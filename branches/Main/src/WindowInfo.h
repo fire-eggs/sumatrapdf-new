@@ -6,6 +6,9 @@
 
 #include "DisplayModel.h"
 
+class PanelInfo;
+class WindowInfo;
+
 class FileWatcher;
 class Synchronizer;
 class DoubleBuffer;
@@ -48,6 +51,38 @@ struct StaticLinkInfo {
     RectI rect;
     const WCHAR *target;
     const WCHAR *infotip;
+};
+
+/* Describes the top window information.
+   A top window is an application window.
+   A top window may have several panels, and
+   each panel may have several (tabbed) documents opened. */
+class TopWindowInfo
+{
+public:
+    TopWindowInfo(HWND hwnd);
+    ~TopWindowInfo();
+
+    HWND            hwndFrame;
+
+    Vec<PanelInfo *> gPanel; // Record the panels in a top window.
+};
+
+/* Describes the panel information.
+   A top window may have several panels.
+   Panels are used for displaying two or more documents at the same time
+   within a single top window. */
+class PanelInfo
+{
+public:
+    PanelInfo(HWND hwnd);
+    ~PanelInfo();
+
+    HWND            hwndPanel;
+
+    Vec<WindowInfo *> gWin; // Record the (tabbed) documents in a panel.
+
+    WindowInfo *    win; // Indicate which document in a panel is currently viewing.
 };
 
 /* Describes information related to one window with (optional) a document
