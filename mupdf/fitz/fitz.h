@@ -268,11 +268,12 @@ void fz_var_imp(void *);
 int fz_push_try(fz_error_context *ex);
 /* SumatraPDF: add filename and line number to errors and warnings */
 #define fz_throw(CTX, MSG, ...) fz_throw_imp(CTX, __FILE__, __LINE__, MSG, __VA_ARGS__)
-void fz_throw_imp(fz_context *ctx, char *file, int line, char *fmt, ...) __printflike(4, 5);
+void fz_throw_imp(fz_context *ctx, char *file, int line, const char *fmt, ...) __printflike(4, 5);
 void fz_rethrow(fz_context *);
 /* SumatraPDF: add filename and line number to errors and warnings */
 #define fz_warn(CTX, MSG, ...) fz_warn_imp(CTX, __FILE__, __LINE__, MSG, __VA_ARGS__)
-void fz_warn_imp(fz_context *ctx, char *file, int line, char *fmt, ...) __printflike(4, 5);
+void fz_warn_imp(fz_context *ctx, char *file, int line, const char *fmt, ...) __printflike(4, 5);
+const char *fz_caught(fz_context *ctx);
 
 /*
 	fz_flush_warnings: Flush any repeated warnings.
@@ -1034,6 +1035,15 @@ fz_rect fz_union_rect(fz_rect a, fz_rect b);
 	Does not throw exceptions.
 */
 fz_bbox fz_union_bbox(fz_bbox a, fz_bbox b);
+
+/*
+	fz_translate_bbox: Translate bounding box.
+
+	Translate a bbox by a given x and y offset. Allows for overflow.
+
+	Does not throw exceptions.
+*/
+fz_bbox fz_translate_bbox(fz_bbox a, int xoff, int yoff);
 
 /*
 	fz_transform_point: Apply a transformation to a point.

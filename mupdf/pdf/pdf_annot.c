@@ -1105,7 +1105,7 @@ pdf_get_string_width(pdf_document *xref, pdf_obj *res, fz_buffer *base, unsigned
 	{
 		pdf_string_to_Tj(ctx, base, string, end);
 		fz_buffer_printf(ctx, base, "ET Q EMC");
-		pdf_run_glyph(xref, res, base, dev, fz_identity, NULL);
+		pdf_run_glyph(xref, res, base, dev, fz_identity, NULL, 0);
 		width = bbox.x1 - bbox.x0;
 	}
 	fz_always(ctx)
@@ -1249,7 +1249,7 @@ pdf_update_tx_widget_annot(pdf_document *xref, pdf_obj *obj)
 			{
 				fz_try(ctx)
 				{
-					fontdesc = pdf_load_font(xref, res, font_obj);
+					fontdesc = pdf_load_font(xref, res, font_obj, 0);
 				}
 				fz_catch(ctx)
 				{
@@ -1257,7 +1257,7 @@ pdf_update_tx_widget_annot(pdf_document *xref, pdf_obj *obj)
 				}
 			}
 			/* TODO: try to reverse the encoding instead of replacing the font */
-			if (!fontdesc || fontdesc->cid_to_gid && !fontdesc->cid_to_ucs)
+			if (fontdesc && fontdesc->cid_to_gid && !fontdesc->cid_to_ucs || !fontdesc && pdf_dict_gets(res, "Font"))
 			{
 				pdf_obj *new_font = pdf_dict_from_string(xref, "<< /Type /Font /BaseFont /Helvetica /Subtype /Type1 >>");
 				fz_free(ctx, font_name);
@@ -1524,7 +1524,8 @@ pdf_load_annots(pdf_document *xref, pdf_obj *annots, fz_matrix page_ctm)
 		fz_catch(ctx)
 		{
 			/* SumatraPDF: fix memory leak */
-			pdf_free_annot(ctx, annot);
+			if (annot)
+				pdf_free_annot(ctx, annot);
 			fz_warn(ctx, "ignoring broken annotation");
 		}
 	}
