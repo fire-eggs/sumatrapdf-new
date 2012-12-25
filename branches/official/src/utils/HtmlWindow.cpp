@@ -126,8 +126,8 @@ public:
 
     // IUnknown
     STDMETHODIMP QueryInterface(REFIID iid, void **ppvObject);
-    STDMETHODIMP_(ULONG) AddRef() { return InterlockedIncrement(&refCount); }
-    STDMETHODIMP_(ULONG) Release();
+    ULONG STDMETHODCALLTYPE AddRef() { return InterlockedIncrement(&refCount); }
+    ULONG STDMETHODCALLTYPE Release();
 
 protected:
     LONG refCount;
@@ -202,16 +202,11 @@ class ComRefCounted {
     ComRefCounted() {
         refCount = 1;
     }
-    STDMETHODIMP_(ULONG) AddRef();
-    STDMETHODIMP_(ULONG) Release();
+    ULONG STDMETHODCALLTYPE AddRef() { return InterlockedIncrement(&refCount); }
+    ULONG STDMETHODCALLTYPE Release();
 };
 
-STDMETHODIMP_(ULONG) ComRefCounted::Release()
-{
-    return InterlockedIncrement(&refCount);
-}
-
-STDMETHODIMP_(ULONG) ComRefCounted::Release()
+ULONG STDMETHODCALLTYPE ComRefCounted::Release()
 {
     LONG res = InterlockedDecrement(&refCount);
     CrashIf(res < 0);
@@ -233,8 +228,8 @@ protected:
 public:
     // IUnknown
     STDMETHODIMP QueryInterface(REFIID riid, void **ppvObject);
-    STDMETHODIMP_(ULONG) AddRef() { return InterlockedIncrement(&refCount); }
-    STDMETHODIMP_(ULONG) Release();
+    ULONG STDMETHODCALLTYPE AddRef() { return InterlockedIncrement(&refCount); }
+    ULONG STDMETHODCALLTYPE Release();
 
     // IInternetProtocolInfo
     STDMETHODIMP ParseUrl(LPCWSTR pwzUrl, PARSEACTION ParseAction, DWORD dwParseFlags,
@@ -257,7 +252,7 @@ protected:
     LONG refCount;
 };
 
-STDMETHODIMP_(ULONG) HW_IInternetProtocolInfo::Release()
+ULONG STDMETHODCALLTYPE HW_IInternetProtocolInfo::Release()
 {
     LONG res = InterlockedDecrement(&refCount);
     CrashIf(res < 0);
@@ -291,8 +286,8 @@ protected:
 public:
     // IUnknown
     STDMETHODIMP QueryInterface(REFIID riid, void **ppvObject);
-    STDMETHODIMP_(ULONG) AddRef() { return InterlockedIncrement(&refCount); }
-    STDMETHODIMP_(ULONG) Release();
+    ULONG STDMETHODCALLTYPE AddRef() { return InterlockedIncrement(&refCount); }
+    ULONG STDMETHODCALLTYPE Release();
 
     // IInternetProtocol
     STDMETHODIMP Start(
@@ -320,7 +315,7 @@ protected:
     size_t dataCurrPos;
 };
 
-STDMETHODIMP_(ULONG) HW_IInternetProtocol::Release()
+ULONG STDMETHODCALLTYPE HW_IInternetProtocol::Release()
 {
     LONG res = InterlockedDecrement(&refCount);
     CrashIf(res < 0);
@@ -428,7 +423,10 @@ STDMETHODIMP HW_IInternetProtocol::Start(
     pIProtSink->ReportProgress(BINDSTATUS_SENDINGREQUEST, urlRest);
 
     HtmlWindow *win = FindHtmlWindowById(htmlWindowId);
-    assert(win);
+    //TODO: this now happens due to events happening on HtmlWindow
+    //used to take a screenshot, so ignore it. Is there a way
+    //to cancel things and not get her?
+    //assert(win);
     if (!win)
         return INET_E_OBJECT_NOT_FOUND;
     if (!win->htmlWinCb)
@@ -481,8 +479,8 @@ public:
 
     // IUnknown
     STDMETHODIMP QueryInterface(REFIID riid, void **ppvObject);
-    STDMETHODIMP_(ULONG) AddRef() { return InterlockedIncrement(&refCount); }
-    STDMETHODIMP_(ULONG) Release();
+    ULONG STDMETHODCALLTYPE AddRef() { return InterlockedIncrement(&refCount); }
+    ULONG STDMETHODCALLTYPE Release();
 
     // IClassFactory
     STDMETHODIMP CreateInstance(IUnknown *pUnkOuter, REFIID riid, void **ppvObject);
@@ -574,8 +572,8 @@ public:
 
     // IUnknown
     STDMETHODIMP QueryInterface(REFIID iid, void ** ppvObject) { return fs->QueryInterface(iid, ppvObject); }
-    STDMETHODIMP_(ULONG) AddRef() { return fs->AddRef(); }
-    STDMETHODIMP_(ULONG) Release() { return fs->Release(); }
+    ULONG STDMETHODCALLTYPE AddRef() { return fs->AddRef(); }
+    ULONG STDMETHODCALLTYPE Release() { return fs->Release(); }
 
     // IOleWindow
     STDMETHODIMP GetWindow(HWND*);
@@ -606,8 +604,8 @@ public:
 
     // IUnknown
     STDMETHODIMP QueryInterface(REFIID iid, void ** ppvObject) { return fs->QueryInterface(iid, ppvObject); }
-    STDMETHODIMP_(ULONG) AddRef() { return fs->AddRef(); }
-    STDMETHODIMP_(ULONG) Release() { return fs->Release(); }
+    ULONG STDMETHODCALLTYPE AddRef() { return fs->AddRef(); }
+    ULONG STDMETHODCALLTYPE Release() { return fs->Release(); }
 
     // IOleWindow
     STDMETHODIMP GetWindow(HWND* h)
@@ -658,8 +656,8 @@ public:
 
     // IUnknown
     STDMETHODIMP QueryInterface(REFIID iid, void ** ppvObject) { return fs->QueryInterface(iid, ppvObject); }
-    STDMETHODIMP_(ULONG) AddRef() { return fs->AddRef(); }
-    STDMETHODIMP_(ULONG) Release() { return fs->Release(); }
+    ULONG STDMETHODCALLTYPE AddRef() { return fs->AddRef(); }
+    ULONG STDMETHODCALLTYPE Release() { return fs->Release(); }
 
     // IOleClientSite
     STDMETHODIMP SaveObject() { return S_OK; }
@@ -680,8 +678,8 @@ public:
 
     // IUnknown
     STDMETHODIMP QueryInterface(REFIID iid, void ** ppvObject) { return fs->QueryInterface(iid, ppvObject); }
-    STDMETHODIMP_(ULONG) AddRef() { return fs->AddRef(); }
-    STDMETHODIMP_(ULONG) Release() { return fs->Release(); }
+    ULONG STDMETHODCALLTYPE AddRef() { return fs->AddRef(); }
+    ULONG STDMETHODCALLTYPE Release() { return fs->Release(); }
 
     // IOleControlSite
     STDMETHODIMP OnControlInfoChanged() { return S_OK; }
@@ -703,8 +701,8 @@ public:
 
     // IUnknown
     STDMETHODIMP QueryInterface(REFIID iid, void ** ppvObject) { return fs->QueryInterface(iid, ppvObject); }
-    STDMETHODIMP_(ULONG) AddRef() { return fs->AddRef(); }
-    STDMETHODIMP_(ULONG) Release() { return fs->Release(); }
+    ULONG STDMETHODCALLTYPE AddRef() { return fs->AddRef(); }
+    ULONG STDMETHODCALLTYPE Release() { return fs->Release(); }
 
     // IOleCommandTarget
     STDMETHODIMP QueryStatus(const GUID*, ULONG, OLECMD[], OLECMDTEXT*);
@@ -721,8 +719,8 @@ public:
 
     // IUnknown
     STDMETHODIMP QueryInterface(REFIID iid, void ** ppvObject) { return fs->QueryInterface(iid, ppvObject); }
-    STDMETHODIMP_(ULONG) AddRef() { return fs->AddRef(); }
-    STDMETHODIMP_(ULONG) Release() { return fs->Release(); }
+    ULONG STDMETHODCALLTYPE AddRef() { return fs->AddRef(); }
+    ULONG STDMETHODCALLTYPE Release() { return fs->Release(); }
 
     // IParseDisplayName
     STDMETHODIMP ParseDisplayName(IBindCtx*, LPOLESTR, ULONG*, IMoniker**) { return E_NOTIMPL; }
@@ -751,8 +749,8 @@ public:
 
     // IUnknown
     STDMETHODIMP QueryInterface(REFIID iid, void ** ppvObject) { return fs->QueryInterface(iid, ppvObject); }
-    STDMETHODIMP_(ULONG) AddRef() { return fs->AddRef(); }
-    STDMETHODIMP_(ULONG) Release() { return fs->Release(); }
+    ULONG STDMETHODCALLTYPE AddRef() { return fs->AddRef(); }
+    ULONG STDMETHODCALLTYPE Release() { return fs->Release(); }
 
     // IDispatch
     STDMETHODIMP GetIDsOfNames(REFIID, OLECHAR**, unsigned int, LCID, DISPID*) { return E_NOTIMPL; }
@@ -771,8 +769,8 @@ public:
 
     // IUnknown
     STDMETHODIMP QueryInterface(REFIID iid, void ** ppvObject) { return fs->QueryInterface(iid, ppvObject); }
-    STDMETHODIMP_(ULONG) AddRef() { return fs->AddRef(); }
-    STDMETHODIMP_(ULONG) Release() { return fs->Release(); }
+    ULONG STDMETHODCALLTYPE AddRef() { return fs->AddRef(); }
+    ULONG STDMETHODCALLTYPE Release() { return fs->Release(); }
 
     // IAdviseSink
     void STDMETHODCALLTYPE OnDataChange(FORMATETC*, STGMEDIUM*) { }
@@ -800,8 +798,8 @@ public:
 
     // IUnknown
     STDMETHODIMP QueryInterface(REFIID iid, void ** ppvObject) { return fs->QueryInterface(iid, ppvObject); }
-    STDMETHODIMP_(ULONG) AddRef() { return fs->AddRef(); }
-    STDMETHODIMP_(ULONG) Release() { return fs->Release(); }
+    ULONG STDMETHODCALLTYPE AddRef() { return fs->AddRef(); }
+    ULONG STDMETHODCALLTYPE Release() { return fs->Release(); }
 
     // IDocHostUIHandler
     STDMETHODIMP ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdtReserved, IDispatch *pdispReserved) { return S_FALSE; }
@@ -830,8 +828,8 @@ public:
 
     // IUnknown
     STDMETHODIMP QueryInterface(REFIID iid, void ** ppvObject) { return fs->QueryInterface(iid, ppvObject); }
-    STDMETHODIMP_(ULONG) AddRef() { return fs->AddRef(); }
-    STDMETHODIMP_(ULONG) Release() { return fs->Release(); }
+    ULONG STDMETHODCALLTYPE AddRef() { return fs->AddRef(); }
+    ULONG STDMETHODCALLTYPE Release() { return fs->Release(); }
 
     STDMETHODIMP DragEnter(IDataObject *pDataObj, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect) {
         HRESULT hr = fs->htmlWindow->OnDragEnter(pDataObj);
@@ -861,8 +859,8 @@ public:
 public:
     // IUnknown
     STDMETHODIMP QueryInterface(REFIID riid, void **ppvObject);
-    STDMETHODIMP_(ULONG) AddRef(void);
-    STDMETHODIMP_(ULONG) Release(void);
+    ULONG STDMETHODCALLTYPE AddRef(void);
+    ULONG STDMETHODCALLTYPE Release(void);
 
     // IMoniker
     STDMETHODIMP BindToStorage(IBindCtx *pbc, IMoniker *pmkToLeft, REFIID riid, void **ppvObj);
@@ -987,12 +985,12 @@ STDMETHODIMP HtmlMoniker::QueryInterface(REFIID riid, void **ppvObject)
     return S_OK;
 }
 
-STDMETHODIMP_(ULONG) HtmlMoniker::AddRef()
+ULONG STDMETHODCALLTYPE HtmlMoniker::AddRef()
 {
     return InterlockedIncrement(&refCount);
 }
 
-STDMETHODIMP_(ULONG) HtmlMoniker::Release()
+ULONG STDMETHODCALLTYPE HtmlMoniker::Release()
 {
     LONG res = InterlockedDecrement(&refCount);
     CrashIf(res < 0);
@@ -1151,7 +1149,7 @@ void HtmlWindow::CreateBrowser()
     webBrowser->put_RegisterAsBrowser(VARIANT_FALSE);
     webBrowser->put_RegisterAsDropTarget(VARIANT_TRUE);
 
-    EnsureAboutBlankShown();
+    NavigateToAboutBlank();
     SubclassHwnd();
 }
 
@@ -1226,11 +1224,7 @@ void HtmlWindow::NavigateToDataUrl(const WCHAR *url)
 void HtmlWindow::NavigateToUrl(const WCHAR *url)
 {
     VARIANT urlVar;
-    VariantInit(&urlVar);
-    urlVar.vt = VT_BSTR;
-    urlVar.bstrVal = SysAllocString(url);
-    if (!urlVar.bstrVal)
-        return;
+    VariantInitBstr(urlVar, url);
     currentURL.Set(NULL);
     webBrowser->Navigate2(&urlVar, 0, 0, 0, 0);
     VariantClear(&urlVar);
@@ -1286,13 +1280,11 @@ void HtmlWindow::CopySelection()
     webBrowser->ExecWB(OLECMDID_COPY, OLECMDEXECOPT_DODEFAULT, NULL, NULL);
 }
 
-void HtmlWindow::EnsureAboutBlankShown()
+void HtmlWindow::NavigateToAboutBlank()
 {
     if (blankWasShown)
         return;
     NavigateToUrl(L"about:blank");
-    WaitUntilLoaded(INFINITE, L"about:blank");
-    blankWasShown = true;
 }
 
 void HtmlWindow::SetHtml(const char *s, size_t len)
@@ -1389,6 +1381,12 @@ bool HtmlWindow::OnBeforeNavigate(const WCHAR *url, bool newWindow)
 
 void HtmlWindow::OnDocumentComplete(const WCHAR *url)
 {
+    // we don't notify about "about:blank"
+    if (str::EqI(L"about:blank", url)) {
+        blankWasShown = true;
+        return;
+    }
+
     // if it's url for our internal protocol, strip the protocol
     // part as we don't want to expose it to clients.
     int protoWindowId;
@@ -1433,69 +1431,10 @@ HRESULT HtmlWindow::OnDragDrop(IDataObject *dataObj)
     return hDrop != NULL ? S_OK : E_FAIL;
 }
 
-// Just to be safe, we use Interlocked*() functions
-// to maintain pumpNestCount
-static LONG pumpNestCount = 0;
-
-static void PumpRemainingMessages()
-{
-    MSG msg;
-    InterlockedIncrement(&pumpNestCount);
-    for (;;) {
-        bool moreMessages = PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE);
-        if (!moreMessages)
-            goto Exit;
-        GetMessage(&msg, NULL, 0, 0);
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
-Exit:
-    InterlockedDecrement(&pumpNestCount);
-}
-
-// TODO: this is a terrible hack. When we're processing messages
-// with the intention of advancing browser window, we might process
-// a message that will cause us to close the chm document and related
-// classes while we're still using them, so we use this function
-// to block those cases.
-// The right fix is to move to truly async processing where instead
-// of busy-waiting for html loading to finish, we schedule the
-// remaining of the code to be executed in document loaded
-// notification/callback
-bool InHtmlNestedMessagePump()
-{
-    return pumpNestCount > 0;
-}
-
 LRESULT HtmlWindow::SendMsg(UINT msg, WPARAM wp, LPARAM lp)
 {
     HWND hwndBrowser = GetBrowserControlHwnd(hwndParent);
     return SendMessage(hwndBrowser, msg, wp, lp);
-}
-
-static bool LoadedExpectedPage(const WCHAR *expectedUrl, const WCHAR *loadedUrl)
-{
-    if (!loadedUrl)
-        return false;
-    if (!expectedUrl)
-        return true;
-    return str::Eq(expectedUrl, loadedUrl);
-}
-
-bool HtmlWindow::WaitUntilLoaded(DWORD maxWaitMs, const WCHAR *url)
-{
-    Timer timer(true);
-    // in some cases (like reading chm from network drive without the right permissions)
-    // web control might navigate to about:blank instead of the url we asked for, so
-    // we stop when navigation is finished but only consider it successful if
-    // we navigated to the url we asked for
-    // TODO: we have a race here: if user chooses e.g. to close the document while we're
-    // here, we'll close the ChmEngine etc. and try to use it after we exit.
-    while (!currentURL && (timer.GetTimeInMs() < maxWaitMs)) {
-        PumpRemainingMessages();
-        Sleep(100);
-    }
-    return LoadedExpectedPage(url, currentURL);
 }
 
 FrameSite::FrameSite(HtmlWindow * win)
@@ -1591,7 +1530,7 @@ STDMETHODIMP FrameSite::QueryInterface(REFIID riid, void **ppv)
     return S_OK;
 }
 
-STDMETHODIMP_(ULONG) FrameSite::Release()
+ULONG STDMETHODCALLTYPE FrameSite::Release()
 {
     LONG res = InterlockedDecrement(&refCount);
     CrashIf(res < 0);
