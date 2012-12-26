@@ -65,6 +65,8 @@ enum MenuToolbarFlags {
 // for backward compatibility use a value that older versions will render as yellow
 #define ABOUT_BG_COLOR_DEFAULT  (RGB(0xff, 0xf2, 0) - 0x80000000)
 
+class TopWindowInfo;
+class PanelInfo;
 class WindowInfo;
 class EbookWindow;
 class Favorites;
@@ -123,6 +125,9 @@ void  OnMenuAbout();
 void  QuitIfNoMoreWindows();
 bool  ShouldSaveThumbnail(DisplayState& ds);
 void  SaveThumbnailForFile(const WCHAR *filePath, RenderedBitmap *bmp);
+
+TopWindowInfo* FindTopWindowInfoByHwnd(HWND hwnd);
+PanelInfo *FindPanelInfoByHwnd(HWND hwnd);
 
 WindowInfo* FindWindowInfoByFile(const WCHAR *file);
 WindowInfo* FindWindowInfoByHwnd(HWND hwnd);
