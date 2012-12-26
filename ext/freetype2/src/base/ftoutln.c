@@ -304,6 +304,13 @@
 
     *anoutline = null_outline;
 
+    if ( numContours < 0                  ||
+         (FT_UInt)numContours > numPoints )
+      return FT_Err_Invalid_Argument;
+
+    if ( numPoints > FT_OUTLINE_POINTS_MAX )
+      return FT_Err_Array_Too_Large;
+
     if ( FT_NEW_ARRAY( anoutline->points,   numPoints   ) ||
          FT_NEW_ARRAY( anoutline->tags,     numPoints   ) ||
          FT_NEW_ARRAY( anoutline->contours, numContours ) )
@@ -922,7 +929,7 @@
     for ( c = 0; c < outline->n_contours; c++ )
     {
       FT_Vector  in, out, shift;
-      FT_Fixed   l_in, l_out, d;
+      FT_Fixed   l_in, l_out, l, q, d;
       int        last = outline->contours[c];
 
 
@@ -952,17 +959,32 @@
         /* shift only if turn is less then ~160 degrees */
         if ( 16 * d > l_in * l_out )
         {
-          /* shift components are rotated */
-          shift.x = FT_DivFix( l_out * in.y + l_in * out.y, d );
-          shift.y = FT_DivFix( l_out * in.x + l_in * out.x, d );
+          /* shift components are aligned along bisector        */
+          /* and directed according to the outline orientation. */
+          shift.x = l_out * in.y + l_in * out.y;
+          shift.y = l_out * in.x + l_in * out.x;
 
           if ( orientation == FT_ORIENTATION_TRUETYPE )
             shift.x = -shift.x;
           else
             shift.y = -shift.y;
 
-          shift.x = FT_MulFix( xstrength, shift.x );
-          shift.y = FT_MulFix( ystrength, shift.y );
+          /* threshold strength to better handle collapsing segments */
+          l = FT_MIN( l_in, l_out );
+          q = out.x * in.y - out.y * in.x;
+          if ( orientation == FT_ORIENTATION_TRUETYPE )
+            q = -q;
+
+          if ( FT_MulDiv( xstrength, q, l ) < d )
+            shift.x = FT_MulDiv( shift.x, xstrength, d );
+          else
+            shift.x = FT_MulDiv( shift.x, l, q );
+
+          
+          if ( FT_MulDiv( ystrength, q, l ) < d )
+            shift.y = FT_MulDiv( shift.y, ystrength, d );
+          else
+            shift.y = FT_MulDiv( shift.y, l, q );
         }
         else
           shift.x = shift.y = 0;

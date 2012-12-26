@@ -1,5 +1,5 @@
 AppTranslator: SumatraPDF
-b9ef8756e8c8b063be42b87992ab7e5a17d42241
+d43f551cb97266789d2d398d934a8cbb82ed108c
 :&About
 af:&Omtrent
 am:&Ծրագրի մասին
@@ -77,7 +77,7 @@ bs:Stvarna veličina\tCtrl+1
 by:Рэальны памер\tCtrl+1
 ca-xv:Mida &real\tCtrl+1
 ca:Mida &real\tCtrl+1
-cn:实际大小(&U)\tCtrl+1
+cn:实际大小(&A)\tCtrl+1
 cy:&Gwir Faint\tCtrl+1
 cz:Skutečná &velikost\tCtrl+1
 de:&Tatsächliche Größe\tStrg+1
@@ -372,6 +372,7 @@ ca:&Copia la selecció
 cn:复制选择内容(&C)\tCtrl+C
 cz:&Kopírovat výběr
 de:Auswahl &kopieren
+dk:&Kopier Markering
 el:&Αντιγραφή Επιλογής
 es:&Copiar selección
 et:K&opeeri valik
@@ -420,7 +421,7 @@ br:Copiar seleção\tCtrl+C
 bs:Kopiraj označeno\tCtrl+C
 ca-xv:&Copia la selecció\tCtrl+C
 ca:&Copia la selecció\tCtrl+C
-cn:复制所选内容\tCtrl+C
+cn:复制所选内容(&C)\tCtrl+C
 cy:Copïo'r Dewis\tCtrl+C
 cz:&Kopírovat výběr\tCtrl+C
 de:Auswahl &kopieren\tStrg+C
@@ -480,7 +481,7 @@ bs:Nemoj me ponovo pitati
 by:Больш не пытаць
 ca-xv:&No ho tornes a preguntar
 ca:&No ho tornis a preguntar
-cn:以后不再询问
+cn:以后不再询问(&D)
 cy:&Peidio gofyn eto
 cz:&Příště se již neptat
 de:Nicht &wieder fragen.
@@ -772,7 +773,7 @@ bs:Prva stranica\tHome
 by:Першая старонка\tHome
 ca-xv:&Primera pàgina\tInici
 ca:&Primera pàgina\tInici
-cn:第一页\tHome
+cn:第一页(&F)\tHome
 cy:Tudalen Gyntaf\tHome
 cz:První &stránka\tHome
 de:&Erste Seite\tPos1
@@ -1081,7 +1082,7 @@ bs:Posljednja stranica\tEnd
 by:Апошняя старонка\tEnd
 ca-xv:Ú&ltima pàgina\tFinal
 ca:Ú&ltima pàgina\tFinal
-cn:最后一页\tEnd
+cn:最后一页(&L)\tEnd
 cy:Tudalen Olaf\tEnd
 cz:Pos&lední stránka\tEnd
 de:&Letzte Seite\tEnde
@@ -1321,7 +1322,7 @@ bs:Sljedeća stranica\t->
 by:Наступная старонка\t->
 ca-xv:Pàgina &següent\t->
 ca:Pàgina &següent\t->
-cn:下一页\t->
+cn:下一页(&N)\t->
 cy:Tudalen Nesaf\t->
 cz:Další strá&nka\tŠipka vpravo
 de:&Nächste Seite\t->
@@ -1835,7 +1836,7 @@ bs:Prethodna stranica\t<-
 by:Папярэдняя старонка\t<-
 ca-xv:Pàgina &anterior\t<-
 ca:Pàgina &anterior\t<-
-cn:上一页\t<-
+cn:上一页(&P)\t<-
 cy:Tudalen Flaenorol\t<-
 cz:&Předchozí stránka\tŠipka vlevo
 de:&Vorherige Seite\t<-
@@ -2098,7 +2099,7 @@ ne:यो कागजातको पासवर्ड &सम्झनुह�
 nl:Wachtwoord onthouden voor dit document
 no:&Husk passordet for dette dokumentet
 pl:Pamiętaj &hasło dla tego dokumentu
-pt:&Lembrar a palavra-passe deste documento
+pt:&Lembrar palavra-passe deste documento
 ro:&Reține parola acestui document
 ru:Запомнит&ь пароль для этого документа
 si:මෙම ගොනුව සදහා මුරපදය &මතක තබාගන්න
@@ -2510,7 +2511,7 @@ bs:&Propusti ovu verziju.
 by:Прапусціць гэту версію.
 ca-xv:&Omet esta versió
 ca:&Omet aquesta versió
-cn:跳过此版本
+cn:跳过此版本(&S)
 cy:&Hepgor y fersiwn yma.
 cz:&Přeskočit tuto verzi
 de:&Diese Version überspringen.
@@ -2576,7 +2577,7 @@ cn:使用原始页面大小(&U)
 cy:&Defnyddio maint gwreiddiol y dudalen
 cz:Po&užít původní velikost stránky
 de:Seitengröße &nicht anpassen
-dk:&Brug original sidestørrelser
+dk:&Brug originale sidestørrelser
 el:&Χρησιμοποίηση μεγέθους αρχικών σελίδων
 es:&Usar el tamaño original de la página
 et:&Kasuta algseid lehekülje suuruseid
@@ -3195,7 +3196,7 @@ cn:高级
 cy:Uwch
 cz:Upřesnit
 de:Weiteres
-dk:Advanceret
+dk:Avanceret
 el:Προχωρημένα
 es:Avanzado
 et:Muud
@@ -3400,7 +3401,7 @@ ta:செயலி
 th:โปรแกรมใช้งาน:
 tl:Pangalan ng aplikasyon:
 tr:Uygulama:
-tw:程式：
+tw:應用程式：
 uk:Прикладна програма:
 uz:Dastur:
 vn:Ứng dụng:
@@ -3442,6 +3443,7 @@ kr:PDF 파일 확장자를 연결할까요?
 kw:Keskelmi orth restrennow PDF?
 lt:Susieti su PDF failais?
 mk:Да управувам со PDF-датотеки?
+ml:capture
 mm:PDF ဖိုင်များနှင့်ဆက်စပ်ရန်
 ne:PDF फाइलहरु सँग सम्बन्धन गराउने?
 nl:Associëren met PDF-bestanden?
@@ -3674,7 +3676,7 @@ ne:&अद्यावधिकहरु स्वतः जाँच्नु�
 nl:Automatisch controleren op &updates
 no:Automatisk sjekk for &oppdateringer
 pl:&Szukaj aktualizacji automatycznie
-pt:&Verificar atualizações automaticamente
+pt:&Procurar atualizações automaticamente
 ro:Urmărește automat versiuni noi
 ru:&Автоматически проверять обновления
 si:යාවත්කාලකිරීම් ස්වයක්‍රීයව සොයන්න
@@ -3688,7 +3690,7 @@ ta:தானாக புதுப்பித்த பதிப்பை த�
 th:ตรวจสอบการปรับปรุงให้ทันสมัยโดยอัตโนมัติ
 tl:Awtomatikong tignan kung may mga pagbabago
 tr:&Güncellemeleri otomatik olarak kontrol et
-tw:自動檢查軟體更新(&U)
+tw:自動檢查更新(&U)
 uk:Автоматична перевірка оновлень
 uz:&Yangi versiyani avtomatik ravishda tekshirish
 vn:Tự động kiểm tra cập nhật
@@ -4036,7 +4038,7 @@ cn:CHM 文档
 cy:Dogfennau CHM
 cz:CHM dokumenty
 de:CHM Hilfe-Dateien
-dk:CHM documenter
+dk:CHM-dokumenter
 el:Έγγραφα CHM
 es:Documentos CHM
 et:CHM-dokumendid
@@ -4186,7 +4188,7 @@ th:ยกเลิก
 tl:Ikansela
 tr:Vazgeç
 tw:取消
-uk:Відмінити
+uk:Скасувати
 uz:Bekor qilish
 vn:Hủy
 :Cannot print this file
@@ -4259,7 +4261,7 @@ cn:无法运行反向搜索命令。请检查设置中的命令行。
 cy:Methu cychwyn gorchymyn chwilio gwrthdro. Gwiriwch y linell orchymyn yn y gosodiadau
 cz:Příkaz inverzní hledání nelze spustit. Zkontrolujte nastavení příkazového řádku.
 de:Fehler beim Ausführen des Befehls für die Inverssuche. Bitte überprüfen Sie die Einstellung.
-dk:Kan ikke starte invers søge kommando. Tjek venligst kommandolinjen i indstillingerne.
+dk:Kan ikke starte invers søgekommando. Tjek venligst kommandolinjen i indstillingerne.
 el:Δεν είναι δυνατή η εκκίνηση αντίστροφης αναζήτησης. Παρακαλώ ελέγξτε τη γραμμή εντολών στις ρυθμίσεις.
 es:No se puede iniciar el comando de búsqueda inversa. Verifique la línea de comandos en la configuración.
 et:Pööratud otsingu alustamine ebaõnnestus. Kontrolli seadistustest käsurida.
@@ -4413,7 +4415,7 @@ nn:&Sjå etter ny versjon
 no:&Se etter oppdateringer...
 pa:ਨਵੇ ਵਰਜਨ ਲਈ ਚੈੱਕ ਕਰੋ(&C)
 pl:Szukaj &aktualizacji
-pt:Verificar at&ualizações
+pt:Procurar at&ualizações
 ro:Verifică apariția unei versiuni noi
 ru:Проверить наличие новой &версии
 si:&යාවත්කාලීනකිරීම් සදහා සොයන්න
@@ -4467,7 +4469,7 @@ ne:कमिक पुस्तिका
 nl:Stripboeken
 no:Tegneserier
 pl:Komiksy
-pt:Banda Desenhada
+pt:Banda desenhada
 ro:Benzi desenate
 ru:Документы CBR, CBZ (комиксы)
 sk:Komiksy
@@ -4486,14 +4488,17 @@ vn:Truyện tranh comic
 :Compatibility
 am:Համատեղելիությունը
 ar:التوافق
+bg:Съвместимост
 br:Compatibilidade
 ca-xv:Compatibilitat
 ca:Compatibilitat
 cn:兼容性
 cz:Kompatibilita
 de:Kompatibilität
+dk:Kompatibilitet
 el:Συμβατότητα
 es:Compatibilidad
+et:Ühilduvus
 eu:Bateragarritasuna
 fa:سازگاری
 fi:Yhteensopivuus
@@ -4501,6 +4506,7 @@ fr:Compatibilité
 ga:Comhoiriúnacht
 hr:Kompatibilnost
 it:Compatibilità
+ja:互換性
 kr:호환성
 mk:Компатибилност
 ne:मिल्दोजुल्दो
@@ -4516,6 +4522,8 @@ sv:Kompatibilitet
 ta:இணக்கத்தன்மை
 th:ความสอดคล้องกัน
 tr:Uyumluluk
+tw:兼容性
+uk:Сумісність
 uz:Mosligi
 vn:Tính tương thích
 :Continuous
@@ -4722,7 +4730,7 @@ cn:提供翻译
 cy:Cyfrannu cyfieithiad.
 cz:Zaslat překlad
 de:Übersetzung beisteuern
-dk:Bidgrag med oversættelse
+dk:Bidrag med oversættelse
 el:Βοηθήστε στη Μετάφραση
 es:Contribuir en la traducción
 et:Osale tõlkimises
@@ -4783,6 +4791,7 @@ ca:Copia la &imatge
 cn:复制图片(&I)
 cz:Kopírovat &obrázek
 de:&Bild kopieren
+dk:Kopier &Billede
 el:Αντιγραφή &Εικόνας
 es:Copiar &Imagen
 et:Kopeeri &pilt
@@ -4795,6 +4804,7 @@ hr:Kopiraj Sl&iku
 hu:&Kép másolása
 id:Salin &Gambar
 it:Copia &immagine
+ja:画像をコピー(&I)
 kr:이미지 복사(&I)
 mk:Копирај &слика
 ne:&छवि प्रतिलिपि बनाउनुहोस्
@@ -4812,6 +4822,7 @@ ta:நகல் & படம்
 th:คัดลอกรูปภาพ
 tr:&Görüntüyü Kopyala
 tw:複製圖片(&I)
+uk:Скопіювати зображення
 uz:&Rasmni nusxa olish
 vn:Sao chép hình ảnh
 :Copy &Link Address
@@ -4983,6 +4994,7 @@ ca:Copyright:
 cn:版权:
 cz:Autorská práva:
 de:Copyright:
+dk:Copyright:
 el:Πνευματική ιδιοκτησία:
 es:Derecho de autor:
 et:Autoriõigus:
@@ -4994,6 +5006,7 @@ hr:Autorsko pravo
 hu:Szerzői jog:
 id:Hak Cipta
 it:Copyright:
+ja:コピーライト:
 kr:저작권:
 mk:Авторско право:
 ne:प्रतिलिपिअधिकार:
@@ -5011,6 +5024,7 @@ ta:காப்புரிமை:
 th:ลิขสิทธิ์:
 tr:Telif hakkı:
 tw:版權：
+uk:Копірайт:
 uz:Mualliflik huquqi:
 vn:Quyền tác giả:
 :Could not obtain Printer properties
@@ -5060,6 +5074,7 @@ sv:Kunde inte hämta egenskaper för skrivare
 ta:அச்சுப்பொறியின் பண்புகள் பெற முடியவில்லை
 th:ไม่ได้รับคุณสมบัติเครื่องพิมพ์
 tr:Yazıcı özellikleri temin edilemedi
+tw:無法取得印表機之屬性
 uk:Неможливо відобразити налаштування друкарки
 uz:Printer xossalarini olib bo'lmadi
 vn:Không thể có được thuộc tính Máy in
@@ -5576,7 +5591,7 @@ cn:DjVu 文件
 cy:Dogfennau DjVu
 cz:DjVu dokumenty
 de:DjVu-Dokumente
-dk:DjVu documenter
+dk:DjVu-dokumenter
 el:Έγγραφα DjVu
 es:Documentos DjVu
 et:DjVu-dokumendid
@@ -5629,7 +5644,7 @@ cn:文档属性
 cy:Priodweddau Dogfen
 cz:Vlastnosti dokumentu
 de:Dokumenteigenschaften
-dk:dokumentegenskaber
+dk:Dokumentegenskaber
 el:Ιδιότητες Εγγράφου
 es:Propiedades del Documento
 et:Dokumendi omadused
@@ -5744,7 +5759,7 @@ cn:退出(&X)\tCtrl+Q
 cy:&Gadael\tCtrl+Q
 cz:&Konec\tCtrl+Q
 de:&Beenden\tStrg+Q
-dk:S&lut\tCtrl+Q
+dk:&Afslut\tCtrl+Q
 el:Έ&ξοδος\tCtrl+Q
 es:&Salir\tCtrl+Q
 et:Väl&ju\tCtrl+Q
@@ -5807,7 +5822,7 @@ cn:EPUB 文档
 cy:Dogfennau EPUB
 cz:EPUB dokumenty
 de:EPUB E-Bücher
-dk:EPUB documenter
+dk:EPUB-dokumenter
 el:Έγγραφα EPUB
 es:Documentos EPUB
 et:EPUB-dokumendid
@@ -5893,7 +5908,7 @@ nn:Skriv inn passord
 no:Skriv inn passord
 pa:ਪਾਸਵਰਡ ਭਰੋ
 pl:Podaj hasło
-pt:Indique a palavra-passe
+pt:Introduza a palavra-passe
 ro:Introduceți parola
 ru:Введите пароль
 si:මුරපදය ඇතුලුකරන්න
@@ -5958,7 +5973,7 @@ nn:Skriv inn passord for %s
 no:Skriv inn passord for %s
 pa:%s ਲਈ ਪਾਸਵਰਡ ਭਰੋ
 pl:Podaj hasło dla %s
-pt:Indique a palavra-passe de %s
+pt:Introduza a palavra-passe de %s
 ro:Introduceți parola pentru %s
 ru:Введите пароль для %s
 si:%s සඳහා මුරපදය ඇතුල්කරන්න
@@ -6025,7 +6040,7 @@ sv:Ange kommandorad att aktivera när du dubbelklickar på PDF-dokumentet:
 ta:நீங்கள் PDF ஆவணத்தின் மீது இரட்டை சொடுக்கும் போது செயலாக்க கட்டளை வரி உள்ளிடவும்:
 tl:Pakisulat ang command na gagawin kapag dalawang beses na kli-nik ang dokumentong PDF:
 tr:PDF belgesine çift tıklanınca yürütülecek komutu giriniz:
-tw:輸入當以滑鼠雙擊 PDF 文件時應執行的指令：
+tw:請輸入滑鼠雙擊 PDF 文件時應執行的指令：
 uk:Введіть командну стрічку, що викликається при подвійному клацані на PDF-документі:
 uz:PDF-hujjatni ikki marta bosganda ishga tushadigan buyruq satrini kiriting:
 vn:Nhập dòng lệnh gọi khi bạn nhấp đúp vào tập tin PDF:
@@ -6319,6 +6334,7 @@ vn:Trang kép
 :Failed to rename the file!
 am:Հնարավոր չեղավ անվանափոխել ֆայլը։
 ar:فشل في إعادة تسمية الملف!
+bg:Преименуването не беше успешно!
 br:Falha ao renomear o arquivo!
 bs:Neuspješna promjena naziva faja!
 ca-xv:S'ha produÏt un error en canviar el nom del fitxer!
@@ -6326,6 +6342,7 @@ ca:S'ha produït un error en canviar el nom del fitxer!
 cn:无法重命名!
 cz:Soubor se nepodařilo přejmenovat!
 de:Die Datei konnte nicht umbenannt werden!
+dk:Fejl ved omdøbning af fil!
 el:Η μετονομασία του αρχείου απέτυχε!
 es:¡No se puede renombrar el fichero!
 et:Faili ümbernimetamine ebaõnnestus.
@@ -6337,6 +6354,7 @@ hr:Neuspjeh u preimenovanju datoteke!
 hu:A fájl átnevezése sikertelen
 id:Gagal mengganti nama berkas!
 it:Impossibile rinominare il file
+ja:ファイル名の変更に失敗しました！
 kr:파일 이름을 바꾸지 못했습니다!
 mk:Не успеав да ја преименувам датотеката!
 ne:नाम फेराई असफल
@@ -6353,6 +6371,7 @@ sv:Kunde inte döpa om filen!
 ta:கோப்புக்கு மறுபெயரிட முடியவில்லை!
 tr:Dosyanın ismi değiştirilemedi!
 tw:重新命名該檔案失敗!
+uk:Не вдалося перейменувати файл!
 uz:Fayl nomini o'zgartirish muvaffaqiyatsiz tugadi!
 vn:Không thể đổi tên tập tin!
 :Failed to save a file
@@ -6423,17 +6442,21 @@ uz:Faylni saqlash muvaffaqiyatsiz tugadi
 vn:Không lưu được tập tin.
 :Fast Web View
 ar:تهيئة الويب السريعة
+bg:Бърз Web изглед
 br:Visualização rápida na Web
 ca-xv:Visualització ràpida de web
 ca:Visualització ràpida de web
 cn:快速WEB查看(线性PDF)
 de:Schnelle Webanzeige
+dk:Hurtig Internet Visning
 el:Γρήγορη Διαδικτυακή Προβολή
 es:Visualización Rápida en Web
+et:Kiire veebivaade
 fr:Affichage Web rapide
 ga:Gréasáin dearcadh go tapa
 hr:Brzi Web prikaz
 it:Vista web veloce
+ja:高速ウェブ表示
 kr:빠른 웹 보기
 mk:Брз веб-преглед
 ne:द्रुत वेब दृश्य
@@ -6448,6 +6471,8 @@ sr-rs:Брзи преглед на мрежи
 sv:Snabb Webb-Visning
 ta:வேகமான வலை பார்வை
 tr:Hızlı Web Görünümü
+tw:快速網頁模式
+uk:Швидкий веб перегляд
 uz:Tez veb ko'rish
 vn:Xem dạng Web nhanh
 :Favorites
@@ -6501,20 +6526,31 @@ uk:Закладки
 uz:Tanlanganlar
 vn:Ưa thích
 :FictionBook documents
+bg:Документи FictionBook
 br:Documentos FictionBook
 ca-xv:Documents FictionBook
 ca:Documents FictionBook
 cn:小说文档
 de:FictionBook-Dokumente
+dk:FictionBook-dokumenter
 el:Έγγραφα FictionBook
 es:Documentos FictionBook
+et:FictionBook-dokumendid
 fr:Documents FictionBook
+hr:FictionBook dokumenti
+it:Documenti FictionBook
+ja:フィクション文章
 nl:FictionBook documenten
+no:FictionBook-dokumenter
 pl:Dokumenty FictionBook
+pt:Livros de ficção
 ru:Документы FictionBook
 sq:Dokumente FictionBook
 sr-rs:FictionBook докуменат
 sv:FictionBook dokument
+tw:FictionBook(fb2) 文件
+uk:Документи FictionBook
+uz:FictionBook hujjatlari
 vn:Tập tin FictionBook
 :File %s not found
 am:%s ֆայլը չի գտնվել
@@ -6527,6 +6563,7 @@ ca:No s'ha trobat el fitxer %s
 cn:无法找到文件 %s
 cz:Soubor %s nebyl nalezen
 de:Datei %s nicht gefunden
+dk:Fil %s ikke fundet
 el:Το αρχείο %s δε βρέθηκε
 es:El archivo %s no se encuentra
 et:Faili %s ei leitud
@@ -6997,7 +7034,7 @@ br:Ajustar ao &conteúdo\tCtrl+3
 bs:Uklopi s&adržaj\tCtrl+3
 ca-xv:Ajusta el &contingut\tCtrl+3
 ca:Ajusta el &contingut\tCtrl+3
-cn:适合内容\tCtrl+3
+cn:适合内容(&C)\tCtrl+3
 cy:Ffitio'r &Cynnwys\tCtrl+3
 cz:Přizpůsobit &obsah\tCtrl+3
 de:An &Inhalt anpassen\tStrg+3
@@ -7476,6 +7513,7 @@ ca:Tipus de lletra:
 cn:字体:
 cz:Písma:
 de:Schriftarten:
+dk:Skrifttyper:
 el:Γραμματοσειρές:
 es:Fuentes:
 et:Fondid:
@@ -7488,6 +7526,7 @@ hr:Fontovi:
 hu:Betűk:
 id:Huruf
 it:Font:
+ja:フォント:
 kr:글꼴:
 mk:Букви:
 ne:फन्टहरू:
@@ -7503,6 +7542,8 @@ sr-rs:Фонтови:
 sv:Typsnitt:
 ta:எழுத்துரு:
 tr:Yazıyüzleri:
+tw:字體
+uk:Шрифти
 uz:Shriftlar:
 vn:Font chữ
 :Formatting the book... %d pages
@@ -7516,6 +7557,7 @@ ca:S'està formatant el llibre... %d pàgines
 cn:正在格式化 %d 页
 cz:Formátování knihy... %d stránek
 de:Buch wird formatiert… Seite %d
+dk:Formaterer bogen... %d sider
 el:Διαμόρφωση του βιβλίου... %d σελίδες
 es:Dando formato al libro... %d páginas
 et:Raamatu vormindamine... %d lehekülge
@@ -7528,6 +7570,7 @@ hr:Oblikovanje knjige... %d stranica
 hu:Könyv formázása... %d oldal
 id:Memformat buku... %d halaman
 it:Formattazione del libro ... %d pagine
+ja:製本中… %d ページ
 kr:%d 페이지 읽어들이는 중...
 mk:Ја форматирам книгата... %d страници
 ne:पुस्तक स्वरूपण ... %d पृष्ठहरु
@@ -7543,6 +7586,8 @@ sr-rs:Форматирање књиге... %d страница
 sv:Formatterar bok... %d sidor
 ta:புத்தகத்தை வடிவமைக்க ... %d பக்கங்கள்
 tr:Kitap biçimlendiriliyor... %d sayfa
+tw:格式化書本... %d 頁
+uk:Форматується книга... %d сторінок
 uz:Kitob format qilinmoqda... %d bet
 vn:Đang định dạng sách... %d trang
 :Found text at page %s
@@ -7627,7 +7672,7 @@ hr:Tekst pronađen na stranici %s (opet)
 hu:Találat a(z) %s. oldalon (ismét)
 id:Teks ditemukan pada halaman %s (lagi)
 it:Trovato testo alla pagina %s (ancora)
-ja:%s ページに指定された文字列が見つかりました（一週）
+ja:%s ページに指定された文字列が見つかりました（一周）
 ka:ტექსტი ნაპოვნია %s გვერდზე (ხელახლა)
 kr:%s 페이지에서 (다시) 문자열 찾음
 lt:Rastas tekstas %s puslapyje (vėl)
@@ -7686,7 +7731,7 @@ ne:प्रायजसो पढिएको
 nl:Vaak gelezen
 no:Ofte leste
 pl:Ostatnio otwierane
-pt:Lidos frequentemente
+pt:Frequentes
 ro:Citite frecvent
 ru:Часто используемые документы
 sk:Často čítané dokumenty
@@ -8064,6 +8109,7 @@ ca:S'està carregant el fitxer %s...
 cn:正在加载 %s...
 cz:Načítání souboru %s...
 de:%s wird geladen…
+dk:Indlæser fil %s...
 el:Φόρτωση του αρχείου %s
 es:Cargando fichero %s...
 et:Faili %s laadimine...
@@ -8076,6 +8122,7 @@ hr:Pokretanje datoteke %s...
 hu:Fájl beolvasása %s...
 id:Memuat berkas %s...
 it:Caricamento file %s...
+ja:%s を読込中…
 kr:%s 파일 불러오는 중...
 mk:Ја вчитувам датотеката %s...
 ne:%s फाइल लोड हुँदैछ ...
@@ -8091,6 +8138,8 @@ sr-rs:Учитавање датотеке %s...
 sv:Laddar fil %s...
 ta:%s கோப்பு ஏற்றப்படுகிறது
 tr:%s dosyası yükleniyor...
+tw:讀取檔案 %s...
+uk:Завантажується файл %s...
 uz:%s fayli yuklanmoqda...
 vn:Đang mở tập tin %s...
 :MB
@@ -8750,7 +8799,7 @@ tl:Walang makitang synchronization file
 tr:Herhangi bir senkronizasyon dosyası bulunamadı
 tw:找不到同步檔案
 uk:Файли синхронізації не знайдено
-uz:Sinxronizatsiya fayli topilmadi
+uz:Sinxronlanish fayli topilmadi
 vn:Không tìm thấy tập tin đồng bộ nào
 :No synchronization info at this position
 am:Այստեղ չկա համաժամեցնելու համար տեղեկություն
@@ -8806,7 +8855,7 @@ tl:Walang makitang detalye ng synchronization dito
 tr:Bu konumda senkronizasyon bilgisi mevcut değildir
 tw:沒有同步資料
 uk:Немає Інформації про синхронізацію на цій позиції
-uz:Bu joyda sinxronizatsiya ma'lumoti yo'q
+uz:Bu joyda sinxronlanish ma'lumoti yo'q
 vn:Không có thông tin đồng bộ ở chỗ này
 :Number of Pages:
 am:Էջերի քանակը.
@@ -8995,7 +9044,7 @@ bs:Otvori u PDF-XChange
 by:Адкрыць у PDF-XChange
 ca-xv:Obri amb el PDF-XChange
 ca:Obre amb el PDF-XChange
-cn:在 PDF-XChange 中打开
+cn:在 PDF-XChange 中打开(&I)
 cy:Agor yn PDF-XChange
 cz:Otevřít v programu PDF-XChange
 de:Mit PDF-&XChange öffnen
@@ -9015,7 +9064,7 @@ hr:Otvori u programu PDF-XChange
 hu:Megnyitás PDF-XChangeben
 id:Buka di PDF-&XChange
 it:Apri con PDF-XChange
-ja:PDF-XChange で開く(&A)
+ja:PDF-XChange で開く(&I)
 ka:გახსნა PDF-XChange-ში
 kr:PDF-XChange로 열기(&I)
 kw:Ygeri yn PDF-XChange
@@ -9105,7 +9154,7 @@ cn:在 &Adobe Reader 中打开
 cy:Agor yn &Adobe Reader
 cz:Otevřít v programu &Adobe Reader
 de:Mit &Adobe Reader öffnen
-dk:Åben med &Adobe Reader
+dk:Åbn med &Adobe Reader
 el:Άνοιγμα με &Adobe Reader
 es:Abrir en &Adobe Reader
 et:Ava &Adobe Readeris
@@ -9177,7 +9226,7 @@ hr:Otvori u programu &Foxit Reader
 hu:Megnyitás &Foxit Readerben
 id:Buka di &Foxit Reader
 it:Apri con &Foxit Reader
-ja:Foxit Reader で開く(&A)
+ja:Foxit Reader で開く(&F)
 ka:გახსნა &Foxit Reader-ში
 kr:Foxit Reader로 열기(&F)
 kw:Ygeri yn &Foxit Reader
@@ -9213,11 +9262,11 @@ bs:Otvori u Microsoft HTML Help
 by:Адкрыць у Microsoft HTML Help
 ca-xv:Obri amb el Microsoft HTML Help
 ca:Obre amb el Microsoft HTML Help
-cn:在 Microsoft HTML Help 中打开
+cn:在 &Microsoft HTML Help 中打开
 cy:Agor yn Microsoft HTML Help
 cz:Otevřít v programu Microsoft HTML Help
 de:Mit &Microsoft HTML Hilfe öffnen
-dk:Åben med Microsoft HTML Help
+dk:Åbn med Microsoft HTML Help
 el:Άνοιγμα με Microsoft HTML Help
 es:Abrir en Microsoft HTML Help
 et:Ava Microsoft HTML Helpga
@@ -9233,6 +9282,7 @@ hr:Otvori u programu Microsoft HTML Help
 hu:Megnyitás Microsoft HTML Helpben
 id:Buka dengan Microsoft HTML Help
 it:Apri con Microsoft HTML Help
+ja:Microsoft HTML ヘルプで開く(&M)
 ka:გახსნა Microsoft HTML Help-ში
 kr:Microsoft HTML Help로 열기(&M)
 kw:Ygeri yn Microsoft HTML Help
@@ -9267,7 +9317,7 @@ bs:Otvori u Microsoft XPS-Viewer
 by:Адкрыць у Microsoft XPS-Viewer
 ca-xv:Obri amb el Microsoft XPS-Viewer
 ca:Obre amb el Microsoft XPS-Viewer
-cn:在 Microsoft XPS-Viewer 中打开
+cn:在 &Microsoft XPS-Viewer 中打开
 cy:Agor yn Microsoft XPS-Viewer
 cz:Otevřít v programu Microsoft XPS-Viewer
 de:Mit &Microsoft XPS-Viewer öffnen
@@ -9287,6 +9337,7 @@ hr:Otvori u programu Microsoft XPS-Viewer
 hu:Megnyitás Microsoft XPS-Viewerben
 id:Buka dengan Microsoft XPS-Viewer
 it:Apri con Microsoft XPS-Viewer
+ja:Microsoft XPS-Viewerで開く(&M)
 ka:გახსნა Microsoft XPS-Viewer-ში
 kr:Microsoft XPS-Viewer로 열기(&M)
 kw:Ygeri yn Microsoft XPS-Viewer
@@ -9476,17 +9527,21 @@ uz:PDF hujjati
 vn:Tập tin PDF
 :PDF Optimizations:
 ar:تحسينات البي دي إف
+bg:PDF оптимизации:
 br:Otimizações PDF:
 ca-xv:Optimitzacions del PDF:
 ca:Optimitzacions del PDF:
 cn:PDF 优化：
 de:PDF Optimierungen:
+dk:PDF Optimeringer:
 el:Βελτιστοποίηση PDF
 es:Optimizaciones de PDF:
+et:PDF-i optimeerimised:
 fr:Optimisations PDF
 ga:Optimisations PDF
 hr:PDF optimizacija:
 it:Ottimizzazioni PDF:
+ja:PDF 最適化:
 kr:PDF 최적화:
 mk:Оптимизации за PDF:
 ne:PDF अप्टिमाइजेसन
@@ -9501,6 +9556,8 @@ sr-rs:PDF оптимизација
 sv:PDF Optimeringar:
 ta:PDF மேம்படுத்தல்கள்
 tr:PDF Optimizasyonları:
+tw:最佳化 PDF
+uk:Оптимізації PDF:
 uz:PDF optimizatsiyalari:
 vn:Các tối ưu PDF
 :PDF Producer:
@@ -10289,14 +10346,17 @@ vn:In
 :Print as &image (requires more memory)
 am:Տպել որպես &նկար (պահանջում է լր. հիշողություն)
 ar:اطبع كصورة (يحتاج إلى ذاكرة أكثر)
+bg:Отпечатай като изображение (изисква повече памет)
 br:Imprimir como &imagem (requer mais memória)
 ca-xv:Imprimeix com a &imatge (requereix més memòria)
 ca:Imprimeix com a &imatge (requereix més memòria)
 cn:打印为图像(需要更多的内存)(&I)
 cz:Tisknout jako &obrázek (vyžaduje více paměti)
 de:Als B&ild drucken (benötigt mehr Speicher)
+dk:Print som &Billede (kræver mere hukommelse)
 el:Εκτύπωση ως &εικόνα (απαιτεί περισσότερη μνήμη)
 es:Imprimir como &image (se necesita más memoria)
+et:Prindi kui p&ilt (nõuab rohkem mälu)
 eu:Irarkitu I&rudi bezala (oroimen gehiago behar du)
 fa:چاپ به عنوان &عکس (حافظه‌ی بیشتری مصرف می‌شود)
 fi:Tulosta &kuvana (kuluttaa enemmän muistia)
@@ -10304,6 +10364,7 @@ fr:Imprimer en tant qu'&image (demande plus de mémoire)
 ga:Priontáil mar &íomhá (Tá gá le níos mó cuimhne)
 hr:Ispiši kao sl&iku (zahtijeva više memorija)
 it:Stampa come &immagine (richiede più memoria))
+ja:画像として印刷 (より多くのメモリを必要とします) (&I)
 kr:이미지로 인쇄(&I) (더 많은 메모리 필요)
 mk:Печати како слика (бара повеќе меморија)
 ne:&छविको रुपमा छाप्नुहोस् (धेरै स्मृति चाहिन्छ)
@@ -10318,6 +10379,8 @@ sr-rs:Штампати као слику (захтева више мемориј
 sv:Skr&iv ut som bild (mer minnekrävande)
 ta:படத்தை போன்று அச்சிடு (நினைவகம் அதிகமாக தேவைப்படுகிறது)
 tr:Resim olarak bas (daha çok hafıza gerektirir)
+tw:列印成圖像 (需要更多的記憶體) (&I)
+uk:Роздрукувати як зображення
 uz:&Rasm sifatida bosib chiqarish (ko'proq xotirani talab qiladi)
 vn:In thành hình ảnh (cần nhiều bộ nhớ hơn)
 :Print range
@@ -10418,6 +10481,7 @@ sr-rs:Штампач са наведеним именом не постоји
 sv:Det finns ingen skrivade med angivet namn
 ta:குறிபிட்ட பெயரில் அச்சுப்பொறி இல்லை.
 tr:Girilen isimli Yazıcı bulunamadı
+tw:指定之印表機不存在
 uk:Друкарки з даним іменем не існує
 uz:Bunday printer mavjud emas
 vn:Máy in với tên được cho không tồn tại
@@ -10590,6 +10654,7 @@ vn:Lỗi in.
 :Re&name...\tF2
 am:Ան&վանափոխել...\tF2
 ar:إعادة تسمية...\tF2
+bg:Преименувай...\tF2
 br:Re&nomear...\tF2
 bs:Promije&ni naziv...\tF2
 ca-xv:Canvia el &nom...\tF2
@@ -10597,6 +10662,7 @@ ca:Canvia el &nom...\tF2
 cn:重命名(&N)...\tF2
 cz:Přejme&novat...\tF2
 de:Umbe&nennen…\tF2
+dk:Om&døb... \tF2
 el:&Μετονομασία...\tF2
 es:Re&nombrar...\tF2
 et:&Nimeta ümber...\tF2
@@ -10608,6 +10674,7 @@ hr:Preime&novati...\tF2
 hu:Átnevezés...\tF2
 id:&Ganti Nama...\tF2
 it:Ri&nomina...\tF2
+ja:名前を変更(&N)...\tF2
 kr:이름 바꾸기(&N)...\tF2
 mk:Преименувај... \tF2
 ne:नाम &फेर्नुहोस्...\tF2
@@ -10624,6 +10691,7 @@ sv:Döp om
 ta:மறுபெயரிடுதல்... \tF2
 tr:İsim Değiştir
 tw:重新命名(&N)...\tF2
+uk:Перейменувати...\tF2
 uz:&Nomini o'zgartirish...\tF2
 vn:Đổi tê&n...\tF2
 :Remember &opened files
@@ -10785,6 +10853,7 @@ vn:Xoá trang %s khỏi Ưa thích
 :Rename To
 am:Անվանափոխել՝
 ar:إعادة تسمية إلى
+bg:Преименувай на
 br:Renomear para
 bs:Promije&ni naziv u
 ca-xv:Canvia el nom a
@@ -10792,6 +10861,7 @@ ca:Canvia el nom a
 cn:重命名到
 cz:Přejmenovat na
 de:Umbenennen zu
+dk:Omdøb til
 el:Μετονομασία
 es:Renombrando a
 et:Nimeta ümber
@@ -10803,6 +10873,7 @@ hr:Preimenuj u
 hu:Átnevezés
 id:Ganti Nama Menjadi
 it:Rinomina in
+ja:名前の変更名
 kr:바꿀 이름
 mk:Преименувај во
 ne:नाम फेर्नुहोस्
@@ -10819,6 +10890,7 @@ sv:Döp om till
 ta:மறுபெயரிட்டு
 tr:Belirtilen İsme Değiştir
 tw:重新命名為
+uk:Перейменувати в
 uz:Yangi nom
 vn:Đổi tên thành
 :Replace document &colors with Windows color scheme
@@ -10832,6 +10904,7 @@ ca:Substitueix els &colors del document amb l'esquema de colors del Windows
 cn:采用系统颜色方案(&C)
 cz:Barvy dokumentu nahradit barevným s&chématem systému Windows
 de:Dokumenten&farben durch Windows-Farbschema ersetzen
+dk:Erstat dokument &farver med Windows farveskema
 el:Αντικατάσταση των &χρωμάτων του εγγράφου με το θέμα των Windows
 es:Reemplazar &colores del documento con el esquema de color de Windows
 et:Asenda dokumendi &värvid Windowsi värviskeemiga
@@ -10843,6 +10916,7 @@ hr:Zamijeni boje dokumenta s postavkama &Windows boja
 hu:Helyettesíti a dokumentum &színeket Windows színsémával
 id:Ganti &warna dokumen dengan skema warna Windows
 it:Sostituisci &colori documento con schema colore di Windows
+ja:Windows カラースキーマへ色を置き換える(&C)
 kr:Windows 색 구성표처럼 문서 색 교체(&C)
 mk:Замени ги &боите во документот со палетата на Windows
 ne:कागजात &रङ्गलाई विन्डोज रङ योजना अनुसार बदल्नुहोस्
@@ -10858,6 +10932,8 @@ sr-rs:Замени боје документа Windows колор шемом
 sv:Byt ut dokument&färg till Windows färgschema
 ta:ஆவணம் மற்றும் வண்ணங்களை  விண்டோஸ் வண்ண திட்டம் மூலம் மாற்றவும்
 tr:Belgenin &renklerini Windows renk planıyla değiştir
+tw:採用Windows的配色方案來取代文件的配色 (&C)
+uk:Замінити кольори у документі використовуючи кольорову схему Windows
 uz:Hujjat &ranglarini Windows rangli sxemasiga o'zgartirish
 vn:Thay màu tập tin bằng bảng màu Windows
 :Rotate &Left\tCtrl+Shift+-
@@ -11441,14 +11517,17 @@ vn:Đặt dòng lệnh tìm kiếm ngược
 :Show &Bookmarks
 am:Ցուցադրել &Էջանիշերը
 ar:إظهار العلامات
+bg:Покажи отметките
 br:Mostrar Fa&voritos
 ca-xv:Mostra els &marcadors
 ca:Mostra els &marcadors
 cn:显示书签(&B)
 cz:Zobrazit &záložky
 de:Lese&zeichen anzeigen
+dk:Vis &Bogmærker
 el:Εμφάνιση &Σελιδοδεικτών
 es:Mostrar &Bookmarks
+et:Näita &järjehoidjaid
 eu:Erakutsi Laster&markak
 fa:ن&شانه‌ها را نشان بده
 fi:Näytä &Kirjanmerkit
@@ -11456,6 +11535,7 @@ fr:Voir les &Marque-pages
 ga:Lea&bharmharcanna a taispeáint
 hr:Prikaži &oznake
 it:Visualizza segnali&bri
+ja:ブックマークを表示(&B)
 kr:책갈피 보이기(&B)
 mk:Прикажи &обележувачи
 ne:&पुस्तकचिनोहरू देखाउनुहोस्
@@ -11470,6 +11550,8 @@ sr-rs:Прикажи обележене
 sv:Visa &Bokmärken
 ta:புத்தகக்குறிகளை காட்டுக
 tr:Göster &Sık Kullanılanlar
+tw:顯示書籤 (&B)
+uk:Показати закладки
 uz:&Xatcho'plarni ko'rsatish
 vn:Hiện chỉ dấu sách
 :Show &Toolbar
@@ -11862,10 +11944,10 @@ sr-rs:Опростите, ово није требало да се догоди!
 sv:Ledsen, det där borde inte ha hänt!\n\nVar god tryck 'Avbryt', om du vill hjälpa oss att korrigera orsaken till denna krash.
 ta:மன்னிக்கவும், இது நடந்திருக்க கூடாது! \n\n தயவு செய்து 'ரத்துதை' அழுத்தவும், எங்களுக்கு இந்த விபத்தினை சரிசெய்ய உதவும்.
 tr:Üzgünüz, bu olmamalıydı!\n\nEğer hatayı düzeltmemize yardımcı olmak istiyorsanız lütfen 'Cancel' a basın.
-tw:噢，抱歉，這不該發生的！\n\n如果你希望協助我們修正這個錯誤，請點選「取消」。
-uk:Вибачте, але це не мало статись!\n\nНатисніть "Відмінити", якщо ви бажаєте допомогти нам виправити причину збою.
+tw:抱歉，這不該發生的！\n\n如果你希望協助我們修正這個錯誤，請點選「取消」。
+uk:Вибачте, але це не мало статись!\n\nНатисніть "Скасувати", якщо ви бажаєте допомогти нам виправити причину збою.
 uz:Kutilmagan voqea sodir bo'ldi.\n\nUshbu nosozlikni tuzatish uchun bizga yordam bermoqchi bo'lsaniz 'Bekor qilish' tugmasini bosing.
-vn:Xin lỗi, điều đó không nên xảy ra!\n\nVui lòng bấm 'Hủy', nếu bạn muốn giúp chúng tôi sửa chữa lý do của trường hợp lỗi này.
+vn:Xin lỗi, điều đó không nên xảy ra!\n\nVui lòng bấm 'Cancel', nếu bạn muốn giúp chúng tôi sửa chữa lý do của trường hợp lỗi này.
 :Source file %s has no synchronization point
 am:%s ֆայլը չունի համաժամեցման կետ
 ar:الملف المصدر %s لم تتم مزامنته عند هذه النقطة
@@ -11920,7 +12002,7 @@ tl:Walang synchronization point ang source file na %s
 tr:%s kaynak dosyasında senkronizasyon noktası yoktur
 tw:參考檔案 %s 沒有同步點
 uk:Файл-джерело %s немає точки синхронізації
-uz:%s manba faylida sinxronizatsiya nuqtasi yo'q
+uz:%s manba faylida sinxronlanish nuqtasi yo'q
 vn:Tập tin nguồn %s không có điểm đồng bộ
 :Subject:
 am:Ֆայլը.
@@ -12304,7 +12386,7 @@ tl:Hindi mabuksan ang synchronization file
 tr:Senkronizasyon dosyası açılamadı
 tw:無法開啟同步檔案
 uk:Неможливо відкрити файл синхронізації
-uz:Sinxronizatsiya faylini ochib bo'lmadi
+uz:Sinxronlanish faylini ochib bo'lmadi
 vn:Không mở được tập tin đồng bộ
 :Tagged PDF
 ar:البي دي إف الموسومة
@@ -12313,12 +12395,15 @@ ca-xv:PDF etiquetat
 ca:PDF etiquetat
 cn:已标记PDF
 de:PDF mit Tags
+dk:Tagged PDF
 el:PDF με ετικέττα
 es:PDF Etiquetado
+et:Siltidega PDF
 fr:PDF balisé
 ga:PDF formáid chlibeáilte
 hr:Strukturirani PDF
 it:PDF marcati
+ja:タグ付き PDF
 kr:태그있는 PDF
 mk:Означен PDF
 ne:ट्याग गरिएको PDF
@@ -12332,6 +12417,8 @@ sr-rs:Означени PDF
 sv:Taggad PDF
 ta:குறியிடப்பட்ட PDF
 tr:İşaretlenmiş PDF
+tw:已標示的 PDF
+uk:PDF з мітками
 uz:Belgilangan PDF
 vn:PDF được gắn thẻ
 :Text documents
@@ -12701,7 +12788,7 @@ cn:XPS 文件
 cy:Dogfennau XPS
 cz:XPS dokumenty
 de:XPS-Dokumente
-dk:XPS documenter
+dk:XPS-dokumenter
 el:Έγγραφα XPS
 es:Documentos XPS
 et:XPS-dokumendid
@@ -12801,7 +12888,7 @@ ta:உங்களிடம் புதிய பதிப்பு உள்�
 th:โปรแกรมของคุณเป็นเวอร์ชั่นล่าสุดอยู่แล้ว
 tl:Ito ang pinakabagong bersyon.
 tr:En güncel sürümü kullanmaktasınız.
-tw:目前使用的版本為最新版。
+tw:您的版本已是最新版。
 uk:Ви вже маєте найновішу версію.
 uz:Sizda so'nggi versiya.
 vn:Bạn đang dùng phiên bản mới nhất.
@@ -12864,7 +12951,7 @@ sv:Du har version %s
 ta:உங்களின் பதிப்பு %s
 tl:Ang bersyong nasa iyo ay %s
 tr:Kullandığınız sürüm: %s
-tw:您使用的版本 %s
+tw:您使用的版本為 %s
 uk:Ви використовуєте версію %s
 uz:Sizdagi versiya %s
 vn:Bạn đang dùng phiên bản %s
@@ -13067,7 +13154,7 @@ cn:缩放比例
 cy:Ffactor Chwyddo
 cz:Měřítko přiblížení
 de:Zoomfaktor
-dk:Zoom faktor
+dk:Zoomfaktor
 el:Ποσοστό μεγέθυνσης
 es:Proporción de Zoom
 et:Suurendusaste
@@ -13108,7 +13195,7 @@ tl:Antas ng laki
 tr:Yakınlaştırma faktörü
 tw:縮放比例
 uk:Масштаб
-uz:Miqyos faktori
+uz:Miqyos omili
 vn:Hệ số thu phóng
 :[Changes detected; refreshing] %s
 am:[Հայտնաբերվել են փոփոխություններ, ընթանում է թարմացում] %s

@@ -319,8 +319,11 @@ public:
 	{
 		if (accumulate)
 			graphics->SetClip(&Region(gpath), CombineModeUnion);
-		else
+		// contrary to Fitz, GDI+ ignores empty paths when clipping
+		else if (gpath->GetPointCount() > 0)
 			pushClip(&Region(gpath), alpha);
+		else
+			pushClip(&Region(Rect()), alpha);
 		started = true;
 	}
 
@@ -329,12 +332,11 @@ public:
 		Region clipRegion(Rect(0, 0, 1, 1));
 		clipRegion.Transform(&Matrix(ctm.a, ctm.b, ctm.c, ctm.d, ctm.e, ctm.f));
 		pushClip(&clipRegion);
-		graphics->GetClip(&clipRegion);
 		stack->layerAlpha = stack->alpha;
 		stack->alpha = 1.0;
 		
 		RectF bounds;
-		clipRegion.GetBounds(&bounds, graphics);
+		graphics->GetClipBounds(&bounds);
 		stack->bounds.X = floorf(bounds.X); stack->bounds.Width = ceilf(bounds.Width) + 1;
 		stack->bounds.Y = floorf(bounds.Y); stack->bounds.Height = ceilf(bounds.Height) + 1;
 		
@@ -407,6 +409,13 @@ public:
 		stack->tileCtm = ctm;
 		stack->tileCtm.e = bbox.x0;
 		stack->tileCtm.f = bbox.y0;
+		
+		RectF bounds;
+		stack->saveG->GetClipBounds(&bounds);
+		bounds.Inflate(stack->bounds.Width, stack->bounds.Height);
+		fz_rect area2 = { bounds.X, bounds.Y, bounds.X + bounds.Width, bounds.Y + bounds.Height };
+		area2 = fz_transform_rect(fz_invert_matrix(stack->tileCtm), area2);
+		area = fz_intersect_rect(area, area2);
 		
 		stack->tileArea.x0 = floorf(area.x0 / xstep);
 		stack->tileArea.y0 = floorf(area.y0 / ystep);
@@ -1014,10 +1023,7 @@ fz_gdiplus_clip_path(fz_device *dev, fz_path *path, fz_rect *rect, int evenodd, 
 	GraphicsPath *gpath = gdiplus_get_path(path, ctm, false, evenodd);
 	
 	// TODO: clipping non-rectangular areas doesn't result in anti-aliased edges
-	if (path->len > 0)
-		((userData *)dev->user)->pushClip(gpath);
-	else
-		((userData *)dev->user)->pushClip(&Region(Rect()));
+	((userData *)dev->user)->pushClip(gpath);
 	
 	delete gpath;
 }
@@ -1030,10 +1036,7 @@ fz_gdiplus_clip_stroke_path(fz_device *dev, fz_path *path, fz_rect *rect, fz_str
 	Pen *pen = gdiplus_get_pen(&SolidBrush(Color()), ctm, stroke);
 	gpath->Widen(pen);
 	
-	if (path->len > 0)
-		((userData *)dev->user)->pushClip(gpath);
-	else
-		((userData *)dev->user)->pushClip(&Region(Rect()));
+	((userData *)dev->user)->pushClip(gpath);
 	
 	delete pen;
 	delete gpath;
@@ -1260,6 +1263,13 @@ gdiplus_run_t3_text(fz_device *dev, fz_text *text, fz_matrix ctm,
 	if (gpath)
 		fz_warn(dev->ctx, "stroking Type 3 glyphs is not supported");
 	
+	// TODO: support Type 3 glyphs recursively drawing other Type 3 glyphs
+	if (((userData *)dev->user)->t3color)
+	{
+		fz_warn(dev->ctx, "drawing Type 3 glyphs recursively is not supported");
+		return;
+	}
+	
 	float rgb[3];
 	fz_convert_color(dev->ctx, fz_device_rgb, rgb, colorspace, color);
 	((userData *)dev->user)->t3color = rgb;
@@ -1275,7 +1285,7 @@ gdiplus_run_t3_text(fz_device *dev, fz_text *text, fz_matrix ctm,
 		ctm2 = fz_concat(text->trm, ctm2);
 		ctm2 = fz_concat(font->t3matrix, ctm2);
 		
-		font->t3run((void *)font->t3doc, font->t3resources, font->t3procs[gid], dev, ctm2, NULL);
+		font->t3run(font->t3doc, font->t3resources, font->t3procs[gid], dev, ctm2, NULL, 0);
 	}
 	
 	((userData *)dev->user)->t3color = NULL;
@@ -1449,22 +1459,9 @@ fz_gdiplus_fill_image_mask(fz_device *dev, fz_image *image, fz_matrix ctm,
 extern "C" static void
 fz_gdiplus_clip_image_mask(fz_device *dev, fz_image *image, fz_rect *rect, fz_matrix ctm)
 {
-	// always push a clip mask so that the stack remains consistent even in case of error
-	fz_pixmap *pixmap = NULL;
-	fz_var(pixmap);
-	fz_try(dev->ctx)
-	{
-		pixmap = fz_image_to_pixmap_def(dev->ctx, image, ctm);
-	}
-	fz_always(dev->ctx)
-	{
-		((userData *)dev->user)->pushClipMask(pixmap, ctm);
-		fz_drop_pixmap(dev->ctx, pixmap);
-	}
-	fz_catch(dev->ctx)
-	{
-		fz_rethrow(dev->ctx);
-	}
+	fz_pixmap *pixmap = fz_image_to_pixmap_def(dev->ctx, image, ctm);
+	((userData *)dev->user)->pushClipMask(pixmap, ctm);
+	fz_drop_pixmap(dev->ctx, pixmap);
 }
 
 extern "C" static void

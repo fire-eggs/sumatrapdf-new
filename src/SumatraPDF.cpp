@@ -9,6 +9,7 @@
 #include "AppPrefs.h"
 #include "AppTools.h"
 #include "CrashHandler.h"
+#include "DebugLog.h"
 #include "DirIter.h"
 #include "Doc.h"
 #include "EbookController.h"
@@ -673,6 +674,68 @@ void SaveThumbnailForFile(const WCHAR *filePath, RenderedBitmap *bmp)
     SaveThumbnail(*ds);
 }
 
+class ChmThumbnailTask : public UITask, public ChmNavigationCallback
+{
+    ChmEngine *engine;
+    HWND hwnd;
+    RenderedBitmap *bmp;
+
+public:
+    ChmThumbnailTask(ChmEngine *engine, HWND hwnd) :
+        engine(engine), hwnd(hwnd), bmp(NULL) { }
+
+    ~ChmThumbnailTask() {
+        delete engine;
+        DestroyWindow(hwnd);
+        delete bmp;
+    }
+
+    virtual void Execute() {
+        SaveThumbnailForFile(engine->FileName(), bmp);
+        bmp = NULL;
+    }
+
+    virtual void PageNoChanged(int pageNo) {
+        CrashIf(pageNo != 1);
+        RectI area(0, 0, THUMBNAIL_DX * 2, THUMBNAIL_DY * 2);
+        bmp = engine->TakeScreenshot(area, SizeI(THUMBNAIL_DX, THUMBNAIL_DY));
+        uitask::Post(this);
+    }
+
+    virtual void LaunchBrowser(const WCHAR *url) { }
+    virtual void FocusFrame(bool always) { }
+};
+
+// Create a thumbnail of chm document by loading it again and rendering
+// its first page to a hwnd specially created for it.
+static void CreateChmThumbnail(WindowInfo& win)
+{
+    ChmEngine *engine = ChmEngine::CreateFromFile(win.loadedFilePath);
+    if (!engine)
+        return;
+
+    // We render twice the size of thumbnail and scale it down
+    int winDx = THUMBNAIL_DX * 2 + GetSystemMetrics(SM_CXVSCROLL);
+    int winDy = THUMBNAIL_DY * 2 + GetSystemMetrics(SM_CYHSCROLL);
+    // reusing WC_STATIC. I don't think exact class matters (WndProc
+    // will be taken over by HtmlWindow anyway) but it can't be NULL.
+    HWND hwnd = CreateWindow(WC_STATIC, L"BrowserCapture", WS_POPUP,
+                             0, 0, winDx, winDy, NULL, NULL, NULL, NULL);
+    if (!hwnd) {
+        delete engine;
+        return;
+    }
+#if 0 // when debugging set to 1 to see the window
+    ShowWindow(hwnd, SW_SHOW);
+#endif
+
+    // engine and window will be destroyed by the callback once it's invoked
+    ChmThumbnailTask *callback = new ChmThumbnailTask(engine, hwnd);
+    engine->SetParentHwnd(hwnd);
+    engine->SetNavigationCalback(callback);
+    engine->DisplayPage(1);
+}
+
 class ThumbnailRenderingTask : public UITask, public RenderingCallback
 {
     ScopedMem<WCHAR> filePath;
@@ -697,27 +760,6 @@ public:
         bmp = NULL;
     }
 };
-
-// Create a thumbnail of chm document by loading it again and rendering
-// its first page to a hwnd specially created for it. An alternative
-// would be to reuse ChmEngine/HtmlWindow we already have but it has
-// its own problem.
-// Could be done in background but no need to do that unless it's
-// too slow (I've measured it at ~1sec for a sample document)
-static void CreateChmThumbnail(WindowInfo& win, DisplayState& ds)
-{
-    assert(win.IsChm());
-    if (!win.IsChm()) return;
-
-    ChmEngine *chmEngine = static_cast<ChmEngine *>(win.dm->AsChmEngine()->Clone());
-    if (!chmEngine)
-        return;
-
-    SizeI thumbSize(THUMBNAIL_DX, THUMBNAIL_DY);
-    RenderedBitmap *bmp = chmEngine->CreateThumbnail(thumbSize);
-    SaveThumbnailForFile(win.loadedFilePath, bmp);
-    delete chmEngine;
-}
 
 bool ShouldSaveThumbnail(DisplayState& ds)
 {
@@ -758,7 +800,7 @@ static void CreateThumbnailForFile(WindowInfo& win, DisplayState& ds)
     }
 
     if (win.IsChm()) {
-        CreateChmThumbnail(win, ds);
+        CreateChmThumbnail(win);
         return;
     }
 
@@ -799,8 +841,6 @@ static void UnsubclassCanvas(HWND hwnd)
     SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)WndProcCanvas);
     SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)0);
 }
-
-#include "DebugLog.h"
 
 // isNewWindow : if true then 'win' refers to a newly created window that needs
 //   to be resized and placed
@@ -1037,9 +1077,6 @@ Error:
 
 void ReloadDocument(WindowInfo *win, bool autorefresh)
 {
-    if (win->IsChm() && InHtmlNestedMessagePump())
-        return;
-
     DisplayState ds;
     ds.useGlobalValues = gGlobalPrefs.globalPrefsOnly;
     if (!win->IsDocLoaded()) {
@@ -2053,8 +2090,8 @@ static void OnMouseMove(WindowInfo& win, int x, int y, WPARAM flags)
     case MA_SELECTING:
         win.selectionRect.dx = x - win.selectionRect.x;
         win.selectionRect.dy = y - win.selectionRect.y;
-        win.RepaintAsync();
         OnSelectionEdgeAutoscroll(&win, x, y);
+        win.RepaintAsync();
         break;
     case MA_DRAGGING:
     case MA_DRAGGING_RIGHT:
@@ -2361,9 +2398,6 @@ void OnMenuExit()
 
     for (size_t i = 0; i < gWindows.Count(); i++) {
         WindowInfo *win = gWindows.At(i);
-        if (win->IsChm() && InHtmlNestedMessagePump()) {
-            return;
-        }
         AbortFinding(win);
         AbortPrinting(win);
     }
@@ -2445,15 +2479,14 @@ void CloseDocumentAndDeleteWindowInfo(WindowInfo *win)
    menu item. */
 void CloseWindow(WindowInfo *win, bool quitIfLast, bool forceClose)
 {
-    assert(win);
+    CrashIf(!win);
     if (!win) return;
+    CrashIf(forceClose && !quitIfLast);
+    if (forceClose) quitIfLast = true;
+
     // when used as an embedded plugin, closing should happen automatically
     // when the parent window is destroyed (cf. WM_DESTROY)
     if (gPluginMode && !forceClose)
-        return;
-
-    bool wasChm = win->IsChm();
-    if (wasChm && InHtmlNestedMessagePump())
         return;
 
     if (win->IsDocLoaded())
@@ -2462,12 +2495,18 @@ void CloseWindow(WindowInfo *win, bool quitIfLast, bool forceClose)
         ExitFullscreen(*win);
 
     bool lastWindow = (1 == TotalWindowsCount());
+    // hide the window before saving prefs (closing seems slightly faster that way)
+    if (lastWindow && quitIfLast && !forceClose)
+        ShowWindow(win->hwndFrame, SW_HIDE);
     if (lastWindow)
         SavePrefs();
     else
         UpdateCurrentFileDisplayStateForWin(SumatraWindow::Make(win));
 
-    if (lastWindow && !quitIfLast) {
+    if (forceClose) {
+        // WM_DESTROY has already been sent, so don't destroy win->hwndFrame again
+        DeleteWindowInfo(win);
+    } else if (lastWindow && !quitIfLast) {
         /* last window - don't delete it */
         CloseDocumentInWindow(win);
     } else {
@@ -2917,7 +2956,7 @@ void OnMenuOpen(SumatraWindow& win)
     // TODO: Use IFileOpenDialog instead (requires a Vista SDK, though)
     ofn.nMaxFile = MAX_PATH * 100;
 #if 0
-    if (!WindowsVerVistaOrGreater())
+    if (!IsVistaOrGreater())
     {
         ofn.lpfnHook = FileOpenHook;
         ofn.Flags |= OFN_ENABLEHOOK;
@@ -3521,7 +3560,7 @@ static void FrameOnChar(WindowInfo& win, WPARAM key)
         else if (win.presentation)
             OnMenuViewPresentation(win);
         else if (gGlobalPrefs.escToExit)
-            DestroyWindow(win.hwndFrame);
+            CloseWindow(&win, true);
         else if (win.fullScreen)
             OnMenuViewFullscreen(win);
         else if (win.showSelection)
@@ -3529,8 +3568,7 @@ static void FrameOnChar(WindowInfo& win, WPARAM key)
         return;
     case 'q':
         // close the current document/window. Quit if this is the last window
-        if (!gPluginMode)
-            DestroyWindow(win.hwndFrame);
+        CloseWindow(&win, true);
         return;
     case 'r':
         ReloadDocument(&win);
@@ -4063,7 +4101,8 @@ static void OnTimer(WindowInfo& win, HWND hwnd, WPARAM timerId)
             win.MoveDocBy(win.xScrollSpeed, win.yScrollSpeed);
         else if (MA_SELECTING == win.mouseAction || MA_SELECTING_TEXT == win.mouseAction) {
             GetCursorPosInHwnd(win.hwndCanvas, pt);
-            OnMouseMove(win, pt.x, pt.y, MK_CONTROL);
+            if (NeedsSelectionEdgeAutoscroll(&win, pt.x, pt.y))
+                OnMouseMove(win, pt.x, pt.y, MK_CONTROL);
         }
         else {
             KillTimer(hwnd, SMOOTHSCROLL_TIMER_ID);
@@ -4557,7 +4596,7 @@ static LRESULT FrameOnCommand(WindowInfo *win, HWND hwnd, UINT msg, WPARAM wPara
             // close the document and its window, unless it's the last window
             // in which case we close the document but convert the window
             // to about window
-            CloseWindow(win, false, false);
+            CloseWindow(win, false);
             break;
 
         case IDM_EXIT:
@@ -4964,6 +5003,10 @@ InitMouseWheelInfo:
             // (required since the canvas itself never has the focus and thus
             // never receives WM_MOUSEWHEEL messages)
             return SendMessage(win->hwndCanvas, msg, wParam, lParam);
+
+        case WM_CLOSE:
+            CloseWindow(win, true);
+            break;
 
         case WM_DESTROY:
             /* WM_DESTROY is generated by windows when close button is pressed

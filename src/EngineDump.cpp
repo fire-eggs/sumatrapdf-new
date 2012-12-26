@@ -7,6 +7,7 @@
 #include "CmdLineParser.h"
 #include "Doc.h"
 #include "FileUtil.h"
+#include "ImagesEngine.h"
 #include "PdfEngine.h"
 #include "TgaReader.h"
 #include "WinUtil.h"
@@ -301,14 +302,10 @@ void RenderDocument(BaseEngine *engine, const WCHAR *renderPath)
 {
     for (int pageNo = 1; pageNo <= engine->PageCount(); pageNo++) {
         RenderedBitmap *bmp = engine->RenderBitmap(pageNo, 1.0, 0);
-        size_t len = 0;
-        ScopedMem<unsigned char> data;
-        if (bmp && str::EndsWithI(renderPath, L".bmp"))
-            data.Set(SerializeBitmap(bmp->GetBitmap(), &len));
-        else if (bmp)
-            data.Set(tga::SerializeBitmap(bmp->GetBitmap(), &len));
+        if (!bmp)
+            continue;
         ScopedMem<WCHAR> pageBmpPath(str::Format(renderPath, pageNo));
-        file::WriteAll(pageBmpPath, data, len);
+        SaveRenderedBitmap(bmp, pageBmpPath);
         delete bmp;
     }
 }
@@ -327,10 +324,6 @@ public:
 
 int main(int argc, char **argv)
 {
-#ifdef DEBUG
-    // _CrtSetBreakAlloc(527);
-#endif
-
     setlocale(LC_ALL, "C");
     DisableDataExecution();
 
@@ -340,7 +333,7 @@ int main(int argc, char **argv)
 Usage:
         ErrOut("%s <filename> [-pwd <password>][-full][-alt][-render <path-%%d.tga>]\n",
             path::GetBaseName(argList.At(0)));
-        return 0;
+        return 2;
     }
 
     ScopedMem<WCHAR> filePath;
@@ -362,6 +355,7 @@ Usage:
     WCHAR *renderPath = NULL;
     bool useAlternateHandlers = false;
     bool loadOnly = false;
+    int breakAlloc = 0;
 
     for (size_t i = 2; i < argList.Count(); i++) {
         if (str::Eq(argList.At(i), L"-full"))
@@ -374,9 +368,21 @@ Usage:
             useAlternateHandlers = true;
         else if (str::Eq(argList.At(i), L"-loadonly"))
             loadOnly = true;
+#ifdef DEBUG
+        else if (str::Eq(argList.At(i), L"-breakalloc") && i + 1 < argList.Count())
+            breakAlloc = _wtoi(argList.At(++i));
+#endif
         else
             goto Usage;
     }
+
+#ifdef DEBUG
+    if (breakAlloc) {
+        _CrtSetBreakAlloc(breakAlloc);
+        if (!IsDebuggerPresent())
+            MessageBox(NULL, L"Keep your debugger ready for the allocation breakpoint...", L"EngineDump", MB_ICONINFORMATION);
+    }
+#endif
 
     // optionally use GDI+ rendering for PDF/XPS and the original ChmEngine for CHM
     DebugGdiPlusDevice(useAlternateHandlers);

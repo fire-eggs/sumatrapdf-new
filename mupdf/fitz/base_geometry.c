@@ -170,7 +170,8 @@ const fz_bbox fz_infinite_bbox = { 1, 1, -1, -1 };
 const fz_bbox fz_empty_bbox = { 0, 0, 0, 0 };
 const fz_bbox fz_unit_bbox = { 0, 0, 1, 1 };
 
-#define SAFE_INT(f) ((f > INT_MAX) ? INT_MAX : ((f < INT_MIN) ? INT_MIN : (int)f))
+/* SumatraPDF: prevent an integer overflow */
+#define SAFE_INT(f) (((f) > INT_MAX || (f) > (1 << 30) && (int)(f) < 0) ? INT_MAX : (((f) < INT_MIN || (f) < -(1 << 30) && (int)(f) > 0) ? INT_MIN : (int)(f)))
 fz_bbox
 fz_bbox_covering_rect(fz_rect f)
 {
@@ -205,10 +206,11 @@ fz_rect
 fz_intersect_rect(fz_rect a, fz_rect b)
 {
 	fz_rect r;
-	if (fz_is_infinite_rect(a)) return b;
-	if (fz_is_infinite_rect(b)) return a;
+	/* Check for empty box before infinite box */
 	if (fz_is_empty_rect(a)) return fz_empty_rect;
 	if (fz_is_empty_rect(b)) return fz_empty_rect;
+	if (fz_is_infinite_rect(a)) return b;
+	if (fz_is_infinite_rect(b)) return a;
 	r.x0 = fz_max(a.x0, b.x0);
 	r.y0 = fz_max(a.y0, b.y0);
 	r.x1 = fz_min(a.x1, b.x1);
@@ -220,10 +222,11 @@ fz_rect
 fz_union_rect(fz_rect a, fz_rect b)
 {
 	fz_rect r;
-	if (fz_is_infinite_rect(a)) return a;
-	if (fz_is_infinite_rect(b)) return b;
+	/* Check for empty box before infinite box */
 	if (fz_is_empty_rect(a)) return b;
 	if (fz_is_empty_rect(b)) return a;
+	if (fz_is_infinite_rect(a)) return a;
+	if (fz_is_infinite_rect(b)) return b;
 	r.x0 = fz_min(a.x0, b.x0);
 	r.y0 = fz_min(a.y0, b.y0);
 	r.x1 = fz_max(a.x1, b.x1);
@@ -235,10 +238,11 @@ fz_bbox
 fz_intersect_bbox(fz_bbox a, fz_bbox b)
 {
 	fz_bbox r;
-	if (fz_is_infinite_rect(a)) return b;
-	if (fz_is_infinite_rect(b)) return a;
+	/* Check for empty box before infinite box */
 	if (fz_is_empty_rect(a)) return fz_empty_bbox;
 	if (fz_is_empty_rect(b)) return fz_empty_bbox;
+	if (fz_is_infinite_rect(a)) return b;
+	if (fz_is_infinite_rect(b)) return a;
 	r.x0 = fz_maxi(a.x0, b.x0);
 	r.y0 = fz_maxi(a.y0, b.y0);
 	r.x1 = fz_mini(a.x1, b.x1);
@@ -247,13 +251,54 @@ fz_intersect_bbox(fz_bbox a, fz_bbox b)
 }
 
 fz_bbox
+fz_translate_bbox(fz_bbox a, int xoff, int yoff)
+{
+	fz_bbox b;
+	b.x0 = a.x0 + xoff;
+	b.y0 = a.y0 + yoff;
+	b.x1 = a.x1 + xoff;
+	b.y1 = a.y1 + yoff;
+	/* Check for overflow */
+	if (((~a.x0^xoff)&(a.x0^b.x0)) < 0)
+	{
+		if (xoff < 0)
+			b.x0 = INT_MIN;
+		else
+			b.x0 = INT_MAX;
+	}
+	if (((~a.x1^xoff)&(a.x1^b.x1)) < 0)
+	{
+		if (xoff < 0)
+			b.x1 = INT_MIN;
+		else
+			b.x1 = INT_MAX;
+	}
+	if (((~a.y0^yoff)&(a.y0^b.y0)) < 0)
+	{
+		if (yoff < 0)
+			b.y0 = INT_MIN;
+		else
+			b.y0 = INT_MAX;
+	}
+	if (((~a.y1^yoff)&(a.y1^b.y1)) < 0)
+	{
+		if (yoff < 0)
+			b.y1 = INT_MIN;
+		else
+			b.y1 = INT_MAX;
+	}
+	return b;
+}
+
+fz_bbox
 fz_union_bbox(fz_bbox a, fz_bbox b)
 {
 	fz_bbox r;
-	if (fz_is_infinite_rect(a)) return a;
-	if (fz_is_infinite_rect(b)) return b;
+	/* Check for empty box before infinite box */
 	if (fz_is_empty_rect(a)) return b;
 	if (fz_is_empty_rect(b)) return a;
+	if (fz_is_infinite_rect(a)) return a;
+	if (fz_is_infinite_rect(b)) return b;
 	r.x0 = fz_mini(a.x0, b.x0);
 	r.y0 = fz_mini(a.y0, b.y0);
 	r.x1 = fz_maxi(a.x1, b.x1);
