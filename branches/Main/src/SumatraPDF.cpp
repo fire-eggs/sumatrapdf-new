@@ -100,6 +100,7 @@ WCHAR *          gPluginURL = NULL; // owned by CommandLineInfo in WinMain
 #define COL_WINDOW_BG           RGB(0x99, 0x99, 0x99)
 #endif
 
+#define PANEL_CLASS_NAME             L"SUMATRA_PDF_PANEL"
 #define CANVAS_CLASS_NAME            L"SUMATRA_PDF_CANVAS"
 #define SIDEBAR_SPLITTER_CLASS_NAME  L"SidebarSplitter"
 #define FAV_SPLITTER_CLASS_NAME      L"FavSplitter"
@@ -142,6 +143,7 @@ HBRUSH                       gBrushAboutBg;
 HFONT                        gDefaultGuiFont;
 
 // TODO: combine into Vec<SumatraWindow> (after 2.0) ?
+Vec<TopWindowInfo*>          gWIN; // Record all top windows. (Ebook windows are not included.)
 Vec<WindowInfo*>             gWindows;
 Vec<EbookWindow*>            gEbookWindows;
 FileHistory                  gFileHistory;
@@ -174,6 +176,7 @@ static void UpdateUITextForLanguage();
 static void UpdateToolbarAndScrollbarState(WindowInfo& win);
 static void EnterFullscreen(WindowInfo& win, bool presentation=false);
 static void ExitFullscreen(WindowInfo& win);
+static LRESULT CALLBACK WndProcPanel(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 static LRESULT CALLBACK WndProcCanvas(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 bool HasPermission(int permission)
@@ -316,27 +319,67 @@ void SwitchToDisplayMode(WindowInfo *win, DisplayMode displayMode, bool keepCont
     UpdateToolbarState(win);
 }
 
-WindowInfo *FindWindowInfoByHwnd(HWND hwnd)
+TopWindowInfo *FindTopWindowInfoByHwnd(HWND hwnd)
 {
-    HWND parent = GetParent(hwnd);
-    for (size_t i = 0; i < gWindows.Count(); i++) {
-        WindowInfo *win = gWindows.At(i);
-        if (hwnd == win->hwndFrame      ||
-            // canvas, toolbar, rebar, tocbox, splitters
-            parent == win->hwndFrame    ||
-            // infotips, message windows
-            parent == win->hwndCanvas   ||
-            // page and find labels and boxes
-            parent == win->hwndToolbar  ||
-            // ToC tree, sidebar title and close button
-            parent == win->hwndTocBox   ||
-            // Favorites tree, title, and close button
-            parent == win->hwndFavBox)
-        {
-            return win;
-        }
+    HWND hwndFrame = GetAncestor(hwnd, GA_ROOTOWNER);
+
+    for (size_t i = 0; i < gWIN.Count(); i++) {
+        TopWindowInfo *WIN = gWIN.At(i);
+        if (hwndFrame == WIN->hwndFrame)
+            return WIN;
     }
     return NULL;
+}
+
+PanelInfo *FindPanelInfoByHwnd(HWND hwnd)
+{
+    TopWindowInfo *WIN = FindTopWindowInfoByHwnd(hwnd);
+
+    if (WIN == NULL)
+        return NULL;
+
+    if (WIN->gPanel.Count() == 0)
+        return NULL;
+
+    if (hwnd == WIN->hwndFrame)
+        return WIN->panel;
+
+    HWND hwndParent = hwnd;
+    HWND hwndParentOld = NULL;
+
+    while (hwndParent != WIN->hwndFrame) {
+        hwndParentOld = hwndParent;
+        hwndParent = GetParent(hwndParent);
+    }
+    HWND hwndPanel = hwndParentOld;
+
+    for (size_t i = 0; i < WIN->gPanel.Count(); i++) {
+        PanelInfo *panel = WIN->gPanel.At(i);
+        if (hwndPanel == panel->hwndPanel)
+            return panel;
+    }
+    return WIN->panel;
+}
+
+WindowInfo *FindWindowInfoByHwnd(HWND hwnd)
+{
+    PanelInfo *panel = FindPanelInfoByHwnd(hwnd);
+
+    if (panel == NULL)
+        return NULL;
+
+    if (panel->gWin.Count() == 0)
+        return NULL;
+
+    if (hwnd == panel->hwndPanel || hwnd == panel->win->hwndFrame)
+        return panel->win;
+
+    for ( size_t i = 0; i < panel->gWin.Count(); i++) {
+        WindowInfo *win = panel->gWin.At(i);
+        if (hwnd == win->hwndCanvas)
+            return win;
+    }
+    return panel->win;
 }
 
 bool WindowInfoStillValid(WindowInfo *win)
@@ -1175,20 +1218,43 @@ static WindowInfo* CreateWindowInfo()
     if (!hwndFrame)
         return NULL;
 
-    assert(NULL == FindWindowInfoByHwnd(hwndFrame));
-    WindowInfo *win = new WindowInfo(hwndFrame);
+    HWND hwndPanel = CreateWindowEx(
+            NULL,
+            PANEL_CLASS_NAME, NULL,
+            WS_CHILD | WS_CLIPCHILDREN,
+            0, 0, 0, 0,
+            hwndFrame, NULL,
+            ghinst, NULL);
+    if (!hwndPanel) {
+        return NULL;
+    }
 
-    win->hwndCanvas = CreateWindowEx(
+    HWND hwndCanvas = CreateWindowEx(
             WS_EX_STATICEDGE,
             CANVAS_CLASS_NAME, NULL,
             WS_CHILD | WS_HSCROLL | WS_VSCROLL,
             0, 0, 0, 0, /* position and size determined in OnSize */
-            hwndFrame, NULL,
+            hwndPanel, NULL,
             ghinst, NULL);
-    if (!win->hwndCanvas) {
-        delete win;
+    if (!hwndCanvas) {
         return NULL;
     }
+
+    assert(NULL == FindTopWindowInfoByHwnd(hwndFrame));
+
+    TopWindowInfo *WIN = new TopWindowInfo(hwndFrame);
+    gWIN.Append(WIN);
+
+    PanelInfo *panel = new PanelInfo(hwndPanel);
+    WIN->gPanel.Append(panel);
+    WIN->panel = panel;
+
+    WindowInfo *win = new WindowInfo(hwndCanvas);
+    panel->gWin.Append(win);
+    panel->win = win;
+
+    win->WIN = WIN;
+    win->hwndFrame = hwndFrame;
 
     // hide scrollbars to avoid showing/hiding on empty window
     ShowScrollBar(win->hwndCanvas, SB_BOTH, FALSE);
@@ -1199,6 +1265,9 @@ static WindowInfo* CreateWindowInfo()
 
     ShowWindow(win->hwndCanvas, SW_SHOW);
     UpdateWindow(win->hwndCanvas);
+
+    ShowWindow(panel->hwndPanel, SW_SHOW);
+    UpdateWindow(panel->hwndPanel);
 
     win->hwndInfotip = CreateWindowEx(WS_EX_TOPMOST,
         TOOLTIPS_CLASS, NULL, WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
@@ -3126,7 +3195,7 @@ static void FrameOnSize(WindowInfo* win, int dx, int dy)
     if (tocVisible || gGlobalPrefs.favVisible)
         SetSidebarVisibility(win, tocVisible, gGlobalPrefs.favVisible);
     else
-        SetWindowPos(win->hwndCanvas, NULL, 0, rebBarDy, dx, dy - rebBarDy, SWP_NOZORDER);
+        SetWindowPos(win->WIN->panel->hwndPanel, NULL, 0, rebBarDy, dx, dy - rebBarDy, SWP_NOZORDER);
 
     if (win->presentation || win->fullScreen) {
         RectI fullscreen = GetFullscreenRect(win->hwndFrame);
@@ -4359,6 +4428,33 @@ static LRESULT OnGesture(WindowInfo& win, UINT message, WPARAM wParam, LPARAM lP
     }
 
     Touch::CloseGestureInfoHandle(hgi);
+    return 0;
+}
+
+static void PanelOnSize(PanelInfo* panel, int dx, int dy)
+{
+    SetWindowPos(panel->win->hwndCanvas, NULL, 0, 0, dx, dy, SWP_NOZORDER);
+}
+
+static void PanelOnPaint(PanelInfo& panel)
+{
+
+}
+
+static LRESULT CALLBACK WndProcPanel(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    PanelInfo *panel = FindPanelInfoByHwnd(hwnd);
+    if (!panel)
+        return DefWindowProc(hwnd, msg, wParam, lParam);
+
+    switch (msg) {
+        case WM_SIZE:
+            PanelOnSize(panel, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+            break;
+
+        default:
+            return DefWindowProc(hwnd, msg, wParam, lParam);
+    }
     return 0;
 }
 

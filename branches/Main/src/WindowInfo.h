@@ -66,6 +66,7 @@ public:
     HWND            hwndFrame;
 
     Vec<PanelInfo *> gPanel; // Record the panels in a top window.
+    PanelInfo *     panel; // Indicate which panel in a TopWindow is currently active.
 };
 
 /* Describes the panel information.
@@ -81,8 +82,7 @@ public:
     HWND            hwndPanel;
 
     Vec<WindowInfo *> gWin; // Record the (tabbed) documents in a panel.
-
-    WindowInfo *    win; // Indicate which document in a panel is currently viewing.
+    WindowInfo *    win; // Indicate which document (tab page) in a panel is currently viewed.
 };
 
 /* Describes information related to one window with (optional) a document
@@ -101,6 +101,8 @@ public:
 
     bool IsChm() const { return dm && dm->engineType == Engine_Chm; }
     bool IsNotPdf() const { return dm && dm->engineType != Engine_PDF; }
+
+    TopWindowInfo * WIN; // Use WIN in win will reduce a lot of (redundant) code.
 
     WCHAR *         loadedFilePath;
     DisplayModel *  dm;

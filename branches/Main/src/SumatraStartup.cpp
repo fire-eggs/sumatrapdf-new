@@ -43,6 +43,11 @@ static bool RegisterWinClass(HINSTANCE hinst)
     atom = RegisterClassEx(&wcex);
     CrashIf(!atom);
 
+    FillWndClassEx(wcex, hinst, PANEL_CLASS_NAME, WndProcPanel);
+    wcex.style |= CS_DBLCLKS;
+    atom = RegisterClassEx(&wcex);
+    CrashIf(!atom);
+
     FillWndClassEx(wcex, hinst, CANVAS_CLASS_NAME, WndProcCanvas);
     wcex.style |= CS_DBLCLKS;
     atom = RegisterClassEx(&wcex);
