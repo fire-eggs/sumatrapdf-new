@@ -16,13 +16,24 @@
 #include "Translations.h"
 #include "WinUtil.h"
 
+TopWindowInfo::TopWindowInfo(HWND hwnd) :
+    hwndFrame(hwnd), win(NULL)
+{
+
+}
+
+TopWindowInfo::~TopWindowInfo()
+{
+
+}
+
 WindowInfo::WindowInfo(HWND hwnd) :
-    dm(NULL), menu(NULL), hwndFrame(hwnd),
+    dm(NULL), menu(NULL), hwndFrame(NULL),
     linkOnLastButtonDown(NULL), url(NULL), selectionOnPage(NULL),
     tocLoaded(false), tocVisible(false), tocRoot(NULL), tocKeepSelection(false),
     fullScreen(false), presentation(PM_DISABLED), tocBeforeFullScreen(false),
     windowStateBeforePresentation(0), prevStyle(0),
-    hwndCanvas(NULL), hwndToolbar(NULL), hwndReBar(NULL),
+    hwndCanvas(hwnd), hwndToolbar(NULL), hwndReBar(NULL),
     hwndFindText(NULL), hwndFindBox(NULL), hwndFindBg(NULL),
     hwndPageText(NULL), hwndPageBox(NULL), hwndPageBg(NULL), hwndPageTotal(NULL),
     hwndTocBox(NULL), hwndTocTree(NULL),
