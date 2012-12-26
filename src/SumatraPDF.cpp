@@ -142,6 +142,7 @@ HBRUSH                       gBrushAboutBg;
 HFONT                        gDefaultGuiFont;
 
 // TODO: combine into Vec<SumatraWindow> (after 2.0) ?
+Vec<TopWindowInfo*>          gWIN;
 Vec<WindowInfo*>             gWindows;
 Vec<EbookWindow*>            gEbookWindows;
 FileHistory                  gFileHistory;
@@ -316,25 +317,53 @@ void SwitchToDisplayMode(WindowInfo *win, DisplayMode displayMode, bool keepCont
     UpdateToolbarState(win);
 }
 
+TopWindowInfo *FindTopWindowInfoByHwnd(HWND hwnd)
+{
+    HWND hwndFrame = GetAncestor(hwnd, GA_ROOTOWNER);
+
+    for (size_t i = 0; i < gWIN.Count(); i++) {
+        TopWindowInfo *WIN = gWIN.At(i);
+        if (hwndFrame == WIN->hwndFrame)
+            return WIN;
+    }
+    return NULL;
+}
+
 WindowInfo *FindWindowInfoByHwnd(HWND hwnd)
 {
-    HWND parent = GetParent(hwnd);
-    for (size_t i = 0; i < gWindows.Count(); i++) {
-        WindowInfo *win = gWindows.At(i);
-        if (hwnd == win->hwndFrame      ||
-            // canvas, toolbar, rebar, tocbox, splitters
-            parent == win->hwndFrame    ||
-            // infotips, message windows
-            parent == win->hwndCanvas   ||
-            // page and find labels and boxes
-            parent == win->hwndToolbar  ||
-            // ToC tree, sidebar title and close button
-            parent == win->hwndTocBox   ||
-            // Favorites tree, title, and close button
-            parent == win->hwndFavBox)
-        {
+    TopWindowInfo *WIN = FindTopWindowInfoByHwnd(hwnd);
+
+    if (WIN == NULL)
+        return NULL;
+
+    if (WIN->gWin.Count() == 0)
+        return NULL;
+
+    if (hwnd == WIN->hwndFrame)
+        return WIN->win;
+
+    HWND hwndParent = hwnd;
+    HWND hwndParentOld = NULL;
+
+    while (hwndParent != WIN->hwndFrame) {
+        hwndParentOld = hwndParent;
+        hwndParent = GetParent(hwndParent);
+    }
+    HWND hwndAncestor = hwndParentOld;
+
+    for (size_t i = 0; i < WIN->gWin.Count(); i++) {
+        WindowInfo *win = WIN->gWin.At(i);
+        if (hwndAncestor == win->hwndCanvas)
             return win;
-        }
+    }
+
+    if (hwndAncestor == WIN->win->hwndReBar           ||
+        hwndAncestor == WIN->win->hwndTocBox          ||
+        hwndAncestor == WIN->win->hwndFavBox          ||
+        hwndAncestor == WIN->win->hwndSidebarSplitter ||
+        hwndAncestor == WIN->win->hwndFavSplitter)
+    {
+        return WIN->win;
     }
     return NULL;
 }
@@ -1175,20 +1204,27 @@ static WindowInfo* CreateWindowInfo()
     if (!hwndFrame)
         return NULL;
 
-    assert(NULL == FindWindowInfoByHwnd(hwndFrame));
-    WindowInfo *win = new WindowInfo(hwndFrame);
-
-    win->hwndCanvas = CreateWindowEx(
+    HWND hwndCanvas = CreateWindowEx(
             WS_EX_STATICEDGE,
             CANVAS_CLASS_NAME, NULL,
             WS_CHILD | WS_HSCROLL | WS_VSCROLL,
             0, 0, 0, 0, /* position and size determined in OnSize */
             hwndFrame, NULL,
             ghinst, NULL);
-    if (!win->hwndCanvas) {
-        delete win;
+    if (!hwndCanvas) {
         return NULL;
     }
+
+    assert(NULL == FindTopWindowInfoByHwnd(hwndFrame));
+
+    TopWindowInfo *WIN = new TopWindowInfo(hwndFrame);
+    gWIN.Append(WIN);
+
+    WindowInfo *win = new WindowInfo(hwndCanvas);
+    WIN->gWin.Append(win);
+    WIN->win = win;
+
+    win->hwndFrame = hwndFrame;
 
     // hide scrollbars to avoid showing/hiding on empty window
     ShowScrollBar(win->hwndCanvas, SB_BOTH, FALSE);
