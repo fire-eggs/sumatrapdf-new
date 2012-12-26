@@ -6,7 +6,6 @@
 
 #include "DisplayModel.h"
 
-class PanelInfo;
 class WindowInfo;
 
 class FileWatcher;
@@ -65,24 +64,8 @@ public:
 
     HWND            hwndFrame;
 
-    Vec<PanelInfo *> gPanel; // Record the panels in a top window.
-};
-
-/* Describes the panel information.
-   A top window may have several panels.
-   Panels are used for displaying two or more documents at the same time
-   within a single top window. */
-class PanelInfo
-{
-public:
-    PanelInfo(HWND hwnd);
-    ~PanelInfo();
-
-    HWND            hwndPanel;
-
-    Vec<WindowInfo *> gWin; // Record the (tabbed) documents in a panel.
-
-    WindowInfo *    win; // Indicate which document in a panel is currently viewing.
+    Vec<WindowInfo *> gWin; // Record the win(s) in a top window.
+    WindowInfo *    win; // Indicate which document (tab page) in a WIN is currently viewed.
 };
 
 /* Describes information related to one window with (optional) a document
