@@ -1224,6 +1224,7 @@ static WindowInfo* CreateWindowInfo()
     WIN->gWin.Append(win);
     WIN->win = win;
 
+    win->WIN = WIN;
     win->hwndFrame = hwndFrame;
 
     // hide scrollbars to avoid showing/hiding on empty window
@@ -1244,6 +1245,58 @@ static WindowInfo* CreateWindowInfo()
     CreateToolbar(win);
     CreateSidebar(win);
     UpdateFindbox(win);
+    if (HasPermission(Perm_DiskAccess) && !gPluginMode)
+        DragAcceptFiles(win->hwndCanvas, TRUE);
+
+    gWindows.Append(win);
+    UpdateWindowRtlLayout(win);
+
+    if (Touch::SupportsGestures()) {
+        GESTURECONFIG gc = { 0, GC_ALLGESTURES, 0 };
+        Touch::SetGestureConfig(win->hwndCanvas, 0, 1, &gc, sizeof(GESTURECONFIG));
+    }
+
+    return win;
+}
+
+static WindowInfo* CreateCanvas(TopWindowInfo *WIN)
+{
+    HWND hwndCanvas = CreateWindowEx(
+        WS_EX_STATICEDGE,
+        CANVAS_CLASS_NAME, NULL,
+        WS_CHILD | WS_HSCROLL | WS_VSCROLL,
+        0, 0, 0, 0, /* position and size determined in OnSize */
+        WIN->hwndFrame, NULL,
+        ghinst, NULL);
+    if (!hwndCanvas) {
+        return NULL;
+    }
+
+    WindowInfo *winOld = WIN->win;
+
+    WindowInfo *win = new WindowInfo(hwndCanvas);
+    WIN->gWin.Append(win);
+    WIN->win = win;
+
+    win->WIN = WIN;
+    win->hwndFrame = WIN->hwndFrame;
+
+    // hide scrollbars to avoid showing/hiding on empty window
+    ShowScrollBar(win->hwndCanvas, SB_BOTH, FALSE);
+
+    int dx = WindowRect(WIN->hwndFrame).dx;
+    int dy = WindowRect(WIN->hwndFrame).dy;
+    SendMessage(WIN->hwndFrame, WM_SIZE, 0, MAKELPARAM(dx, dy));
+
+    ShowWindow(winOld->hwndCanvas, SW_HIDE);
+    ShowWindow(win->hwndCanvas, SW_SHOW);
+    UpdateWindow(win->hwndCanvas);
+
+    win->hwndInfotip = CreateWindowEx(WS_EX_TOPMOST,
+        TOOLTIPS_CLASS, NULL, WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
+        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+        win->hwndCanvas, NULL, ghinst, NULL);
+
     if (HasPermission(Perm_DiskAccess) && !gPluginMode)
         DragAcceptFiles(win->hwndCanvas, TRUE);
 
@@ -3506,6 +3559,19 @@ bool FrameOnKeydown(WindowInfo *win, WPARAM key, LPARAM lparam, bool inTextfield
         return true;
     }
 
+    if (VK_LEFT == key && IsCtrlPressed() && IsAltPressed()) {
+        ShowPreviousDocument(win->WIN);
+        return true;
+    } else if (VK_RIGHT == key && IsCtrlPressed() && IsAltPressed()) {
+        ShowNextDocument(win->WIN);
+        return true;
+    }
+
+    if ('T' == key && IsCtrlPressed() && !IsAltPressed()) {
+        OpenNewTab(win->WIN);
+        return true;
+    }
+
     if (!win->IsDocLoaded())
         return false;
 
@@ -4053,6 +4119,41 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible)
 
     if (tocVisible)
         UpdateTocSelection(win, win->dm->CurrentPageNo());
+}
+
+void ShowDocument(TopWindowInfo *WIN, WindowInfo *win,  WindowInfo *winNew, bool HideOldDocument)
+{
+    if (win == winNew)
+        return;
+
+    WIN->win = winNew;
+
+    if (HideOldDocument) {
+        ShowWindow(win->hwndCanvas, SW_HIDE);
+        UpdateWindow(win->hwndCanvas);
+    }
+
+    ShowWindow(winNew->hwndCanvas, SW_SHOW);
+}
+
+void ShowPreviousDocument(TopWindowInfo *WIN)
+{
+    WindowInfo *win = WIN->gWin.At(max(WIN->gWin.Find(WIN->win) - 1, 0));
+    ShowDocument(WIN, WIN->win, win, true);
+}
+
+void ShowNextDocument(TopWindowInfo *WIN)
+{
+    WindowInfo *win = WIN->gWin.At(min(WIN->gWin.Find(WIN->win) + 1, (int) WIN->gWin.Count() - 1));
+    ShowDocument(WIN, WIN->win, win, true);
+}
+
+void OpenNewTab(TopWindowInfo *WIN)
+{
+    SetFocus(WIN->hwndFrame);
+    UpdateCurrentFileDisplayStateForWin(SumatraWindow::Make(WIN->win));
+    WindowInfo *win = CreateCanvas(WIN);
+    RebuildMenuBarForWindow(win);
 }
 
 static LRESULT OnSetCursor(WindowInfo& win, HWND hwnd)

@@ -85,6 +85,8 @@ public:
     bool IsChm() const { return dm && dm->engineType == Engine_Chm; }
     bool IsNotPdf() const { return dm && dm->engineType != Engine_PDF; }
 
+    TopWindowInfo * WIN;
+
     WCHAR *         loadedFilePath;
     DisplayModel *  dm;
 

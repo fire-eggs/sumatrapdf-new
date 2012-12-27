@@ -28,6 +28,7 @@ TopWindowInfo::~TopWindowInfo()
 }
 
 WindowInfo::WindowInfo(HWND hwnd) :
+    WIN(NULL),
     dm(NULL), menu(NULL), hwndFrame(NULL),
     linkOnLastButtonDown(NULL), url(NULL), selectionOnPage(NULL),
     tocLoaded(false), tocVisible(false), tocRoot(NULL), tocKeepSelection(false),

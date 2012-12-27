@@ -125,6 +125,12 @@ void  QuitIfNoMoreWindows();
 bool  ShouldSaveThumbnail(DisplayState& ds);
 void  SaveThumbnailForFile(const WCHAR *filePath, RenderedBitmap *bmp);
 
+void ShowDocument(TopWindowInfo *WIN, WindowInfo *win, WindowInfo *winNew, bool HideOldDocument);
+void ShowPreviousDocument(TopWindowInfo *WIN);
+void ShowNextDocument(TopWindowInfo *WIN);
+
+void OpenNewTab(TopWindowInfo *WIN);
+
 TopWindowInfo* FindTopWindowInfoByHwnd(HWND hwnd);
 
 WindowInfo* FindWindowInfoByFile(const WCHAR *file);
