@@ -27,8 +27,21 @@ TopWindowInfo::~TopWindowInfo()
 
 }
 
+ContainerInfo::ContainerInfo(HWND hwnd) :
+    hwndContainer(hwnd),
+    panel(NULL), container1(NULL), container2(NULL), parentContainer(NULL),
+    hwndSplitter(NULL), isSplitVertical(true)
+{
+
+}
+
+ContainerInfo::~ContainerInfo()
+{    
+
+}
+
 PanelInfo::PanelInfo(HWND hwnd) :
-    hwndPanel(hwnd), win(NULL)
+    hwndPanel(hwnd), container(NULL), win(NULL)
 {
 
 }
@@ -39,7 +52,7 @@ PanelInfo::~PanelInfo()
 }
 
 WindowInfo::WindowInfo(HWND hwnd) :
-    WIN(NULL),
+    WIN(NULL), container(NULL), panel(NULL),
     dm(NULL), menu(NULL), hwndFrame(NULL),
     linkOnLastButtonDown(NULL), url(NULL), selectionOnPage(NULL),
     tocLoaded(false), tocVisible(false), tocRoot(NULL), tocKeepSelection(false),

@@ -66,6 +66,7 @@ enum MenuToolbarFlags {
 #define ABOUT_BG_COLOR_DEFAULT  (RGB(0xff, 0xf2, 0) - 0x80000000)
 
 class TopWindowInfo;
+class ContainerInfo;
 class PanelInfo;
 class WindowInfo;
 class EbookWindow;
@@ -125,6 +126,8 @@ void  OnMenuAbout();
 void  QuitIfNoMoreWindows();
 bool  ShouldSaveThumbnail(DisplayState& ds);
 void  SaveThumbnailForFile(const WCHAR *filePath, RenderedBitmap *bmp);
+
+void OpenNewPanel(ContainerInfo *container);
 
 TopWindowInfo* FindTopWindowInfoByHwnd(HWND hwnd);
 PanelInfo *FindPanelInfoByHwnd(HWND hwnd);
