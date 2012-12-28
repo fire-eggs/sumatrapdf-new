@@ -100,6 +100,7 @@ WCHAR *          gPluginURL = NULL; // owned by CommandLineInfo in WinMain
 #define COL_WINDOW_BG           RGB(0x99, 0x99, 0x99)
 #endif
 
+#define CONTAINER_CLASS_NAME         L"SUMATRA_PDF_CONTAINER"
 #define PANEL_CLASS_NAME             L"SUMATRA_PDF_PANEL"
 #define CANVAS_CLASS_NAME            L"SUMATRA_PDF_CANVAS"
 #define SIDEBAR_SPLITTER_CLASS_NAME  L"SidebarSplitter"
@@ -176,6 +177,7 @@ static void UpdateUITextForLanguage();
 static void UpdateToolbarAndScrollbarState(WindowInfo& win);
 static void EnterFullscreen(WindowInfo& win, bool presentation=false);
 static void ExitFullscreen(WindowInfo& win);
+static LRESULT CALLBACK WndProcContainer(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 static LRESULT CALLBACK WndProcPanel(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 static LRESULT CALLBACK WndProcCanvas(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -331,6 +333,32 @@ TopWindowInfo *FindTopWindowInfoByHwnd(HWND hwnd)
     return NULL;
 }
 
+ContainerInfo *FindContainerInfoByHwnd(HWND hwnd)
+{
+    TopWindowInfo *WIN = FindTopWindowInfoByHwnd(hwnd);
+
+    if (WIN == NULL || WIN->gContainer.Count() == 0 || hwnd == WIN->hwndFrame)
+        return NULL;
+
+    HWND hwndParent = hwnd;
+    WCHAR ClassName[MAX_PATH] = {0}; // Need to check if this is free later.
+    GetClassName(hwndParent, ClassName, MAX_PATH);
+    while(!str::Eq(ClassName, CONTAINER_CLASS_NAME)) { // Need to think about too long classname.
+        hwndParent = GetParent(hwndParent);
+        GetClassName(hwndParent, ClassName, MAX_PATH);
+        if (str::Eq(ClassName, FRAME_CLASS_NAME)) // For now.
+            return NULL; // For now.
+    }
+    HWND hwndContainer = hwndParent;
+
+    for (size_t i = 0; i < WIN->gContainer.Count(); i++) {
+        ContainerInfo *Container = WIN->gContainer.At(i);
+        if (hwndContainer == Container->hwndContainer)
+            return Container;
+    }
+    return NULL;
+}
+
 PanelInfo *FindPanelInfoByHwnd(HWND hwnd)
 {
     TopWindowInfo *WIN = FindTopWindowInfoByHwnd(hwnd);
@@ -341,13 +369,24 @@ PanelInfo *FindPanelInfoByHwnd(HWND hwnd)
     if (WIN->gPanel.Count() == 0)
         return NULL;
 
+    ContainerInfo *container = FindContainerInfoByHwnd(hwnd); // NULL if hwnd == WIN->hwndFrame.
+
     if (hwnd == WIN->hwndFrame)
         return WIN->panel;
 
+    // Only for now temp.
+    if (container == NULL) // Now, if in this case, we know hwnd is not frame, not container, not panel, not canvas.
+        return WIN->panel;
+
+    // If hwnd is already one of the container, return panel;
+    if (hwnd == container->hwndContainer)
+        return WIN->panel;
+
+    // So hwnd is not any of hwndContainer now // And (for now temp) it is a canvas or panel.
     HWND hwndParent = hwnd;
     HWND hwndParentOld = NULL;
 
-    while (hwndParent != WIN->hwndFrame) {
+    while (hwndParent != container->hwndContainer) {
         hwndParentOld = hwndParent;
         hwndParent = GetParent(hwndParent);
     }
@@ -358,7 +397,7 @@ PanelInfo *FindPanelInfoByHwnd(HWND hwnd)
         if (hwndPanel == panel->hwndPanel)
             return panel;
     }
-    return WIN->panel;
+    return NULL; // Need to modify. Need to consider Rebar, TocBox, FavBox, SidebarSplitter, FavSplitter.
 }
 
 WindowInfo *FindWindowInfoByHwnd(HWND hwnd)
@@ -371,9 +410,20 @@ WindowInfo *FindWindowInfoByHwnd(HWND hwnd)
     if (panel->gWin.Count() == 0)
         return NULL;
 
+    ContainerInfo *container = FindContainerInfoByHwnd(hwnd);
+
     if (hwnd == panel->hwndPanel || hwnd == panel->win->hwndFrame)
         return panel->win;
 
+    // Only for now temp.
+    if (container == NULL) // Now, if in this case, we know hwnd is not frame, not panel, not canvas.
+        return panel->win;
+
+    // If hwnd is already one of the container, return panel->win;
+    if (hwnd == container->hwndContainer)
+        return panel->win;
+
+    // So hwnd is not any of hwndContainer, frame, panel now // And (for now temp) it is a canvas or panel.
     for ( size_t i = 0; i < panel->gWin.Count(); i++) {
         WindowInfo *win = panel->gWin.At(i);
         if (hwnd == win->hwndCanvas)
@@ -1218,12 +1268,23 @@ static WindowInfo* CreateWindowInfo()
     if (!hwndFrame)
         return NULL;
 
+    HWND hwndContainer = CreateWindowEx(
+        NULL,
+        CONTAINER_CLASS_NAME, NULL,
+        WS_CHILD | WS_CLIPCHILDREN,
+        0, 0, 0, 0,
+        hwndFrame, NULL,
+        ghinst, NULL);
+    if (!hwndContainer) {
+        return NULL;
+    }
+
     HWND hwndPanel = CreateWindowEx(
             NULL,
             PANEL_CLASS_NAME, NULL,
             WS_CHILD | WS_CLIPCHILDREN,
             0, 0, 0, 0,
-            hwndFrame, NULL,
+            hwndContainer, NULL,
             ghinst, NULL);
     if (!hwndPanel) {
         return NULL;
@@ -1245,15 +1306,27 @@ static WindowInfo* CreateWindowInfo()
     TopWindowInfo *WIN = new TopWindowInfo(hwndFrame);
     gWIN.Append(WIN);
 
+    ContainerInfo *container = new ContainerInfo(hwndContainer);
+    WIN->gContainer.Append(container);
+
+    ////container->container1 = NULL;
+    ////container->container2 = NULL;
+    ////container->parentContainer = NULL;
+
     PanelInfo *panel = new PanelInfo(hwndPanel);
     WIN->gPanel.Append(panel);
     WIN->panel = panel;
+    container->panel = panel;
+
+    panel->container = container;
 
     WindowInfo *win = new WindowInfo(hwndCanvas);
     panel->gWin.Append(win);
     panel->win = win;
 
     win->WIN = WIN;
+    win->container = container;
+    win->panel = panel;
     win->hwndFrame = hwndFrame;
 
     // hide scrollbars to avoid showing/hiding on empty window
@@ -1268,6 +1341,138 @@ static WindowInfo* CreateWindowInfo()
 
     ShowWindow(panel->hwndPanel, SW_SHOW);
     UpdateWindow(panel->hwndPanel);
+
+    ShowWindow(container->hwndContainer, SW_SHOW);
+    UpdateWindow(container->hwndContainer);
+
+    win->hwndInfotip = CreateWindowEx(WS_EX_TOPMOST,
+        TOOLTIPS_CLASS, NULL, WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
+        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+        win->hwndCanvas, NULL, ghinst, NULL);
+
+    CreateToolbar(win);
+    CreateSidebar(win);
+    UpdateFindbox(win);
+    if (HasPermission(Perm_DiskAccess) && !gPluginMode)
+        DragAcceptFiles(win->hwndCanvas, TRUE);
+
+    gWindows.Append(win);
+    UpdateWindowRtlLayout(win);
+
+    if (Touch::SupportsGestures()) {
+        GESTURECONFIG gc = { 0, GC_ALLGESTURES, 0 };
+        Touch::SetGestureConfig(win->hwndCanvas, 0, 1, &gc, sizeof(GESTURECONFIG));
+    }
+
+    return win;
+}
+
+static WindowInfo* CreatePanel(ContainerInfo *container)
+{
+    TopWindowInfo *WIN = container->panel->win->WIN;
+
+    if (container->panel == NULL)
+        return NULL;
+
+    int dx = ClientRect(container->hwndContainer).dx;
+    int dy = ClientRect(container->hwndContainer).dy;
+
+    HWND hwndContainer1 = CreateWindowEx(
+        NULL,
+        CONTAINER_CLASS_NAME, NULL,
+        WS_CHILD | WS_CLIPCHILDREN,
+        0, 0, 0, 0,
+        container->hwndContainer, NULL,
+        ghinst, NULL);
+    if (!hwndContainer1) {
+        return NULL;
+    }
+
+    HWND hwndContainer2 = CreateWindowEx(
+        NULL,
+        CONTAINER_CLASS_NAME, NULL,
+        WS_CHILD | WS_CLIPCHILDREN,
+        0, 0, 0, 0,
+        container->hwndContainer, NULL,
+        ghinst, NULL);
+    if (!hwndContainer2) {
+        return NULL;
+    }
+
+    SetParent(container->panel->hwndPanel, hwndContainer1);
+
+    HWND hwndPanel = CreateWindowEx(
+        NULL,
+        PANEL_CLASS_NAME, NULL,
+        WS_CHILD | WS_CLIPCHILDREN,
+        0, 0, 0, 0,
+        hwndContainer2, NULL,
+        ghinst, NULL);
+    if (!hwndPanel) {
+        return NULL;
+    }
+
+    HWND hwndCanvas = CreateWindowEx(
+        WS_EX_STATICEDGE,
+        CANVAS_CLASS_NAME, NULL,
+        WS_CHILD | WS_HSCROLL | WS_VSCROLL,
+        0, 0, 0, 0, /* position and size determined in OnSize */
+        hwndPanel, NULL,
+        ghinst, NULL);
+    if (!hwndCanvas) {
+        return NULL;
+    }
+
+    //assert(NULL == FindTopWindowInfoByHwnd(hwndFrame));
+
+    ContainerInfo *container1 = new ContainerInfo(hwndContainer1);
+    ContainerInfo *container2 = new ContainerInfo(hwndContainer2);
+    WIN->gContainer.Append(container1);
+    WIN->gContainer.Append(container2);
+    container->container1 = container1;
+    container->container2 = container2;
+
+    container1->parentContainer = container;
+    container2->parentContainer = container; 
+
+    PanelInfo *panel = new PanelInfo(hwndPanel);
+    WIN->gPanel.Append(panel);
+    WIN->panel = panel;
+    container1->panel = container->panel;
+    container2->panel = panel;
+    container->panel = NULL;
+
+    container1->panel->container = container1;
+    panel->container= container2;
+
+    WindowInfo *win = new WindowInfo(hwndCanvas);
+    panel->gWin.Append(win);
+    panel->win = win;
+
+    win->WIN = WIN;
+    container1->panel->win->container = container1;
+    win->container = container2;
+    // container1->panel->win->panel = container1->panel;
+    win->panel = panel;
+    win->hwndFrame = WIN->hwndFrame;
+
+    // hide scrollbars to avoid showing/hiding on empty window
+    ShowScrollBar(win->hwndCanvas, SB_BOTH, FALSE);
+
+    SetWindowPos(hwndContainer1, NULL, 0, 0, dx / 2, dy, SWP_NOZORDER);
+    SetWindowPos(hwndContainer2, NULL, dx / 2, 0, dx / 2, dy, SWP_NOZORDER);
+
+    ShowWindow(win->hwndCanvas, SW_SHOW);
+    UpdateWindow(win->hwndCanvas);
+
+    ShowWindow(panel->hwndPanel, SW_SHOW);
+    UpdateWindow(panel->hwndPanel);
+
+    ShowWindow(container1->hwndContainer, SW_SHOW);
+    UpdateWindow(container1->hwndContainer);
+
+    ShowWindow(container2->hwndContainer, SW_SHOW);
+    UpdateWindow(container2->hwndContainer);
 
     win->hwndInfotip = CreateWindowEx(WS_EX_TOPMOST,
         TOOLTIPS_CLASS, NULL, WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
@@ -3195,7 +3400,7 @@ static void FrameOnSize(WindowInfo* win, int dx, int dy)
     if (tocVisible || gGlobalPrefs.favVisible)
         SetSidebarVisibility(win, tocVisible, gGlobalPrefs.favVisible);
     else
-        SetWindowPos(win->WIN->panel->hwndPanel, NULL, 0, rebBarDy, dx, dy - rebBarDy, SWP_NOZORDER);
+        SetWindowPos(win->WIN->gContainer.At(0)->hwndContainer, NULL, 0, rebBarDy, dx, dy - rebBarDy, SWP_NOZORDER);
 
     if (win->presentation || win->fullScreen) {
         RectI fullscreen = GetFullscreenRect(win->hwndFrame);
@@ -3536,6 +3741,11 @@ bool FrameOnKeydown(WindowInfo *win, WPARAM key, LPARAM lparam, bool inTextfield
         // folder browsing should also work when an error page is displayed,
         // so special-case it before the win.IsDocLoaded() check
         BrowseFolder(*win, VK_RIGHT == key);
+        return true;
+    }
+
+    if ('P' == key && IsCtrlPressed() && IsAltPressed()) {
+        OpenNewPanel(win->panel->container);
         return true;
     }
 
@@ -4088,6 +4298,11 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible)
         UpdateTocSelection(win, win->dm->CurrentPageNo());
 }
 
+void OpenNewPanel(ContainerInfo *container)
+{
+    WindowInfo *win = CreatePanel(container);
+}
+
 static LRESULT OnSetCursor(WindowInfo& win, HWND hwnd)
 {
     POINT pt;
@@ -4433,14 +4648,36 @@ static LRESULT OnGesture(WindowInfo& win, UINT message, WPARAM wParam, LPARAM lP
     return 0;
 }
 
+static void ContainerOnSize(ContainerInfo* container, int dx, int dy)
+{
+    if (container->panel != NULL)
+        SetWindowPos(container->panel->hwndPanel, NULL, 0, 0, dx, dy, SWP_NOZORDER);
+    else if (container->container1 != NULL && container->container2 != NULL) {
+        SetWindowPos(container->container1->hwndContainer, NULL, 0, 0, dx / 2, dy, SWP_NOZORDER);
+        SetWindowPos(container->container2->hwndContainer, NULL, dx /2, 0, dx / 2, dy, SWP_NOZORDER);
+    }
+}
+
 static void PanelOnSize(PanelInfo* panel, int dx, int dy)
 {
     SetWindowPos(panel->win->hwndCanvas, NULL, 0, 0, dx, dy, SWP_NOZORDER);
 }
 
-static void PanelOnPaint(PanelInfo& panel)
+static LRESULT CALLBACK WndProcContainer(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    ContainerInfo *container = FindContainerInfoByHwnd(hwnd);
+    if (!container)
+        return DefWindowProc(hwnd, msg, wParam, lParam);
 
+    switch (msg) {
+        case WM_SIZE:
+            ContainerOnSize(container, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+            break;
+
+        default:
+            return DefWindowProc(hwnd, msg, wParam, lParam);
+    }
+    return 0;
 }
 
 static LRESULT CALLBACK WndProcPanel(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)

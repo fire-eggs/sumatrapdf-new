@@ -6,6 +6,7 @@
 
 #include "DisplayModel.h"
 
+class ContainerInfo;
 class PanelInfo;
 class WindowInfo;
 
@@ -65,8 +66,30 @@ public:
 
     HWND            hwndFrame;
 
+    Vec<ContainerInfo *> gContainer;
+
     Vec<PanelInfo *> gPanel; // Record the panels in a top window.
     PanelInfo *     panel; // Indicate which panel in a TopWindow is currently active.
+};
+
+/* */
+class ContainerInfo
+{
+public:
+    ContainerInfo(HWND hwnd);
+    ~ContainerInfo();
+
+    HWND            hwndContainer;
+
+    PanelInfo *     panel;
+
+    ContainerInfo * container1;
+    ContainerInfo * container2;
+    ContainerInfo * parentContainer;
+
+    HWND            hwndSplitter;
+
+    bool            isSplitVertical;
 };
 
 /* Describes the panel information.
@@ -80,6 +103,8 @@ public:
     ~PanelInfo();
 
     HWND            hwndPanel;
+
+    ContainerInfo * container; // Need?
 
     Vec<WindowInfo *> gWin; // Record the (tabbed) documents in a panel.
     WindowInfo *    win; // Indicate which document (tab page) in a panel is currently viewed.
@@ -102,7 +127,9 @@ public:
     bool IsChm() const { return dm && dm->engineType == Engine_Chm; }
     bool IsNotPdf() const { return dm && dm->engineType != Engine_PDF; }
 
-    TopWindowInfo * WIN; // Use WIN in win will reduce a lot of (redundant) code.
+    TopWindowInfo * WIN; // Need? // Use WIN in win will reduce a lot of (redundant) code.
+    ContainerInfo * container; // Need?
+    PanelInfo *     panel; // Need?
 
     WCHAR *         loadedFilePath;
     DisplayModel *  dm;
