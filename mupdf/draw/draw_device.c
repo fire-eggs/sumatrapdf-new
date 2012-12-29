@@ -369,6 +369,9 @@ fz_draw_clip_path(fz_device *devp, fz_path *path, fz_rect *rect, int even_odd, f
 	bbox = fz_intersect_bbox(bbox, state->scissor);
 	if (rect)
 		bbox = fz_intersect_bbox(bbox, fz_bbox_covering_rect(*rect));
+	/* SumatraPDF: try to match rendering with and without display list */
+	else
+		bbox = fz_intersect_bbox(bbox, fz_bbox_covering_rect(fz_bound_path(ctx, path, NULL, ctm)));
 
 	if (fz_is_empty_rect(bbox) || fz_is_rect_gel(dev->gel))
 	{
@@ -435,6 +438,9 @@ fz_draw_clip_stroke_path(fz_device *devp, fz_path *path, fz_rect *rect, fz_strok
 	bbox = fz_intersect_bbox(bbox, state->scissor);
 	if (rect)
 		bbox = fz_intersect_bbox(bbox, fz_bbox_covering_rect(*rect));
+	/* SumatraPDF: try to match rendering with and without display list */
+	else
+		bbox = fz_intersect_bbox(bbox, fz_bbox_covering_rect(fz_bound_path(ctx, path, stroke, ctm)));
 
 	fz_try(ctx)
 	{
@@ -1761,7 +1767,10 @@ fz_draw_apply_transfer_function(fz_device *devp, fz_transfer_function *tr, int f
 		else if (dest->n > 2)
 			for (n = 0; n < dest->n - 1; n++)
 				*s++ = tr->function[n][*s];
-		*s++ = for_mask ? tr->function[3][*s] : *s;
+		if (for_mask && !dev->stack[dev->top].luminosity)
+			*s++ = tr->function[3][*s];
+		else
+			s++;
 	}
 #ifdef DUMP_GROUP_BLENDS
 	fz_dump_blend(dev->ctx, dest, " mapped to ");
