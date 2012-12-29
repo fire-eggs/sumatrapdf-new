@@ -269,7 +269,7 @@ void OnSelectAll(WindowInfo *win, bool textOnly)
     if (!win->IsDocLoaded())
         return;
 
-    if (win->hwndFindBox == GetFocus() || win->hwndPageBox == GetFocus()) {
+    if (win->toolBar()->hwndFindBox == GetFocus() || win->toolBar()->hwndPageBox == GetFocus()) {
         Edit_SelectAll(GetFocus());
         return;
     }

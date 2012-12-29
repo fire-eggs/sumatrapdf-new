@@ -91,7 +91,7 @@ static bool IsToolbarButtonEnabled(WindowInfo *win, int buttonNo)
     case IDM_FIND_NEXT:
     case IDM_FIND_PREV:
         // TODO: Update on whether there's more to find, not just on whether there is text.
-        return win::GetTextLen(win->hwndFindBox) > 0;
+        return win::GetTextLen(win->toolBar()->hwndFindBox) > 0;
 
     case IDM_GOTO_NEXT_PAGE:
         return win->dm->CurrentPageNo() < win->dm->PageCount();
@@ -132,7 +132,7 @@ static void BuildTBBUTTONINFO(TBBUTTONINFO& info, WCHAR *txt)
 void UpdateToolbarButtonsToolTipsForWindow(WindowInfo *win)
 {
     TBBUTTONINFO buttonInfo;
-    HWND hwnd = win->hwndToolbar;
+    HWND hwnd = win->toolBar()->hwndToolbar;
     LRESULT res;
     for (int i = 0; i < TOOLBAR_BUTTONS_COUNT; i++) {
         WPARAM buttonId = (WPARAM)i;
@@ -154,13 +154,13 @@ void ToolbarUpdateStateForWindow(WindowInfo *win, bool showHide)
     for (int i = 0; i < TOOLBAR_BUTTONS_COUNT; i++) {
         if (showHide) {
             BOOL hide = !IsVisibleToolbarButton(win, i);
-            SendMessage(win->hwndToolbar, TB_HIDEBUTTON, gToolbarButtons[i].cmdId, hide);
+            SendMessage(win->toolBar()->hwndToolbar, TB_HIDEBUTTON, gToolbarButtons[i].cmdId, hide);
         }
         if (TbIsSeparator(gToolbarButtons[i]))
             continue;
 
         LPARAM buttonState = IsToolbarButtonEnabled(win, i) ? enabled : disabled;
-        SendMessage(win->hwndToolbar, TB_ENABLEBUTTON, gToolbarButtons[i].cmdId, buttonState);
+        SendMessage(win->toolBar()->hwndToolbar, TB_ENABLEBUTTON, gToolbarButtons[i].cmdId, buttonState);
     }
 
     // Find labels may have to be repositioned if some
@@ -174,12 +174,12 @@ void ShowOrHideToolbarGlobally()
     for (size_t i = 0; i < gWindows.Count(); i++) {
         WindowInfo *win = gWindows.At(i);
         if (gGlobalPrefs.toolbarVisible) {
-            ShowWindow(win->hwndReBar, SW_SHOW);
+            ShowWindow(win->toolBar()->hwndReBar, SW_SHOW);
         } else {
             // Move the focus out of the toolbar
-            if (win->hwndFindBox == GetFocus() || win->hwndPageBox == GetFocus())
+            if (win->toolBar()->hwndFindBox == GetFocus() || win->toolBar()->hwndPageBox == GetFocus())
                 SetFocus(win->hwndFrame);
-            ShowWindow(win->hwndReBar, SW_HIDE);
+            ShowWindow(win->toolBar()->hwndReBar, SW_HIDE);
         }
         ClientRect rect(win->hwndFrame);
         SendMessage(win->hwndFrame, WM_SIZE, 0, MAKELONG(rect.dx, rect.dy));
@@ -188,17 +188,19 @@ void ShowOrHideToolbarGlobally()
 
 void UpdateFindbox(WindowInfo* win)
 {
-    ToggleWindowStyle(win->hwndFindBg, SS_WHITERECT, win->IsDocLoaded());
-    ToggleWindowStyle(win->hwndPageBg, SS_WHITERECT, win->IsDocLoaded());
+    ToolbarInfo *toolBar = win->toolBar();
 
-    InvalidateRect(win->hwndToolbar, NULL, TRUE);
-    UpdateWindow(win->hwndToolbar);
+    ToggleWindowStyle(toolBar->hwndFindBg, SS_WHITERECT, win->IsDocLoaded());
+    ToggleWindowStyle(toolBar->hwndPageBg, SS_WHITERECT, win->IsDocLoaded());
+
+    InvalidateRect(toolBar->hwndToolbar, NULL, TRUE);
+    UpdateWindow(toolBar->hwndToolbar);
 
     if (!win->IsDocLoaded()) {  // Avoid focus on Find box
-        SetClassLongPtr(win->hwndFindBox, GCLP_HCURSOR, (LONG_PTR)gCursorArrow);
+        SetClassLongPtr(toolBar->hwndFindBox, GCLP_HCURSOR, (LONG_PTR)gCursorArrow);
         HideCaret(NULL);
     } else {
-        SetClassLongPtr(win->hwndFindBox, GCLP_HCURSOR, (LONG_PTR)gCursorIBeam);
+        SetClassLongPtr(toolBar->hwndFindBox, GCLP_HCURSOR, (LONG_PTR)gCursorIBeam);
         ShowCaret(NULL);
     }
 }
@@ -221,7 +223,7 @@ static LRESULT CALLBACK WndProcToolbar(HWND hwnd, UINT message, WPARAM wParam, L
     if (WM_CTLCOLORSTATIC == message) {
         HWND hStatic = (HWND)lParam;
         WindowInfo *win = FindWindowInfoByHwnd(hStatic);
-        if ((win && win->hwndFindBg != hStatic && win->hwndPageBg != hStatic) || IsAppThemed())
+        if ((win && win->toolBar()->hwndFindBg != hStatic && win->toolBar()->hwndPageBg != hStatic) || IsAppThemed())
         {
             SetBkMode((HDC)wParam, TRANSPARENT);
             SelectBrush((HDC)wParam, GetStockBrush(NULL_BRUSH));
@@ -232,7 +234,7 @@ static LRESULT CALLBACK WndProcToolbar(HWND hwnd, UINT message, WPARAM wParam, L
         HWND hEdit = (HWND)lParam;
         WindowInfo *win = FindWindowInfoByHwnd(hEdit);
         // "find as you type"
-        if (EN_UPDATE == HIWORD(wParam) && hEdit == win->hwndFindBox && gGlobalPrefs.toolbarVisible)
+        if (EN_UPDATE == HIWORD(wParam) && hEdit == win->toolBar()->hwndFindBox && gGlobalPrefs.toolbarVisible)
             FindTextOnThread(win, FIND_FORWARD, true);
     }
     return CallWindowProc(DefWndProcToolbar, hwnd, message, wParam, lParam);
@@ -336,24 +338,26 @@ void UpdateToolbarFindText(WindowInfo *win)
 
 void UpdateToolbarState(WindowInfo *win)
 {
+    ToolbarInfo *toolBar = win->toolBar();
+
     if (!win->IsDocLoaded())
         return;
 
-    WORD state = (WORD)SendMessage(win->hwndToolbar, TB_GETSTATE, IDT_VIEW_FIT_WIDTH, 0);
+    WORD state = (WORD)SendMessage(toolBar->hwndToolbar, TB_GETSTATE, IDT_VIEW_FIT_WIDTH, 0);
     if (win->dm->GetDisplayMode() == DM_CONTINUOUS && win->dm->ZoomVirtual() == ZOOM_FIT_WIDTH)
         state |= TBSTATE_CHECKED;
     else
         state &= ~TBSTATE_CHECKED;
-    SendMessage(win->hwndToolbar, TB_SETSTATE, IDT_VIEW_FIT_WIDTH, state);
+    SendMessage(toolBar->hwndToolbar, TB_SETSTATE, IDT_VIEW_FIT_WIDTH, state);
 
     bool isChecked = (state & TBSTATE_CHECKED);
 
-    state = (WORD)SendMessage(win->hwndToolbar, TB_GETSTATE, IDT_VIEW_FIT_PAGE, 0);
+    state = (WORD)SendMessage(toolBar->hwndToolbar, TB_GETSTATE, IDT_VIEW_FIT_PAGE, 0);
     if (win->dm->GetDisplayMode() == DM_SINGLE_PAGE && win->dm->ZoomVirtual() == ZOOM_FIT_PAGE)
         state |= TBSTATE_CHECKED;
     else
         state &= ~TBSTATE_CHECKED;
-    SendMessage(win->hwndToolbar, TB_SETSTATE, IDT_VIEW_FIT_PAGE, state);
+    SendMessage(toolBar->hwndToolbar, TB_SETSTATE, IDT_VIEW_FIT_PAGE, state);
 
     isChecked &= (state & TBSTATE_CHECKED);
     if (!isChecked)
@@ -409,7 +413,7 @@ static LRESULT CALLBACK WndProcPageBox(HWND hwnd, UINT message, WPARAM wParam, L
     } else if (WM_CHAR == message) {
         switch (wParam) {
         case VK_RETURN: {
-            ScopedMem<WCHAR> buf(win::GetText(win->hwndPageBox));
+            ScopedMem<WCHAR> buf(win::GetText(win->toolBar()->hwndPageBox));
             int newPageNo = win->dm->engine->GetPageByLabel(buf);
             if (win->dm->ValidPageNo(newPageNo)) {
                 win->dm->GoToPage(newPageNo, 0, true);
@@ -639,10 +643,6 @@ void CreateToolbar(WinInfo& winInfo)
     // it is the same as calling CreatePageBox(WIN->toolBar) or CreatePageBox(panel->toolBar).
     // So the other hwnds are assigned there.
     winInfo.AssignToolbaInfo();
-
-    // temp
-    WIN->panel->win->hwndToolbar = hwndToolbar;
-    WIN->panel->win->hwndReBar = hwndReBar;
 
     CreatePageBox(winInfo.toolBar);
     CreateFindBox(winInfo.toolBar);

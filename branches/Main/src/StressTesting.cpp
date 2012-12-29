@@ -583,7 +583,7 @@ bool StressTest::OpenFile(const WCHAR *fileName)
     // search immediately in single page documents
     if (1 == pageForSearchStart) {
         // use text that is unlikely to be found, so that we search all pages
-        win::SetText(win->hwndFindBox, L"!z_yt");
+        win::SetText(win->toolBar()->hwndFindBox, L"!z_yt");
         FindTextOnThread(win);
     }
 
@@ -623,7 +623,7 @@ bool StressTest::GoToNextPage()
     // current API doesn't make it easy
     if (currPage == pageForSearchStart) {
         // use text that is unlikely to be found, so that we search all pages
-        win::SetText(win->hwndFindBox, L"!z_yt");
+        win::SetText(win->toolBar()->hwndFindBox, L"!z_yt");
         FindTextOnThread(win);
     }
 

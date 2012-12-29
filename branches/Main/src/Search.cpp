@@ -50,36 +50,38 @@ void OnMenuFind(WindowInfo *win)
     if (!win->IsDocLoaded() || !NeedsFindUI(win))
         return;
 
+    ToolbarInfo *toolBar = win->toolBar();
+
     // copy any selected text to the find bar, if it's still empty
     if (win->dm->textSelection->result.len > 0 &&
-        Edit_GetTextLength(win->hwndFindBox) == 0) {
+        Edit_GetTextLength(toolBar->hwndFindBox) == 0) {
         ScopedMem<WCHAR> selection(win->dm->textSelection->ExtractText(L" "));
         str::NormalizeWS(selection);
         if (!str::IsEmpty(selection.Get())) {
-            win::SetText(win->hwndFindBox, selection);
-            Edit_SetModify(win->hwndFindBox, TRUE);
+            win::SetText(toolBar->hwndFindBox, selection);
+            Edit_SetModify(toolBar->hwndFindBox, TRUE);
         }
     }
 
     // Don't show a dialog if we don't have to - use the Toolbar instead
     if (gGlobalPrefs.toolbarVisible && !win->fullScreen && !win->presentation) {
-        if (GetFocus() == win->hwndFindBox)
-            SendMessage(win->hwndFindBox, WM_SETFOCUS, 0, 0);
+        if (GetFocus() == toolBar->hwndFindBox)
+            SendMessage(toolBar->hwndFindBox, WM_SETFOCUS, 0, 0);
         else
-            SetFocus(win->hwndFindBox);
+            SetFocus(toolBar->hwndFindBox);
         return;
     }
 
-    ScopedMem<WCHAR> previousFind(win::GetText(win->hwndFindBox));
-    WORD state = (WORD)SendMessage(win->hwndToolbar, TB_GETSTATE, IDM_FIND_MATCH, 0);
+    ScopedMem<WCHAR> previousFind(win::GetText(toolBar->hwndFindBox));
+    WORD state = (WORD)SendMessage(toolBar->hwndToolbar, TB_GETSTATE, IDM_FIND_MATCH, 0);
     bool matchCase = (state & TBSTATE_CHECKED) != 0;
 
     ScopedMem<WCHAR> findString(Dialog_Find(win->hwndFrame, previousFind, &matchCase));
     if (!findString)
         return;
 
-    win::SetText(win->hwndFindBox, findString);
-    Edit_SetModify(win->hwndFindBox, TRUE);
+    win::SetText(toolBar->hwndFindBox, findString);
+    Edit_SetModify(toolBar->hwndFindBox, TRUE);
 
     bool matchCaseChanged = matchCase != (0 != (state & TBSTATE_CHECKED));
     if (matchCaseChanged) {
@@ -87,7 +89,7 @@ void OnMenuFind(WindowInfo *win)
             state |= TBSTATE_CHECKED;
         else
             state &= ~TBSTATE_CHECKED;
-        SendMessage(win->hwndToolbar, TB_SETSTATE, IDM_FIND_MATCH, state);
+        SendMessage(toolBar->hwndToolbar, TB_SETSTATE, IDM_FIND_MATCH, state);
         win->dm->textSearch->SetSensitive(matchCase);
     }
 
@@ -98,7 +100,7 @@ void OnMenuFindNext(WindowInfo *win)
 {
     if (!win->IsDocLoaded() || !NeedsFindUI(win))
         return;
-    if (SendMessage(win->hwndToolbar, TB_ISBUTTONENABLED, IDM_FIND_NEXT, 0))
+    if (SendMessage(win->toolBar()->hwndToolbar, TB_ISBUTTONENABLED, IDM_FIND_NEXT, 0))
         FindTextOnThread(win, FIND_FORWARD);
 }
 
@@ -106,7 +108,7 @@ void OnMenuFindPrev(WindowInfo *win)
 {
     if (!win->IsDocLoaded() || !NeedsFindUI(win))
         return;
-    if (SendMessage(win->hwndToolbar, TB_ISBUTTONENABLED, IDM_FIND_PREV, 0))
+    if (SendMessage(win->toolBar()->hwndToolbar, TB_ISBUTTONENABLED, IDM_FIND_PREV, 0))
         FindTextOnThread(win, FIND_BACKWARD);
 }
 
@@ -114,9 +116,9 @@ void OnMenuFindMatchCase(WindowInfo *win)
 {
     if (!win->IsDocLoaded() || !NeedsFindUI(win))
         return;
-    WORD state = (WORD)SendMessage(win->hwndToolbar, TB_GETSTATE, IDM_FIND_MATCH, 0);
+    WORD state = (WORD)SendMessage(win->toolBar()->hwndToolbar, TB_GETSTATE, IDM_FIND_MATCH, 0);
     win->dm->textSearch->SetSensitive((state & TBSTATE_CHECKED) != 0);
-    Edit_SetModify(win->hwndFindBox, TRUE);
+    Edit_SetModify(win->toolBar()->hwndFindBox, TRUE);
 }
 
 void OnMenuFindSel(WindowInfo *win, TextSearchDirection direction)
@@ -131,9 +133,9 @@ void OnMenuFindSel(WindowInfo *win, TextSearchDirection direction)
     if (str::IsEmpty(selection.Get()))
         return;
 
-    win::SetText(win->hwndFindBox, selection);
+    win::SetText(win->toolBar()->hwndFindBox, selection);
     AbortFinding(win); // cancel FAYT
-    Edit_SetModify(win->hwndFindBox, FALSE);
+    Edit_SetModify(win->toolBar()->hwndFindBox, FALSE);
     win->dm->textSearch->SetLastResult(win->dm->textSelection);
 
     FindTextOnThread(win, direction);
@@ -207,17 +209,17 @@ struct FindThreadData : public ProgressUpdateUI {
             win->notifications->Add(wnd, NG_FIND_PROGRESS);
         }
 
-        SendMessage(win->hwndToolbar, TB_ENABLEBUTTON, IDM_FIND_PREV, disable);
-        SendMessage(win->hwndToolbar, TB_ENABLEBUTTON, IDM_FIND_NEXT, disable);
-        SendMessage(win->hwndToolbar, TB_ENABLEBUTTON, IDM_FIND_MATCH, disable);
+        SendMessage(win->toolBar()->hwndToolbar, TB_ENABLEBUTTON, IDM_FIND_PREV, disable);
+        SendMessage(win->toolBar()->hwndToolbar, TB_ENABLEBUTTON, IDM_FIND_NEXT, disable);
+        SendMessage(win->toolBar()->hwndToolbar, TB_ENABLEBUTTON, IDM_FIND_MATCH, disable);
     }
 
     void HideUI(bool success, bool loopedAround) {
         LPARAM enable = (LPARAM)MAKELONG(1, 0);
 
-        SendMessage(win->hwndToolbar, TB_ENABLEBUTTON, IDM_FIND_PREV, enable);
-        SendMessage(win->hwndToolbar, TB_ENABLEBUTTON, IDM_FIND_NEXT, enable);
-        SendMessage(win->hwndToolbar, TB_ENABLEBUTTON, IDM_FIND_MATCH, enable);
+        SendMessage(win->toolBar()->hwndToolbar, TB_ENABLEBUTTON, IDM_FIND_PREV, enable);
+        SendMessage(win->toolBar()->hwndToolbar, TB_ENABLEBUTTON, IDM_FIND_NEXT, enable);
+        SendMessage(win->toolBar()->hwndToolbar, TB_ENABLEBUTTON, IDM_FIND_MATCH, enable);
 
         if (!win->notifications->Contains(wnd))
             /* our notification has been replaced or closed (or never created) */;
@@ -338,8 +340,8 @@ void FindTextOnThread(WindowInfo* win, TextSearchDirection direction, bool FAYT)
 {
     AbortFinding(win, true);
 
-    FindThreadData *ftd = new FindThreadData(*win, direction, win->hwndFindBox);
-    Edit_SetModify(win->hwndFindBox, FALSE);
+    FindThreadData *ftd = new FindThreadData(*win, direction, win->toolBar()->hwndFindBox);
+    Edit_SetModify(win->toolBar()->hwndFindBox, FALSE);
 
     if (str::IsEmpty(ftd->text.Get())) {
         delete ftd;

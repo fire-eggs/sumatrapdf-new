@@ -649,6 +649,8 @@ bool IsUIRightToLeft()
 // depending on the currently used language (cf. IsUIRightToLeft)
 static void UpdateWindowRtlLayout(WindowInfo *win)
 {
+	ToolbarInfo *toolBar = win->toolBar();
+
     bool isRTL = IsUIRightToLeft();
     bool wasRTL = (GetWindowLong(win->hwndFrame, GWL_EXSTYLE) & WS_EX_LAYOUTRTL) != 0;
     if (wasRTL == isRTL)
@@ -670,11 +672,11 @@ static void UpdateWindowRtlLayout(WindowInfo *win)
     ToggleWindowStyle(favBoxTitle, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
     ToggleWindowStyle(win->hwndFavTree, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
 
-    ToggleWindowStyle(win->hwndReBar, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
-    ToggleWindowStyle(win->hwndToolbar, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
-    ToggleWindowStyle(win->hwndFindBox, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
-    ToggleWindowStyle(win->hwndFindText, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
-    ToggleWindowStyle(win->hwndPageText, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
+    ToggleWindowStyle(toolBar->hwndReBar, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
+    ToggleWindowStyle(toolBar->hwndToolbar, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
+    ToggleWindowStyle(toolBar->hwndFindBox, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
+    ToggleWindowStyle(toolBar->hwndFindText, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
+    ToggleWindowStyle(toolBar->hwndPageText, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
 
     win->notifications->Relayout();
 
@@ -1132,7 +1134,7 @@ Error:
     }
     if (win->IsDocLoaded()) {
         bool enable = !win->dm->engine || !win->dm->engine->HasPageLabels();
-        ToggleWindowStyle(win->hwndPageBox, ES_NUMBER, enable);
+        ToggleWindowStyle(win->toolBar()->hwndPageBox, ES_NUMBER, enable);
         // if the window isn't shown and win.canvasRc is still empty, zoom
         // has not been determined yet
         assert(!args.showWin || !win->canvasRc.IsEmpty() || win->IsChm());
@@ -1518,7 +1520,7 @@ static void DeleteWindowInfo(WindowInfo *win)
     DeletePropertiesWindow(win->hwndFrame);
     gWindows.Remove(win);
 
-    ImageList_Destroy((HIMAGELIST)SendMessage(win->hwndToolbar, TB_GETIMAGELIST, 0, 0));
+    ImageList_Destroy((HIMAGELIST)SendMessage(win->toolBar()->hwndToolbar, TB_GETIMAGELIST, 0, 0));
     DragAcceptFiles(win->hwndCanvas, FALSE);
 
     AbortFinding(win);
@@ -1779,7 +1781,7 @@ void WindowInfo::PageNoChanged(int pageNo)
 
     if (INVALID_PAGE_NO != pageNo) {
         ScopedMem<WCHAR> buf(dm->engine->GetPageLabel(pageNo));
-        win::SetText(hwndPageBox, buf);
+        win::SetText(toolBar()->hwndPageBox, buf);
         ToolbarUpdateStateForWindow(this, false);
         if (dm->engine && dm->engine->HasPageLabels())
             UpdateToolbarPageText(this, dm->PageCount(), true);
@@ -3390,8 +3392,8 @@ static void FrameOnSize(WindowInfo* win, int dx, int dy)
 {
     int rebBarDy = 0;
     if (gGlobalPrefs.toolbarVisible && !(win->presentation || win->fullScreen)) {
-        SetWindowPos(win->hwndReBar, NULL, 0, 0, dx, 0, SWP_NOZORDER);
-        rebBarDy = WindowRect(win->hwndReBar).dy;
+        SetWindowPos(win->toolBar()->hwndReBar, NULL, 0, 0, dx, 0, SWP_NOZORDER);
+        rebBarDy = WindowRect(win->toolBar()->hwndReBar).dy;
     }
 
     bool tocVisible = win->tocLoaded && win->tocVisible;
@@ -3542,7 +3544,7 @@ static void OnMenuGoToPage(WindowInfo& win)
 
     // Don't show a dialog if we don't have to - use the Toolbar instead
     if (gGlobalPrefs.toolbarVisible && !win.fullScreen && !win.presentation) {
-        FocusPageNoEdit(win.hwndPageBox);
+        FocusPageNoEdit(win.toolBar()->hwndPageBox);
         return;
     }
 
@@ -3603,7 +3605,7 @@ static void EnterFullscreen(WindowInfo& win, bool presentation)
     RectI rect = GetFullscreenRect(win.hwndFrame);
 
     SetMenu(win.hwndFrame, NULL);
-    ShowWindow(win.hwndReBar, SW_HIDE);
+    ShowWindow(win.toolBar()->hwndReBar, SW_HIDE);
 
     SetWindowLong(win.hwndFrame, GWL_STYLE, ws);
     SetWindowPos(win.hwndFrame, NULL, rect.x, rect.y, rect.dx, rect.dy, SWP_FRAMECHANGED | SWP_NOZORDER);
@@ -3640,7 +3642,7 @@ static void ExitFullscreen(WindowInfo& win)
         SetSidebarVisibility(&win, tocVisible, gGlobalPrefs.favVisible);
 
     if (gGlobalPrefs.toolbarVisible)
-        ShowWindow(win.hwndReBar, SW_SHOW);
+        ShowWindow(win.toolBar()->hwndReBar, SW_SHOW);
     SetMenu(win.hwndFrame, win.menu);
 
     SetWindowLong(win.hwndFrame, GWL_STYLE, win.prevStyle);
@@ -3681,8 +3683,8 @@ void AdvanceFocus(WindowInfo* win)
         bool isAvailable;
     } tabOrder[] = {
         { win->hwndFrame,   true                                },
-        { win->hwndPageBox, hasToolbar                          },
-        { win->hwndFindBox, hasToolbar && NeedsFindUI(win)      },
+        { win->toolBar()->hwndPageBox, hasToolbar                          },
+        { win->toolBar()->hwndFindBox, hasToolbar && NeedsFindUI(win)      },
         { win->hwndTocTree, win->tocLoaded && win->tocVisible   },
         { win->hwndFavTree, gGlobalPrefs.favVisible             },
     };
@@ -4020,7 +4022,7 @@ static void ResizeSidebar(WindowInfo *win)
     int y = 0;
     int totalDy = rFrame.dy;
     if (gGlobalPrefs.toolbarVisible && !win->fullScreen && !win->presentation)
-        y = WindowRect(win->hwndReBar).dy;
+        y = WindowRect(win->toolBar()->hwndReBar).dy;
     totalDy -= y;
 
     // rToc.y is always 0, as rToc is a ClientRect, so we first have
@@ -4062,7 +4064,7 @@ static void ResizeFav(WindowInfo *win)
     int y = 0;
     int totalDy = rFrame.dy;
     if (gGlobalPrefs.toolbarVisible && !win->fullScreen && !win->presentation)
-        y = WindowRect(win->hwndReBar).dy;
+        y = WindowRect(win->toolBar()->hwndReBar).dy;
     totalDy -= y;
 
     // rToc.y is always 0, as rToc is a ClientRect, so we first have
@@ -4224,7 +4226,7 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible)
     ClientRect rFrame(win->hwndFrame);
     int toolbarDy = 0;
     if (gGlobalPrefs.toolbarVisible && !win->fullScreen && !win->presentation)
-        toolbarDy = WindowRect(win->hwndReBar).dy;
+        toolbarDy = WindowRect(win->toolBar()->hwndReBar).dy;
     int dy = rFrame.dy - toolbarDy;
 
     if (!sidebarVisible) {
@@ -5155,7 +5157,7 @@ static LRESULT FrameOnCommand(WindowInfo *win, HWND hwnd, UINT msg, WPARAM wPara
 
         case IDM_COPY_SELECTION:
             // Don't break the shortcut for text boxes
-            if (win->hwndFindBox == GetFocus() || win->hwndPageBox == GetFocus())
+            if (win->toolBar()->hwndFindBox == GetFocus() || win->toolBar()->hwndPageBox == GetFocus())
                 SendMessage(GetFocus(), WM_COPY, 0, 0);
             else if (!HasPermission(Perm_CopySelection))
                 break;
