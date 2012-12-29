@@ -17,9 +17,9 @@
 #include "WinUtil.h"
 
 TopWindowInfo::TopWindowInfo(HWND hwnd) :
-    hwndFrame(hwnd), panel(NULL)
+    hwndFrame(hwnd), panel(NULL), toolBar(NULL), sideBar(NULL)
 {
-
+    dpi = win::GetHwndDpi(hwndFrame, &uiDPIFactor);
 }
 
 TopWindowInfo::~TopWindowInfo()
@@ -29,7 +29,8 @@ TopWindowInfo::~TopWindowInfo()
 
 ContainerInfo::ContainerInfo(HWND hwnd) :
     hwndContainer(hwnd),
-    panel(NULL), container1(NULL), container2(NULL), parentContainer(NULL),
+    parentContainer(NULL), container1(NULL), container2(NULL),
+    panel(NULL),
     hwndSplitter(NULL), isSplitVertical(true)
 {
 
@@ -41,7 +42,7 @@ ContainerInfo::~ContainerInfo()
 }
 
 PanelInfo::PanelInfo(HWND hwnd) :
-    hwndPanel(hwnd), container(NULL), win(NULL)
+    hwndPanel(hwnd), WIN(NULL), container(NULL), win(NULL), toolBar(NULL), sideBar(NULL)
 {
 
 }
@@ -52,7 +53,7 @@ PanelInfo::~PanelInfo()
 }
 
 WindowInfo::WindowInfo(HWND hwnd) :
-    WIN(NULL), container(NULL), panel(NULL),
+    panel(NULL),
     dm(NULL), menu(NULL), hwndFrame(NULL),
     linkOnLastButtonDown(NULL), url(NULL), selectionOnPage(NULL),
     tocLoaded(false), tocVisible(false), tocRoot(NULL), tocKeepSelection(false),
@@ -75,7 +76,6 @@ WindowInfo::WindowInfo(HWND hwnd) :
 {
     ZeroMemory(&selectionRect, sizeof(selectionRect));
 
-    dpi = win::GetHwndDpi(hwndFrame, &uiDPIFactor);
     touchState.panStarted = false;
     buffer = new DoubleBuffer(hwndCanvas, canvasRc);
     linkHandler = new LinkHandler(*this);
@@ -101,6 +101,15 @@ WindowInfo::~WindowInfo()
     delete dm;
 
     free(loadedFilePath);
+}
+
+ToolbarInfo * WindowInfo::toolBar() const
+{
+    // One can improve this after introducing gGlobalPrefs.ToolbarForEachPanel.
+    ToolbarInfo * toolBar = this->panel->WIN->toolBar;
+    if (toolBar == NULL)
+        toolBar = this->panel->toolBar;
+    return toolBar;
 }
 
 // Notify both display model and double-buffer (if they exist)
@@ -219,6 +228,28 @@ void WindowInfo::FocusFrame(bool always)
 {
     if (always || !FindWindowInfoByHwnd(GetFocus()))
         SetFocus(hwndFrame);
+}
+
+ToolbarInfo::ToolbarInfo(HWND hwnd) :
+    win(NULL), hwndReBar(hwnd)
+{
+
+}
+
+ToolbarInfo::~ToolbarInfo()
+{
+
+}
+
+SidebarInfo::SidebarInfo(HWND hwnd) :
+    hwndTocBox(NULL)
+{
+
+}
+
+SidebarInfo::~SidebarInfo()
+{
+
 }
 
 BaseEngine *LinkHandler::engine() const

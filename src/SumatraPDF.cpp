@@ -1026,7 +1026,7 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
     }
     */
     if (win->dm) {
-        win->dm->SetInitialViewSettings(displayMode, startPage, win->GetViewPortSize(), win->dpi);
+        win->dm->SetInitialViewSettings(displayMode, startPage, win->GetViewPortSize(), win->panel->WIN->dpi);
         if (engineType == Engine_ComicBook)
             win->dm->SetDisplayR2L(gGlobalPrefs.cbxR2L);
         if (prevModel && str::Eq(win->dm->FilePath(), prevModel->FilePath())) {
@@ -1309,9 +1309,9 @@ static WindowInfo* CreateWindowInfo()
     ContainerInfo *container = new ContainerInfo(hwndContainer);
     WIN->gContainer.Append(container);
 
+    ////container->parentContainer = NULL;
     ////container->container1 = NULL;
     ////container->container2 = NULL;
-    ////container->parentContainer = NULL;
 
     PanelInfo *panel = new PanelInfo(hwndPanel);
     WIN->gPanel.Append(panel);
@@ -1322,10 +1322,9 @@ static WindowInfo* CreateWindowInfo()
 
     WindowInfo *win = new WindowInfo(hwndCanvas);
     panel->gWin.Append(win);
+    panel->WIN = WIN;
     panel->win = win;
 
-    win->WIN = WIN;
-    win->container = container;
     win->panel = panel;
     win->hwndFrame = hwndFrame;
 
@@ -1350,7 +1349,8 @@ static WindowInfo* CreateWindowInfo()
         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
         win->hwndCanvas, NULL, ghinst, NULL);
 
-    CreateToolbar(win);
+    // One needs to use gGlobalPrefs.ToolbarForEachPanel to determine WIN or panel.
+    CreateToolbar(WinInfo::Make(WIN));
     CreateSidebar(win);
     UpdateFindbox(win);
     if (HasPermission(Perm_DiskAccess) && !gPluginMode)
@@ -1369,10 +1369,10 @@ static WindowInfo* CreateWindowInfo()
 
 static WindowInfo* CreatePanel(ContainerInfo *container)
 {
-    TopWindowInfo *WIN = container->panel->win->WIN;
-
     if (container->panel == NULL)
         return NULL;
+
+    TopWindowInfo *WIN = container->panel->WIN;
 
     int dx = ClientRect(container->hwndContainer).dx;
     int dy = ClientRect(container->hwndContainer).dy;
@@ -1443,16 +1443,13 @@ static WindowInfo* CreatePanel(ContainerInfo *container)
     container->panel = NULL;
 
     container1->panel->container = container1;
+    panel->WIN = WIN;
     panel->container= container2;
 
     WindowInfo *win = new WindowInfo(hwndCanvas);
     panel->gWin.Append(win);
     panel->win = win;
 
-    win->WIN = WIN;
-    container1->panel->win->container = container1;
-    win->container = container2;
-    // container1->panel->win->panel = container1->panel;
     win->panel = panel;
     win->hwndFrame = WIN->hwndFrame;
 
@@ -1479,7 +1476,8 @@ static WindowInfo* CreatePanel(ContainerInfo *container)
         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
         win->hwndCanvas, NULL, ghinst, NULL);
 
-    CreateToolbar(win);
+    // Need to consider 2 cases.
+    CreateToolbar(WinInfo::Make(WIN));
     CreateSidebar(win);
     UpdateFindbox(win);
     if (HasPermission(Perm_DiskAccess) && !gPluginMode)
@@ -2236,7 +2234,7 @@ static void DrawDocument(WindowInfo& win, HDC hdc, RECT *rcArea)
         HDC bmpDC = CreateCompatibleDC(hdc);
         if (bmpDC) {
             SelectObject(bmpDC, gBitmapReloadingCue);
-            int size = (int)(16 * win.uiDPIFactor);
+            int size = (int)(16 * win.panel->WIN->uiDPIFactor);
             int cx = min(bounds.dx, 2 * size), cy = min(bounds.dy, 2 * size);
             StretchBlt(hdc, bounds.x + bounds.dx - min((cx + size) / 2, cx),
                 bounds.y + max((cy - size) / 2, 0), min(cx, size), min(cy, size),
@@ -3400,7 +3398,7 @@ static void FrameOnSize(WindowInfo* win, int dx, int dy)
     if (tocVisible || gGlobalPrefs.favVisible)
         SetSidebarVisibility(win, tocVisible, gGlobalPrefs.favVisible);
     else
-        SetWindowPos(win->WIN->gContainer.At(0)->hwndContainer, NULL, 0, rebBarDy, dx, dy - rebBarDy, SWP_NOZORDER);
+        SetWindowPos(win->panel->WIN->gContainer.At(0)->hwndContainer, NULL, 0, rebBarDy, dx, dy - rebBarDy, SWP_NOZORDER);
 
     if (win->presentation || win->fullScreen) {
         RectI fullscreen = GetFullscreenRect(win->hwndFrame);
@@ -4147,7 +4145,7 @@ void LayoutTreeContainer(HWND hwndContainer, int id)
 
     WindowInfo *win = FindWindowInfoByHwnd(hwndContainer);
     assert(win);
-    int offset = win ? (int)(2 * win->uiDPIFactor) : 2;
+    int offset = win ? (int)(2 * win->panel->WIN->uiDPIFactor) : 2;
     if (size.dy < 16)
         size.dy = 16;
     size.dy += 2 * offset;

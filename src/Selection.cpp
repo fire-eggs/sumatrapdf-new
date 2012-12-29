@@ -302,23 +302,23 @@ void OnSelectAll(WindowInfo *win, bool textOnly)
 
 bool NeedsSelectionEdgeAutoscroll(WindowInfo *win, int x, int y)
 {
-    return x < SELECT_AUTOSCROLL_AREA_WIDTH * win->uiDPIFactor ||
-           x > (win->canvasRc.dx - SELECT_AUTOSCROLL_AREA_WIDTH) * win->uiDPIFactor ||
-           y < SELECT_AUTOSCROLL_AREA_WIDTH * win->uiDPIFactor ||
-           y > (win->canvasRc.dy - SELECT_AUTOSCROLL_AREA_WIDTH) * win->uiDPIFactor;
+    return x < SELECT_AUTOSCROLL_AREA_WIDTH * win->panel->WIN->uiDPIFactor ||
+           x > (win->canvasRc.dx - SELECT_AUTOSCROLL_AREA_WIDTH) * win->panel->WIN->uiDPIFactor ||
+           y < SELECT_AUTOSCROLL_AREA_WIDTH * win->panel->WIN->uiDPIFactor ||
+           y > (win->canvasRc.dy - SELECT_AUTOSCROLL_AREA_WIDTH) * win->panel->WIN->uiDPIFactor;
 }
 
 void OnSelectionEdgeAutoscroll(WindowInfo *win, int x, int y)
 {
     int dx = 0, dy = 0;
 
-    if (x < SELECT_AUTOSCROLL_AREA_WIDTH * win->uiDPIFactor)
+    if (x < SELECT_AUTOSCROLL_AREA_WIDTH * win->panel->WIN->uiDPIFactor)
         dx = -SELECT_AUTOSCROLL_STEP_LENGTH;
-    else if (x > (win->canvasRc.dx - SELECT_AUTOSCROLL_AREA_WIDTH) * win->uiDPIFactor)
+    else if (x > (win->canvasRc.dx - SELECT_AUTOSCROLL_AREA_WIDTH) * win->panel->WIN->uiDPIFactor)
         dx = SELECT_AUTOSCROLL_STEP_LENGTH;
-    if (y < SELECT_AUTOSCROLL_AREA_WIDTH * win->uiDPIFactor)
+    if (y < SELECT_AUTOSCROLL_AREA_WIDTH * win->panel->WIN->uiDPIFactor)
         dy = -SELECT_AUTOSCROLL_STEP_LENGTH;
-    else if (y > (win->canvasRc.dy - SELECT_AUTOSCROLL_AREA_WIDTH) * win->uiDPIFactor)
+    else if (y > (win->canvasRc.dy - SELECT_AUTOSCROLL_AREA_WIDTH) * win->panel->WIN->uiDPIFactor)
         dy = SELECT_AUTOSCROLL_STEP_LENGTH;
 
     CrashIf(NeedsSelectionEdgeAutoscroll(win, x, y) != (dx != 0 || dy != 0));

@@ -5,8 +5,10 @@
 #define Toolbar_h
 
 class WindowInfo;
+struct WinInfo;
+class ToolbarInfo;
 
-void CreateToolbar(WindowInfo *win);
+void CreateToolbar(WinInfo& winInfo);
 void ToolbarUpdateStateForWindow(WindowInfo *win, bool showHide);
 void UpdateToolbarButtonsToolTipsForWindow(WindowInfo *win);
 void UpdateToolbarFindText(WindowInfo *win);

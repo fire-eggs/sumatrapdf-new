@@ -9,6 +9,8 @@
 class ContainerInfo;
 class PanelInfo;
 class WindowInfo;
+class ToolbarInfo;
+class SidebarInfo;
 
 class FileWatcher;
 class Synchronizer;
@@ -70,6 +72,12 @@ public:
 
     Vec<PanelInfo *> gPanel; // Record the panels in a top window.
     PanelInfo *     panel; // Indicate which panel in a TopWindow is currently active.
+
+    ToolbarInfo *   toolBar;
+    SidebarInfo *   sideBar;
+
+    int             dpi;
+    float           uiDPIFactor;
 };
 
 /* */
@@ -81,11 +89,12 @@ public:
 
     HWND            hwndContainer;
 
-    PanelInfo *     panel;
+    ContainerInfo * parentContainer; // Need?
 
     ContainerInfo * container1;
     ContainerInfo * container2;
-    ContainerInfo * parentContainer;
+
+    PanelInfo *     panel;
 
     HWND            hwndSplitter;
 
@@ -104,10 +113,14 @@ public:
 
     HWND            hwndPanel;
 
+    TopWindowInfo * WIN; // Need?
     ContainerInfo * container; // Need?
 
     Vec<WindowInfo *> gWin; // Record the (tabbed) documents in a panel.
     WindowInfo *    win; // Indicate which document (tab page) in a panel is currently viewed.
+
+    ToolbarInfo *   toolBar;
+    SidebarInfo *   sideBar; 
 };
 
 /* Describes information related to one window with (optional) a document
@@ -127,8 +140,6 @@ public:
     bool IsChm() const { return dm && dm->engineType == Engine_Chm; }
     bool IsNotPdf() const { return dm && dm->engineType != Engine_PDF; }
 
-    TopWindowInfo * WIN; // Need? // Use WIN in win will reduce a lot of (redundant) code.
-    ContainerInfo * container; // Need?
     PanelInfo *     panel; // Need?
 
     WCHAR *         loadedFilePath;
@@ -172,9 +183,6 @@ public:
 
     bool            infotipVisible;
     HMENU           menu;
-
-    int             dpi;
-    float           uiDPIFactor;
 
     DoubleBuffer *  buffer;
 
@@ -255,6 +263,7 @@ public:
 
     TouchState touchState;
 
+    ToolbarInfo * toolBar() const; // For functions like UpdateToolbarPageText(win), one needs "win to toolBar" to get hwnd.
     void  UpdateCanvasSize();
     SizeI GetViewPortSize();
     void  RedrawAll(bool update=false);
@@ -285,6 +294,114 @@ public:
     virtual void UpdateScrollbars(SizeI canvas);
     virtual void RenderPage(int pageNo);
     virtual void CleanUp(DisplayModel *dm);
+};
+
+class ToolbarInfo
+{
+public:
+    ToolbarInfo(HWND hwnd);
+    ~ToolbarInfo();
+
+    WindowInfo *    win; // When one deals with PageBox...etc, one needs "toolBar to win". It should be updated when switching between documents.
+
+    HWND            hwndReBar;
+    HWND            hwndToolbar;
+    HWND            hwndFindText;
+    HWND            hwndFindBox;
+    HWND            hwndFindBg;
+    HWND            hwndPageText;
+    HWND            hwndPageBox;
+    HWND            hwndPageBg;
+    HWND            hwndPageTotal;
+};
+
+class SidebarInfo
+{
+public:
+    SidebarInfo(HWND hwnd);
+    ~SidebarInfo();
+
+    // state related to table of contents (PDF bookmarks etc.)
+    HWND            hwndTocBox;
+    HWND            hwndTocTree;
+    bool            tocLoaded;
+    bool            tocVisible;
+    // set to temporarily disable UpdateTocSelection
+    bool            tocKeepSelection;
+    // an array of ids for ToC items that have been expanded/collapsed by user
+    Vec<int>        tocState;
+    DocTocItem *    tocRoot;
+
+    // state related to favorites
+    HWND            hwndFavBox;
+    HWND            hwndFavTree;
+    WStrVec         expandedFavorites;
+
+    // vertical splitter for resizing left side panel
+    HWND            hwndSidebarSplitter;
+
+    // horizontal splitter for resizing favorites and bookmars parts
+    HWND            hwndFavSplitter;
+};
+
+struct WinInfo {
+
+    TopWindowInfo *AsWIN() const { return (type == Frame) ? WINInfo : NULL; }
+    PanelInfo *AsPanel() const { return (type == Panel) ? panelInfo : NULL; }
+
+    static WinInfo Make(TopWindowInfo *WIN) {
+        WinInfo w; w.type = Frame; w.WINInfo = WIN;
+        return w;
+    }
+
+    static WinInfo Make(PanelInfo *panel) {
+        WinInfo w; w.type = Panel; w.panelInfo = panel;
+        return w;
+    }
+
+    void AssignToolbaInfo() {
+        if (type == Frame)
+            WINInfo->toolBar = toolBar;
+        else if (type == Panel)
+            panelInfo->toolBar = toolBar;
+    }
+
+    // This is used to determine the correct hwnd which will be the parent of those will be created later.
+    HWND Hwnd() const {
+        if (type == Frame)
+            return WINInfo->hwndFrame;
+        else if (type == Panel)
+            return panelInfo->hwndPanel;
+        else
+            return NULL;
+    }
+
+    // This is used in CreateToolbar(WinInfo&);
+    TopWindowInfo *WIN() const {
+        if (type == Frame)
+            return WINInfo;
+        else if (type == Panel)
+            return panelInfo->WIN;
+        else
+            return NULL;
+    }
+
+    bool isWIN() const {
+        if (type == Frame)
+            return true;
+        return false;
+    }
+
+    ToolbarInfo *toolBar;
+    SidebarInfo *sideBar;
+
+private:
+    enum Type { Frame, Panel };
+    Type type;
+    union {
+        TopWindowInfo *WINInfo;
+        PanelInfo *panelInfo;
+    };
 };
 
 class LinkHandler {

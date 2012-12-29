@@ -619,8 +619,8 @@ void DrawStartPage(WindowInfo& win, HDC hdc, FileHistory& fileHistory, COLORREF 
             }
             DisplayState *state = list.At(h * width + w);
 
-            RectI page(offset.x + w * (int)(THUMBNAIL_DX + DOCLIST_MARGIN_BETWEEN_X * win.uiDPIFactor),
-                       offset.y + h * (int)(THUMBNAIL_DY + DOCLIST_MARGIN_BETWEEN_Y * win.uiDPIFactor),
+            RectI page(offset.x + w * (int)(THUMBNAIL_DX + DOCLIST_MARGIN_BETWEEN_X * win.panel->WIN->uiDPIFactor),
+                       offset.y + h * (int)(THUMBNAIL_DY + DOCLIST_MARGIN_BETWEEN_Y * win.panel->WIN->uiDPIFactor),
                        THUMBNAIL_DX, THUMBNAIL_DY);
             if (isRtl)
                 page.x = rc.dx - page.x - page.dx;
@@ -644,7 +644,7 @@ void DrawStartPage(WindowInfo& win, HDC hdc, FileHistory& fileHistory, COLORREF 
             }
             RoundRect(hdc, page.x, page.y, page.x + page.dx, page.y + page.dy, 10, 10);
 
-            int iconSpace = (int)(20 * win.uiDPIFactor);
+            int iconSpace = (int)(20 * win.panel->WIN->uiDPIFactor);
             RectI rect(page.x + iconSpace, page.y + page.dy + 3, page.dx - iconSpace, iconSpace);
             if (isRtl)
                 rect.x -= iconSpace;
@@ -653,7 +653,7 @@ void DrawStartPage(WindowInfo& win, HDC hdc, FileHistory& fileHistory, COLORREF 
             SHFILEINFO sfi;
             HIMAGELIST himl = (HIMAGELIST)SHGetFileInfo(state->filePath, 0, &sfi, sizeof(sfi), SHGFI_SYSICONINDEX | SHGFI_SMALLICON | SHGFI_USEFILEATTRIBUTES);
             ImageList_Draw(himl, sfi.iIcon, hdc,
-                           isRtl ? page.x + page.dx - (int)(16 * win.uiDPIFactor) : page.x,
+                           isRtl ? page.x + page.dx - (int)(16 * win.panel->WIN->uiDPIFactor) : page.x,
                            rect.y, ILD_TRANSPARENT);
 
             win.staticLinks.Append(StaticLinkInfo(rect.Union(page), state->filePath, state->filePath));
