@@ -147,15 +147,6 @@ public:
 
     HWND            hwndFrame;
     HWND            hwndCanvas;
-    HWND            hwndToolbar;
-    HWND            hwndReBar;
-    HWND            hwndFindText;
-    HWND            hwndFindBox;
-    HWND            hwndFindBg;
-    HWND            hwndPageText;
-    HWND            hwndPageBox;
-    HWND            hwndPageBg;
-    HWND            hwndPageTotal;
 
     // state related to table of contents (PDF bookmarks etc.)
     HWND            hwndTocBox;
