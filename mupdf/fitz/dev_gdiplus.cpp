@@ -14,6 +14,9 @@ extern "C" {
 #include FT_ADVANCES_H
 }
 
+// define the following to output intermediary rendering stages to files
+#undef DUMP_BITMAP_STEPS
+
 using namespace Gdiplus;
 
 static ULONG_PTR g_gdiplusToken;
@@ -42,7 +45,7 @@ class PixmapBitmap : public Bitmap
 
 public:
 	PixmapBitmap(fz_context *ctx, fz_pixmap *pixmap) : Bitmap(pixmap->w, pixmap->h,
-		pixmap->has_alpha ? PixelFormat32bppARGB :
+		pixmap->has_alpha ? PixelFormat32bppPARGB:
 		pixmap->colorspace != fz_device_gray ? PixelFormat24bppRGB :
 		pixmap->single_bit ? PixelFormat1bppIndexed : PixelFormat8bppIndexed),
 		palette(NULL), ctx(ctx)
@@ -244,6 +247,32 @@ gdiplus_transform_point(fz_matrix ctm, float x, float y)
 
 inline BYTE BlendScreen(BYTE s, BYTE bg) { return 255 - (255 - s) * (255 - bg) / 255; }
 
+#ifdef DUMP_BITMAP_STEPS
+static void
+fz_dump_bitmap(fz_context *ctx, Bitmap *bmp, const char *msg)
+{
+	static int count = 1;
+	
+	CLSID clsid;
+	UINT numEncoders, size;
+	GetImageEncodersSize(&numEncoders, &size);
+	ImageCodecInfo *codecInfo = (ImageCodecInfo *)fz_malloc(ctx, size);
+	GetImageEncoders(numEncoders, size, codecInfo);
+	for (UINT j = 0; j < numEncoders; j++)
+		if (!wcscmp(codecInfo[j].MimeType, L"image/png"))
+			clsid = codecInfo[j].Clsid;
+	fz_free(ctx, codecInfo);
+	
+	WCHAR filename[MAX_PATH];
+	_snwprintf(filename, nelem(filename), L"gdump%03d - %S.png", count, msg);
+	filename[MAX_PATH - 1] = '\0';
+	printf("%03d: %s (%dx%d)\n", count, msg, bmp->GetWidth(), bmp->GetHeight());
+	count++;
+	
+	bmp->Save(filename, &clsid);
+}
+#endif
+
 class userData
 {
 	userDataStackItem *stack;
@@ -341,7 +370,7 @@ public:
 		stack->bounds.Y = floorf(bounds.Y); stack->bounds.Height = ceilf(bounds.Height) + 1;
 		
 		stack->saveG = graphics;
-		stack->layer = new Bitmap(stack->bounds.Width, stack->bounds.Height, PixelFormat32bppARGB);
+		stack->layer = new Bitmap(stack->bounds.Width, stack->bounds.Height, PixelFormat32bppPARGB);
 		graphics = _setup(new Graphics(stack->layer));
 		graphics->TranslateTransform(-stack->bounds.X, -stack->bounds.Y);
 		graphics->SetClip(&Region(stack->bounds));
@@ -349,7 +378,7 @@ public:
 		if (mask)
 		{
 			assert(mask->n == 1 && !mask->colorspace);
-			stack->mask = new Bitmap(stack->bounds.Width, stack->bounds.Height, PixelFormat32bppARGB);
+			stack->mask = new Bitmap(stack->bounds.Width, stack->bounds.Height, PixelFormat32bppPARGB);
 			
 			Graphics g2(stack->mask);
 			_setup(&g2);
@@ -383,7 +412,7 @@ public:
 	{
 		assert(stack->layer && !stack->mask);
 		stack->mask = stack->layer;
-		stack->layer = new Bitmap(stack->bounds.Width, stack->bounds.Height, PixelFormat32bppARGB);
+		stack->layer = new Bitmap(stack->bounds.Width, stack->bounds.Height, PixelFormat32bppPARGB);
 		delete graphics;
 		graphics = _setup(new Graphics(stack->layer));
 		graphics->TranslateTransform(-stack->bounds.X, -stack->bounds.Y);
@@ -399,7 +428,7 @@ public:
 		stack->bounds.Y = bbox.y0; stack->bounds.Height = bbox.y1 - bbox.y0;
 		
 		stack->saveG = graphics;
-		stack->layer = new Bitmap(stack->bounds.Width, stack->bounds.Height, PixelFormat32bppARGB);
+		stack->layer = new Bitmap(stack->bounds.Width, stack->bounds.Height, PixelFormat32bppPARGB);
 		graphics = _setup(new Graphics(stack->layer));
 		graphics->TranslateTransform(-stack->bounds.X, -stack->bounds.Y);
 		graphics->SetClip(&Region(stack->bounds));
@@ -426,6 +455,9 @@ public:
 	void applyTiling()
 	{
 		assert(stack->layer && stack->saveG && stack->xstep && stack->ystep);
+#ifdef DUMP_BITMAP_STEPS
+		dumpLayer("a single tile");
+#endif
 		
 		for (int y = stack->tileArea.y0; y < stack->tileArea.y1; y++)
 		{
@@ -445,6 +477,9 @@ public:
 		delete stack->layer;
 		stack->layer = NULL;
 		
+#ifdef DUMP_BITMAP_STEPS
+		dumpLayer("result of applyTiling", true);
+#endif
 		popClip();
 	}
 
@@ -455,20 +490,58 @@ public:
 			return;
 		
 		if (transparency && !stack->prev->prev)
+		{
+			// instead of blending onto the (white) background, blend onto
+			// a white layer so that blending for annotations works as expected
+			assert(stack->layer);
+#ifdef DUMP_BITMAP_STEPS
+			dumpLayer("before blending onto white background for annotations");
+#endif
+			Bitmap *whiteBg = new Bitmap(stack->layer->GetWidth(), stack->layer->GetHeight(), PixelFormat32bppPARGB);
+			delete graphics;
+			graphics = _setup(new Graphics(whiteBg));
+			graphics->Clear(Color::White);
+			graphics->DrawImage(stack->layer, stack->bounds, 0, 0, stack->layer->GetWidth(), stack->layer->GetHeight(), UnitPixel, &DrawImageAttributes(1.0f));
+			delete stack->layer;
+			stack->layer = whiteBg;
+#ifdef DUMP_BITMAP_STEPS
+			dumpLayer("after blending onto white background for annotations");
+#endif
 			return;
+		}
 		
 		assert(!stack->layer == !stack->saveG);
 		if (stack->layer)
 		{
+#ifdef DUMP_BITMAP_STEPS
+			dumpLayer("layer at start of popClip");
+			dumpLayer(" background at start of popClip", true);
+#endif
 			delete graphics;
 			graphics = stack->saveG;
 			stack->saveG = NULL;
 			if (stack->mask)
+			{
+#ifdef DUMP_BITMAP_STEPS
+				fz_dump_bitmap(ctx, stack->mask, "  applying mask to layer");
+#endif
 				_applyMask(stack->layer, stack->mask, stack->luminosity);
+#ifdef DUMP_BITMAP_STEPS
+				dumpLayer("  result of _applyMask");
+#endif
+			}
 			int blendmode = stack->blendmode & FZ_BLEND_MODEMASK;
 			if (blendmode != 0)
+			{
 				_applyBlend(stack->layer, stack->bounds, blendmode);
+#ifdef DUMP_BITMAP_STEPS
+				dumpLayer("  applying blending to layer");
+#endif
+			}
 			graphics->DrawImage(stack->layer, stack->bounds, 0, 0, stack->layer->GetWidth(), stack->layer->GetHeight(), UnitPixel, &DrawImageAttributes(stack->layerAlpha));
+#ifdef DUMP_BITMAP_STEPS
+			dumpLayer(" result of popClip", true);
+#endif
 		}
 		
 		graphics->SetClip(&stack->clip);
@@ -488,6 +561,9 @@ public:
 			fz_warn(ctx, "layer stack item required for transfer functions");
 			return;
 		}
+#ifdef DUMP_BITMAP_STEPS
+		dumpLayer("layer before transfer function");
+#endif
 		
 		Bitmap *layer = fgStack->layer;
 		Rect bounds(0, 0, layer->GetWidth(), layer->GetHeight());
@@ -503,19 +579,23 @@ public:
 			{
 				for (int n = 0; n < 3; n++)
 					Scan0[col * 4 + n] = tr->function[2 - n][Scan0[col * 4 + n]];
-				if (for_mask)
+				if (for_mask && !stack->luminosity)
 					Scan0[col * 4 + 3] = tr->function[3][Scan0[col * 4 + 3]];
 			}
 		}
 		
 		layer->UnlockBits(&data);
+		
+#ifdef DUMP_BITMAP_STEPS
+		dumpLayer("layer after transfer function");
+#endif
 	}
 
 	void drawPixmap(fz_pixmap *image, fz_matrix ctm, float alpha=1.0, Graphics *graphics=NULL) const
 	{
 		if (!image->samples)
 			return;
-
+		
 		if (!graphics)
 		{
 			graphics = this->graphics;
@@ -564,10 +644,15 @@ public:
 			// TODO: why does this lead to subpar results when printing?
 			graphics->SetInterpolationMode(InterpolationModeNearestNeighbor);
 			graphics->DrawImage(&PixmapBitmap(ctx, image), corners, 3, 0, 0, image->w, image->h, UnitPixel, &DrawImageAttributes(alpha));
+#ifdef DUMP_BITMAP_STEPS
+			fz_dump_bitmap(ctx, &PixmapBitmap(ctx, image), "image to draw");
+#endif
 			graphics->Restore(state);
 		}
 		else if (scale < 1.0 && fz_mini(image->w, image->h) > 100 && !image->has_alpha)
 		{
+			fz_pixmap *scaledPixmap = NULL;
+			fz_var(scaledPixmap);
 			fz_try(ctx)
 			{
 				int w = floorf(image->w * scale + 0.5f);
@@ -577,9 +662,17 @@ public:
 					w = floorf(hypotf(corners[0].X - corners[1].X, corners[0].Y - corners[1].Y) + 0.5f);
 					h = floorf(hypotf(corners[0].X - corners[2].X, corners[0].Y - corners[2].Y) + 0.5f);
 				}
-				fz_pixmap *scaledPixmap = fz_scale_pixmap(ctx, image, 0, 0, w, h, NULL);
+				scaledPixmap = fz_scale_pixmap(ctx, image, 0, 0, w, h, NULL);
 				if (scaledPixmap)
+				{
 					graphics->DrawImage(&PixmapBitmap(ctx, scaledPixmap), corners, 3, 0, 0, w, h, UnitPixel, &DrawImageAttributes(alpha));
+#ifdef DUMP_BITMAP_STEPS
+					fz_dump_bitmap(ctx, &PixmapBitmap(ctx, scaledPixmap), "scaled image to draw");
+#endif
+				}
+			}
+			fz_always(ctx)
+			{
 				fz_drop_pixmap(ctx, scaledPixmap);
 			}
 			fz_catch(ctx) { }
@@ -587,7 +680,13 @@ public:
 		else
 		{
 			graphics->DrawImage(&PixmapBitmap(ctx, image), corners, 3, 0, 0, image->w, image->h, UnitPixel, &DrawImageAttributes(alpha));
+#ifdef DUMP_BITMAP_STEPS
+			fz_dump_bitmap(ctx, &PixmapBitmap(ctx, image), "image to draw");
+#endif
 		}
+#ifdef DUMP_BITMAP_STEPS
+		dumpLayer("result of drawPixmap");
+#endif
 	}
 
 	float getAlpha(float alpha=1.0) const { return stack->alpha * alpha; }
@@ -693,10 +792,10 @@ protected:
 		if (!bgStack || (group->blendmode & FZ_BLEND_ISOLATED))
 		{
 			if ((group->blendmode & FZ_BLEND_KNOCKOUT))
-				return new Bitmap(clipBounds.Width, clipBounds.Height, PixelFormat32bppARGB);
+				return new Bitmap(clipBounds.Width, clipBounds.Height, PixelFormat32bppPARGB);
 			
 			clipBounds.Offset(-group->bounds.X, -group->bounds.Y);
-			return group->layer->Clone(clipBounds, PixelFormat32bppARGB);
+			return group->layer->Clone(clipBounds, PixelFormat32bppPARGB);
 		}
 		
 		Bitmap *backdrop = _flattenBlendBackdrop(bgStack, clipBounds);
@@ -788,6 +887,18 @@ protected:
 		}
 		return true;
 	}
+
+#ifdef DUMP_BITMAP_STEPS
+public:
+	void dumpLayer(const char *msg, bool bgLayer=false) const
+	{
+		userDataStackItem *bgStack = bgLayer ? stack->prev : stack;
+		while (bgStack && !bgStack->layer)
+			bgStack = bgStack->prev;
+		if (bgStack)
+			fz_dump_bitmap(ctx, bgStack->layer, msg);
+	}
+#endif
 };
 
 static void
