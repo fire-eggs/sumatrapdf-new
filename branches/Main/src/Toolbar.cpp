@@ -556,8 +556,11 @@ static void CreatePageBox(ToolbarInfo* toolBar)
 #define WS_REBAR (WS_CHILD | WS_CLIPCHILDREN | WS_BORDER | RBS_VARHEIGHT | \
                   RBS_BANDBORDERS | CCS_NODIVIDER | CCS_NOPARENTALIGN)
 
-void CreateToolbar(WinInfo& winInfo)
+void CreateToolbar(WinInfo& winInfo, bool toolbarForEachPanel)
 {
+    if (winInfo.AsPanel() && !toolbarForEachPanel && (toolbarForEachPanel == gGlobalPrefs.toolbarForEachPanel))
+        return;
+
     TopWindowInfo *WIN = winInfo.WIN();
 
     HWND hwndToolbar = CreateWindowEx(0, TOOLBARCLASSNAME, NULL, WS_TOOLBAR,

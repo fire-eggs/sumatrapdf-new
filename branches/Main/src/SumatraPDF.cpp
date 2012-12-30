@@ -649,7 +649,7 @@ bool IsUIRightToLeft()
 // depending on the currently used language (cf. IsUIRightToLeft)
 static void UpdateWindowRtlLayout(WindowInfo *win)
 {
-	ToolbarInfo *toolBar = win->toolBar();
+    ToolbarInfo *toolBar = win->toolBar();
 
     bool isRTL = IsUIRightToLeft();
     bool wasRTL = (GetWindowLong(win->hwndFrame, GWL_EXSTYLE) & WS_EX_LAYOUTRTL) != 0;
@@ -1306,7 +1306,7 @@ static WindowInfo* CreateWindowInfo()
     assert(NULL == FindTopWindowInfoByHwnd(hwndFrame));
 
     TopWindowInfo *WIN = new TopWindowInfo(hwndFrame);
-    gWIN.Append(WIN);
+    // gWIN.Append(WIN); // We append this later so FrameOnSize is called only when everything is done.
 
     ContainerInfo *container = new ContainerInfo(hwndContainer);
     WIN->gContainer.Append(container);
@@ -1337,6 +1337,9 @@ static WindowInfo* CreateWindowInfo()
     win->menu = BuildMenu(win);
     SetMenu(win->hwndFrame, win->menu);
 
+    // At this point, it will call FrameOnSize, but now toolBar and sideBar are still NULL.
+    // We append WIN to gWIN later to avoid resize problem.
+
     ShowWindow(win->hwndCanvas, SW_SHOW);
     UpdateWindow(win->hwndCanvas);
 
@@ -1352,11 +1355,14 @@ static WindowInfo* CreateWindowInfo()
         win->hwndCanvas, NULL, ghinst, NULL);
 
     // One needs to use gGlobalPrefs.ToolbarForEachPanel to determine WIN or panel.
-    CreateToolbar(WinInfo::Make(WIN));
+    // Here, it always creates a toolbar, either for WIN or for panel.
+    CreateToolbar(WinInfo::Make(gGlobalPrefs.toolbarForEachPanel, WIN, panel));
     CreateSidebar(win);
     UpdateFindbox(win);
     if (HasPermission(Perm_DiskAccess) && !gPluginMode)
         DragAcceptFiles(win->hwndCanvas, TRUE);
+
+    gWIN.Append(WIN);
 
     gWindows.Append(win);
     UpdateWindowRtlLayout(win);
@@ -1371,13 +1377,9 @@ static WindowInfo* CreateWindowInfo()
 
 static WindowInfo* CreatePanel(ContainerInfo *container)
 {
-    if (container->panel == NULL)
-        return NULL;
+    assert(container->panel != NULL);
 
     TopWindowInfo *WIN = container->panel->WIN;
-
-    int dx = ClientRect(container->hwndContainer).dx;
-    int dy = ClientRect(container->hwndContainer).dy;
 
     HWND hwndContainer1 = CreateWindowEx(
         NULL,
@@ -1425,7 +1427,8 @@ static WindowInfo* CreatePanel(ContainerInfo *container)
         return NULL;
     }
 
-    //assert(NULL == FindTopWindowInfoByHwnd(hwndFrame));
+    assert(NULL == FindContainerInfoByHwnd(hwndContainer1));
+    assert(NULL == FindContainerInfoByHwnd(hwndContainer2));
 
     ContainerInfo *container1 = new ContainerInfo(hwndContainer1);
     ContainerInfo *container2 = new ContainerInfo(hwndContainer2);
@@ -1458,9 +1461,6 @@ static WindowInfo* CreatePanel(ContainerInfo *container)
     // hide scrollbars to avoid showing/hiding on empty window
     ShowScrollBar(win->hwndCanvas, SB_BOTH, FALSE);
 
-    SetWindowPos(hwndContainer1, NULL, 0, 0, dx / 2, dy, SWP_NOZORDER);
-    SetWindowPos(hwndContainer2, NULL, dx / 2, 0, dx / 2, dy, SWP_NOZORDER);
-
     ShowWindow(win->hwndCanvas, SW_SHOW);
     UpdateWindow(win->hwndCanvas);
 
@@ -1477,9 +1477,10 @@ static WindowInfo* CreatePanel(ContainerInfo *container)
         TOOLTIPS_CLASS, NULL, WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
         win->hwndCanvas, NULL, ghinst, NULL);
-
-    // Need to consider 2 cases.
-    CreateToolbar(WinInfo::Make(WIN));
+    
+    // Here it doesn't create any toolbar if gGlobalPrefs.toolbarForEachPanel is false.
+    CreateToolbar(WinInfo::Make(panel), gGlobalPrefs.toolbarForEachPanel);
+    
     CreateSidebar(win);
     UpdateFindbox(win);
     if (HasPermission(Perm_DiskAccess) && !gPluginMode)
@@ -3390,8 +3391,10 @@ static void AdjustWindowEdge(WindowInfo& win)
 
 static void FrameOnSize(WindowInfo* win, int dx, int dy)
 {
+    // FrameOnSize is called only when all childs are created and all infos are recorded.
+
     int rebBarDy = 0;
-    if (gGlobalPrefs.toolbarVisible && !(win->presentation || win->fullScreen)) {
+    if (!gGlobalPrefs.toolbarForEachPanel && gGlobalPrefs.toolbarVisible && !(win->presentation || win->fullScreen)) {
         SetWindowPos(win->toolBar()->hwndReBar, NULL, 0, 0, dx, 0, SWP_NOZORDER);
         rebBarDy = WindowRect(win->toolBar()->hwndReBar).dy;
     }
@@ -3399,8 +3402,16 @@ static void FrameOnSize(WindowInfo* win, int dx, int dy)
     bool tocVisible = win->tocLoaded && win->tocVisible;
     if (tocVisible || gGlobalPrefs.favVisible)
         SetSidebarVisibility(win, tocVisible, gGlobalPrefs.favVisible);
-    else
-        SetWindowPos(win->panel->WIN->gContainer.At(0)->hwndContainer, NULL, 0, rebBarDy, dx, dy - rebBarDy, SWP_NOZORDER);
+    else {
+        if (gGlobalPrefs.toolbarForEachPanel) { // The top container fills the client area of hwndFrame.
+            // SetWindowPos(win->panel->WIN->gContainer.At(0)->hwndContainer, NULL, 0, 0, dx, dy, SWP_NOZORDER);
+            SetWindowPos(win->panel->WIN->gContainer.At(0)->hwndContainer, NULL, 0, rebBarDy, dx, dy - rebBarDy, SWP_NOZORDER);
+            // We should not use this. This is a bad solution to ensure that containers are resized.
+            // SendMessage(win->panel->WIN->gContainer.At(0)->hwndContainer, WM_SIZE, NULL, MAKELPARAM(dx, dy - rebBarDy));
+        } else { // On should combine this with above, but now we separate them for clearness.
+            SetWindowPos(win->panel->WIN->gContainer.At(0)->hwndContainer, NULL, 0, rebBarDy, dx, dy - rebBarDy, SWP_NOZORDER);
+        }
+    }
 
     if (win->presentation || win->fullScreen) {
         RectI fullscreen = GetFullscreenRect(win->hwndFrame);
@@ -3744,8 +3755,11 @@ bool FrameOnKeydown(WindowInfo *win, WPARAM key, LPARAM lparam, bool inTextfield
         return true;
     }
 
-    if ('P' == key && IsCtrlPressed() && IsAltPressed()) {
-        OpenNewPanel(win->panel->container);
+    if ('V' == key && IsCtrlPressed() && IsAltPressed()) {
+        SplitPanel(win->panel->container, L"Vertically");
+        return true;
+    } else if ('H' == key && IsCtrlPressed() && IsAltPressed()) {
+        SplitPanel(win->panel->container, L"Horizontally");
         return true;
     }
 
@@ -4298,9 +4312,22 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible)
         UpdateTocSelection(win, win->dm->CurrentPageNo());
 }
 
-void OpenNewPanel(ContainerInfo *container)
+void SplitPanel(ContainerInfo *container, WCHAR const *direction)
 {
     WindowInfo *win = CreatePanel(container);
+
+    int dx = ClientRect(container->hwndContainer).dx;
+    int dy = ClientRect(container->hwndContainer).dy;
+
+    if (str::Eq(direction, L"Vertically")) {
+        container->isSplitVertical = true;
+        SetWindowPos(container->container1->hwndContainer, NULL, 0, 0, dx / 2, dy, SWP_NOZORDER);
+        SetWindowPos(container->container2->hwndContainer, NULL, dx / 2, 0, dx / 2, dy, SWP_NOZORDER);
+    } else if (str::Eq(direction, L"Horizontally")) {
+        container->isSplitVertical = false;
+        SetWindowPos(container->container1->hwndContainer, NULL, 0, 0, dx, dy / 2, SWP_NOZORDER);
+        SetWindowPos(container->container2->hwndContainer, NULL, 0, dy / 2, dx, dy / 2, SWP_NOZORDER);
+    }
 }
 
 static LRESULT OnSetCursor(WindowInfo& win, HWND hwnd)
@@ -4650,17 +4677,44 @@ static LRESULT OnGesture(WindowInfo& win, UINT message, WPARAM wParam, LPARAM lP
 
 static void ContainerOnSize(ContainerInfo* container, int dx, int dy)
 {
-    if (container->panel != NULL)
+    if (container->panel != NULL) {
         SetWindowPos(container->panel->hwndPanel, NULL, 0, 0, dx, dy, SWP_NOZORDER);
-    else if (container->container1 != NULL && container->container2 != NULL) {
-        SetWindowPos(container->container1->hwndContainer, NULL, 0, 0, dx / 2, dy, SWP_NOZORDER);
-        SetWindowPos(container->container2->hwndContainer, NULL, dx /2, 0, dx / 2, dy, SWP_NOZORDER);
+        // We should not use this. This is a bad solution to ensure that containers are resized.
+        // SendMessage(container->panel->hwndPanel, WM_SIZE, NULL, MAKELPARAM(dx,dy));
+    } else if (container->container1 != NULL && container->container2 != NULL) {
+
+        int dx_1 = ClientRect(container->container1->hwndContainer).dx;
+        int dy_1 = ClientRect(container->container1->hwndContainer).dy;
+
+        if (container->isSplitVertical) {
+            SetWindowPos(container->container1->hwndContainer, NULL, 0, 0, dx_1, dy, SWP_NOZORDER);
+            SetWindowPos(container->container2->hwndContainer, NULL, dx_1, 0, dx - dx_1, dy, SWP_NOZORDER);
+        } else {
+            SetWindowPos(container->container1->hwndContainer, NULL, 0, 0, dx, dy_1, SWP_NOZORDER);
+            SetWindowPos(container->container2->hwndContainer, NULL, 0, dy_1, dx, dy - dy_1, SWP_NOZORDER);
+        }
     }
 }
 
 static void PanelOnSize(PanelInfo* panel, int dx, int dy)
 {
-    SetWindowPos(panel->win->hwndCanvas, NULL, 0, 0, dx, dy, SWP_NOZORDER);
+    int rebBarDy = 0;
+    if (gGlobalPrefs.toolbarForEachPanel && gGlobalPrefs.toolbarVisible && !(panel->win->presentation || panel->win->fullScreen)) {
+        SetWindowPos(panel->win->toolBar()->hwndReBar, NULL, 0, 0, dx, 0, SWP_NOZORDER);
+        rebBarDy = WindowRect(panel->toolBar->hwndReBar).dy;
+    }
+
+    bool tocVisible = panel->win->tocLoaded && panel->win->tocVisible;
+    if (tocVisible || gGlobalPrefs.favVisible)
+        SetSidebarVisibility(panel->win, tocVisible, gGlobalPrefs.favVisible);
+    else {
+        if (gGlobalPrefs.toolbarForEachPanel)
+            SetWindowPos(panel->win->hwndCanvas, NULL, 0, rebBarDy, dx, dy - rebBarDy, SWP_NOZORDER);
+        else {
+            //SetWindowPos(win->panel->WIN->gContainer.At(0)->hwndContainer, NULL, 0, 0, dx, dy, SWP_NOZORDER);
+            SetWindowPos(panel->win->hwndCanvas, NULL, 0, rebBarDy, dx, dy - rebBarDy, SWP_NOZORDER);
+        }
+    }
 }
 
 static LRESULT CALLBACK WndProcContainer(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)

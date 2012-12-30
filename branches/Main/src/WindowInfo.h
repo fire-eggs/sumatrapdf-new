@@ -350,6 +350,13 @@ struct WinInfo {
         return w;
     }
 
+    static WinInfo Make(bool forEachPanel,TopWindowInfo *WIN, PanelInfo *panel) {
+        if (forEachPanel)
+            return Make(panel);
+        else
+            return Make(WIN);
+    }
+
     void AssignToolbaInfo() {
         if (type == Frame)
             WINInfo->toolBar = toolBar;
