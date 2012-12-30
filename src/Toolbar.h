@@ -8,7 +8,7 @@ class WindowInfo;
 struct WinInfo;
 class ToolbarInfo;
 
-void CreateToolbar(WinInfo& winInfo);
+void CreateToolbar(WinInfo& winInfo, bool toolbarForEachPanel=false);
 void ToolbarUpdateStateForWindow(WindowInfo *win, bool showHide);
 void UpdateToolbarButtonsToolTipsForWindow(WindowInfo *win);
 void UpdateToolbarFindText(WindowInfo *win);

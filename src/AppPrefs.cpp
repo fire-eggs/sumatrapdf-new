@@ -37,6 +37,8 @@
 #define WINDOW_Y_STR                "Window Y"
 #define WINDOW_DX_STR               "Window DX"
 #define WINDOW_DY_STR               "Window DY"
+#define TOOLBAR_FOR_EACH_PANEL_STR  "Toolbar For Each Panel"
+#define SIDEBAR_FOR_EACH_PANEL_STR  "Sidebar For Each Panel"
 // for backwards compatibility the string si "ShowToolbar" and not
 // (more appropriate now) "ToolbarVisible"
 #define TOOLBAR_VISIBLE_STR         "ShowToolbar"
@@ -92,6 +94,8 @@
 SerializableGlobalPrefs gGlobalPrefs = {
     false, // bool globalPrefsOnly
     DEFAULT_LANGUAGE, // const char *currentLanguage
+    true, // bool toolbarForEachPanel
+    false, // bool sidebarFor EachPanel
     true, // bool toolbarVisible
     false, // bool favVisible
     false, // bool pdfAssociateDontAskAgain
@@ -136,12 +140,15 @@ static int GetWeekCount()
     // 1408 == (10 * 1000 * 1000 * 60 * 60 * 24 * 7) / (1 << 32)
 }
 
+// Save gGlobalPrefs.
 static BencDict* SerializeGlobalPrefs(SerializableGlobalPrefs& globalPrefs)
 {
     BencDict *prefs = new BencDict();
     if (!prefs)
         return NULL;
 
+    prefs->Add(TOOLBAR_FOR_EACH_PANEL_STR, globalPrefs.toolbarForEachPanel);
+    prefs->Add(SIDEBAR_FOR_EACH_PANEL_STR, globalPrefs.sidebarForEachPanel);
     prefs->Add(TOOLBAR_VISIBLE_STR, globalPrefs.toolbarVisible);
     prefs->Add(TOC_VISIBLE_STR, globalPrefs.tocVisible);
     prefs->Add(FAV_VISIBLE_STR, globalPrefs.favVisible);
@@ -325,6 +332,7 @@ static BencArray *SerializeFavorites(Favorites *favs)
     return res;
 }
 
+// Save gGlobalPrefs. This is call in Prefs::Save(...).
 static char *SerializePrefs(SerializableGlobalPrefs& globalPrefs, FileHistory& root, Favorites *favs, size_t* lenOut)
 {
     char *data = NULL;
@@ -485,6 +493,7 @@ static DisplayState * DeserializeDisplayState(BencDict *dict, bool globalPrefsOn
     return ds;
 }
 
+// Write prefs from a file to gGlobalPrefs.
 static void DeserializePrefs(const char *prefsTxt, SerializableGlobalPrefs& globalPrefs,
     FileHistory& fh, Favorites **favsOut)
 {
@@ -496,6 +505,8 @@ static void DeserializePrefs(const char *prefsTxt, SerializableGlobalPrefs& glob
     if (!global)
         goto Exit;
 
+    Retrieve(global, TOOLBAR_FOR_EACH_PANEL_STR, globalPrefs.toolbarForEachPanel);
+    Retrieve(global, SIDEBAR_FOR_EACH_PANEL_STR, globalPrefs.sidebarForEachPanel);
     Retrieve(global, TOOLBAR_VISIBLE_STR, globalPrefs.toolbarVisible);
     Retrieve(global, TOC_VISIBLE_STR, globalPrefs.tocVisible);
     Retrieve(global, FAV_VISIBLE_STR, globalPrefs.favVisible);

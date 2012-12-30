@@ -127,7 +127,7 @@ void  QuitIfNoMoreWindows();
 bool  ShouldSaveThumbnail(DisplayState& ds);
 void  SaveThumbnailForFile(const WCHAR *filePath, RenderedBitmap *bmp);
 
-void OpenNewPanel(ContainerInfo *container);
+void SplitPanel(ContainerInfo *container, WCHAR const *direction);
 
 TopWindowInfo* FindTopWindowInfoByHwnd(HWND hwnd);
 PanelInfo *FindPanelInfoByHwnd(HWND hwnd);
