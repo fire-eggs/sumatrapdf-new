@@ -666,9 +666,10 @@ static void RemoveDialogItem(HWND hDlg, int itemId, int prevId=0)
         else if (itemRc.Intersect(rc) == itemRc) // container
             MoveWindow(item, rc.x, rc.y, rc.dx, rc.dy - shrink, TRUE);
     }
+    // We can delete this.
     // shrink the dialog
-    WindowRect dlgRc(hDlg);
-    MoveWindow(hDlg, dlgRc.x, dlgRc.y, dlgRc.dx, dlgRc.dy - shrink, TRUE);
+    //WindowRect dlgRc(hDlg);
+    //MoveWindow(hDlg, dlgRc.x, dlgRc.y, dlgRc.dx, dlgRc.dy - shrink, TRUE);
 }
 
 static INT_PTR CALLBACK Dialog_Settings_Proc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -757,9 +758,9 @@ static INT_PTR CALLBACK Dialog_Settings_Proc(HWND hDlg, UINT msg, WPARAM wParam,
             RemoveDialogItem(hDlg, IDC_SECTION_INVERSESEARCH, IDC_SECTION_ADVANCED);
         }
 
-        CenterDialog(hDlg);
-        SetFocus(GetDlgItem(hDlg, IDC_DEFAULT_LAYOUT));
-        return FALSE;
+        ////We can delete this.
+        ////CenterDialog(hDlg);
+        ////SetFocus(GetDlgItem(hDlg, IDC_DEFAULT_LAYOUT));
     case WM_COMMAND:
         switch (LOWORD(wParam))
         {
@@ -781,9 +782,9 @@ static INT_PTR CALLBACK Dialog_Settings_Proc(HWND hDlg, UINT msg, WPARAM wParam,
             EndDialog(hDlg, IDOK);
             return TRUE;
 
-        case IDCANCEL:
-            EndDialog(hDlg, IDCANCEL);
-            return TRUE;
+        //case IDCANCEL:
+        //    EndDialog(hDlg, IDCANCEL);
+        //    return TRUE;
 
         case IDC_REMEMBER_OPENED_FILES:
             {
@@ -820,6 +821,82 @@ INT_PTR Dialog_Settings(HWND hwnd, SerializableGlobalPrefs *prefs)
 {
     return CreateDialogBox(IDD_DIALOG_SETTINGS, hwnd,
                            Dialog_Settings_Proc, (LPARAM)prefs);
+}
+
+static INT_PTR CALLBACK Dialog_Preference_Proc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    static HWND hwndSetting;
+    static HWND hwndTest;
+
+    SerializableGlobalPrefs *prefs;
+
+    switch (msg)
+    {
+    case WM_INITDIALOG:
+        prefs = (SerializableGlobalPrefs *)lParam;
+        assert(prefs);
+        SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)prefs);
+
+        hwndSetting = CreateDialogParam(NULL, MAKEINTRESOURCE(IDD_DIALOG_SETTINGS), hDlg, Dialog_Settings_Proc, (LPARAM)prefs);
+        //hwndTest = CreateDialogParam(NULL, MAKEINTRESOURCE(IDD_DIALOG_TEST), hDlg, Dialog_Settings_Proc, (LPARAM)prefs);
+
+        //ShowWindow(hwndTest, SW_HIDE);
+        //UpdateWindow(hwndTest);
+
+        TV_INSERTSTRUCT tvinsert;
+        tvinsert.hParent = NULL;
+        tvinsert.hInsertAfter = TVI_LAST;
+        tvinsert.itemex.mask = TVIF_TEXT | TVIF_STATE | TVIF_PARAM;
+        tvinsert.itemex.state = 0;
+        tvinsert.itemex.stateMask = TVIS_EXPANDED;
+
+        tvinsert.itemex.pszText = L"General";
+        SendDlgItemMessage(hDlg, IDC_CATEGORY_TREE, TVM_INSERTITEM, 0, (LPARAM)&tvinsert);
+
+        tvinsert.itemex.pszText = L"Document";
+        SendDlgItemMessage(hDlg, IDC_CATEGORY_TREE, TVM_INSERTITEM, 0, (LPARAM)&tvinsert);
+
+        tvinsert.itemex.pszText = L"Full Screen";
+        SendDlgItemMessage(hDlg, IDC_CATEGORY_TREE, TVM_INSERTITEM, 0, (LPARAM)&tvinsert);
+
+        win::SetText(hDlg, L"SumatraPDF Preference");
+
+        CenterDialog(hDlg);
+        ////SetFocus(GetDlgItem(hDlg, IDC_DEFAULT_LAYOUT));
+        return FALSE;
+    case WM_DESTROY:
+        if (hwndSetting != NULL)
+        {
+            DestroyWindow(hwndSetting);
+            return (INT_PTR)FALSE;
+        }
+        if (hwndTest != NULL)
+        {
+            DestroyWindow(hwndTest);
+            return (INT_PTR)FALSE;
+        }
+        break;
+    case WM_COMMAND:
+        switch (LOWORD(wParam))
+        {
+        case IDOK:
+            SendMessage(hwndSetting, WM_COMMAND, MAKEWPARAM(IDOK, NULL), (LPARAM)hDlg);
+            EndDialog(hDlg, IDOK);
+            return TRUE;
+
+        case IDCANCEL:
+            EndDialog(hDlg, IDCANCEL);
+            return TRUE;
+        }
+        break;
+    }
+    return FALSE;
+}
+
+INT_PTR Dialog_Preference(HWND hwnd, SerializableGlobalPrefs *prefs)
+{
+    return CreateDialogBox(IDD_DIALOG_PREFERENCE, hwnd,
+        Dialog_Preference_Proc, (LPARAM)prefs);
 }
 
 #ifndef ID_APPLY_NOW
