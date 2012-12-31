@@ -11,6 +11,8 @@
 #define IDD_DIALOG_CHANGE_LANGUAGE      134
 #define IDD_DIALOG_NEW_VERSION          135
 #define IDD_DIALOG_SETTINGS             136
+#define IDD_DIALOG_TEST                 128
+#define IDD_DIALOG_PREFERENCE           133
 #define IDD_DIALOG_FIND                 137
 #define IDD_DIALOG_CUSTOM_ZOOM          138
 #define IDD_PROPSHEET_PRINT_ADVANCED    139
@@ -80,6 +82,7 @@
 #define IDM_VISIT_WEBSITE               550
 #define IDM_ABOUT                       551
 #define IDM_SETTINGS                    552
+#define IDM_PREFERENCE                  556
 #define IDM_CHANGE_LANGUAGE             553
 #define IDM_CHECK_UPDATE                554
 #define IDM_MANUAL                      555
@@ -120,6 +123,8 @@
 #define IDC_YOU_HAVE                    1018
 #define IDC_NEW_AVAILABLE               1019
 #define IDC_SKIP_THIS_VERSION           1020
+#define IDC_CATEGORY_LABEL              1035
+#define IDC_CATEGORY_TREE               1036
 #define IDC_SECTION_VIEW                1021
 #define IDC_DEFAULT_LAYOUT_LABEL        1022
 #define IDC_DEFAULT_LAYOUT              1023

@@ -3481,6 +3481,32 @@ static void OnMenuSettings(WindowInfo& win)
         gWindows.At(0)->RedrawAll(true);
 }
 
+void OnMenuPreference(HWND hwnd)
+{
+    if (!HasPermission(Perm_SavePreferences)) return;
+
+    bool useSysColors = gGlobalPrefs.useSysColors;
+
+    if (IDOK != Dialog_Preference(hwnd, &gGlobalPrefs))
+        return;
+
+    if (!gGlobalPrefs.rememberOpenedFiles) {
+        gFileHistory.Clear();
+        CleanUpThumbnailCache(gFileHistory);
+    }
+    if (useSysColors != gGlobalPrefs.useSysColors)
+        UpdateDocumentColors();
+
+    SavePrefs();
+}
+
+static void OnMenuPreference(WindowInfo& win)
+{
+    OnMenuPreference(win.panel->WIN->hwndFrame);
+    if (gWindows.Count() > 0 && gWindows.At(0)->IsAboutWindow())
+        gWindows.At(0)->RedrawAll(true);
+}
+
 // toggles 'show pages continuously' state
 static void OnMenuViewContinuous(WindowInfo& win)
 {
@@ -5162,6 +5188,10 @@ static LRESULT FrameOnCommand(WindowInfo *win, HWND hwnd, UINT msg, WPARAM wPara
 
         case IDM_SETTINGS:
             OnMenuSettings(*win);
+            break;
+
+        case IDM_PREFERENCE:
+            OnMenuPreference(*win);
             break;
 
         case IDM_VIEW_WITH_ACROBAT:
