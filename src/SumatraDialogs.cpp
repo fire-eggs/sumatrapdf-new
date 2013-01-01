@@ -12,6 +12,9 @@
 #include "Translations.h"
 #include "WinUtil.h"
 
+// Maybe better to be as a static local variable in Dialog_Preference_Proc.
+WCHAR * captionChildDlg[3] = { L"General", L"View", L"Color" };
+
 // cf. http://msdn.microsoft.com/en-us/library/ms645398(v=VS.85).aspx
 struct DLGTEMPLATEEX {
     WORD      dlgVer;   // 0x0001
@@ -713,7 +716,6 @@ static INT_PTR CALLBACK Dialog_Settings_Proc(HWND hDlg, UINT msg, WPARAM wParam,
             EnableWindow(GetDlgItem(hDlg, IDC_SET_DEFAULT_READER), HasPermission(Perm_RegistryAccess));
         }
 
-        win::SetText(hDlg, _TR("SumatraPDF Options"));
         SetDlgItemText(hDlg, IDC_SECTION_VIEW, _TR("View"));
         SetDlgItemText(hDlg, IDC_DEFAULT_LAYOUT_LABEL, _TR("Default &Layout:"));
         SetDlgItemText(hDlg, IDC_DEFAULT_ZOOM_LABEL, _TR("Default &Zoom:"));
@@ -758,9 +760,8 @@ static INT_PTR CALLBACK Dialog_Settings_Proc(HWND hDlg, UINT msg, WPARAM wParam,
             RemoveDialogItem(hDlg, IDC_SECTION_INVERSESEARCH, IDC_SECTION_ADVANCED);
         }
 
-        ////We can delete this.
-        ////CenterDialog(hDlg);
-        ////SetFocus(GetDlgItem(hDlg, IDC_DEFAULT_LAYOUT));
+        //SetFocus(GetDlgItem(hDlg, IDC_DEFAULT_LAYOUT));
+		return FALSE;
     case WM_COMMAND:
         switch (LOWORD(wParam))
         {
@@ -779,7 +780,6 @@ static INT_PTR CALLBACK Dialog_Settings_Proc(HWND hDlg, UINT msg, WPARAM wParam,
                 free(prefs->inverseSearchCmdLine);
                 prefs->inverseSearchCmdLine = win::GetText(GetDlgItem(hDlg, IDC_CMDLINE));
             }
-            EndDialog(hDlg, IDOK);
             return TRUE;
 
         //case IDCANCEL:
@@ -817,17 +817,99 @@ static INT_PTR CALLBACK Dialog_Settings_Proc(HWND hDlg, UINT msg, WPARAM wParam,
     return FALSE;
 }
 
+static INT_PTR CALLBACK Dialog_View_Proc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	SerializableGlobalPrefs *prefs;
+
+	switch (msg)
+	{
+	case WM_INITDIALOG:
+		prefs = (SerializableGlobalPrefs *)lParam;
+		assert(prefs);
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)prefs);
+
+		CheckDlgButton(hDlg, IDC_ENABLE_SPLIT_WINDOW, prefs->enableSplitWindow ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg, IDC_ENABLE_TAB, prefs->enableTab ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL, prefs->toolbarForEachPanel ? BST_CHECKED : BST_UNCHECKED);
+		EnableWindow(GetDlgItem(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL), prefs->enableSplitWindow);
+		CheckDlgButton(hDlg, IDC_SIDEBAR_FOR_EACH_PANEL, prefs->sidebarForEachPanel ? BST_CHECKED : BST_UNCHECKED);
+		EnableWindow(GetDlgItem(hDlg, IDC_SIDEBAR_FOR_EACH_PANEL), prefs->enableSplitWindow);
+
+        return FALSE;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDOK:
+			prefs = (SerializableGlobalPrefs *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+			assert(prefs);
+            prefs->enableSplitWindow = (BST_CHECKED == IsDlgButtonChecked(hDlg, IDC_ENABLE_SPLIT_WINDOW));
+            prefs->enableTab = (BST_CHECKED == IsDlgButtonChecked(hDlg, IDC_ENABLE_TAB));
+            prefs->toolbarForEachPanel = (BST_CHECKED == IsDlgButtonChecked(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL));
+            prefs->sidebarForEachPanel = (BST_CHECKED == IsDlgButtonChecked(hDlg, IDC_SIDEBAR_FOR_EACH_PANEL));
+			return TRUE;
+		}
+		break;
+	}
+	return FALSE;
+}
+
 INT_PTR Dialog_Settings(HWND hwnd, SerializableGlobalPrefs *prefs)
 {
-    return CreateDialogBox(IDD_DIALOG_SETTINGS, hwnd,
-                           Dialog_Settings_Proc, (LPARAM)prefs);
+	return CreateDialogBox(IDD_DIALOG_SETTINGS, hwnd,
+		Dialog_Settings_Proc, (LPARAM)prefs);
+}
+
+static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	SerializableGlobalPrefs *prefs;
+
+	switch (msg)
+	{
+	case WM_INITDIALOG:
+		prefs = (SerializableGlobalPrefs *)lParam;
+		assert(prefs);
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)prefs);
+
+		// Fill the page layouts into the select box
+		SendDlgItemMessage(hDlg, IDC_DEFAULT_LAYOUT, CB_ADDSTRING, 0, (LPARAM)_TR("Automatic"));
+		SendDlgItemMessage(hDlg, IDC_DEFAULT_LAYOUT, CB_ADDSTRING, 0, (LPARAM)_TR("Single Page"));
+		SendDlgItemMessage(hDlg, IDC_DEFAULT_LAYOUT, CB_ADDSTRING, 0, (LPARAM)_TR("Facing"));
+		SendDlgItemMessage(hDlg, IDC_DEFAULT_LAYOUT, CB_ADDSTRING, 0, (LPARAM)_TR("Book View"));
+		SendDlgItemMessage(hDlg, IDC_DEFAULT_LAYOUT, CB_ADDSTRING, 0, (LPARAM)_TR("Continuous"));
+		SendDlgItemMessage(hDlg, IDC_DEFAULT_LAYOUT, CB_ADDSTRING, 0, (LPARAM)_TR("Continuous Facing"));
+		SendDlgItemMessage(hDlg, IDC_DEFAULT_LAYOUT, CB_ADDSTRING, 0, (LPARAM)_TR("Continuous Book View"));
+		SendDlgItemMessage(hDlg, IDC_DEFAULT_LAYOUT, CB_SETCURSEL, prefs->defaultDisplayMode - DM_FIRST, 0);
+
+		SetupZoomComboBox(hDlg, IDC_DEFAULT_ZOOM, false, prefs->defaultZoom);
+
+		SetDlgItemText(hDlg, IDC_SECTION_VIEW, _TR("View"));
+		SetDlgItemText(hDlg, IDC_DEFAULT_LAYOUT_LABEL, _TR("Default &Layout:"));
+		SetDlgItemText(hDlg, IDC_DEFAULT_ZOOM_LABEL, _TR("Default &Zoom:"));
+
+        return FALSE;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDOK:
+			prefs = (SerializableGlobalPrefs *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+			assert(prefs);
+			prefs->defaultDisplayMode = (DisplayMode)(SendDlgItemMessage(hDlg, IDC_DEFAULT_LAYOUT, CB_GETCURSEL, 0, 0) + DM_FIRST);
+			prefs->defaultZoom = GetZoomComboBoxValue(hDlg, IDC_DEFAULT_ZOOM, false, prefs->defaultZoom);
+			return TRUE;
+		}
+		break;
+	}
+	return FALSE;
+}
+
+INT_PTR Dialog_Color(HWND hwnd, SerializableGlobalPrefs *prefs)
+{
+	return CreateDialogBox(IDD_DIALOG_COLOR, hwnd,
+		Dialog_Color_Proc, (LPARAM)prefs);
 }
 
 static INT_PTR CALLBACK Dialog_Preference_Proc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    static HWND hwndSetting;
-    static HWND hwndTest;
-
     SerializableGlobalPrefs *prefs;
 
     switch (msg)
@@ -837,11 +919,19 @@ static INT_PTR CALLBACK Dialog_Preference_Proc(HWND hDlg, UINT msg, WPARAM wPara
         assert(prefs);
         SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)prefs);
 
-        hwndSetting = CreateDialogParam(NULL, MAKEINTRESOURCE(IDD_DIALOG_SETTINGS), hDlg, Dialog_Settings_Proc, (LPARAM)prefs);
-        //hwndTest = CreateDialogParam(NULL, MAKEINTRESOURCE(IDD_DIALOG_TEST), hDlg, Dialog_Settings_Proc, (LPARAM)prefs);
+		HWND hwndChildDlg;
 
-        //ShowWindow(hwndTest, SW_HIDE);
-        //UpdateWindow(hwndTest);
+        hwndChildDlg = CreateDialogParam(NULL, MAKEINTRESOURCE(IDD_DIALOG_SETTINGS), hDlg, Dialog_Settings_Proc, (LPARAM)prefs);
+		ShowWindow(hwndChildDlg, SW_SHOW);
+		UpdateWindow(hwndChildDlg);
+
+        hwndChildDlg = CreateDialogParam(NULL, MAKEINTRESOURCE(IDD_DIALOG_VIEW), hDlg, Dialog_View_Proc, (LPARAM)prefs);
+        ShowWindow(hwndChildDlg, SW_HIDE);
+        UpdateWindow(hwndChildDlg);
+
+		hwndChildDlg = CreateDialogParam(NULL, MAKEINTRESOURCE(IDD_DIALOG_COLOR), hDlg, Dialog_Color_Proc, (LPARAM)prefs);
+		ShowWindow(hwndChildDlg, SW_HIDE);
+		UpdateWindow(hwndChildDlg);
 
         TV_INSERTSTRUCT tvinsert;
         tvinsert.hParent = NULL;
@@ -851,36 +941,37 @@ static INT_PTR CALLBACK Dialog_Preference_Proc(HWND hDlg, UINT msg, WPARAM wPara
         tvinsert.itemex.stateMask = TVIS_EXPANDED;
 
         tvinsert.itemex.pszText = L"General";
-        SendDlgItemMessage(hDlg, IDC_CATEGORY_TREE, TVM_INSERTITEM, 0, (LPARAM)&tvinsert);
+		HTREEITEM hItem;
+        hItem = TreeView_InsertItem(GetDlgItem(hDlg, IDC_CATEGORY_TREE), &tvinsert); 
+		TreeView_Select(GetDlgItem(hDlg, IDC_CATEGORY_TREE), (LPARAM)hItem, TVGN_CARET);
 
-        tvinsert.itemex.pszText = L"Document";
-        SendDlgItemMessage(hDlg, IDC_CATEGORY_TREE, TVM_INSERTITEM, 0, (LPARAM)&tvinsert);
+        tvinsert.itemex.pszText = L"View";
+        TreeView_InsertItem(GetDlgItem(hDlg, IDC_CATEGORY_TREE), &tvinsert); 
 
-        tvinsert.itemex.pszText = L"Full Screen";
-        SendDlgItemMessage(hDlg, IDC_CATEGORY_TREE, TVM_INSERTITEM, 0, (LPARAM)&tvinsert);
+        tvinsert.itemex.pszText = L"Color";
+        TreeView_InsertItem(GetDlgItem(hDlg, IDC_CATEGORY_TREE), &tvinsert); 
 
         win::SetText(hDlg, L"SumatraPDF Preference");
 
         CenterDialog(hDlg);
-        ////SetFocus(GetDlgItem(hDlg, IDC_DEFAULT_LAYOUT));
+        SetFocus(GetDlgItem(hDlg, IDC_CATEGORY_TREE));
         return FALSE;
     case WM_DESTROY:
-        if (hwndSetting != NULL)
-        {
-            DestroyWindow(hwndSetting);
-            return (INT_PTR)FALSE;
-        }
-        if (hwndTest != NULL)
-        {
-            DestroyWindow(hwndTest);
-            return (INT_PTR)FALSE;
-        }
-        break;
+		for (int i = 0; i < 3; i++) {
+			HWND hwndChildDlg = FindWindowEx(hDlg, NULL, NULL, captionChildDlg[i]); 
+			if (hwndChildDlg != NULL)
+				DestroyWindow(hwndChildDlg);
+		}
+		return FALSE;
     case WM_COMMAND:
         switch (LOWORD(wParam))
         {
         case IDOK:
-            SendMessage(hwndSetting, WM_COMMAND, MAKEWPARAM(IDOK, NULL), (LPARAM)hDlg);
+			for (int i = 0; i < 3; i++) {
+				HWND hwndChildDlg = FindWindowEx(hDlg, NULL, NULL, captionChildDlg[i]); 
+				if (hwndChildDlg != NULL)
+					SendMessage(hwndChildDlg, WM_COMMAND, MAKEWPARAM(IDOK, NULL), (LPARAM)hDlg);
+			}
             EndDialog(hDlg, IDOK);
             return TRUE;
 
@@ -889,6 +980,32 @@ static INT_PTR CALLBACK Dialog_Preference_Proc(HWND hDlg, UINT msg, WPARAM wPara
             return TRUE;
         }
         break;
+	case WM_NOTIFY:
+		LPNMTREEVIEW pnmtv;
+		pnmtv = (LPNMTREEVIEW)lParam;
+		if (pnmtv->hdr.code == TVN_SELCHANGED)
+		{
+			TVITEM item;
+			item.mask = TVIF_TEXT;
+			WCHAR text[MAX_PATH]; 
+			item.pszText = text;
+			item.cchTextMax = MAX_PATH;
+
+			item.hItem = pnmtv->itemNew.hItem;
+			SendMessage(pnmtv->hdr.hwndFrom, TVM_GETITEM, 0, (LPARAM)&item);
+			HWND hwndNew = FindWindowEx(hDlg, NULL, NULL, text);
+
+			item.hItem = pnmtv->itemOld.hItem;
+			SendMessage(pnmtv->hdr.hwndFrom, TVM_GETITEM, 0, (LPARAM)&item);
+			HWND hwndOld = FindWindowEx(hDlg, NULL, NULL, text);
+
+			ShowWindow(hwndOld, SW_HIDE);
+			UpdateWindow(hwndOld);
+
+			ShowWindow(hwndNew, SW_SHOW);
+			UpdateWindow(hwndNew);
+		}
+		break;
     }
     return FALSE;
 }

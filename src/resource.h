@@ -11,7 +11,8 @@
 #define IDD_DIALOG_CHANGE_LANGUAGE      134
 #define IDD_DIALOG_NEW_VERSION          135
 #define IDD_DIALOG_SETTINGS             136
-#define IDD_DIALOG_TEST                 128
+#define IDD_DIALOG_VIEW                 128
+#define IDD_DIALOG_COLOR                127
 #define IDD_DIALOG_PREFERENCE           133
 #define IDD_DIALOG_FIND                 137
 #define IDD_DIALOG_CUSTOM_ZOOM          138
@@ -143,6 +144,13 @@
 #define IDC_CMDLINE_LABEL               1041
 #define IDC_CMDLINE                     1042
 #define IDC_USE_SYS_COLORS              1045
+#define IDC_SECTION_MULTIPLE_WINDOW     1054
+#define IDC_ENABLE_SPLIT_WINDOW         1046
+#define IDC_ENABLE_TAB                  1047
+#define IDC_SECTION_TOOLBAR             1055
+#define IDC_TOOLBAR_FOR_EACH_PANEL      1048
+#define IDC_SECTION_SIDEBAR             1056
+#define IDC_SIDEBAR_FOR_EACH_PANEL      1049
 #define IDC_SECTION_PRINT_RANGE         1050
 #define IDC_PRINT_RANGE_ALL             1051
 #define IDC_PRINT_RANGE_EVEN            1052

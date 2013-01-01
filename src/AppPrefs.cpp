@@ -37,6 +37,8 @@
 #define WINDOW_Y_STR                "Window Y"
 #define WINDOW_DX_STR               "Window DX"
 #define WINDOW_DY_STR               "Window DY"
+#define ENABLE_SPLIT_WINDOW_STR     "Enable Split Window"
+#define ENABLE_TAB_STR              "Enable Tab"
 #define TOOLBAR_FOR_EACH_PANEL_STR  "Toolbar For Each Panel"
 #define SIDEBAR_FOR_EACH_PANEL_STR  "Sidebar For Each Panel"
 // for backwards compatibility the string si "ShowToolbar" and not
@@ -94,6 +96,8 @@
 SerializableGlobalPrefs gGlobalPrefs = {
     false, // bool globalPrefsOnly
     DEFAULT_LANGUAGE, // const char *currentLanguage
+    false, // bool enableSplitWindow
+    false, // bool enableTab
     true, // bool toolbarForEachPanel
     false, // bool sidebarFor EachPanel
     true, // bool toolbarVisible
@@ -147,8 +151,12 @@ static BencDict* SerializeGlobalPrefs(SerializableGlobalPrefs& globalPrefs)
     if (!prefs)
         return NULL;
 
+    prefs->Add(ENABLE_SPLIT_WINDOW_STR, globalPrefs.enableSplitWindow);
+    prefs->Add(ENABLE_TAB_STR, globalPrefs.enableTab);
+
     prefs->Add(TOOLBAR_FOR_EACH_PANEL_STR, globalPrefs.toolbarForEachPanel);
     prefs->Add(SIDEBAR_FOR_EACH_PANEL_STR, globalPrefs.sidebarForEachPanel);
+
     prefs->Add(TOOLBAR_VISIBLE_STR, globalPrefs.toolbarVisible);
     prefs->Add(TOC_VISIBLE_STR, globalPrefs.tocVisible);
     prefs->Add(FAV_VISIBLE_STR, globalPrefs.favVisible);
@@ -505,8 +513,12 @@ static void DeserializePrefs(const char *prefsTxt, SerializableGlobalPrefs& glob
     if (!global)
         goto Exit;
 
+    Retrieve(global, ENABLE_SPLIT_WINDOW_STR, globalPrefs.enableSplitWindow);
+    Retrieve(global, ENABLE_TAB_STR, globalPrefs.enableTab);
+
     Retrieve(global, TOOLBAR_FOR_EACH_PANEL_STR, globalPrefs.toolbarForEachPanel);
     Retrieve(global, SIDEBAR_FOR_EACH_PANEL_STR, globalPrefs.sidebarForEachPanel);
+
     Retrieve(global, TOOLBAR_VISIBLE_STR, globalPrefs.toolbarVisible);
     Retrieve(global, TOC_VISIBLE_STR, globalPrefs.tocVisible);
     Retrieve(global, FAV_VISIBLE_STR, globalPrefs.favVisible);

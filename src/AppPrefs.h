@@ -28,6 +28,10 @@ struct SerializableGlobalPrefs {
     /* pointer to a static string returned by Trans::ValidateLanguageCode(), don't free */
     const char *currentLanguage;
 
+
+	bool enableSplitWindow;
+	bool enableTab;
+
     // If yes, toolbar and sidebar are child windows of panel and each panel has its own toolbar and sidebar.
     // Otherwise, toolbar and sidebar are child windows of WIN and each WIN has only one toolbar and sidebar.
     bool toolbarForEachPanel;
