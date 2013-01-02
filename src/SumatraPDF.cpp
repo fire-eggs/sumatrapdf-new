@@ -337,6 +337,7 @@ TopWindowInfo *FindTopWindowInfoByHwnd(HWND hwnd)
     return NULL;
 }
 
+// In any case, only when hwnd is a child of a container can return non-NULL value.
 ContainerInfo *FindContainerInfoByHwnd(HWND hwnd)
 {
     TopWindowInfo *WIN = FindTopWindowInfoByHwnd(hwnd);
@@ -350,8 +351,8 @@ ContainerInfo *FindContainerInfoByHwnd(HWND hwnd)
     while(!str::Eq(ClassName, CONTAINER_CLASS_NAME)) { // Need to think about too long classname.
         hwndParent = GetParent(hwndParent);
         GetClassName(hwndParent, ClassName, MAX_PATH);
-        if (str::Eq(ClassName, FRAME_CLASS_NAME)) // For now.
-            return NULL; // For now.
+        if (str::Eq(ClassName, FRAME_CLASS_NAME))
+            return NULL;
     }
     HWND hwndContainer = hwndParent;
 
@@ -373,20 +374,24 @@ PanelInfo *FindPanelInfoByHwnd(HWND hwnd)
     if (WIN->gPanel.Count() == 0)
         return NULL;
 
+	if (hwnd == WIN->hwndFrame)
+		return WIN->panel;
+
+	// Now WIN != NULL and it has panels;
+	// If hwnd is a child of a container, container != NULL;
     ContainerInfo *container = FindContainerInfoByHwnd(hwnd); // NULL if hwnd == WIN->hwndFrame.
 
-    if (hwnd == WIN->hwndFrame)
-        return WIN->panel;
+    // If container == NULL here, hwnd can only be a child in ReBar or Sidebar, and it is not in any container.
+    if (container == NULL)
+        return WIN->panel; // WIN != NULL implies that WIN->panel != NULL;
 
-    // Only for now temp.
-    if (container == NULL) // Now, if in this case, we know hwnd is not frame, not container, not panel, not canvas.
-        return WIN->panel;
+	// Now hwnd is in a container.
 
     // If hwnd is already one of the container, return panel;
     if (hwnd == container->hwndContainer)
         return WIN->panel;
 
-    // So hwnd is not any of hwndContainer now // And (for now temp) it is a canvas or panel.
+    // Now hwnd is not any of hwndContainer, is in one of  the container.
     HWND hwndParent = hwnd;
     HWND hwndParentOld = NULL;
 
@@ -401,7 +406,7 @@ PanelInfo *FindPanelInfoByHwnd(HWND hwnd)
         if (hwndPanel == panel->hwndPanel)
             return panel;
     }
-    return NULL; // Need to modify. Need to consider Rebar, TocBox, FavBox, SidebarSplitter, FavSplitter.
+    return NULL;
 }
 
 WindowInfo *FindWindowInfoByHwnd(HWND hwnd)
@@ -414,26 +419,40 @@ WindowInfo *FindWindowInfoByHwnd(HWND hwnd)
     if (panel->gWin.Count() == 0)
         return NULL;
 
+	if (hwnd == panel->hwndPanel || hwnd == panel->win->hwndFrame)
+		return panel->win;
+
     ContainerInfo *container = FindContainerInfoByHwnd(hwnd);
 
-    if (hwnd == panel->hwndPanel || hwnd == panel->win->hwndFrame)
+    if (container == NULL)
         return panel->win;
 
-    // Only for now temp.
-    if (container == NULL) // Now, if in this case, we know hwnd is not frame, not panel, not canvas.
-        return panel->win;
-
-    // If hwnd is already one of the container, return panel->win;
     if (hwnd == container->hwndContainer)
         return panel->win;
 
-    // So hwnd is not any of hwndContainer, frame, panel now // And (for now temp) it is a canvas or panel.
+	HWND hwndParent = hwnd;
+	HWND hwndParentOld = NULL;
+
+	while (hwndParent != panel->hwndPanel) {
+		hwndParentOld = hwndParent;
+		hwndParent = GetParent(hwndParent);
+	}
+	HWND hwndAncestor = hwndParentOld;
+
     for ( size_t i = 0; i < panel->gWin.Count(); i++) {
         WindowInfo *win = panel->gWin.At(i);
         if (hwnd == win->hwndCanvas)
             return win;
     }
-    return panel->win;
+
+    for ( size_t i = 0; i < panel->gWin.Count(); i++) {
+		WindowInfo *win = panel->gWin.At(i);
+		if ((win->toolBar() && hwndAncestor == win->toolBar()->hwndReBar) ||
+			(win->sideBar() && (hwndAncestor == win->sideBar()->hwndSidebar || hwndAncestor == win->sideBar()->hwndSidebarSplitter))
+		   )
+			return panel->win;
+	}
+    return NULL;
 }
 
 bool WindowInfoStillValid(WindowInfo *win)
@@ -1236,28 +1255,7 @@ static void UpdateToolbarAndScrollbarState(WindowInfo& win)
         win::SetText(win.hwndFrame, SUMATRA_WINDOW_TITLE);
 }
 
-static void CreateSidebar(WindowInfo* win)
-{
-    //win->hwndSidebarSplitter = CreateWindow(SIDEBAR_SPLITTER_CLASS_NAME, L"",
-    //    WS_CHILDWINDOW, 0, 0, 0, 0, win->hwndFrame, (HMENU)0, ghinst, NULL);
-
-    //CreateToc(win);
-    //win->hwndFavSplitter = CreateWindow(FAV_SPLITTER_CLASS_NAME, L"",
-    //    WS_CHILDWINDOW, 0, 0, 0, 0, win->hwndFrame, (HMENU)0, ghinst, NULL);
-    //CreateFavorites(win);
-
-    //if (win->tocVisible) {
-    //    InvalidateRect(win->hwndTocBox, NULL, TRUE);
-    //    UpdateWindow(win->hwndTocBox);
-    //}
-
-    //if (gGlobalPrefs.favVisible) {
-    //    InvalidateRect(win->hwndFavBox, NULL, TRUE);
-    //    UpdateWindow(win->hwndFavBox);
-    //}
-}
-
-static void CreateSidebar(WinInfo& winInfo, bool sidebarForEachPanel = false)
+static void CreateSidebar(WinInfo& winInfo, bool sidebarForEachPanel=false)
 {
 	if (winInfo.AsPanel() && !sidebarForEachPanel && (sidebarForEachPanel == gGlobalPrefs.sidebarForEachPanel))
 		return;
@@ -1272,38 +1270,9 @@ static void CreateSidebar(WinInfo& winInfo, bool sidebarForEachPanel = false)
 		winInfo.Hwnd(), NULL,
 		ghinst, NULL);
 
+	// For now temp.
 	ShowWindow(winInfo.sideBar->hwndSidebarSplitter, SW_SHOW);
 	UpdateWindow(winInfo.sideBar->hwndSidebarSplitter);
-
-	//winInfo.sideBar->hwndSidebarSplitterHelper = CreateWindowEx(
-	//	NULL,
-	//	SIDEBAR_SPLITTER_CLASS_NAME, NULL,
-	//	WS_CHILDWINDOW | WS_CLIPSIBLINGS,
-	//	0, 0, 0, 0,
-	//	panel->hwndPanel, NULL,
-	//	ghinst, NULL);
-
-	//CreateToc(winInfo.sideBar);
-
-	//CreateFavorites(winInfo.sideBar);
-
-	// Create hwndSearchBox only when we need it.
-	//CreateFullSearch(panel);
-
-	// It seems that we don't need this since in WM_SIZE it calls SetSidebarVisibility if necessary.
-	// But what if in other situations? So we still keep this.
-	//if (gGlobalPrefs.sideBarVisible) {
-	//	InvalidateRect(panel->hwndLeftSidebarTop, NULL, TRUE);
-	//	UpdateWindow(panel->hwndLeftSidebarTop);
-	//}
-
-	//if (gGlobalPrefs.favVisible) {
-	//	InvalidateRect(panel->hwndLeftSidebarBottom, NULL, TRUE);
-	//	UpdateWindow(panel->hwndLeftSidebarBottom);
-	//}
-
-	//panel->sideBarVisible = false; // Don't want to show sideBar1 if open a new panel without doc.
-	//panel->favVisible = gGlobalPrefs.favVisible; // When creating a new panel, we respect to gGlobalPrefs.favVisible;
 }
 
 static WindowInfo* CreateWindowInfo()
@@ -1390,7 +1359,8 @@ static WindowInfo* CreateWindowInfo()
     win->menu = BuildMenu(win);
     SetMenu(win->hwndFrame, win->menu);
 
-    // At this point, it will call FrameOnSize, but now toolBar and sideBar are still NULL.
+    // At this point, it will
+	// call FrameOnSize, but now toolBar and sideBar are still NULL.
     // We append WIN to gWIN later to avoid resize problem.
 
     ShowWindow(win->hwndCanvas, SW_SHOW);
@@ -1533,9 +1503,9 @@ static WindowInfo* CreatePanel(ContainerInfo *container)
     
     // Here it doesn't create any toolbar if gGlobalPrefs.toolbarForEachPanel is false.
     CreateToolbar(WinInfo::Make(panel), gGlobalPrefs.toolbarForEachPanel);
-    
-    CreateSidebar(win);
-    UpdateFindbox(win);
+    CreateSidebar(WinInfo::Make(panel), gGlobalPrefs.sidebarForEachPanel);
+ 
+	UpdateFindbox(win);
     if (HasPermission(Perm_DiskAccess) && !gPluginMode)
         DragAcceptFiles(win->hwndCanvas, TRUE);
 
@@ -4098,7 +4068,7 @@ static void UpdateUITextForLanguage()
 static void ResizeSidebar(WindowInfo *win)
 {
 	HWND hwndParent = win->panel->WIN->hwndFrame;
-	HWND hwnd = win->panel->container->hwndContainer;
+	HWND hwnd = win->panel->WIN->gContainer.At(0)->hwndContainer;
 	if (gGlobalPrefs.sidebarForEachPanel) {
 		hwndParent = win->panel->hwndPanel;
         hwnd = win->hwndCanvas;
@@ -4109,7 +4079,6 @@ static void ResizeSidebar(WindowInfo *win)
     int sidebarDx = pcur.x; // without splitter
 
     ClientRect rSidebar(win->sideBar()->hwndSidebar);
-
     ClientRect rParent(hwndParent);
 
     // make sure to keep this in sync with the calculations in SetSidebarVisibility
@@ -4123,7 +4092,6 @@ static void ResizeSidebar(WindowInfo *win)
 
     SetCursor(gCursorSizeWE);
 
-    int hwndDx = rParent.dx - sidebarDx - SPLITTER_DX;
     int y = 0;
     int totalDy = rParent.dy;
     if (gGlobalPrefs.toolbarVisible && (gGlobalPrefs.toolbarForEachPanel == gGlobalPrefs.sidebarForEachPanel) && !win->fullScreen && !win->presentation)
@@ -4132,13 +4100,12 @@ static void ResizeSidebar(WindowInfo *win)
 
     // rToc.y is always 0, as rToc is a ClientRect, so we first have
     // to convert it into coordinates relative to hwndFrame:
-    //assert(MapRectToWindow(rToc, win->hwndTocBox, win->hwndFrame).y == y);
+    assert(MapRectToWindow(rSidebar, win->sideBar()->hwndSidebar, hwndParent).y == y);
     //assert(totalDy == (rToc.dy + rFav.dy));
-
 
     MoveWindow(win->sideBar()->hwndSidebar, 0, y, sidebarDx, totalDy, TRUE);
     MoveWindow(win->sideBar()->hwndSidebarSplitter, sidebarDx, y, SPLITTER_DX, totalDy, TRUE);
-    MoveWindow(hwnd, sidebarDx + SPLITTER_DX, y, hwndDx, totalDy, TRUE);
+    MoveWindow(hwnd, sidebarDx + SPLITTER_DX, y, rParent.dx - sidebarDx - SPLITTER_DX, totalDy, TRUE);
 }
 
 // TODO: the layout logic here is similar to what we do in SetSidebarVisibility()
@@ -4147,17 +4114,17 @@ static void ResizeFav(WindowInfo *win)
 {
     POINT pcur;
     GetCursorPosInHwnd(win->sideBar()->hwndSidebar, pcur);
-    int tocDy = pcur.y; // without splitter
+    int topDy = pcur.y; // without splitter
 
-    ClientRect rToc(win->sideBar()->hwndSidebarTop);
-    ClientRect rFav(win->sideBar()->hwndSidebarBottom);
-    assert(rToc.dx == rFav.dx);
+    ClientRect rTop(win->sideBar()->hwndSidebarTop);
+    ClientRect rBottom(win->sideBar()->hwndSidebarBottom);
+    assert(rTop.dx == rBottom.dx);
     ClientRect rSidebar(win->sideBar()->hwndSidebar);
-    int tocDx = rToc.dx;
+    int topDx = rTop.dx;
 
     // make sure to keep this in sync with the calculations in SetSidebarVisibility
-    if (tocDy < min(TOC_MIN_DY, rToc.dy) ||
-        tocDy > max(rSidebar.dy - TOC_MIN_DY, rToc.dy)) {
+    if (topDy < min(TOC_MIN_DY, rTop.dy) ||
+        topDy > max(rSidebar.dy - TOC_MIN_DY, rTop.dy)) {
         SetCursor(gCursorNo);
         return;
     }
@@ -4167,16 +4134,16 @@ static void ResizeFav(WindowInfo *win)
 	int totalDy = rSidebar.dy;
     // rToc.y is always 0, as rToc is a ClientRect, so we first have
     // to convert it into coordinates relative to hwndFrame:
-    //assert(MapRectToWindow(rToc, win->hwndTocBox, win->hwndFrame).y == y);
+    assert(MapRectToWindow(rTop, win->sideBar()->hwndSidebarTop,  win->sideBar()->hwndSidebar).y == 0);
     //assert(totalDy == (rToc.dy + rFav.dy));
-    int favDy = totalDy - tocDy - SPLITTER_DY;
-    assert(favDy >= 0);
+    int bottomDy = totalDy - topDy - SPLITTER_DY;
+    assert(bottomDy >= 0);
 
-    MoveWindow(win->sideBar()->hwndSidebarTop,      0, 0,                       tocDx, tocDy,       TRUE);
-    MoveWindow(win->sideBar()->hwndFavSplitter, 0, tocDy,               tocDx, SPLITTER_DY, TRUE);
-    MoveWindow(win->sideBar()->hwndSidebarBottom,  0, tocDy + SPLITTER_DY, tocDx, favDy,       TRUE);
+    MoveWindow(win->sideBar()->hwndSidebarTop, 0, 0, topDx, topDy, TRUE);
+    MoveWindow(win->sideBar()->hwndFavSplitter, 0, topDy, topDx, SPLITTER_DY, TRUE);
+    MoveWindow(win->sideBar()->hwndSidebarBottom, 0, topDy + SPLITTER_DY, topDx, bottomDy, TRUE);
 
-    gGlobalPrefs.tocDy = tocDy;
+    gGlobalPrefs.tocDy = topDy;
 }
 
 static LRESULT CALLBACK WndProcFavSplitter(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -4325,9 +4292,11 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible)
     if (gGlobalPrefs.toolbarVisible && (gGlobalPrefs.toolbarForEachPanel == gGlobalPrefs.sidebarForEachPanel) && !win->fullScreen && !win->presentation)
         toolbarDy = WindowRect(win->toolBar()->hwndReBar).dy;
     
-    ClientRect rParent(win->panel->WIN->hwndFrame);
+	HWND hwndParent = win->panel->WIN->hwndFrame;
 	if (gGlobalPrefs.toolbarForEachPanel)
-		ClientRect rParent(win->panel->hwndPanel);
+		hwndParent = win->panel->hwndPanel; 
+
+    ClientRect rParent(hwndParent);
 
 	int sidebarDy = rParent.dy - toolbarDy;
 

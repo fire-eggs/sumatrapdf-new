@@ -171,17 +171,14 @@ void CreateSidebarBox(WinInfo& winInfo)
 		ghinst, NULL);
 
 	// For now temp.
-	// For now temp.
 	ShowWindow(hwndSidebarTop, SW_SHOW);
 	UpdateWindow(hwndSidebarTop);
 
-	// For now temp.
 	ShowWindow(hwndSidebarBottom, SW_SHOW);
 	UpdateWindow(hwndSidebarBottom);
 
 	ShowWindow(hwndFavSplitter, SW_SHOW);
 	UpdateWindow(hwndFavSplitter);
-
 
 	ShowWindow(hwndSidebar, SW_SHOW);
 	UpdateWindow(hwndSidebar);
@@ -198,6 +195,7 @@ void CreateSidebarBox(WinInfo& winInfo)
 	CreateToc(sideBar, hwndSidebarTop);
 	CreateFavorites(sideBar, hwndSidebarBottom);
 
+	// For now temp.
 	ShowWindow(sideBar->hwndTocBox, SW_SHOW);
 	UpdateWindow(sideBar->hwndTocBox);
 
