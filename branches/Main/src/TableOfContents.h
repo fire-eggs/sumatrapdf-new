@@ -4,6 +4,8 @@
 #ifndef TableOfContents_h
 #define TableOfContents_h
 
+class SidebarInfo;
+
 #include <CommCtrl.h>
 
 /* Define if you want page numbers to be displayed in the ToC sidebar */
@@ -11,7 +13,7 @@
 
 class WindowInfo;
 
-void CreateToc(WindowInfo *win);
+void CreateToc(SidebarInfo *sideBar, HWND hwndParent);
 void ClearTocBox(WindowInfo *win);
 void ToggleTocBox(WindowInfo *win);
 void LoadTocTree(WindowInfo *win);

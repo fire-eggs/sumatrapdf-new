@@ -511,41 +511,41 @@ static LRESULT CALLBACK WndProcTocBox(HWND hwnd, UINT msg, WPARAM wParam, LPARAM
     return CallWindowProc(DefWndProcTocBox, hwnd, msg, wParam, lParam);
 }
 
-void CreateToc(WindowInfo *win)
+void CreateToc(SidebarInfo *sideBar, HWND hwndParent)
 {
     // toc windows
-    win->hwndTocBox = CreateWindow(WC_STATIC, L"", WS_CHILD|WS_CLIPCHILDREN,
+    sideBar->hwndTocBox = CreateWindow(WC_STATIC, L"", WS_CHILD|WS_CLIPCHILDREN,
                                    0, 0, gGlobalPrefs.sidebarDx, 0,
-                                   win->hwndFrame, (HMENU)0, ghinst, NULL);
+                                   hwndParent, (HMENU)0, ghinst, NULL);
     HWND title = CreateWindow(WC_STATIC, L"", WS_VISIBLE | WS_CHILD,
-                              0, 0, 0, 0, win->hwndTocBox, (HMENU)IDC_TOC_TITLE, ghinst, NULL);
+                              0, 0, 0, 0, sideBar->hwndTocBox, (HMENU)IDC_TOC_TITLE, ghinst, NULL);
     SetWindowFont(title, gDefaultGuiFont, FALSE);
     win::SetText(title, _TR("Bookmarks"));
 
     HWND hwndClose = CreateWindow(WC_STATIC, L"",
                                   SS_OWNERDRAW | SS_NOTIFY | WS_CHILD | WS_VISIBLE,
-                                  0, 0, 16, 16, win->hwndTocBox, (HMENU)IDC_TOC_CLOSE, ghinst, NULL);
+                                  0, 0, 16, 16, sideBar->hwndTocBox, (HMENU)IDC_TOC_CLOSE, ghinst, NULL);
 
-    win->hwndTocTree = CreateWindowEx(WS_EX_STATICEDGE, WC_TREEVIEW, L"TOC",
+    sideBar->hwndTocTree = CreateWindowEx(WS_EX_STATICEDGE, WC_TREEVIEW, L"TOC",
                                       TVS_HASBUTTONS|TVS_HASLINES|TVS_LINESATROOT|TVS_SHOWSELALWAYS|
                                       TVS_TRACKSELECT|TVS_DISABLEDRAGDROP|TVS_NOHSCROLL|TVS_INFOTIP|
                                       WS_TABSTOP|WS_VISIBLE|WS_CHILD,
-                                      0, 0, 0, 0, win->hwndTocBox, (HMENU)IDC_TOC_TREE, ghinst, NULL);
+                                      0, 0, 0, 0, sideBar->hwndTocBox, (HMENU)IDC_TOC_TREE, ghinst, NULL);
 
     // Note: those must be consecutive numbers and in title/close/tree order
     STATIC_ASSERT(IDC_TOC_BOX + 1 == IDC_TOC_TITLE &&
             IDC_TOC_BOX + 2 == IDC_TOC_CLOSE &&
             IDC_TOC_BOX + 3 == IDC_TOC_TREE, consecutive_toc_ids);
 
-    TreeView_SetUnicodeFormat(win->hwndTocTree, true);
+    TreeView_SetUnicodeFormat(sideBar->hwndTocTree, true);
 
     if (NULL == DefWndProcTocTree)
-        DefWndProcTocTree = (WNDPROC)GetWindowLongPtr(win->hwndTocTree, GWLP_WNDPROC);
-    SetWindowLongPtr(win->hwndTocTree, GWLP_WNDPROC, (LONG_PTR)WndProcTocTree);
+        DefWndProcTocTree = (WNDPROC)GetWindowLongPtr(sideBar->hwndTocTree, GWLP_WNDPROC);
+    SetWindowLongPtr(sideBar->hwndTocTree, GWLP_WNDPROC, (LONG_PTR)WndProcTocTree);
 
     if (NULL == DefWndProcTocBox)
-        DefWndProcTocBox = (WNDPROC)GetWindowLongPtr(win->hwndTocBox, GWLP_WNDPROC);
-    SetWindowLongPtr(win->hwndTocBox, GWLP_WNDPROC, (LONG_PTR)WndProcTocBox);
+        DefWndProcTocBox = (WNDPROC)GetWindowLongPtr(sideBar->hwndTocBox, GWLP_WNDPROC);
+    SetWindowLongPtr(sideBar->hwndTocBox, GWLP_WNDPROC, (LONG_PTR)WndProcTocBox);
 
     if (NULL == DefWndProcCloseButton)
         DefWndProcCloseButton = (WNDPROC)GetWindowLongPtr(hwndClose, GWLP_WNDPROC);

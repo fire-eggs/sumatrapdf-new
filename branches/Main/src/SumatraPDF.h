@@ -12,6 +12,13 @@
 #define FRAME_CLASS_NAME        L"SUMATRA_PDF_FRAME"
 #define SUMATRA_WINDOW_TITLE    L"SumatraPDF"
 
+#define SIDEBAR_CLASS_NAME           L"Sidebar"
+#define SIDEBAR_TOP_CLASS_NAME       L"Sidebar Top"
+#define SIDEBAR_BOTTOM_CLASS_NAME    L"Sidebar Bottom"
+#define FAV_SPLITTER_CLASS_NAME      L"FavSplitter"
+
+#define SPLITTER_DY         4
+
 #define WEBSITE_MAIN_URL         L"http://blog.kowalczyk.info/software/sumatrapdf/"
 #define WEBSITE_MANUAL_URL       L"http://blog.kowalczyk.info/software/sumatrapdf/manual.html"
 #define WEBSITE_TRANSLATIONS_URL L"http://code.google.com/p/sumatrapdf/wiki/HelpTranslateSumatra"

@@ -98,7 +98,7 @@ SerializableGlobalPrefs gGlobalPrefs = {
     DEFAULT_LANGUAGE, // const char *currentLanguage
     false, // bool enableSplitWindow
     false, // bool enableTab
-    true, // bool toolbarForEachPanel
+    false, // bool toolbarForEachPanel
     false, // bool sidebarFor EachPanel
     true, // bool toolbarVisible
     false, // bool favVisible

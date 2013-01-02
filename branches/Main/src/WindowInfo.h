@@ -149,6 +149,8 @@ public:
     HWND            hwndCanvas;
 
     // state related to table of contents (PDF bookmarks etc.)
+	HWND            hwndSidebar;
+
     HWND            hwndTocBox;
     HWND            hwndTocTree;
     bool            tocLoaded;
@@ -255,6 +257,8 @@ public:
     TouchState touchState;
 
     ToolbarInfo * toolBar() const; // For functions like UpdateToolbarPageText(win), one needs "win to toolBar" to get hwnd.
+	SidebarInfo * sideBar() const;
+
     void  UpdateCanvasSize();
     SizeI GetViewPortSize();
     void  RedrawAll(bool update=false);
@@ -312,7 +316,13 @@ public:
     SidebarInfo(HWND hwnd);
     ~SidebarInfo();
 
+	WindowInfo *    win;
+
     // state related to table of contents (PDF bookmarks etc.)
+	HWND            hwndSidebar;
+	HWND            hwndSidebarTop;
+	HWND            hwndSidebarBottom;
+
     HWND            hwndTocBox;
     HWND            hwndTocTree;
     bool            tocLoaded;
@@ -363,6 +373,13 @@ struct WinInfo {
         else if (type == Panel)
             panelInfo->toolBar = toolBar;
     }
+
+	void AssignSidebarInfo() {
+		if (type == Frame)
+			WINInfo->sideBar = sideBar;
+		else if (type == Panel)
+			panelInfo->sideBar = sideBar;
+	}
 
     // This is used to determine the correct hwnd which will be the parent of those will be created later.
     HWND Hwnd() const {
