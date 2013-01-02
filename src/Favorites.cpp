@@ -813,40 +813,40 @@ static LRESULT CALLBACK WndProcFavBox(HWND hwnd, UINT message, WPARAM wParam, LP
     return CallWindowProc(DefWndProcFavBox, hwnd, message, wParam, lParam);
 }
 
-void CreateFavorites(WindowInfo *win)
+void CreateFavorites(SidebarInfo *sideBar, HWND hwndParent)
 {
-    win->hwndFavBox = CreateWindow(WC_STATIC, L"", WS_CHILD|WS_CLIPCHILDREN,
+    sideBar->hwndFavBox = CreateWindow(WC_STATIC, L"", WS_CHILD|WS_CLIPCHILDREN,
                                    0, 0, gGlobalPrefs.sidebarDx, 0,
-                                   win->hwndFrame, (HMENU)0, ghinst, NULL);
+                                   hwndParent, (HMENU)0, ghinst, NULL);
     HWND title = CreateWindow(WC_STATIC, L"", WS_VISIBLE | WS_CHILD,
-                              0, 0, 0, 0, win->hwndFavBox, (HMENU)IDC_FAV_TITLE, ghinst, NULL);
+                              0, 0, 0, 0, sideBar->hwndFavBox, (HMENU)IDC_FAV_TITLE, ghinst, NULL);
     SetWindowFont(title, gDefaultGuiFont, FALSE);
     win::SetText(title, _TR("Favorites"));
 
     HWND hwndClose = CreateWindow(WC_STATIC, L"",
                                   SS_OWNERDRAW | SS_NOTIFY | WS_CHILD | WS_VISIBLE,
-                                  0, 0, 16, 16, win->hwndFavBox, (HMENU)IDC_FAV_CLOSE, ghinst, NULL);
+                                  0, 0, 16, 16, sideBar->hwndFavBox, (HMENU)IDC_FAV_CLOSE, ghinst, NULL);
 
-    win->hwndFavTree = CreateWindowEx(WS_EX_STATICEDGE, WC_TREEVIEW, L"Fav",
+    sideBar->hwndFavTree = CreateWindowEx(WS_EX_STATICEDGE, WC_TREEVIEW, L"Fav",
                                       TVS_HASBUTTONS|TVS_HASLINES|TVS_LINESATROOT|TVS_SHOWSELALWAYS|
                                       TVS_TRACKSELECT|TVS_DISABLEDRAGDROP|TVS_NOHSCROLL|TVS_INFOTIP|
                                       WS_TABSTOP|WS_VISIBLE|WS_CHILD,
-                                      0, 0, 0, 0, win->hwndFavBox, (HMENU)IDC_FAV_TREE, ghinst, NULL);
+                                      0, 0, 0, 0, sideBar->hwndFavBox, (HMENU)IDC_FAV_TREE, ghinst, NULL);
 
     // Note: those must be consecutive numbers and in title/close/tree order
     STATIC_ASSERT(IDC_FAV_BOX + 1 == IDC_FAV_TITLE &&
             IDC_FAV_BOX + 2 == IDC_FAV_CLOSE &&
             IDC_FAV_BOX + 3 == IDC_FAV_TREE, consecutive_fav_ids);
 
-    TreeView_SetUnicodeFormat(win->hwndFavTree, true);
+    TreeView_SetUnicodeFormat(sideBar->hwndFavTree, true);
 
     if (NULL == DefWndProcFavTree)
-        DefWndProcFavTree = (WNDPROC)GetWindowLongPtr(win->hwndFavTree, GWLP_WNDPROC);
-    SetWindowLongPtr(win->hwndFavTree, GWLP_WNDPROC, (LONG_PTR)WndProcFavTree);
+        DefWndProcFavTree = (WNDPROC)GetWindowLongPtr(sideBar->hwndFavTree, GWLP_WNDPROC);
+    SetWindowLongPtr(sideBar->hwndFavTree, GWLP_WNDPROC, (LONG_PTR)WndProcFavTree);
 
     if (NULL == DefWndProcFavBox)
-        DefWndProcFavBox = (WNDPROC)GetWindowLongPtr(win->hwndFavBox, GWLP_WNDPROC);
-    SetWindowLongPtr(win->hwndFavBox, GWLP_WNDPROC, (LONG_PTR)WndProcFavBox);
+        DefWndProcFavBox = (WNDPROC)GetWindowLongPtr(sideBar->hwndFavBox, GWLP_WNDPROC);
+    SetWindowLongPtr(sideBar->hwndFavBox, GWLP_WNDPROC, (LONG_PTR)WndProcFavBox);
 
     if (NULL == DefWndProcCloseButton)
         DefWndProcCloseButton = (WNDPROC)GetWindowLongPtr(hwndClose, GWLP_WNDPROC);

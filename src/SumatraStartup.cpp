@@ -75,6 +75,21 @@ static bool RegisterWinClass(HINSTANCE hinst)
     atom = RegisterClassEx(&wcex);
     CrashIf(!atom);
 
+	FillWndClassEx(wcex, hinst, SIDEBAR_CLASS_NAME, WndProcSidebar);
+	wcex.style |= CS_DBLCLKS;
+	atom = RegisterClassEx(&wcex);
+	CrashIf(!atom);
+
+	FillWndClassEx(wcex, hinst, SIDEBAR_TOP_CLASS_NAME, WndProcSidebarTop);
+	wcex.style |= CS_DBLCLKS;
+	atom = RegisterClassEx(&wcex);
+	CrashIf(!atom);
+
+	FillWndClassEx(wcex, hinst, SIDEBAR_BOTTOM_CLASS_NAME, WndProcSidebarBottom);
+	wcex.style |= CS_DBLCLKS;
+	atom = RegisterClassEx(&wcex);
+	CrashIf(!atom);
+
     RegisterNotificationsWndClass(hinst);
     RegisterMobiWinClass(hinst);
 

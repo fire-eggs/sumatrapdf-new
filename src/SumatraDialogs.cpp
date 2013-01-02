@@ -847,6 +847,14 @@ static INT_PTR CALLBACK Dialog_View_Proc(HWND hDlg, UINT msg, WPARAM wParam, LPA
             prefs->toolbarForEachPanel = (BST_CHECKED == IsDlgButtonChecked(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL));
             prefs->sidebarForEachPanel = (BST_CHECKED == IsDlgButtonChecked(hDlg, IDC_SIDEBAR_FOR_EACH_PANEL));
             return TRUE;
+
+        case IDC_ENABLE_SPLIT_WINDOW:
+            {
+                bool enableSplitWindow = (BST_CHECKED == IsDlgButtonChecked(hDlg, IDC_ENABLE_SPLIT_WINDOW));
+                EnableWindow(GetDlgItem(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL), enableSplitWindow);
+                EnableWindow(GetDlgItem(hDlg, IDC_SIDEBAR_FOR_EACH_PANEL), enableSplitWindow);
+            }
+            return TRUE;
         }
         break;
     }

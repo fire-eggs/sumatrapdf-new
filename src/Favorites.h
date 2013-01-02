@@ -5,6 +5,7 @@
 #define Favorites_h
 
 class WindowInfo;
+class SidebarInfo;
 
 /*
 A favorite is a bookmark (we call it a favorite, like Internet Explorer, to
@@ -111,7 +112,7 @@ public:
 void AddFavorite(WindowInfo *win);
 void DelFavorite(WindowInfo *win);
 void RebuildFavMenu(WindowInfo *win, HMENU menu);
-void CreateFavorites(WindowInfo *win);
+void CreateFavorites(SidebarInfo *sideBar, HWND hwndParent);
 void ToggleFavorites(WindowInfo *win);
 void PopulateFavTreeIfNeeded(WindowInfo *win);
 void RememberFavTreeExpansionStateForAllWindows();
