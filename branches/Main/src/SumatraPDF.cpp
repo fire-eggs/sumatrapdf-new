@@ -104,6 +104,7 @@ WCHAR *          gPluginURL = NULL; // owned by CommandLineInfo in WinMain
 #define CONTAINER_CLASS_NAME         L"SUMATRA_PDF_CONTAINER"
 #define PANEL_CLASS_NAME             L"SUMATRA_PDF_PANEL"
 #define CANVAS_CLASS_NAME            L"SUMATRA_PDF_CANVAS"
+#define PANEL_SPLITTER_CLASS_NAME    L"PanelSplitter"
 #define SIDEBAR_SPLITTER_CLASS_NAME  L"SidebarSplitter"
 //#define FAV_SPLITTER_CLASS_NAME      L"FavSplitter"
 #define RESTRICTIONS_FILE_NAME       L"sumatrapdfrestrict.ini"
@@ -1450,6 +1451,14 @@ static WindowInfo* CreatePanel(ContainerInfo *container)
         return NULL;
     }
 
+	container->hwndSplitter = CreateWindowEx(
+		NULL,
+		PANEL_SPLITTER_CLASS_NAME, NULL,
+		WS_CHILDWINDOW,
+		0, 0, 0, 0,
+		container->hwndContainer, NULL,
+		ghinst, NULL);
+
     assert(NULL == FindContainerInfoByHwnd(hwndContainer1));
     assert(NULL == FindContainerInfoByHwnd(hwndContainer2));
 
@@ -1495,6 +1504,12 @@ static WindowInfo* CreatePanel(ContainerInfo *container)
 
     ShowWindow(container2->hwndContainer, SW_SHOW);
     UpdateWindow(container2->hwndContainer);
+
+	ShowWindow(container2->hwndContainer, SW_SHOW);
+	UpdateWindow(container2->hwndContainer);
+
+	ShowWindow(container->hwndSplitter, SW_SHOW);
+	UpdateWindow(container->hwndSplitter);
 
     win->hwndInfotip = CreateWindowEx(WS_EX_TOPMOST,
         TOOLTIPS_CLASS, NULL, WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
@@ -4063,6 +4078,68 @@ static void UpdateUITextForLanguage()
     }
 }
 
+static void ResizePanel(ContainerInfo *container)
+{
+	//HWND hwndParent = win->panel->WIN->hwndFrame;
+	//HWND hwnd = win->panel->WIN->gContainer.At(0)->hwndContainer;
+	//if (gGlobalPrefs.sidebarForEachPanel) {
+	//	hwndParent = win->panel->hwndPanel;
+	//	hwnd = win->hwndCanvas;
+	//}
+
+	//HWN
+
+	HWND hwnd1 = container->container1->hwndContainer;
+	HWND hwnd2 = container->container2->hwndContainer;
+	HWND hwndParent = container->hwndContainer;
+
+	POINT pcur;
+	GetCursorPosInHwnd(hwndParent, pcur);
+	int hwnd1D;
+	if (container->isSplitVertical)
+		hwnd1D = pcur.x; // without splitter
+	else
+		hwnd1D = pcur.y;
+
+	ClientRect r1(hwnd1);
+	ClientRect rParent(hwndParent);
+
+	// make sure to keep this in sync with the calculations in SetSidebarVisibility
+	// note: without the min/max(..., rToc.dx), the sidebar will be
+	//       stuck at its width if it accidentally got too wide or too narrow
+	//if (hwnd1Dx < min(SIDEBAR_MIN_WIDTH, r1.dx) ||
+	//	hwnd1Dx > max(rParent.dx / 2, r1.dx)) {
+	//		SetCursor(gCursorNo);
+	//		return;
+	//}
+
+	if (container->isSplitVertical)
+		SetCursor(gCursorSizeWE);
+	else
+		SetCursor(gCursorSizeNS);
+
+	int totalD;
+	if (container->isSplitVertical)
+		totalD = rParent.dy;
+	else 
+		totalD = rParent.dx;
+	// rToc.y is always 0, as rToc is a ClientRect, so we first have
+	// to convert it into coordinates relative to hwndFrame:
+	//assert(MapRectToWindow(rSidebar, win->sideBar()->hwndSidebar, hwndParent).y == y);
+	//assert(totalDy == (rToc.dy + rFav.dy));
+
+	if (container->isSplitVertical) {
+		MoveWindow(hwnd1, 0, 0, hwnd1D, totalD, TRUE);
+		MoveWindow(container->hwndSplitter, hwnd1D, 0, SPLITTER_DX, totalD, TRUE);
+		MoveWindow(hwnd2,hwnd1D + SPLITTER_DX, 0, rParent.dx - hwnd1D - SPLITTER_DX, totalD, TRUE);
+	} else
+	{
+		MoveWindow(hwnd1, 0, 0, totalD, hwnd1D, TRUE);
+		MoveWindow(container->hwndSplitter, 0, hwnd1D, totalD, SPLITTER_DY, TRUE);
+		MoveWindow(hwnd2, 0, hwnd1D + SPLITTER_DY, totalD, rParent.dy - hwnd1D - SPLITTER_DY, TRUE);
+	}
+}
+
 // TODO: the layout logic here is similar to what we do in SetSidebarVisibility()
 // would be nice to consolidate.
 static void ResizeSidebar(WindowInfo *win)
@@ -4168,6 +4245,40 @@ static LRESULT CALLBACK WndProcFavSplitter(HWND hwnd, UINT message, WPARAM wPara
             break;
     }
     return DefWindowProc(hwnd, message, wParam, lParam);
+}
+
+static LRESULT CALLBACK WndProcPanelSplitter(HWND hwnd, UINT message,
+	WPARAM wParam, LPARAM lParam)
+{
+	ContainerInfo *container = FindContainerInfoByHwnd(hwnd);
+	if (!container)
+		return DefWindowProc(hwnd, message, wParam, lParam);
+
+	switch (message)
+	{
+	case WM_MOUSEMOVE:
+		if (container->isSplitVertical)
+			SetCursor(gCursorSizeWE);
+		else
+			SetCursor(gCursorSizeNS);
+
+		if (hwnd == GetCapture()) {
+			ResizePanel(container);
+			return 0;
+		}
+		break;
+	case WM_LBUTTONDOWN:
+		if (container->isSplitVertical)
+			SetCursor(gCursorSizeWE);
+		else
+			SetCursor(gCursorSizeNS);
+		SetCapture(hwnd);
+		break;
+	case WM_LBUTTONUP:
+		ReleaseCapture();
+		break;
+	}
+	return DefWindowProc(hwnd, message, wParam, lParam);
 }
 
 static LRESULT CALLBACK WndProcSidebarSplitter(HWND hwnd, UINT message,
@@ -4352,11 +4463,13 @@ void SplitPanel(ContainerInfo *container, WCHAR const *direction)
     if (str::Eq(direction, L"Vertically")) {
         container->isSplitVertical = true;
         SetWindowPos(container->container1->hwndContainer, NULL, 0, 0, dx / 2, dy, SWP_NOZORDER);
-        SetWindowPos(container->container2->hwndContainer, NULL, dx / 2, 0, dx / 2, dy, SWP_NOZORDER);
+        SetWindowPos(container->hwndSplitter, NULL, dx / 2, 0, SPLITTER_DX, dy, SWP_NOZORDER);
+        SetWindowPos(container->container2->hwndContainer, NULL, dx / 2 + SPLITTER_DX, 0, dx / 2 - SPLITTER_DX, dy, SWP_NOZORDER);
     } else if (str::Eq(direction, L"Horizontally")) {
         container->isSplitVertical = false;
         SetWindowPos(container->container1->hwndContainer, NULL, 0, 0, dx, dy / 2, SWP_NOZORDER);
-        SetWindowPos(container->container2->hwndContainer, NULL, 0, dy / 2, dx, dy / 2, SWP_NOZORDER);
+        SetWindowPos(container->hwndSplitter, NULL, 0, dy / 2, dx, SPLITTER_DY, SWP_NOZORDER);
+        SetWindowPos(container->container2->hwndContainer, NULL, 0, dy / 2 + SPLITTER_DY, dx, dy / 2 - SPLITTER_DX, SWP_NOZORDER);
     }
 }
 
@@ -4718,10 +4831,12 @@ static void ContainerOnSize(ContainerInfo* container, int dx, int dy)
 
         if (container->isSplitVertical) {
             SetWindowPos(container->container1->hwndContainer, NULL, 0, 0, dx_1, dy, SWP_NOZORDER);
-            SetWindowPos(container->container2->hwndContainer, NULL, dx_1, 0, dx - dx_1, dy, SWP_NOZORDER);
+			SetWindowPos(container->hwndSplitter, NULL, dx_1, 0, SPLITTER_DX, dy, SWP_NOZORDER);
+            SetWindowPos(container->container2->hwndContainer, NULL, dx_1 + SPLITTER_DX, 0, dx - dx_1 - SPLITTER_DX, dy, SWP_NOZORDER);
         } else {
             SetWindowPos(container->container1->hwndContainer, NULL, 0, 0, dx, dy_1, SWP_NOZORDER);
-            SetWindowPos(container->container2->hwndContainer, NULL, 0, dy_1, dx, dy - dy_1, SWP_NOZORDER);
+			SetWindowPos(container->hwndSplitter, NULL, 0, dy_1, dx, SPLITTER_DY, SWP_NOZORDER);
+            SetWindowPos(container->container2->hwndContainer, NULL, 0, dy_1 + SPLITTER_DY, dx, dy - dy_1 - SPLITTER_DY, SWP_NOZORDER);
         }
     }
 }
