@@ -63,6 +63,12 @@ static bool RegisterWinClass(HINSTANCE hinst)
     atom = RegisterClassEx(&wcex);
     CrashIf(!atom);
 
+	FillWndClassEx(wcex, hinst, PANEL_SPLITTER_CLASS_NAME, WndProcPanelSplitter);
+	wcex.hCursor        = LoadCursor(NULL, IDC_SIZEWE);
+	wcex.hbrBackground  = (HBRUSH)(COLOR_BTNFACE + 1);
+	atom = RegisterClassEx(&wcex);
+	CrashIf(!atom);
+
     FillWndClassEx(wcex, hinst, SIDEBAR_SPLITTER_CLASS_NAME, WndProcSidebarSplitter);
     wcex.hCursor        = LoadCursor(NULL, IDC_SIZEWE);
     wcex.hbrBackground  = (HBRUSH)(COLOR_BTNFACE + 1);
