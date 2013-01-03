@@ -69,6 +69,7 @@ public:
     HWND            hwndFrame;
 
     Vec<ContainerInfo *> gContainer;
+	ContainerInfo * container;
 
     Vec<PanelInfo *> gPanel; // Record the panels in a top window.
     PanelInfo *     panel; // Indicate which panel in a TopWindow is currently active.
