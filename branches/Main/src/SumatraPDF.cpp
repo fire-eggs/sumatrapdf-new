@@ -4142,6 +4142,11 @@ static void ResizePanel(ContainerInfo *container)
 		MoveWindow(container->hwndSplitter, 0, hwnd1D, totalD, SPLITTER_DY, TRUE);
 		MoveWindow(hwnd2, 0, hwnd1D + SPLITTER_DY, totalD, rParent.dy - hwnd1D - SPLITTER_DY, TRUE);
 	}
+
+	TopWindowInfo *WIN = FindTopWindowInfoByHwnd(container->hwndContainer);
+
+	InvalidateRect(WIN->hwndFrame, NULL, TRUE);
+	UpdateWindow(WIN->hwndFrame);
 }
 
 // TODO: the layout logic here is similar to what we do in SetSidebarVisibility()
