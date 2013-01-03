@@ -1337,6 +1337,7 @@ static WindowInfo* CreateWindowInfo()
 
     ContainerInfo *container = new ContainerInfo(hwndContainer);
     WIN->gContainer.Append(container);
+	WIN->container = container;
 
     ////container->parentContainer = NULL;
     ////container->container1 = NULL;
@@ -1458,7 +1459,7 @@ static WindowInfo* CreatePanel(ContainerInfo *container)
 	container->hwndSplitter = CreateWindowEx(
 		NULL,
 		PANEL_SPLITTER_CLASS_NAME, NULL,
-		WS_CHILDWINDOW,
+		WS_CHILDWINDOW | WS_CLIPSIBLINGS,
 		0, 0, 0, 0,
 		container->hwndContainer, NULL,
 		ghinst, NULL);
@@ -4192,6 +4193,9 @@ static void ResizeSidebar(WindowInfo *win)
     MoveWindow(win->sideBar()->hwndSidebar, 0, y, sidebarDx, totalDy, TRUE);
     MoveWindow(win->sideBar()->hwndSidebarSplitter, sidebarDx, y, SPLITTER_DX, totalDy, TRUE);
     MoveWindow(hwnd, sidebarDx + SPLITTER_DX, y, rParent.dx - sidebarDx - SPLITTER_DX, totalDy, TRUE);
+
+	InvalidateRect(win->panel->WIN->hwndFrame, NULL, TRUE);
+	UpdateWindow(win->panel->WIN->hwndFrame);
 }
 
 // TODO: the layout logic here is similar to what we do in SetSidebarVisibility()
@@ -4482,6 +4486,8 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible)
     //win->tocVisible = tocVisible;
     //gGlobalPrefs.favVisible = favVisible;
 
+	TopWindowInfo *WIN = FindTopWindowInfoByHwnd(win->hwndCanvas);
+
     int toolbarDy = 0;
     if (gGlobalPrefs.toolbarVisible && (gGlobalPrefs.toolbarForEachPanel == gGlobalPrefs.sidebarForEachPanel) && !win->fullScreen && !win->presentation)
         toolbarDy = WindowRect(win->toolBar()->hwndReBar).dy;
@@ -4533,7 +4539,11 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible)
 
 	SetWindowPos(win->sideBar()->hwndSidebar, NULL, 0, y, sidebarDx, sidebarDy, SWP_NOZORDER);
 	SetWindowPos(win->sideBar()->hwndSidebarSplitter, NULL, sidebarDx, y, SPLITTER_DX, sidebarDy, SWP_NOZORDER);
-	SetWindowPos(hwnd, NULL, sidebarDx + SPLITTER_DX, y, rParent.dx - sidebarDx - SPLITTER_DX, sidebarDy,  SWP_NOZORDER);
+
+	if (gGlobalPrefs.sidebarForEachPanel || GetParent(hwnd) == hwndParent)
+		SetWindowPos(hwnd, NULL, sidebarDx + SPLITTER_DX, y, rParent.dx - sidebarDx - SPLITTER_DX, sidebarDy,  SWP_NOZORDER);
+	else
+		SetWindowPos(WIN->container->hwndContainer, NULL, sidebarDx + SPLITTER_DX, y, rParent.dx - sidebarDx - SPLITTER_DX, sidebarDy,  SWP_NOZORDER);
 }
 
 void SplitPanel(ContainerInfo *container, WCHAR const *direction)
