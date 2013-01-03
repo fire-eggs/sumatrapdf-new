@@ -4269,6 +4269,9 @@ static LRESULT CALLBACK WndProcFavSplitter(HWND hwnd, UINT message, WPARAM wPara
         case WM_LBUTTONUP:
             ReleaseCapture();
             break;
+		case WM_ERASEBKGND:
+			return 1;
+			break;
     }
     return DefWindowProc(hwnd, message, wParam, lParam);
 }
@@ -4324,6 +4327,9 @@ static LRESULT CALLBACK WndProcPanelSplitter(HWND hwnd, UINT message,
 	case WM_LBUTTONUP:
 		ReleaseCapture();
 		break;
+	case WM_ERASEBKGND:
+		return 1;
+		break;
 	}
 	return DefWindowProc(hwnd, message, wParam, lParam);
 }
@@ -4371,6 +4377,9 @@ static LRESULT CALLBACK WndProcSidebarSplitter(HWND hwnd, UINT message,
         case WM_LBUTTONUP:
             ReleaseCapture();
             break;
+		case WM_ERASEBKGND:
+			return 1;
+			break;
     }
     return DefWindowProc(hwnd, message, wParam, lParam);
 }
@@ -4986,6 +4995,10 @@ static LRESULT CALLBACK WndProcContainer(HWND hwnd, UINT msg, WPARAM wParam, LPA
 			ContainerOnPaint(*container);
 			break;
 
+		case WM_ERASEBKGND:
+			return 1;
+			break;
+
         default:
             return DefWindowProc(hwnd, msg, wParam, lParam);
     }
@@ -5005,6 +5018,10 @@ static LRESULT CALLBACK WndProcPanel(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 
 		case WM_PAINT:
 			PanelOnPaint(*panel);
+			break;
+
+		case WM_ERASEBKGND:
+			return 1;
 			break;
 
         default:
