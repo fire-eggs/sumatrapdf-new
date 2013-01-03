@@ -1266,7 +1266,7 @@ static void CreateSidebar(WinInfo& winInfo, bool sidebarForEachPanel=false)
 	winInfo.sideBar->hwndSidebarSplitter = CreateWindowEx(
 		NULL,
 		SIDEBAR_SPLITTER_CLASS_NAME, NULL,
-		WS_CHILDWINDOW,
+		WS_CHILDWINDOW | WS_CLIPSIBLINGS,
 		0, 0, 0, 0,
 		winInfo.Hwnd(), NULL,
 		ghinst, NULL);
@@ -1286,7 +1286,7 @@ static WindowInfo* CreateWindowInfo()
 
     HWND hwndFrame = CreateWindow(
             FRAME_CLASS_NAME, SUMATRA_WINDOW_TITLE,
-            WS_OVERLAPPEDWINDOW,
+            WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
             windowPos.x, windowPos.y, windowPos.dx, windowPos.dy,
             NULL, NULL,
             ghinst, NULL);
@@ -1318,7 +1318,7 @@ static WindowInfo* CreateWindowInfo()
     HWND hwndCanvas = CreateWindowEx(
             WS_EX_STATICEDGE,
             CANVAS_CLASS_NAME, NULL,
-            WS_CHILD | WS_HSCROLL | WS_VSCROLL,
+            WS_CHILD | WS_HSCROLL | WS_VSCROLL | WS_CLIPSIBLINGS,
             0, 0, 0, 0, /* position and size determined in OnSize */
             hwndPanel, NULL,
             ghinst, NULL);
@@ -1443,7 +1443,7 @@ static WindowInfo* CreatePanel(ContainerInfo *container)
     HWND hwndCanvas = CreateWindowEx(
         WS_EX_STATICEDGE,
         CANVAS_CLASS_NAME, NULL,
-        WS_CHILD | WS_HSCROLL | WS_VSCROLL,
+        WS_CHILD | WS_HSCROLL | WS_VSCROLL | WS_CLIPSIBLINGS,
         0, 0, 0, 0, /* position and size determined in OnSize */
         hwndPanel, NULL,
         ghinst, NULL);
