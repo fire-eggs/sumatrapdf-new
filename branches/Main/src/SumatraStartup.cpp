@@ -136,6 +136,8 @@ static bool InstanceInit(HINSTANCE hInstance, int nCmdShow)
     gBrushAboutBg = CreateSolidBrush(ABOUT_BG_GRAY_COLOR);
 #endif
 
+	gBrushSidebarSplitterBg = CreateSolidBrush(SIDEBAR_SPLITTER_BG_COLOR);
+
     NONCLIENTMETRICS ncm = { 0 };
     ncm.cbSize = sizeof(ncm);
     SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0);

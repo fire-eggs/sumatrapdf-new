@@ -101,6 +101,8 @@ WCHAR *          gPluginURL = NULL; // owned by CommandLineInfo in WinMain
 #define COL_WINDOW_BG           RGB(0x99, 0x99, 0x99)
 #endif
 
+#define SIDEBAR_SPLITTER_BG_COLOR RGB(0xF0, 0xF0, 0xF0)
+
 #define CONTAINER_CLASS_NAME         L"SUMATRA_PDF_CONTAINER"
 #define PANEL_CLASS_NAME             L"SUMATRA_PDF_PANEL"
 #define CANVAS_CLASS_NAME            L"SUMATRA_PDF_CANVAS"
@@ -143,6 +145,7 @@ HCURSOR                      gCursorHand;
 HCURSOR                      gCursorIBeam;
 HBRUSH                       gBrushLogoBg;
 HBRUSH                       gBrushAboutBg;
+HBRUSH                       gBrushSidebarSplitterBg;
 HFONT                        gDefaultGuiFont;
 
 // TODO: combine into Vec<SumatraWindow> (after 2.0) ?
@@ -158,6 +161,7 @@ static HCURSOR                      gCursorSizeWE;
 static HCURSOR                      gCursorSizeNS;
 static HCURSOR                      gCursorNo;
 static HBRUSH                       gBrushNoDocBg;
+
 static HBITMAP                      gBitmapReloadingCue;
 static RenderCache                  gRenderCache;
 static bool                         gCrashOnOpen = false;
@@ -4223,6 +4227,24 @@ static void ResizeFav(WindowInfo *win)
     gGlobalPrefs.tocDy = topDy;
 }
 
+static void FavSplitterOnPaint(HWND hwnd)
+{
+	int dx = ClientRect(hwnd).dx;
+	int dy = ClientRect(hwnd).dy;
+
+	PAINTSTRUCT ps;
+	HDC hdc = BeginPaint(hwnd, &ps);
+
+	RECT rc;
+	rc.left = 0;
+	rc.right = dx;
+	rc.top = 0;
+	rc.bottom = dy;
+	FillRect(hdc, &rc, gBrushSidebarSplitterBg);
+
+	EndPaint(hwnd, &ps);
+}
+
 static LRESULT CALLBACK WndProcFavSplitter(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     WindowInfo *win = FindWindowInfoByHwnd(hwnd);
@@ -4237,6 +4259,10 @@ static LRESULT CALLBACK WndProcFavSplitter(HWND hwnd, UINT message, WPARAM wPara
                 return 0;
             }
             break;
+		case WM_PAINT:
+			FavSplitterOnPaint(hwnd);
+			return 0;
+			break;
         case WM_LBUTTONDOWN:
             SetCapture(hwnd);
             break;
@@ -4245,6 +4271,23 @@ static LRESULT CALLBACK WndProcFavSplitter(HWND hwnd, UINT message, WPARAM wPara
             break;
     }
     return DefWindowProc(hwnd, message, wParam, lParam);
+}
+static void PanelSplitterOnPaint(HWND hwnd)
+{
+	int dx = ClientRect(hwnd).dx;
+	int dy = ClientRect(hwnd).dy;
+
+	PAINTSTRUCT ps;
+	HDC hdc = BeginPaint(hwnd, &ps);
+
+	RECT rc;
+	rc.left = 0;
+	rc.right = dx;
+	rc.top = 0;
+	rc.bottom = dy;
+	FillRect(hdc, &rc, gBrushSidebarSplitterBg);
+
+	EndPaint(hwnd, &ps);
 }
 
 static LRESULT CALLBACK WndProcPanelSplitter(HWND hwnd, UINT message,
@@ -4267,6 +4310,10 @@ static LRESULT CALLBACK WndProcPanelSplitter(HWND hwnd, UINT message,
 			return 0;
 		}
 		break;
+	case WM_PAINT:
+		PanelSplitterOnPaint(hwnd);
+		return 0;
+		break;
 	case WM_LBUTTONDOWN:
 		if (container->isSplitVertical)
 			SetCursor(gCursorSizeWE);
@@ -4279,6 +4326,24 @@ static LRESULT CALLBACK WndProcPanelSplitter(HWND hwnd, UINT message,
 		break;
 	}
 	return DefWindowProc(hwnd, message, wParam, lParam);
+}
+
+static void SidebarSplitterOnPaint(HWND hwnd)
+{
+	int dx = ClientRect(hwnd).dx;
+	int dy = ClientRect(hwnd).dy;
+
+	PAINTSTRUCT ps;
+	HDC hdc = BeginPaint(hwnd, &ps);
+
+	RECT rc;
+	rc.left = 0;
+	rc.right = dx;
+	rc.top = 0;
+	rc.bottom = dy;
+	FillRect(hdc, &rc, gBrushSidebarSplitterBg);
+
+	EndPaint(hwnd, &ps);
 }
 
 static LRESULT CALLBACK WndProcSidebarSplitter(HWND hwnd, UINT message,
@@ -4296,6 +4361,10 @@ static LRESULT CALLBACK WndProcSidebarSplitter(HWND hwnd, UINT message,
                 return 0;
             }
             break;
+		case WM_PAINT:
+			SidebarSplitterOnPaint(hwnd);
+			return 0;
+			break;
         case WM_LBUTTONDOWN:
             SetCapture(hwnd);
             break;
@@ -4862,6 +4931,46 @@ static void PanelOnSize(PanelInfo* panel, int dx, int dy)
     }
 }
 
+static void ContainerOnPaint(ContainerInfo& container)
+{
+	int dx = ClientRect(container.hwndContainer).dx;
+	int dy = ClientRect(container.hwndContainer).dy;
+
+	PAINTSTRUCT ps;
+	HDC hdc = BeginPaint(container.hwndContainer, &ps);
+
+	RECT rc;
+	rc.left = 0;
+	rc.right = dx;
+	rc.top = 0 ;
+	rc.bottom = dy;
+	FillRect(hdc, &rc, gBrushNoDocBg);
+
+	EndPaint(container.hwndContainer, &ps);
+}
+
+static void PanelOnPaint(PanelInfo& panel)
+{
+	int rebBarDy = WindowRect(panel.win->toolBar()->hwndReBar).dy;
+	if (!gGlobalPrefs.toolbarVisible || !gGlobalPrefs.toolbarForEachPanel)
+		rebBarDy = 0;
+
+	int dx = ClientRect(panel.hwndPanel).dx;
+	int dy = ClientRect(panel.hwndPanel).dy;
+
+	PAINTSTRUCT ps;
+	HDC hdc = BeginPaint(panel.hwndPanel, &ps);
+
+	RECT rc;
+	rc.left = 0;
+	rc.right = dx;
+	rc.top = rebBarDy ;
+	rc.bottom = dy - rebBarDy;
+	FillRect(hdc, &rc, gBrushNoDocBg);
+
+	EndPaint(panel.hwndPanel, &ps);
+}
+
 static LRESULT CALLBACK WndProcContainer(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     ContainerInfo *container = FindContainerInfoByHwnd(hwnd);
@@ -4872,6 +4981,10 @@ static LRESULT CALLBACK WndProcContainer(HWND hwnd, UINT msg, WPARAM wParam, LPA
         case WM_SIZE:
             ContainerOnSize(container, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
             break;
+
+		case WM_PAINT:
+			ContainerOnPaint(*container);
+			break;
 
         default:
             return DefWindowProc(hwnd, msg, wParam, lParam);
@@ -4889,6 +5002,10 @@ static LRESULT CALLBACK WndProcPanel(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
         case WM_SIZE:
             PanelOnSize(panel, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
             break;
+
+		case WM_PAINT:
+			PanelOnPaint(*panel);
+			break;
 
         default:
             return DefWindowProc(hwnd, msg, wParam, lParam);
