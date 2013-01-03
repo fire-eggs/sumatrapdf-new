@@ -89,6 +89,7 @@ extern HCURSOR                  gCursorArrow;
 extern HCURSOR                  gCursorIBeam;
 extern HBRUSH                   gBrushLogoBg;
 extern HBRUSH                   gBrushAboutBg;
+extern HBRUSH                   gBrushSidebarSplitterBg;
 extern HFONT                    gDefaultGuiFont;
 extern WCHAR *                  gPluginURL;
 extern Vec<WindowInfo*>         gWindows;
