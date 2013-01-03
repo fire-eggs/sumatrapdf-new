@@ -133,9 +133,9 @@ LRESULT CALLBACK WndProcSidebarCB(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 void CreateSidebarBox(WinInfo& winInfo)
 {
 	HWND hwndSidebar = CreateWindowEx(
-		NULL,
+		WS_CLIPCHILDREN,
 		SIDEBAR_CLASS_NAME, NULL,
-		WS_CHILD,
+		WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
 		0, 0, gGlobalPrefs.sidebarDx, 0,
 		winInfo.Hwnd(), NULL,
 		ghinst, NULL);
@@ -143,9 +143,9 @@ void CreateSidebarBox(WinInfo& winInfo)
 		return;
 
 	HWND hwndSidebarTop = CreateWindowEx(
-		NULL,
+		WS_CLIPCHILDREN,
 		SIDEBAR_TOP_CLASS_NAME, NULL,
-		WS_CHILD,
+		WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
 		0, 0, 0, 0,
 		hwndSidebar, NULL,
 		ghinst, NULL);
@@ -153,9 +153,9 @@ void CreateSidebarBox(WinInfo& winInfo)
 		return;
 
 	HWND hwndSidebarBottom = CreateWindowEx(
-		NULL,
+		WS_CLIPCHILDREN,
 		SIDEBAR_BOTTOM_CLASS_NAME, NULL,
-		WS_CHILD,
+		WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
 		0, 0, 0, 0,
 		hwndSidebar, NULL,
 		ghinst, NULL);
@@ -165,7 +165,7 @@ void CreateSidebarBox(WinInfo& winInfo)
 	HWND hwndFavSplitter = CreateWindowEx(
 		NULL,
 		FAV_SPLITTER_CLASS_NAME, NULL,
-		WS_CHILDWINDOW,
+		WS_CHILDWINDOW | WS_CLIPSIBLINGS,
 		0, 0, 0, 0,
 		hwndSidebar, NULL,
 		ghinst, NULL);
