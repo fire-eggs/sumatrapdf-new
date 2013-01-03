@@ -830,8 +830,8 @@ static INT_PTR CALLBACK Dialog_View_Proc(HWND hDlg, UINT msg, WPARAM wParam, LPA
 
         CheckDlgButton(hDlg, IDC_ENABLE_SPLIT_WINDOW, prefs->enableSplitWindow ? BST_CHECKED : BST_UNCHECKED);
         CheckDlgButton(hDlg, IDC_ENABLE_TAB, prefs->enableTab ? BST_CHECKED : BST_UNCHECKED);
-        CheckDlgButton(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL, prefs->toolbarForEachPanel ? BST_CHECKED : BST_UNCHECKED);
-        EnableWindow(GetDlgItem(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL), prefs->enableSplitWindow);
+        CheckDlgButton(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL, (prefs->toolbarForEachPanel && prefs->sidebarForEachPanel) ? BST_CHECKED : BST_UNCHECKED);
+        EnableWindow(GetDlgItem(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL), (prefs->enableSplitWindow && prefs->sidebarForEachPanel));
         CheckDlgButton(hDlg, IDC_SIDEBAR_FOR_EACH_PANEL, prefs->sidebarForEachPanel ? BST_CHECKED : BST_UNCHECKED);
         EnableWindow(GetDlgItem(hDlg, IDC_SIDEBAR_FOR_EACH_PANEL), prefs->enableSplitWindow);
 
@@ -851,10 +851,27 @@ static INT_PTR CALLBACK Dialog_View_Proc(HWND hDlg, UINT msg, WPARAM wParam, LPA
         case IDC_ENABLE_SPLIT_WINDOW:
             {
                 bool enableSplitWindow = (BST_CHECKED == IsDlgButtonChecked(hDlg, IDC_ENABLE_SPLIT_WINDOW));
-                EnableWindow(GetDlgItem(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL), enableSplitWindow);
+				if (!enableSplitWindow) {
+					Button_SetCheck(GetDlgItem(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL), false);
+					Button_SetCheck(GetDlgItem(hDlg, IDC_SIDEBAR_FOR_EACH_PANEL), false);
+				}
                 EnableWindow(GetDlgItem(hDlg, IDC_SIDEBAR_FOR_EACH_PANEL), enableSplitWindow);
-            }
+                bool sidebarForEachPanel = (BST_CHECKED == IsDlgButtonChecked(hDlg, IDC_SIDEBAR_FOR_EACH_PANEL));
+                EnableWindow(GetDlgItem(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL), enableSplitWindow && sidebarForEachPanel);
+
+			}
             return TRUE;
+		case IDC_SIDEBAR_FOR_EACH_PANEL:
+			{
+				bool sidebarForEachPanel = (BST_CHECKED == IsDlgButtonChecked(hDlg, IDC_SIDEBAR_FOR_EACH_PANEL));
+				if (!sidebarForEachPanel) {
+					Button_SetCheck(GetDlgItem(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL), false);
+					EnableWindow(GetDlgItem(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL), false);
+				}
+				else
+					EnableWindow(GetDlgItem(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL), true);
+			}
+			return TRUE;
         }
         break;
     }
