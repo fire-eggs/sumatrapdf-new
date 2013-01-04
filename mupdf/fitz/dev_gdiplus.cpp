@@ -525,6 +525,8 @@ public:
 			Bitmap *whiteBg = new Bitmap(stack->layer->GetWidth(), stack->layer->GetHeight(), PixelFormat32bppPARGB);
 			delete graphics;
 			graphics = _setup(new Graphics(whiteBg));
+			graphics->TranslateTransform(-stack->bounds.X, -stack->bounds.Y);
+			graphics->SetClip(&Region(stack->bounds));
 			graphics->Clear(Color::White);
 			graphics->DrawImage(stack->layer, stack->bounds, 0, 0, stack->layer->GetWidth(), stack->layer->GetHeight(), UnitPixel, &DrawImageAttributes(1.0f));
 			delete stack->layer;
@@ -686,7 +688,7 @@ public:
 			}
 			fz_catch(ctx) { }
 		}
-		else if (!image->interpolate && !alwaysInterpolate && graphics == this->graphics)
+		else if (!image->interpolate && !alwaysInterpolate)
 		{
 			GraphicsState state = graphics->Save();
 			// TODO: why does this lead to subpar results when printing?

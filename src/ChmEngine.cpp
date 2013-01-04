@@ -32,7 +32,7 @@ public:
 
     ChmTocItem(WCHAR *title, int pageNo, WCHAR *url) :
         DocTocItem(title, pageNo), url(url) { }
-    ChmTocItem *Clone();
+    ChmTocItem *Clone() const;
 
     virtual PageDestination *GetLink() { return this; }
     virtual PageDestType GetDestType() const {
@@ -51,7 +51,7 @@ public:
     }
 };
 
-ChmTocItem *ChmTocItem::Clone()
+ChmTocItem *ChmTocItem::Clone() const
 {
     ChmTocItem *res = new ChmTocItem(str::Dup(title), pageNo, str::Dup(url));
     res->open = open;
@@ -118,6 +118,9 @@ public:
     virtual unsigned char *GetFileData(size_t *cbCount) {
         return (unsigned char *)file::ReadAll(fileName, cbCount);
     }
+    virtual bool SaveFileAs(const WCHAR *copyFileName) {
+        return CopyFile(fileName, copyFileName, FALSE);
+    }
 
     virtual WCHAR * ExtractPageText(int pageNo, WCHAR *lineSep, RectI **coords_out=NULL,
                                     RenderTarget target=Target_View) {
@@ -129,6 +132,9 @@ public:
     virtual WCHAR *GetProperty(DocumentProperty prop) { return doc->GetProperty(prop); }
 
     virtual const WCHAR *GetDefaultFileExt() const { return L".chm"; }
+
+    virtual Vec<PageElement *> *GetElements(int pageNo) { return NULL; }
+    virtual PageElement *GetElementAtPos(int pageNo, PointD pt) { return NULL; }
 
     virtual bool BenchLoadPage(int pageNo) { return true; }
 

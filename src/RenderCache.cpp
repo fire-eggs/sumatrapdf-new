@@ -11,6 +11,9 @@
    due to insufficient (GDI) memory. */
 #define CONSERVE_MEMORY
 
+// define to view the tile boundaries
+#undef SHOW_TILE_LAYOUT
+
 RenderCache::RenderCache()
     : cacheCount(0), requestCount(0),
       maxTileSize(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN)),
@@ -75,8 +78,7 @@ void RenderCache::DropCacheEntry(BitmapCacheEntry *entry)
     assert(entry);
     if (!entry) return;
     if (0 == --entry->refs) {
-        delete entry->bitmap;
-        free(entry);
+        delete entry;
     }
 }
 
@@ -110,9 +112,8 @@ void RenderCache::Add(PageRenderRequest &req, RenderedBitmap *bitmap)
     }
 
     // Copy the PageRenderRequest as it will be reused
-    BitmapCacheEntry entry = { req.dm, req.pageNo, req.rotation, req.zoom, req.tile, bitmap, 1 };
-    cache[cacheCount] = (BitmapCacheEntry *)_memdup(&entry);
-    assert(cache[cacheCount]);
+    cache[cacheCount] = new BitmapCacheEntry(req.dm, req.pageNo, req.rotation, req.zoom, req.tile, bitmap);
+    CrashIf(!cache[cacheCount]);
     if (!cache[cacheCount])
         delete bitmap;
     else
@@ -124,7 +125,7 @@ static RectI GetTileRectDevice(BaseEngine *engine, int pageNo, int rotation, flo
 {
     RectD mediabox = engine->PageMediabox(pageNo);
 
-    if (tile.res && tile.res != INVALID_TILE_RES) {
+    if (tile.res > 0 && tile.res != INVALID_TILE_RES) {
         CrashIf(tile.res > 30);
         double width = mediabox.dx / (1ULL << tile.res);
         mediabox.x += tile.col * width;
@@ -150,12 +151,12 @@ static RectI GetTileOnScreen(BaseEngine *engine, int pageNo, int rotation, float
     return bbox;
 }
 
-static bool IsTileVisible(DisplayModel *dm, int pageNo, int rotation, float zoom, TilePosition tile, float fuzz=0)
+static bool IsTileVisible(DisplayModel *dm, int pageNo, TilePosition tile, float fuzz=0)
 {
     if (!dm) return false;
     PageInfo *pageInfo = dm->GetPageInfo(pageNo);
     if (!dm->engine || !pageInfo) return false;
-    RectI tileOnScreen = GetTileOnScreen(dm->engine, pageNo, rotation, zoom, tile, pageInfo->pageOnScreen);
+    RectI tileOnScreen = GetTileOnScreen(dm->engine, pageNo, dm->Rotation(), dm->ZoomReal(), tile, pageInfo->pageOnScreen);
     // consider nearby tiles visible depending on the fuzz factor
     tileOnScreen.x -= (int)(tileOnScreen.dx * fuzz * 0.5);
     tileOnScreen.dx = (int)(tileOnScreen.dx * (fuzz + 1));
@@ -166,13 +167,11 @@ static bool IsTileVisible(DisplayModel *dm, int pageNo, int rotation, float zoom
 }
 
 /* Free all bitmaps in the cache that are of a specific page (or all pages
-   of the given DisplayModel, or even all invisible pages). Returns TRUE if freed
-   at least one item. */
-bool RenderCache::FreePage(DisplayModel *dm, int pageNo, TilePosition *tile)
+   of the given DisplayModel, or even all invisible pages). */
+void RenderCache::FreePage(DisplayModel *dm, int pageNo, TilePosition *tile)
 {
     ScopedCritSec scope(&cacheAccess);
     int cacheCountTmp = cacheCount;
-    bool freedSomething = false;
     int curPos = 0;
 
     for (int i = 0; i < cacheCountTmp; i++) {
@@ -185,7 +184,8 @@ bool RenderCache::FreePage(DisplayModel *dm, int pageNo, TilePosition *tile)
                 // a given tile of the page or all tiles not rendered at a given resolution
                 // (and at resolution 0 for quick zoom previews)
                 shouldFree = shouldFree && (entry->tile == *tile ||
-                    tile->row == (USHORT)-1 && entry->tile.res > 0 && entry->tile.res != tile->res);
+                    tile->row == (USHORT)-1 && entry->tile.res > 0 && entry->tile.res != tile->res ||
+                    tile->row == (USHORT)-1 && entry->tile.res == 0 && entry->outOfDate);
         } else if (dm) {
             // all pages of this DisplayModel
             shouldFree = (cache[i]->dm == dm);
@@ -193,12 +193,10 @@ bool RenderCache::FreePage(DisplayModel *dm, int pageNo, TilePosition *tile)
             // all invisible pages resp. page tiles
             shouldFree = !entry->dm->PageVisibleNearby(entry->pageNo);
             if (!shouldFree && entry->tile.res > 1)
-                shouldFree = !IsTileVisible(entry->dm, entry->pageNo, entry->rotation,
-                                            entry->zoom, entry->tile, 2.0);
+                shouldFree = !IsTileVisible(entry->dm, entry->pageNo, entry->tile, 2.0);
         }
 
         if (shouldFree) {
-            freedSomething = true;
             DropCacheEntry(entry);
             cache[i] = NULL;
             cacheCount--;
@@ -209,7 +207,6 @@ bool RenderCache::FreePage(DisplayModel *dm, int pageNo, TilePosition *tile)
         if (!shouldFree)
             curPos++;
     }
-    return freedSomething;
 }
 
 // keep the cached bitmaps for visible pages to avoid flickering during a reload.
@@ -223,23 +220,9 @@ void RenderCache::KeepForDisplayModel(DisplayModel *oldDm, DisplayModel *newDm)
                 cache[i]->dm = newDm;
             // make sure that the page is rerendered eventually
             cache[i]->zoom = INVALID_ZOOM;
-            cache[i]->bitmap->outOfDate = true;
+            cache[i]->outOfDate = true;
         }
     }
-}
-
-/* Free all bitmaps cached for a given <dm>. Returns TRUE if freed
-   at least one item. */
-bool RenderCache::FreeForDisplayModel(DisplayModel *dm)
-{
-    return FreePage(dm);
-}
-
-/* Free all bitmaps in the cache that are not visible. Returns TRUE if freed
-   at least one item. */
-bool RenderCache::FreeNotVisible()
-{
-    return FreePage();
 }
 
 // determine the count of tiles required for a page at a given zoom level
@@ -297,7 +280,7 @@ bool RenderCache::ReduceTileSize()
 
 void RenderCache::Render(DisplayModel *dm, int pageNo, RenderingCallback *callback)
 {
-    TilePosition tile = { GetTileRes(dm, pageNo), 0, 0 };
+    TilePosition tile(GetTileRes(dm, pageNo), 0, 0);
     Render(dm, pageNo, tile, true, callback);
 
     // render both tiles of the first row when splitting a page in four
@@ -505,7 +488,7 @@ void RenderCache::ClearQueueForDisplayModel(DisplayModel *dm, int pageNo, TilePo
     for (int i = 0; i < reqCount; i++) {
         PageRenderRequest *req = &(requests[i]);
         bool shouldRemove = req->dm == dm && (pageNo == INVALID_PAGE_NO || req->pageNo == pageNo) &&
-            (!tile || req->tile.res != tile->res || !IsTileVisible(dm, req->pageNo, req->rotation, req->zoom, *tile, 0.5));
+            (!tile || req->tile.res != tile->res || !IsTileVisible(dm, req->pageNo, *tile, 0.5));
         if (i != curPos)
             requests[curPos] = requests[i];
         if (shouldRemove) {
@@ -576,9 +559,6 @@ DWORD WINAPI RenderCache::RenderCacheThread(LPVOID data)
             if (bmp && !req.dm->engine->IsImageCollection())
                 UpdateBitmapColorRange(bmp->GetBitmap(), cache->colorRange);
             cache->Add(req, bmp);
-#ifdef CONSERVE_MEMORY
-            cache->FreeNotVisible();
-#endif
             req.dm->RepaintDisplay();
         }
     }
@@ -597,8 +577,7 @@ UINT RenderCache::PaintTile(HDC hdc, RectI bounds, DisplayModel *dm, int pageNo,
 
     if (!entry) {
         if (!isRemoteSession) {
-            if (renderedReplacement)
-                *renderedReplacement = true;
+            *renderedReplacement = true;
             entry = Find(dm, pageNo, dm->Rotation(), INVALID_ZOOM, &tile);
         }
         renderDelay = GetRenderDelay(dm, pageNo, tile);
@@ -636,7 +615,7 @@ UINT RenderCache::PaintTile(HDC hdc, RectI bounds, DisplayModel *dm, int pageNo,
 
         DeleteDC(bmpDC);
 
-#ifdef DEBUG_TILE_LAYOUT
+#ifdef SHOW_TILE_LAYOUT
         HPEN pen = CreatePen(PS_SOLID, 1, RGB(0xff, 0xff, 0x00));
         HGDIOBJ oldPen = SelectObject(hdc, pen);
         PaintRect(hdc, bounds);
@@ -644,8 +623,11 @@ UINT RenderCache::PaintTile(HDC hdc, RectI bounds, DisplayModel *dm, int pageNo,
 #endif
     }
 
-    if (renderOutOfDateCue)
-        *renderOutOfDateCue = renderedBmp->outOfDate;
+    if (entry->outOfDate) {
+        if (renderOutOfDateCue)
+            *renderOutOfDateCue = true;
+        AssertCrash(*renderedReplacement);
+    }
 
     DropCacheEntry(entry);
     return 0;
@@ -659,7 +641,7 @@ UINT RenderCache::PaintTiles(HDC hdc, RectI bounds, DisplayModel *dm, int pageNo
     float zoom = dm->ZoomReal();
     int tileCount = 1 << tileRes;
 
-    TilePosition tile = { tileRes, 0, 0 };
+    TilePosition tile(tileRes, 0, 0);
 
     UINT renderTimeMin = (UINT)-1;
     for (tile.row = 0; tile.row < tileCount; tile.row++) {
@@ -694,10 +676,13 @@ UINT RenderCache::Paint(HDC hdc, RectI bounds, DisplayModel *dm, int pageNo,
 
 #ifdef CONSERVE_MEMORY
     if (0 == renderTime && !renderedReplacement) {
+        if (renderOutOfDateCue)
+            *renderOutOfDateCue = false;
         // free tiles with different resolution
-        TilePosition tile = { tileRes, -1, 0 };
+        TilePosition tile(tileRes, (USHORT)-1, 0);
         FreePage(dm, pageNo, &tile);
     }
+    FreeNotVisible();
 #endif
 
     return renderTimeMin;

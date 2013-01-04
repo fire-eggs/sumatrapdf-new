@@ -10,7 +10,7 @@ enum RenderTarget { Target_View, Target_Print, Target_Export };
 enum PageLayoutType { Layout_Single = 0, Layout_Facing = 1, Layout_Book = 2,
                       Layout_R2L = 16, Layout_NonContinuous = 32 };
 
-enum PageElementType { Element_Link, Element_Comment, Element_Image };
+enum PageElementType { Element_Link, Element_Image, Element_Annotation };
 
 enum PageDestType { Dest_None,
     Dest_ScrollTo, Dest_LaunchURL, Dest_LaunchEmbedded, Dest_LaunchFile,
@@ -18,6 +18,8 @@ enum PageDestType { Dest_None,
     Dest_FindDialog, Dest_FullScreen, Dest_GoBack, Dest_GoForward,
     Dest_GoToPageDialog, Dest_PrintDialog, Dest_SaveAsDialog, Dest_ZoomToDialog,
 };
+
+enum PageAnnotType { Annot_None, Annot_Comment, Annot_Highlight };
 
 enum DocumentProperty {
     Prop_Title, Prop_Author, Prop_Copyright, Prop_Subject,
@@ -32,14 +34,10 @@ protected:
     SizeI size;
 
 public:
-    // whether this bitmap will (have to) be replaced soon
-    bool outOfDate;
-
-    RenderedBitmap(HBITMAP hbmp, SizeI size) :
-        hbmp(hbmp), size(size), outOfDate(false) { }
+    RenderedBitmap(HBITMAP hbmp, SizeI size) : hbmp(hbmp), size(size) { }
     ~RenderedBitmap() { DeleteObject(hbmp); }
 
-    RenderedBitmap *Clone() {
+    RenderedBitmap *Clone() const {
         HBITMAP hbmp2 = (HBITMAP)CopyImage(hbmp, IMAGE_BITMAP, size.dx, size.dy, 0);
         return new RenderedBitmap(hbmp2, size);
     }
@@ -49,7 +47,7 @@ public:
     SizeI Size() const { return size; }
 
     // render the bitmap into the target rectangle (streching and skewing as requird)
-    void StretchDIBits(HDC hdc, RectI target) {
+    void StretchDIBits(HDC hdc, RectI target) const {
         HDC bmpDC = CreateCompatibleDC(hdc);
         HGDIOBJ oldBmp = SelectObject(bmpDC, hbmp);
         SetStretchBltMode(hdc, HALFTONE);
@@ -90,6 +88,25 @@ public:
     virtual bool SaveEmbedded(LinkSaverUI &saveUI) { return false; }
 };
 
+// an user annotation on page
+struct PageAnnotation {
+    const PageAnnotType type;
+    const int pageNo;
+    const RectD rect;
+
+    PageAnnotation() : type(Annot_None), pageNo(-1) { }
+    PageAnnotation(PageAnnotType type, int pageNo, RectD rect) :
+        type(type), pageNo(pageNo), rect(rect) { }
+
+    // TODO: can operator= be written for const fields without hacks?
+    PageAnnotation& operator=(const PageAnnotation& other) {
+        *(PageAnnotType *)&type = other.type;
+        *(int *)&pageNo = other.pageNo;
+        *(RectD *)&rect = other.rect;
+        return *this;
+    }
+};
+
 // use in PageDestination::GetDestRect for values that don't matter
 #define DEST_USE_DEFAULT    -999.9
 
@@ -110,6 +127,9 @@ public:
     // if this element is a link, this returns information about the link's destination
     // (the result is owned by the PageElement and MUST NOT be deleted)
     virtual PageDestination *AsLink() { return NULL; }
+    // if this element is a page annotation, this returns additional data
+    // (the result is owned by the PageElement and MUST NOT be deleted)
+    virtual PageAnnotation *GetAnnot() { return NULL; }
     // if this element is an image, this returns it
     // caller must delete the result
     virtual RenderedBitmap *GetImage() { return NULL; }
@@ -208,7 +228,9 @@ public:
     // returns the binary data for the current file
     // (e.g. for saving again when the file has already been deleted)
     // caller needs to free() the result
-    virtual unsigned char *GetFileData(size_t *cbCount) { return NULL; }
+    virtual unsigned char *GetFileData(size_t *cbCount) = 0;
+    // saves a copy of the current file under a different name (overwriting an existing file)
+    virtual bool SaveFileAs(const WCHAR *copyFileName) = 0;
     // extracts all text found in the given page (and optionally also the
     // coordinates of the individual glyphs)
     // caller needs to free() the result
@@ -220,17 +242,25 @@ public:
     virtual PageLayoutType PreferredLayout() { return Layout_Single; }
     // whether the content should be displayed as images instead of as document pages
     // (e.g. with a black background and less padding in between and without search UI)
-    virtual bool IsImageCollection() { return false; }
+    virtual bool IsImageCollection() const { return false; }
 
     // access to various document properties (such as Author, Title, etc.)
-    virtual WCHAR *GetProperty(DocumentProperty prop) { return NULL; }
+    virtual WCHAR *GetProperty(DocumentProperty prop) = 0;
+
+    // TODO: generalize from PageAnnotation to PageModification
+    // whether this engine supports adding user annotations of a given type
+    // (either for rendering or for saving)
+    virtual bool SupportsAnnotation(PageAnnotType type, bool forSaving=false) const { return false; }
+    // informs the engine about annotations the user made so that they can be rendered, etc.
+    // (this call supercedes any prior call to UpdateUserAnnotations)
+    virtual void UpdateUserAnnotations(Vec<PageAnnotation> *list) { }
 
     // TODO: needs a more general interface
     // whether it is allowed to print the current document
-    virtual bool IsPrintingAllowed() { return true; }
+    virtual bool AllowsPrinting() const { return true; }
     // whether it is allowed to extract text from the current document
     // (except for searching an accessibility reasons)
-    virtual bool IsCopyingTextAllowed() { return true; }
+    virtual bool AllowsCopyingText() const { return true; }
 
     // the DPI for a file is needed when converting internal measures to physical ones
     virtual float GetFileDPI() const { return 96.0f; }
@@ -239,10 +269,10 @@ public:
 
     // returns a list of all available elements for this page
     // caller must delete the result (including all elements contained in the Vec)
-    virtual Vec<PageElement *> *GetElements(int pageNo) { return NULL; }
+    virtual Vec<PageElement *> *GetElements(int pageNo) = 0;
     // returns the element at a given point or NULL if there's none
     // caller must delete the result
-    virtual PageElement *GetElementAtPos(int pageNo, PointD pt) { return NULL; }
+    virtual PageElement *GetElementAtPos(int pageNo, PointD pt) = 0;
 
     // creates a PageDestination from a name (or NULL for invalid names)
     // caller must delete the result
