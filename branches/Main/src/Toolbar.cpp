@@ -566,7 +566,7 @@ void CreateToolbar(WinInfo& winInfo, bool toolbarForEachPanel)
     HWND hwndToolbar = CreateWindowEx(0, TOOLBARCLASSNAME, NULL, WS_TOOLBAR,
         0, 0, 0, 0, winInfo.Hwnd(), (HMENU)IDC_TOOLBAR, ghinst, NULL);
 
-    SendMessage(hwndToolbar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
+    LRESULT lres = SendMessage(hwndToolbar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
 
     ShowWindow(hwndToolbar, SW_SHOW);
     TBBUTTON tbButtons[TOOLBAR_BUTTONS_COUNT];
