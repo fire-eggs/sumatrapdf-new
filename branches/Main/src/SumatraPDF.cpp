@@ -5082,6 +5082,10 @@ static LRESULT CALLBACK WndProcPanel(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
             PanelOnSize(panel, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
             break;
 
+		case WM_MOUSEACTIVATE:
+			panel->WIN->panel = panel;
+			break;
+
         case WM_PAINT:
             PanelOnPaint(*panel);
             break;
