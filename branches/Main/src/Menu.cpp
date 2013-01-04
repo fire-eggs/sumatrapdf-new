@@ -316,7 +316,7 @@ void MenuUpdateZoom(WindowInfo* win)
 
 void MenuUpdatePrintItem(WindowInfo* win, HMENU menu, bool disableOnly=false) {
     bool filePrintEnabled = win->IsDocLoaded();
-    bool filePrintAllowed = !filePrintEnabled || win->dm->engine->IsPrintingAllowed();
+    bool filePrintAllowed = !filePrintEnabled || win->dm->engine->AllowsPrinting();
 
     int ix;
     for (ix = 0; ix < dimof(menuDefFile) && menuDefFile[ix].id != IDM_PRINT; ix++);
@@ -477,7 +477,7 @@ void OnContextMenu(WindowInfo* win, int x, int y)
     HMENU popup = BuildMenuFromMenuDef(menuDefContext, dimof(menuDefContext), CreatePopupMenu());
     if (!value || pageEl->GetType() != Element_Link)
         win::menu::Remove(popup, IDM_COPY_LINK_TARGET);
-    if (!value || pageEl->GetType() != Element_Comment)
+    if (!value || pageEl->GetType() != Element_Annotation || pageEl->GetAnnot()->type != Annot_Comment)
         win::menu::Remove(popup, IDM_COPY_COMMENT);
     if (!pageEl || pageEl->GetType() != Element_Image)
         win::menu::Remove(popup, IDM_COPY_IMAGE);

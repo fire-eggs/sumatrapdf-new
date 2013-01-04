@@ -86,7 +86,7 @@ static bool IsToolbarButtonEnabled(WindowInfo *win, int buttonNo)
         return !gPluginMode;
 
     case IDM_PRINT:
-        return win->dm->engine && win->dm->engine->IsPrintingAllowed();
+        return win->dm->engine && win->dm->engine->AllowsPrinting();
 
     case IDM_FIND_NEXT:
     case IDM_FIND_PREV:
@@ -566,7 +566,7 @@ void CreateToolbar(WinInfo& winInfo, bool toolbarForEachPanel)
     HWND hwndToolbar = CreateWindowEx(0, TOOLBARCLASSNAME, NULL, WS_TOOLBAR,
         0, 0, 0, 0, winInfo.Hwnd(), (HMENU)IDC_TOOLBAR, ghinst, NULL);
 
-    LRESULT lres = SendMessage(hwndToolbar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
+    SendMessage(hwndToolbar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
 
     ShowWindow(hwndToolbar, SW_SHOW);
     TBBUTTON tbButtons[TOOLBAR_BUTTONS_COUNT];
@@ -599,16 +599,18 @@ void CreateToolbar(WinInfo& winInfo, bool toolbarForEachPanel)
         if (gToolbarButtons[i].cmdId == IDM_FIND_MATCH)
             tbButtons[i].fsStyle = BTNS_CHECK;
     }
-    lres = SendMessage(hwndToolbar, TB_SETIMAGELIST, 0, (LPARAM)himl);
+    SendMessage(hwndToolbar, TB_SETIMAGELIST, 0, (LPARAM)himl);
 
     LRESULT exstyle = SendMessage(hwndToolbar, TB_GETEXTENDEDSTYLE, 0, 0);
     exstyle |= TBSTYLE_EX_MIXEDBUTTONS;
-    lres = SendMessage(hwndToolbar, TB_SETEXTENDEDSTYLE, 0, exstyle);
+    SendMessage(hwndToolbar, TB_SETEXTENDEDSTYLE, 0, exstyle);
 
-    lres = SendMessage(hwndToolbar, TB_ADDBUTTONS, TOOLBAR_BUTTONS_COUNT, (LPARAM)tbButtons);
+    SendMessage(hwndToolbar, TB_ADDBUTTONS, TOOLBAR_BUTTONS_COUNT, (LPARAM)tbButtons);
 
     RECT rc;
-    lres = SendMessage(hwndToolbar, TB_GETITEMRECT, 0, (LPARAM)&rc);
+    LRESULT res = SendMessage(hwndToolbar, TB_GETITEMRECT, 0, (LPARAM)&rc);
+    if (!res)
+        rc.left = rc.right = rc.top = rc.bottom = 0;
 
     DWORD  reBarStyle = WS_REBAR | WS_VISIBLE;
     HWND hwndReBar = CreateWindowEx(WS_EX_TOOLWINDOW, REBARCLASSNAME, NULL, reBarStyle,
