@@ -63,11 +63,11 @@ static bool RegisterWinClass(HINSTANCE hinst)
     atom = RegisterClassEx(&wcex);
     CrashIf(!atom);
 
-	FillWndClassEx(wcex, hinst, PANEL_SPLITTER_CLASS_NAME, WndProcPanelSplitter);
-	wcex.hCursor        = LoadCursor(NULL, IDC_SIZEWE);
-	wcex.hbrBackground  = (HBRUSH)(COLOR_BTNFACE + 1);
-	atom = RegisterClassEx(&wcex);
-	CrashIf(!atom);
+    FillWndClassEx(wcex, hinst, PANEL_SPLITTER_CLASS_NAME, WndProcPanelSplitter);
+    wcex.hCursor        = LoadCursor(NULL, IDC_SIZEWE);
+    wcex.hbrBackground  = (HBRUSH)(COLOR_BTNFACE + 1);
+    atom = RegisterClassEx(&wcex);
+    CrashIf(!atom);
 
     FillWndClassEx(wcex, hinst, SIDEBAR_SPLITTER_CLASS_NAME, WndProcSidebarSplitter);
     wcex.hCursor        = LoadCursor(NULL, IDC_SIZEWE);
@@ -81,20 +81,20 @@ static bool RegisterWinClass(HINSTANCE hinst)
     atom = RegisterClassEx(&wcex);
     CrashIf(!atom);
 
-	FillWndClassEx(wcex, hinst, SIDEBAR_CLASS_NAME, WndProcSidebar);
-	wcex.style |= CS_DBLCLKS;
-	atom = RegisterClassEx(&wcex);
-	CrashIf(!atom);
+    FillWndClassEx(wcex, hinst, SIDEBAR_CLASS_NAME, WndProcSidebar);
+    wcex.style |= CS_DBLCLKS;
+    atom = RegisterClassEx(&wcex);
+    CrashIf(!atom);
 
-	FillWndClassEx(wcex, hinst, SIDEBAR_TOP_CLASS_NAME, WndProcSidebarTop);
-	wcex.style |= CS_DBLCLKS;
-	atom = RegisterClassEx(&wcex);
-	CrashIf(!atom);
+    FillWndClassEx(wcex, hinst, SIDEBAR_TOP_CLASS_NAME, WndProcSidebarTop);
+    wcex.style |= CS_DBLCLKS;
+    atom = RegisterClassEx(&wcex);
+    CrashIf(!atom);
 
-	FillWndClassEx(wcex, hinst, SIDEBAR_BOTTOM_CLASS_NAME, WndProcSidebarBottom);
-	wcex.style |= CS_DBLCLKS;
-	atom = RegisterClassEx(&wcex);
-	CrashIf(!atom);
+    FillWndClassEx(wcex, hinst, SIDEBAR_BOTTOM_CLASS_NAME, WndProcSidebarBottom);
+    wcex.style |= CS_DBLCLKS;
+    atom = RegisterClassEx(&wcex);
+    CrashIf(!atom);
 
     RegisterNotificationsWndClass(hinst);
     RegisterMobiWinClass(hinst);
@@ -127,7 +127,10 @@ static bool InstanceInit(HINSTANCE hInstance, int nCmdShow)
         gBrushNoDocBg = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
     }
     else
-        gBrushNoDocBg = CreateSolidBrush(COL_WINDOW_BG);
+    {
+        COLORREF noDocBgColor = NO_DOC_BG_COLOR_DEFAULT != gGlobalPrefs.noDocBgColor ? gGlobalPrefs.noDocBgColor : COL_WINDOW_BG;
+        gBrushNoDocBg = CreateSolidBrush(noDocBgColor);
+    }
     COLORREF bgColor = ABOUT_BG_COLOR_DEFAULT != gGlobalPrefs.bgColor ? gGlobalPrefs.bgColor : ABOUT_BG_LOGO_COLOR;
     gBrushLogoBg = CreateSolidBrush(bgColor);
 #ifndef ABOUT_USE_LESS_COLORS
@@ -136,7 +139,10 @@ static bool InstanceInit(HINSTANCE hInstance, int nCmdShow)
     gBrushAboutBg = CreateSolidBrush(ABOUT_BG_GRAY_COLOR);
 #endif
 
-	gBrushSidebarSplitterBg = CreateSolidBrush(SIDEBAR_SPLITTER_BG_COLOR);
+    gBrushPanelSplitterBg = CreateSolidBrush(PANEL_SPLITTER_BG_COLOR);
+    gBrushPanelSplitterEdgeBg = CreateSolidBrush(PANEL_SPLITTER_EDGE_BG_COLOR);
+    gBrushSidebarSplitterBg = CreateSolidBrush(SIDEBAR_SPLITTER_BG_COLOR);
+    gBrushSidebarSplitterEdgeBg = CreateSolidBrush(SIDEBAR_SPLITTER_EDGE_BG_COLOR);
 
     NONCLIENTMETRICS ncm = { 0 };
     ncm.cbSize = sizeof(ncm);
@@ -286,6 +292,8 @@ static void RunUnitTests()
 static void GetCommandLineInfo(CommandLineInfo& i)
 {
     i.bgColor = gGlobalPrefs.bgColor;
+    i.colorRange[0] = gGlobalPrefs.docTextColor;
+    i.colorRange[1] = gGlobalPrefs.docBgColor;
     i.fwdSearch.offset = gGlobalPrefs.fwdSearch.offset;
     i.fwdSearch.width = gGlobalPrefs.fwdSearch.width;
     i.fwdSearch.color = gGlobalPrefs.fwdSearch.color;
@@ -392,6 +400,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     gCrashOnOpen = i.crashOnOpen;
 
     gGlobalPrefs.bgColor = i.bgColor;
+    gGlobalPrefs.docTextColor = i.colorRange[0];
+    gGlobalPrefs.docBgColor = i.colorRange[1];
     gGlobalPrefs.fwdSearch.offset = i.fwdSearch.offset;
     gGlobalPrefs.fwdSearch.width = i.fwdSearch.width;
     gGlobalPrefs.fwdSearch.color = i.fwdSearch.color;

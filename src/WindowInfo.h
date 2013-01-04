@@ -69,7 +69,7 @@ public:
     HWND            hwndFrame;
 
     Vec<ContainerInfo *> gContainer;
-	ContainerInfo * container;
+    ContainerInfo * container;
 
     Vec<PanelInfo *> gPanel; // Record the panels in a top window.
     PanelInfo *     panel; // Indicate which panel in a TopWindow is currently active.
@@ -150,7 +150,7 @@ public:
     HWND            hwndCanvas;
 
     // state related to table of contents (PDF bookmarks etc.)
-	HWND            hwndSidebar;
+    HWND            hwndSidebar;
 
     HWND            hwndTocBox;
     HWND            hwndTocTree;
@@ -258,7 +258,7 @@ public:
     TouchState touchState;
 
     ToolbarInfo * toolBar() const; // For functions like UpdateToolbarPageText(win), one needs "win to toolBar" to get hwnd.
-	SidebarInfo * sideBar() const;
+    SidebarInfo * sideBar() const;
 
     void  UpdateCanvasSize();
     SizeI GetViewPortSize();
@@ -317,12 +317,12 @@ public:
     SidebarInfo(HWND hwnd);
     ~SidebarInfo();
 
-	WindowInfo *    win;
+    WindowInfo *    win;
 
     // state related to table of contents (PDF bookmarks etc.)
-	HWND            hwndSidebar;
-	HWND            hwndSidebarTop;
-	HWND            hwndSidebarBottom;
+    HWND            hwndSidebar;
+    HWND            hwndSidebarTop;
+    HWND            hwndSidebarBottom;
 
     HWND            hwndTocBox;
     HWND            hwndTocTree;
@@ -375,12 +375,12 @@ struct WinInfo {
             panelInfo->toolBar = toolBar;
     }
 
-	void AssignSidebarInfo() {
-		if (type == Frame)
-			WINInfo->sideBar = sideBar;
-		else if (type == Panel)
-			panelInfo->sideBar = sideBar;
-	}
+    void AssignSidebarInfo() {
+        if (type == Frame)
+            WINInfo->sideBar = sideBar;
+        else if (type == Panel)
+            panelInfo->sideBar = sideBar;
+    }
 
     // This is used to determine the correct hwnd which will be the parent of those will be created later.
     HWND Hwnd() const {

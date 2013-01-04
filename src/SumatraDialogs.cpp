@@ -11,6 +11,9 @@
 #include "SumatraPDF.h"
 #include "Translations.h"
 #include "WinUtil.h"
+#include "WindowInfo.h"
+
+class TopWindowInfo;
 
 // Maybe better to be as a static local variable in Dialog_Preference_Proc.
 WCHAR * captionChildDlg[3] = { L"General", L"View", L"Color" };
@@ -851,27 +854,27 @@ static INT_PTR CALLBACK Dialog_View_Proc(HWND hDlg, UINT msg, WPARAM wParam, LPA
         case IDC_ENABLE_SPLIT_WINDOW:
             {
                 bool enableSplitWindow = (BST_CHECKED == IsDlgButtonChecked(hDlg, IDC_ENABLE_SPLIT_WINDOW));
-				if (!enableSplitWindow) {
-					Button_SetCheck(GetDlgItem(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL), false);
-					Button_SetCheck(GetDlgItem(hDlg, IDC_SIDEBAR_FOR_EACH_PANEL), false);
-				}
+                if (!enableSplitWindow) {
+                    Button_SetCheck(GetDlgItem(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL), false);
+                    Button_SetCheck(GetDlgItem(hDlg, IDC_SIDEBAR_FOR_EACH_PANEL), false);
+                }
                 EnableWindow(GetDlgItem(hDlg, IDC_SIDEBAR_FOR_EACH_PANEL), enableSplitWindow);
                 bool sidebarForEachPanel = (BST_CHECKED == IsDlgButtonChecked(hDlg, IDC_SIDEBAR_FOR_EACH_PANEL));
                 EnableWindow(GetDlgItem(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL), enableSplitWindow && sidebarForEachPanel);
 
-			}
+            }
             return TRUE;
-		case IDC_SIDEBAR_FOR_EACH_PANEL:
-			{
-				bool sidebarForEachPanel = (BST_CHECKED == IsDlgButtonChecked(hDlg, IDC_SIDEBAR_FOR_EACH_PANEL));
-				if (!sidebarForEachPanel) {
-					Button_SetCheck(GetDlgItem(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL), false);
-					EnableWindow(GetDlgItem(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL), false);
-				}
-				else
-					EnableWindow(GetDlgItem(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL), true);
-			}
-			return TRUE;
+        case IDC_SIDEBAR_FOR_EACH_PANEL:
+            {
+                bool sidebarForEachPanel = (BST_CHECKED == IsDlgButtonChecked(hDlg, IDC_SIDEBAR_FOR_EACH_PANEL));
+                if (!sidebarForEachPanel) {
+                    Button_SetCheck(GetDlgItem(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL), false);
+                    EnableWindow(GetDlgItem(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL), false);
+                }
+                else
+                    EnableWindow(GetDlgItem(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL), true);
+            }
+            return TRUE;
         }
         break;
     }
@@ -884,43 +887,131 @@ INT_PTR Dialog_Settings(HWND hwnd, SerializableGlobalPrefs *prefs)
         Dialog_Settings_Proc, (LPARAM)prefs);
 }
 
+static HBITMAP LoadExternalBitmap(HINSTANCE hInst, WCHAR * filename, INT resourceId)
+{
+    ScopedMem<WCHAR> path(AppGenDataFilename(filename));
+
+    if (path) {
+        HBITMAP hBmp = (HBITMAP)LoadImage(NULL, path, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+        if (hBmp)
+            return hBmp;
+    }
+    return LoadBitmap(hInst, MAKEINTRESOURCE(resourceId));
+}
+
+void SetColorDlgButtonColor(HWND hDlg, int nIDDlgItem, COLORREF color)
+{
+    HWND hButton = GetDlgItem(hDlg, nIDDlgItem);
+
+    HDC hdc = GetDC(hButton);
+    HDC memDC = CreateCompatibleDC(hdc);
+
+    int dx = ClientRect(hButton).dx;
+    int dy = ClientRect(hButton).dx;
+    HBITMAP hMemBmp = CreateCompatibleBitmap(hdc, dx, dy);
+    HBITMAP hOldBmp = (HBITMAP)SelectObject(memDC, hMemBmp);
+
+    Rectangle(memDC, 0, 0, dx, dy);
+
+    RECT rc;
+    rc.left   = 0; 
+    rc.top    = 0;
+    rc.right  = dx;
+    rc.bottom = dy;
+
+
+    HBRUSH brush = CreateSolidBrush(color);
+    FillRect(memDC, &rc, brush);
+    SelectObject(memDC, hOldBmp);
+    SendMessage(GetDlgItem(hDlg, nIDDlgItem), BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hMemBmp);
+    DeleteObject(brush);
+    DeleteObject(hMemBmp);
+    DeleteObject(memDC);
+}
+
 static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     SerializableGlobalPrefs *prefs;
 
+    static COLORREF colorOld[4];
+
     switch (msg)
     {
     case WM_INITDIALOG:
-        prefs = (SerializableGlobalPrefs *)lParam;
-        assert(prefs);
-        SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)prefs);
+        {
+            prefs = (SerializableGlobalPrefs *)lParam;
+            assert(prefs);
+            SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)prefs);
 
-        // Fill the page layouts into the select box
-        SendDlgItemMessage(hDlg, IDC_DEFAULT_LAYOUT, CB_ADDSTRING, 0, (LPARAM)_TR("Automatic"));
-        SendDlgItemMessage(hDlg, IDC_DEFAULT_LAYOUT, CB_ADDSTRING, 0, (LPARAM)_TR("Single Page"));
-        SendDlgItemMessage(hDlg, IDC_DEFAULT_LAYOUT, CB_ADDSTRING, 0, (LPARAM)_TR("Facing"));
-        SendDlgItemMessage(hDlg, IDC_DEFAULT_LAYOUT, CB_ADDSTRING, 0, (LPARAM)_TR("Book View"));
-        SendDlgItemMessage(hDlg, IDC_DEFAULT_LAYOUT, CB_ADDSTRING, 0, (LPARAM)_TR("Continuous"));
-        SendDlgItemMessage(hDlg, IDC_DEFAULT_LAYOUT, CB_ADDSTRING, 0, (LPARAM)_TR("Continuous Facing"));
-        SendDlgItemMessage(hDlg, IDC_DEFAULT_LAYOUT, CB_ADDSTRING, 0, (LPARAM)_TR("Continuous Book View"));
-        SendDlgItemMessage(hDlg, IDC_DEFAULT_LAYOUT, CB_SETCURSEL, prefs->defaultDisplayMode - DM_FIRST, 0);
+            colorOld[0] = prefs->bgColor;
+            colorOld[1] = prefs->noDocBgColor;
+            colorOld[2] = prefs->docBgColor;
+            colorOld[3] = prefs->docTextColor;
 
-        SetupZoomComboBox(hDlg, IDC_DEFAULT_ZOOM, false, prefs->defaultZoom);
+            SetColorDlgButtonColor(hDlg, IDC_SET_START_PAGE_BG, prefs->bgColor);
+            SetColorDlgButtonColor(hDlg, IDC_SET_WINDOW_BG, prefs->noDocBgColor);
+            SetColorDlgButtonColor(hDlg, IDC_SET_DOC_BG, prefs->docBgColor);
+            SetColorDlgButtonColor(hDlg, IDC_SET_DOC_TEXT_COLOR, prefs->docTextColor);
 
-        SetDlgItemText(hDlg, IDC_SECTION_VIEW, _TR("View"));
-        SetDlgItemText(hDlg, IDC_DEFAULT_LAYOUT_LABEL, _TR("Default &Layout:"));
-        SetDlgItemText(hDlg, IDC_DEFAULT_ZOOM_LABEL, _TR("Default &Zoom:"));
-
-        return FALSE;
+            return FALSE;
+        }
     case WM_COMMAND:
+        prefs = (SerializableGlobalPrefs *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+        assert(prefs);
+
+        COLORREF customColor[4];
+        COLORREF selcolor = prefs->bgColor;
+        CHOOSECOLOR color;
+        color.lStructSize  = sizeof(CHOOSECOLOR);
+        color.hwndOwner    = hDlg;
+        color.lpCustColors = customColor;
+        color.rgbResult = selcolor;
+        color.Flags = CC_RGBINIT | CC_FULLOPEN;
+
         switch (LOWORD(wParam))
         {
         case IDOK:
-            prefs = (SerializableGlobalPrefs *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
-            assert(prefs);
-            prefs->defaultDisplayMode = (DisplayMode)(SendDlgItemMessage(hDlg, IDC_DEFAULT_LAYOUT, CB_GETCURSEL, 0, 0) + DM_FIRST);
-            prefs->defaultZoom = GetZoomComboBoxValue(hDlg, IDC_DEFAULT_ZOOM, false, prefs->defaultZoom);
-            return TRUE;
+        case IDC_APPLY:
+            {
+                COLORREF color;
+                color = (COLORREF)GetWindowLongPtr(GetDlgItem(hDlg, IDC_SET_START_PAGE_BG), GWLP_USERDATA);
+                prefs->bgColor = (int) color ? color - 1 : gGlobalPrefs.bgColor;
+                color = (COLORREF)GetWindowLongPtr(GetDlgItem(hDlg, IDC_SET_WINDOW_BG), GWLP_USERDATA);
+                prefs->noDocBgColor = (int) color ? color - 1 : gGlobalPrefs.noDocBgColor;
+                color = (COLORREF)GetWindowLongPtr(GetDlgItem(hDlg, IDC_SET_DOC_BG), GWLP_USERDATA);
+                prefs->docBgColor = (int) color ? color - 1 : gGlobalPrefs.docBgColor;
+                color = (COLORREF)GetWindowLongPtr(GetDlgItem(hDlg, IDC_SET_DOC_TEXT_COLOR), GWLP_USERDATA);
+                prefs->docTextColor = (int) color ? color - 1 : gGlobalPrefs.docTextColor;
+
+                UpdateDocumentColors(prefs->docTextColor, prefs->docBgColor);
+
+                return TRUE;
+            }
+        case IDCANCEL:
+            {
+                prefs->bgColor = colorOld[0];
+                prefs->noDocBgColor = colorOld[1];
+                prefs->docBgColor = colorOld[2];
+                prefs->docTextColor = colorOld[3];
+
+                UpdateDocumentColors(prefs->docTextColor, prefs->docBgColor);
+
+                return TRUE;
+            }
+        case IDC_SET_START_PAGE_BG:
+        case IDC_SET_WINDOW_BG:
+        case IDC_SET_DOC_BG:
+        case IDC_SET_DOC_TEXT_COLOR:
+            {
+                HWND hButton = GetDlgItem(hDlg, LOWORD(wParam));
+
+                ChooseColor(&color);
+                SetWindowLongPtr(hButton, GWLP_USERDATA, (LONG_PTR)(color.rgbResult + 1));
+
+                SetColorDlgButtonColor(hDlg, LOWORD(wParam), color.rgbResult);
+
+                return TRUE;
+            }
         }
         break;
     }
@@ -1001,6 +1092,11 @@ static INT_PTR CALLBACK Dialog_Preference_Proc(HWND hDlg, UINT msg, WPARAM wPara
             return TRUE;
 
         case IDCANCEL:
+            //for (int i = 0; i < 3; i++) {
+                HWND hwndChildDlg = FindWindowEx(hDlg, NULL, NULL, captionChildDlg[2]); 
+                //if (hwndChildDlg != NULL)
+                    SendMessage(hwndChildDlg, WM_COMMAND, MAKEWPARAM(IDCANCEL, NULL), (LPARAM)hDlg);
+            //}
             EndDialog(hDlg, IDCANCEL);
             return TRUE;
         }

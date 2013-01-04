@@ -57,6 +57,9 @@
 #define TOC_DY_STR                  "Toc Dy"
 #define TOC_STATE_STR               "TocToggles"
 #define BG_COLOR_STR                "BgColor"
+#define NO_DOC_BG_COLOR_STR         "NoDocBgColor"
+#define DOC_TEXT_COLOR_STR          "DocTextColor"
+#define DOC_BG_COLOR_STR            "DocBgColor"
 #define ESC_TO_EXIT_STR             "EscToExit"
 #define USE_SYS_COLORS_STR          "UseSysColors"
 #define INVERSE_SEARCH_COMMANDLINE  "InverseSearchCommandLine"
@@ -109,6 +112,9 @@ SerializableGlobalPrefs gGlobalPrefs = {
     ABOUT_BG_COLOR_DEFAULT, // int bgColor
     false, // bool escToExit
     false, // bool useSysColors
+    NO_DOC_BG_COLOR_DEFAULT, // int noDocBgColor
+    DOC_BG_COLOR_DEFAULT, //int docBgColor
+    DOC_TEXT_COLOR_DEFAULT, // int docTextColor
     NULL, // WCHAR *inverseSearchCmdLine
     false, // bool enableTeXEnhancements
     NULL, // WCHAR *versionToSkip
@@ -169,6 +175,9 @@ static BencDict* SerializeGlobalPrefs(SerializableGlobalPrefs& globalPrefs)
     prefs->Add(BG_COLOR_STR, globalPrefs.bgColor);
     prefs->Add(ESC_TO_EXIT_STR, globalPrefs.escToExit);
     prefs->Add(USE_SYS_COLORS_STR, globalPrefs.useSysColors);
+    prefs->Add(NO_DOC_BG_COLOR_STR, globalPrefs.noDocBgColor);
+    prefs->Add(DOC_TEXT_COLOR_STR, gGlobalPrefs.docTextColor);
+    prefs->Add(DOC_BG_COLOR_STR, gGlobalPrefs.docBgColor);
     prefs->Add(ENABLE_AUTO_UPDATE_STR, globalPrefs.enableAutoUpdate);
     prefs->Add(REMEMBER_OPENED_FILES_STR, globalPrefs.rememberOpenedFiles);
     prefs->Add(GLOBAL_PREFS_ONLY_STR, globalPrefs.globalPrefsOnly);
@@ -529,6 +538,9 @@ static void DeserializePrefs(const char *prefsTxt, SerializableGlobalPrefs& glob
     Retrieve(global, PDF_ASSOCIATE_ASSOCIATE_STR, globalPrefs.pdfAssociateShouldAssociate);
     Retrieve(global, ESC_TO_EXIT_STR, globalPrefs.escToExit);
     Retrieve(global, USE_SYS_COLORS_STR, globalPrefs.useSysColors);
+    Retrieve(global, NO_DOC_BG_COLOR_STR, globalPrefs.noDocBgColor);
+    Retrieve(global, DOC_TEXT_COLOR_STR, globalPrefs.docTextColor);
+    Retrieve(global, DOC_BG_COLOR_STR, globalPrefs.docBgColor);
     Retrieve(global, BG_COLOR_STR, globalPrefs.bgColor);
     Retrieve(global, ENABLE_AUTO_UPDATE_STR, globalPrefs.enableAutoUpdate);
     Retrieve(global, REMEMBER_OPENED_FILES_STR, globalPrefs.rememberOpenedFiles);
