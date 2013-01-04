@@ -58,6 +58,11 @@ struct SerializableGlobalPrefs {
     /* whether to display documents black-on-white or in system colors */
     bool useSysColors;
 
+    int noDocBgColor;
+
+    int docBgColor;
+    int docTextColor;
+
     /* pattern used to launch the editor when doing inverse search */
     WCHAR *inverseSearchCmdLine;
     /* whether to expose the SyncTeX enhancements to the user */

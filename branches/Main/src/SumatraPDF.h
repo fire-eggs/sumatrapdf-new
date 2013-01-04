@@ -17,7 +17,7 @@
 #define SIDEBAR_BOTTOM_CLASS_NAME    L"Sidebar Bottom"
 #define FAV_SPLITTER_CLASS_NAME      L"FavSplitter"
 
-#define SPLITTER_DY         4
+#define SPLITTER_DY         7
 
 #define WEBSITE_MAIN_URL         L"http://blog.kowalczyk.info/software/sumatrapdf/"
 #define WEBSITE_MANUAL_URL       L"http://blog.kowalczyk.info/software/sumatrapdf/manual.html"
@@ -70,7 +70,11 @@ enum MenuToolbarFlags {
 #define RIGHT_TXT_FONT          L"Arial Black"
 #define RIGHT_TXT_FONT_SIZE     12
 // for backward compatibility use a value that older versions will render as yellow
-#define ABOUT_BG_COLOR_DEFAULT  (RGB(0xff, 0xf2, 0) - 0x80000000)
+#define ABOUT_BG_COLOR_DEFAULT  (RGB(0xFF, 0xFF, 0xD4) - 0x80000000)
+
+#define NO_DOC_BG_COLOR_DEFAULT RGB(0x99, 0x99, 0x99)
+#define DOC_TEXT_COLOR_DEFAULT  RGB(0x00, 0x00, 0x00)
+#define DOC_BG_COLOR_DEFAULT    RGB(0xFF, 0xFF, 0xFF)
 
 class TopWindowInfo;
 class ContainerInfo;
@@ -89,7 +93,6 @@ extern HCURSOR                  gCursorArrow;
 extern HCURSOR                  gCursorIBeam;
 extern HBRUSH                   gBrushLogoBg;
 extern HBRUSH                   gBrushAboutBg;
-extern HBRUSH                   gBrushSidebarSplitterBg;
 extern HFONT                    gDefaultGuiFont;
 extern WCHAR *                  gPluginURL;
 extern Vec<WindowInfo*>         gWindows;
@@ -114,7 +117,7 @@ void  AdvanceFocus(WindowInfo* win);
 bool  WindowInfoStillValid(WindowInfo *win);
 void  ChangeLanguage(const char *langName);
 void  ShowOrHideToolbarGlobally();
-void  UpdateDocumentColors();
+void  UpdateDocumentColors(COLORREF fore=RGB(0x00, 0x00, 0x00), COLORREF back=RGB(0xFF, 0xFF, 0xFF));
 void  UpdateCurrentFileDisplayStateForWin(SumatraWindow& win);
 bool  FrameOnKeydown(WindowInfo* win, WPARAM key, LPARAM lparam, bool inTextfield=false);
 void  SwitchToDisplayMode(WindowInfo *win, DisplayMode displayMode, bool keepContinuous=false);

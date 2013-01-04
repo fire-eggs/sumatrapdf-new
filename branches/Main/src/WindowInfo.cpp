@@ -60,7 +60,7 @@ WindowInfo::WindowInfo(HWND hwnd) :
     fullScreen(false), presentation(PM_DISABLED), tocBeforeFullScreen(false),
     windowStateBeforePresentation(0), prevStyle(0),
     hwndCanvas(hwnd),
-	hwndSidebar(NULL),
+    hwndSidebar(NULL),
     hwndTocBox(NULL), hwndTocTree(NULL),
     hwndSidebarSplitter(NULL), hwndFavSplitter(NULL),
     hwndInfotip(NULL), infotipVisible(false),
@@ -113,11 +113,11 @@ ToolbarInfo * WindowInfo::toolBar() const
 
 SidebarInfo * WindowInfo::sideBar() const
 {
-	// One can improve this after introducing gGlobalPrefs.ToolbarForEachPanel.
-	SidebarInfo * sideBar = this->panel->WIN->sideBar;
-	if (sideBar == NULL)
-		sideBar = this->panel->sideBar;
-	return sideBar;
+    // One can improve this after introducing gGlobalPrefs.ToolbarForEachPanel.
+    SidebarInfo * sideBar = this->panel->WIN->sideBar;
+    if (sideBar == NULL)
+        sideBar = this->panel->sideBar;
+    return sideBar;
 }
 
 // Notify both display model and double-buffer (if they exist)

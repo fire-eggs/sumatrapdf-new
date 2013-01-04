@@ -82,7 +82,7 @@ bool             gUseEbookUI = false;
 // embedded (e.g. in a web browser)
 WCHAR *          gPluginURL = NULL; // owned by CommandLineInfo in WinMain
 
-#define ABOUT_BG_LOGO_COLOR     RGB(0xFF, 0xF2, 0x00)
+#define ABOUT_BG_LOGO_COLOR     RGB(0xFF, 0xFF, 0xD4)
 #define ABOUT_BG_GRAY_COLOR     RGB(0xCC, 0xCC, 0xCC)
 
 // Background color comparison:
@@ -101,7 +101,10 @@ WCHAR *          gPluginURL = NULL; // owned by CommandLineInfo in WinMain
 #define COL_WINDOW_BG           RGB(0x99, 0x99, 0x99)
 #endif
 
-#define SIDEBAR_SPLITTER_BG_COLOR RGB(0xF0, 0xF0, 0xF0)
+#define PANEL_SPLITTER_BG_COLOR         RGB(0xF0, 0xF0, 0xF0)
+#define PANEL_SPLITTER_EDGE_BG_COLOR    RGB(0xA0, 0xA0, 0xA0)
+#define SIDEBAR_SPLITTER_BG_COLOR       RGB(0xF0, 0xF0, 0xF0)
+#define SIDEBAR_SPLITTER_EDGE_BG_COLOR  RGB(0xA0, 0xA0, 0xA0)
 
 #define CONTAINER_CLASS_NAME         L"SUMATRA_PDF_CONTAINER"
 #define PANEL_CLASS_NAME             L"SUMATRA_PDF_PANEL"
@@ -115,7 +118,7 @@ WCHAR *          gPluginURL = NULL; // owned by CommandLineInfo in WinMain
 #define DEFAULT_LINK_PROTOCOLS       L"http,https,mailto"
 #define DEFAULT_FILE_PERCEIVED_TYPES L"audio,video"
 
-#define SPLITTER_DX         5
+#define SPLITTER_DX         7
 #define SIDEBAR_MIN_WIDTH   150
 
 // #define SPLITTER_DY         4
@@ -145,7 +148,6 @@ HCURSOR                      gCursorHand;
 HCURSOR                      gCursorIBeam;
 HBRUSH                       gBrushLogoBg;
 HBRUSH                       gBrushAboutBg;
-HBRUSH                       gBrushSidebarSplitterBg;
 HFONT                        gDefaultGuiFont;
 
 // TODO: combine into Vec<SumatraWindow> (after 2.0) ?
@@ -161,6 +163,11 @@ static HCURSOR                      gCursorSizeWE;
 static HCURSOR                      gCursorSizeNS;
 static HCURSOR                      gCursorNo;
 static HBRUSH                       gBrushNoDocBg;
+
+static HBRUSH                       gBrushPanelSplitterBg;
+static HBRUSH                       gBrushPanelSplitterEdgeBg;
+static HBRUSH                       gBrushSidebarSplitterBg;
+static HBRUSH                       gBrushSidebarSplitterEdgeBg;
 
 static HBITMAP                      gBitmapReloadingCue;
 static RenderCache                  gRenderCache;
@@ -379,18 +386,18 @@ PanelInfo *FindPanelInfoByHwnd(HWND hwnd)
     if (WIN->gPanel.Count() == 0)
         return NULL;
 
-	if (hwnd == WIN->hwndFrame)
-		return WIN->panel;
+    if (hwnd == WIN->hwndFrame)
+        return WIN->panel;
 
-	// Now WIN != NULL and it has panels;
-	// If hwnd is a child of a container, container != NULL;
+    // Now WIN != NULL and it has panels;
+    // If hwnd is a child of a container, container != NULL;
     ContainerInfo *container = FindContainerInfoByHwnd(hwnd); // NULL if hwnd == WIN->hwndFrame.
 
     // If container == NULL here, hwnd can only be a child in ReBar or Sidebar, and it is not in any container.
     if (container == NULL)
         return WIN->panel; // WIN != NULL implies that WIN->panel != NULL;
 
-	// Now hwnd is in a container.
+    // Now hwnd is in a container.
 
     // If hwnd is already one of the container, return panel;
     if (hwnd == container->hwndContainer)
@@ -424,8 +431,8 @@ WindowInfo *FindWindowInfoByHwnd(HWND hwnd)
     if (panel->gWin.Count() == 0)
         return NULL;
 
-	if (hwnd == panel->hwndPanel || hwnd == panel->win->hwndFrame)
-		return panel->win;
+    if (hwnd == panel->hwndPanel || hwnd == panel->win->hwndFrame)
+        return panel->win;
 
     ContainerInfo *container = FindContainerInfoByHwnd(hwnd);
 
@@ -435,14 +442,14 @@ WindowInfo *FindWindowInfoByHwnd(HWND hwnd)
     if (hwnd == container->hwndContainer)
         return panel->win;
 
-	HWND hwndParent = hwnd;
-	HWND hwndParentOld = NULL;
+    HWND hwndParent = hwnd;
+    HWND hwndParentOld = NULL;
 
-	while (hwndParent != panel->hwndPanel) {
-		hwndParentOld = hwndParent;
-		hwndParent = GetParent(hwndParent);
-	}
-	HWND hwndAncestor = hwndParentOld;
+    while (hwndParent != panel->hwndPanel) {
+        hwndParentOld = hwndParent;
+        hwndParent = GetParent(hwndParent);
+    }
+    HWND hwndAncestor = hwndParentOld;
 
     for ( size_t i = 0; i < panel->gWin.Count(); i++) {
         WindowInfo *win = panel->gWin.At(i);
@@ -451,12 +458,12 @@ WindowInfo *FindWindowInfoByHwnd(HWND hwnd)
     }
 
     for ( size_t i = 0; i < panel->gWin.Count(); i++) {
-		WindowInfo *win = panel->gWin.At(i);
-		if ((win->toolBar() && hwndAncestor == win->toolBar()->hwndReBar) ||
-			(win->sideBar() && (hwndAncestor == win->sideBar()->hwndSidebar || hwndAncestor == win->sideBar()->hwndSidebarSplitter))
-		   )
-			return panel->win;
-	}
+        WindowInfo *win = panel->gWin.At(i);
+        if ((win->toolBar() && hwndAncestor == win->toolBar()->hwndReBar) ||
+            (win->sideBar() && (hwndAncestor == win->sideBar()->hwndSidebar || hwndAncestor == win->sideBar()->hwndSidebarSplitter))
+           )
+            return panel->win;
+    }
     return NULL;
 }
 
@@ -1262,22 +1269,22 @@ static void UpdateToolbarAndScrollbarState(WindowInfo& win)
 
 static void CreateSidebar(WinInfo& winInfo, bool sidebarForEachPanel=false)
 {
-	if (winInfo.AsPanel() && !sidebarForEachPanel && (sidebarForEachPanel == gGlobalPrefs.sidebarForEachPanel))
-		return;
+    if (winInfo.AsPanel() && !sidebarForEachPanel && (sidebarForEachPanel == gGlobalPrefs.sidebarForEachPanel))
+        return;
 
-	CreateSidebarBox(winInfo);
+    CreateSidebarBox(winInfo);
 
-	winInfo.sideBar->hwndSidebarSplitter = CreateWindowEx(
-		NULL,
-		SIDEBAR_SPLITTER_CLASS_NAME, NULL,
-		WS_CHILDWINDOW | WS_CLIPSIBLINGS,
-		0, 0, 0, 0,
-		winInfo.Hwnd(), NULL,
-		ghinst, NULL);
+    winInfo.sideBar->hwndSidebarSplitter = CreateWindowEx(
+        NULL,
+        SIDEBAR_SPLITTER_CLASS_NAME, NULL,
+        WS_CHILDWINDOW | WS_CLIPSIBLINGS,
+        0, 0, 0, 0,
+        winInfo.Hwnd(), NULL,
+        ghinst, NULL);
 
-	// For now temp.
-	ShowWindow(winInfo.sideBar->hwndSidebarSplitter, SW_SHOW);
-	UpdateWindow(winInfo.sideBar->hwndSidebarSplitter);
+    // For now temp.
+    ShowWindow(winInfo.sideBar->hwndSidebarSplitter, SW_SHOW);
+    UpdateWindow(winInfo.sideBar->hwndSidebarSplitter);
 }
 
 static WindowInfo* CreateWindowInfo()
@@ -1289,11 +1296,11 @@ static WindowInfo* CreateWindowInfo()
         windowPos = GetDefaultWindowPos();
 
     HWND hwndFrame = CreateWindow(
-            FRAME_CLASS_NAME, SUMATRA_WINDOW_TITLE,
-            WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
-            windowPos.x, windowPos.y, windowPos.dx, windowPos.dy,
-            NULL, NULL,
-            ghinst, NULL);
+        FRAME_CLASS_NAME, SUMATRA_WINDOW_TITLE,
+        WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
+        windowPos.x, windowPos.y, windowPos.dx, windowPos.dy,
+        NULL, NULL,
+        ghinst, NULL);
     if (!hwndFrame)
         return NULL;
 
@@ -1309,23 +1316,23 @@ static WindowInfo* CreateWindowInfo()
     }
 
     HWND hwndPanel = CreateWindowEx(
-            NULL,
-            PANEL_CLASS_NAME, NULL,
-            WS_CHILD | WS_CLIPCHILDREN,
-            0, 0, 0, 0,
-            hwndContainer, NULL,
-            ghinst, NULL);
+        NULL,
+        PANEL_CLASS_NAME, NULL,
+        WS_CHILD | WS_CLIPCHILDREN,
+        0, 0, 0, 0,
+        hwndContainer, NULL,
+        ghinst, NULL);
     if (!hwndPanel) {
         return NULL;
     }
 
     HWND hwndCanvas = CreateWindowEx(
-            WS_EX_STATICEDGE,
-            CANVAS_CLASS_NAME, NULL,
-            WS_CHILD | WS_HSCROLL | WS_VSCROLL | WS_CLIPSIBLINGS,
-            0, 0, 0, 0, /* position and size determined in OnSize */
-            hwndPanel, NULL,
-            ghinst, NULL);
+        NULL,
+        CANVAS_CLASS_NAME, NULL,
+        WS_CHILD | WS_HSCROLL | WS_VSCROLL | WS_CLIPSIBLINGS,
+        0, 0, 0, 0, /* position and size determined in OnSize */
+        hwndPanel, NULL,
+        ghinst, NULL);
     if (!hwndCanvas) {
         return NULL;
     }
@@ -1337,7 +1344,7 @@ static WindowInfo* CreateWindowInfo()
 
     ContainerInfo *container = new ContainerInfo(hwndContainer);
     WIN->gContainer.Append(container);
-	WIN->container = container;
+    WIN->container = container;
 
     ////container->parentContainer = NULL;
     ////container->container1 = NULL;
@@ -1366,7 +1373,7 @@ static WindowInfo* CreateWindowInfo()
     SetMenu(win->hwndFrame, win->menu);
 
     // At this point, it will
-	// call FrameOnSize, but now toolBar and sideBar are still NULL.
+    // call FrameOnSize, but now toolBar and sideBar are still NULL.
     // We append WIN to gWIN later to avoid resize problem.
 
     ShowWindow(win->hwndCanvas, SW_SHOW);
@@ -1446,7 +1453,7 @@ static WindowInfo* CreatePanel(ContainerInfo *container)
     }
 
     HWND hwndCanvas = CreateWindowEx(
-        WS_EX_STATICEDGE,
+        NULL,
         CANVAS_CLASS_NAME, NULL,
         WS_CHILD | WS_HSCROLL | WS_VSCROLL | WS_CLIPSIBLINGS,
         0, 0, 0, 0, /* position and size determined in OnSize */
@@ -1456,13 +1463,13 @@ static WindowInfo* CreatePanel(ContainerInfo *container)
         return NULL;
     }
 
-	container->hwndSplitter = CreateWindowEx(
-		NULL,
-		PANEL_SPLITTER_CLASS_NAME, NULL,
-		WS_CHILDWINDOW | WS_CLIPSIBLINGS,
-		0, 0, 0, 0,
-		container->hwndContainer, NULL,
-		ghinst, NULL);
+    container->hwndSplitter = CreateWindowEx(
+        NULL,
+        PANEL_SPLITTER_CLASS_NAME, NULL,
+        WS_CHILDWINDOW | WS_CLIPSIBLINGS,
+        0, 0, 0, 0,
+        container->hwndContainer, NULL,
+        ghinst, NULL);
 
     assert(NULL == FindContainerInfoByHwnd(hwndContainer1));
     assert(NULL == FindContainerInfoByHwnd(hwndContainer2));
@@ -1510,11 +1517,11 @@ static WindowInfo* CreatePanel(ContainerInfo *container)
     ShowWindow(container2->hwndContainer, SW_SHOW);
     UpdateWindow(container2->hwndContainer);
 
-	ShowWindow(container2->hwndContainer, SW_SHOW);
-	UpdateWindow(container2->hwndContainer);
+    ShowWindow(container2->hwndContainer, SW_SHOW);
+    UpdateWindow(container2->hwndContainer);
 
-	ShowWindow(container->hwndSplitter, SW_SHOW);
-	UpdateWindow(container->hwndSplitter);
+    ShowWindow(container->hwndSplitter, SW_SHOW);
+    UpdateWindow(container->hwndSplitter);
 
     win->hwndInfotip = CreateWindowEx(WS_EX_TOPMOST,
         TOOLTIPS_CLASS, NULL, WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
@@ -1525,7 +1532,7 @@ static WindowInfo* CreatePanel(ContainerInfo *container)
     CreateToolbar(WinInfo::Make(panel), gGlobalPrefs.toolbarForEachPanel);
     CreateSidebar(WinInfo::Make(panel), gGlobalPrefs.sidebarForEachPanel);
  
-	UpdateFindbox(win);
+    UpdateFindbox(win);
     if (HasPermission(Perm_DiskAccess) && !gPluginMode)
         DragAcceptFiles(win->hwndCanvas, TRUE);
 
@@ -2312,10 +2319,10 @@ static void RerenderEverything()
     }
 }
 
-void UpdateDocumentColors()
+void UpdateDocumentColors(COLORREF fore, COLORREF back)
 {
-    COLORREF fore = WIN_COL_BLACK;
-    COLORREF back = WIN_COL_WHITE;
+    //COLORREF fore = WIN_COL_BLACK;
+    //COLORREF back = WIN_COL_WHITE;
     if (gGlobalPrefs.useSysColors) {
         fore = GetSysColor(COLOR_WINDOWTEXT);
         back = GetSysColor(COLOR_WINDOW);
@@ -2332,7 +2339,18 @@ void UpdateDocumentColors()
     if (gGlobalPrefs.useSysColors && (fore != WIN_COL_BLACK || back != WIN_COL_WHITE))
         gBrushNoDocBg = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
     else
-        gBrushNoDocBg = CreateSolidBrush(COL_WINDOW_BG);
+        gBrushNoDocBg = CreateSolidBrush(gGlobalPrefs.noDocBgColor);
+
+    DeleteObject(gBrushLogoBg);
+    gBrushLogoBg = CreateSolidBrush(gGlobalPrefs.bgColor);
+
+#ifndef ABOUT_USE_LESS_COLORS
+    DeleteObject(gBrushAboutBg);
+    gBrushAboutBg = CreateSolidBrush(gGlobalPrefs.bgColor);
+#else
+    DeleteObject(gBrushAboutBg);
+    gBrushAboutBg = CreateSolidBrush(ABOUT_BG_GRAY_COLOR);
+#endif
 }
 
 static void ToggleGdiDebugging()
@@ -3435,7 +3453,7 @@ static void AdjustWindowEdge(WindowInfo& win)
     if (IsZoomed(win.hwndFrame) || win.fullScreen || win.presentation || gPluginMode)
         newStyle &= ~WS_EX_STATICEDGE;
     else
-        newStyle |= WS_EX_STATICEDGE;
+        newStyle &= WS_EX_STATICEDGE;
 
     if (newStyle != exStyle) {
         SetWindowLong(win.hwndCanvas, GWL_EXSTYLE, newStyle);
@@ -4085,81 +4103,81 @@ static void UpdateUITextForLanguage()
 
 static void ResizePanel(ContainerInfo *container)
 {
-	//HWND hwndParent = win->panel->WIN->hwndFrame;
-	//HWND hwnd = win->panel->WIN->gContainer.At(0)->hwndContainer;
-	//if (gGlobalPrefs.sidebarForEachPanel) {
-	//	hwndParent = win->panel->hwndPanel;
-	//	hwnd = win->hwndCanvas;
-	//}
+    //HWND hwndParent = win->panel->WIN->hwndFrame;
+    //HWND hwnd = win->panel->WIN->gContainer.At(0)->hwndContainer;
+    //if (gGlobalPrefs.sidebarForEachPanel) {
+    //    hwndParent = win->panel->hwndPanel;
+    //    hwnd = win->hwndCanvas;
+    //}
 
-	//HWN
+    //HWN
 
-	HWND hwnd1 = container->container1->hwndContainer;
-	HWND hwnd2 = container->container2->hwndContainer;
-	HWND hwndParent = container->hwndContainer;
+    HWND hwnd1 = container->container1->hwndContainer;
+    HWND hwnd2 = container->container2->hwndContainer;
+    HWND hwndParent = container->hwndContainer;
 
-	POINT pcur;
-	GetCursorPosInHwnd(hwndParent, pcur);
-	int hwnd1D;
-	if (container->isSplitVertical)
-		hwnd1D = pcur.x; // without splitter
-	else
-		hwnd1D = pcur.y;
+    POINT pcur;
+    GetCursorPosInHwnd(hwndParent, pcur);
+    int hwnd1D;
+    if (container->isSplitVertical)
+        hwnd1D = pcur.x; // without splitter
+    else
+        hwnd1D = pcur.y;
 
-	ClientRect r1(hwnd1);
-	ClientRect rParent(hwndParent);
+    ClientRect r1(hwnd1);
+    ClientRect rParent(hwndParent);
 
-	// make sure to keep this in sync with the calculations in SetSidebarVisibility
-	// note: without the min/max(..., rToc.dx), the sidebar will be
-	//       stuck at its width if it accidentally got too wide or too narrow
-	//if (hwnd1Dx < min(SIDEBAR_MIN_WIDTH, r1.dx) ||
-	//	hwnd1Dx > max(rParent.dx / 2, r1.dx)) {
-	//		SetCursor(gCursorNo);
-	//		return;
-	//}
+    // make sure to keep this in sync with the calculations in SetSidebarVisibility
+    // note: without the min/max(..., rToc.dx), the sidebar will be
+    //       stuck at its width if it accidentally got too wide or too narrow
+    //if (hwnd1Dx < min(SIDEBAR_MIN_WIDTH, r1.dx) ||
+    //    hwnd1Dx > max(rParent.dx / 2, r1.dx)) {
+    //        SetCursor(gCursorNo);
+    //        return;
+    //}
 
-	if (container->isSplitVertical)
-		SetCursor(gCursorSizeWE);
-	else
-		SetCursor(gCursorSizeNS);
+    if (container->isSplitVertical)
+        SetCursor(gCursorSizeWE);
+    else
+        SetCursor(gCursorSizeNS);
 
-	int totalD;
-	if (container->isSplitVertical)
-		totalD = rParent.dy;
-	else 
-		totalD = rParent.dx;
-	// rToc.y is always 0, as rToc is a ClientRect, so we first have
-	// to convert it into coordinates relative to hwndFrame:
-	//assert(MapRectToWindow(rSidebar, win->sideBar()->hwndSidebar, hwndParent).y == y);
-	//assert(totalDy == (rToc.dy + rFav.dy));
+    int totalD;
+    if (container->isSplitVertical)
+        totalD = rParent.dy;
+    else 
+        totalD = rParent.dx;
+    // rToc.y is always 0, as rToc is a ClientRect, so we first have
+    // to convert it into coordinates relative to hwndFrame:
+    //assert(MapRectToWindow(rSidebar, win->sideBar()->hwndSidebar, hwndParent).y == y);
+    //assert(totalDy == (rToc.dy + rFav.dy));
 
-	if (container->isSplitVertical) {
-		MoveWindow(hwnd1, 0, 0, hwnd1D, totalD, TRUE);
-		MoveWindow(container->hwndSplitter, hwnd1D, 0, SPLITTER_DX, totalD, TRUE);
-		MoveWindow(hwnd2,hwnd1D + SPLITTER_DX, 0, rParent.dx - hwnd1D - SPLITTER_DX, totalD, TRUE);
-	} else
-	{
-		MoveWindow(hwnd1, 0, 0, totalD, hwnd1D, TRUE);
-		MoveWindow(container->hwndSplitter, 0, hwnd1D, totalD, SPLITTER_DY, TRUE);
-		MoveWindow(hwnd2, 0, hwnd1D + SPLITTER_DY, totalD, rParent.dy - hwnd1D - SPLITTER_DY, TRUE);
-	}
+    if (container->isSplitVertical) {
+        MoveWindow(hwnd1, 0, 0, hwnd1D, totalD, TRUE);
+        MoveWindow(container->hwndSplitter, hwnd1D, 0, SPLITTER_DX, totalD, TRUE);
+        MoveWindow(hwnd2,hwnd1D + SPLITTER_DX, 0, rParent.dx - hwnd1D - SPLITTER_DX, totalD, TRUE);
+    } else
+    {
+        MoveWindow(hwnd1, 0, 0, totalD, hwnd1D, TRUE);
+        MoveWindow(container->hwndSplitter, 0, hwnd1D, totalD, SPLITTER_DY, TRUE);
+        MoveWindow(hwnd2, 0, hwnd1D + SPLITTER_DY, totalD, rParent.dy - hwnd1D - SPLITTER_DY, TRUE);
+    }
 
-	TopWindowInfo *WIN = FindTopWindowInfoByHwnd(container->hwndContainer);
+    TopWindowInfo *WIN = FindTopWindowInfoByHwnd(container->hwndContainer);
 
-	InvalidateRect(WIN->hwndFrame, NULL, TRUE);
-	UpdateWindow(WIN->hwndFrame);
+    InvalidateRect(WIN->hwndFrame, NULL, TRUE);
+    UpdateWindow(WIN->hwndFrame);
 }
 
 // TODO: the layout logic here is similar to what we do in SetSidebarVisibility()
 // would be nice to consolidate.
 static void ResizeSidebar(WindowInfo *win)
 {
-	HWND hwndParent = win->panel->WIN->hwndFrame;
-	HWND hwnd = win->panel->WIN->gContainer.At(0)->hwndContainer;
-	if (gGlobalPrefs.sidebarForEachPanel) {
-		hwndParent = win->panel->hwndPanel;
+    HWND hwndParent = win->panel->WIN->hwndFrame;
+    HWND hwnd = win->panel->WIN->gContainer.At(0)->hwndContainer;
+    if (gGlobalPrefs.sidebarForEachPanel) {
+        hwndParent = win->panel->hwndPanel;
         hwnd = win->hwndCanvas;
-	}
+    }
 
     POINT pcur;
     GetCursorPosInHwnd(hwndParent, pcur);
@@ -4194,8 +4212,8 @@ static void ResizeSidebar(WindowInfo *win)
     MoveWindow(win->sideBar()->hwndSidebarSplitter, sidebarDx, y, SPLITTER_DX, totalDy, TRUE);
     MoveWindow(hwnd, sidebarDx + SPLITTER_DX, y, rParent.dx - sidebarDx - SPLITTER_DX, totalDy, TRUE);
 
-	InvalidateRect(win->panel->WIN->hwndFrame, NULL, TRUE);
-	UpdateWindow(win->panel->WIN->hwndFrame);
+    InvalidateRect(win->panel->WIN->hwndFrame, NULL, TRUE);
+    UpdateWindow(win->panel->WIN->hwndFrame);
 }
 
 // TODO: the layout logic here is similar to what we do in SetSidebarVisibility()
@@ -4221,7 +4239,7 @@ static void ResizeFav(WindowInfo *win)
 
     SetCursor(gCursorSizeNS);
 
-	int totalDy = rSidebar.dy;
+    int totalDy = rSidebar.dy;
     // rToc.y is always 0, as rToc is a ClientRect, so we first have
     // to convert it into coordinates relative to hwndFrame:
     assert(MapRectToWindow(rTop, win->sideBar()->hwndSidebarTop,  win->sideBar()->hwndSidebar).y == 0);
@@ -4238,20 +4256,20 @@ static void ResizeFav(WindowInfo *win)
 
 static void FavSplitterOnPaint(HWND hwnd)
 {
-	int dx = ClientRect(hwnd).dx;
-	int dy = ClientRect(hwnd).dy;
+    int dx = ClientRect(hwnd).dx;
+    int dy = ClientRect(hwnd).dy;
 
-	PAINTSTRUCT ps;
-	HDC hdc = BeginPaint(hwnd, &ps);
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(hwnd, &ps);
 
-	RECT rc;
-	rc.left = 0;
-	rc.right = dx;
-	rc.top = 0;
-	rc.bottom = dy;
-	FillRect(hdc, &rc, gBrushSidebarSplitterBg);
+    RECT rc;
+    rc.left = 0;
+    rc.right = dx;
+    rc.top = 0;
+    rc.bottom = dy;
+    FillRect(hdc, &rc, gBrushSidebarSplitterBg);
 
-	EndPaint(hwnd, &ps);
+    EndPaint(hwnd, &ps);
 }
 
 static LRESULT CALLBACK WndProcFavSplitter(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -4268,97 +4286,125 @@ static LRESULT CALLBACK WndProcFavSplitter(HWND hwnd, UINT message, WPARAM wPara
                 return 0;
             }
             break;
-		case WM_PAINT:
-			FavSplitterOnPaint(hwnd);
-			return 0;
-			break;
+        case WM_PAINT:
+            FavSplitterOnPaint(hwnd);
+            return 0;
+            break;
         case WM_LBUTTONDOWN:
             SetCapture(hwnd);
             break;
         case WM_LBUTTONUP:
             ReleaseCapture();
             break;
-		case WM_ERASEBKGND:
-			return 1;
-			break;
+        case WM_ERASEBKGND:
+            return 1;
+            break;
     }
     return DefWindowProc(hwnd, message, wParam, lParam);
 }
 static void PanelSplitterOnPaint(HWND hwnd)
 {
-	int dx = ClientRect(hwnd).dx;
-	int dy = ClientRect(hwnd).dy;
+    ContainerInfo *container = FindContainerInfoByHwnd(hwnd);
 
-	PAINTSTRUCT ps;
-	HDC hdc = BeginPaint(hwnd, &ps);
+    int dx = ClientRect(hwnd).dx;
+    int dy = ClientRect(hwnd).dy;
 
-	RECT rc;
-	rc.left = 0;
-	rc.right = dx;
-	rc.top = 0;
-	rc.bottom = dy;
-	FillRect(hdc, &rc, gBrushSidebarSplitterBg);
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(hwnd, &ps);
 
-	EndPaint(hwnd, &ps);
+    RECT rc;
+    rc.left = 0;
+    rc.right = dx;
+    rc.top = 0;
+    rc.bottom = dy;
+    FillRect(hdc, &rc, gBrushPanelSplitterBg);
+
+    if (!container->isSplitVertical) {
+        rc.left = 0;
+        rc.right = dx;
+        rc.top = 0;
+        rc.bottom = 1;
+        FillRect(hdc, &rc, gBrushPanelSplitterEdgeBg);
+
+        rc.left = 0;
+        rc.right = dx;
+        rc.top = dy - 1;
+        rc.bottom = dy;
+        FillRect(hdc, &rc, gBrushPanelSplitterEdgeBg);
+    } else {
+        rc.left = 0;
+        rc.right = 1;
+        rc.top = 0;
+        rc.bottom = dy;
+        FillRect(hdc, &rc, gBrushPanelSplitterEdgeBg);
+
+        rc.left = dx - 1;
+        rc.right = dx;
+        rc.top = 0;
+        rc.bottom = dy;
+        FillRect(hdc, &rc, gBrushPanelSplitterEdgeBg);
+    }
+
+    EndPaint(hwnd, &ps);
 }
 
 static LRESULT CALLBACK WndProcPanelSplitter(HWND hwnd, UINT message,
-	WPARAM wParam, LPARAM lParam)
+    WPARAM wParam, LPARAM lParam)
 {
-	ContainerInfo *container = FindContainerInfoByHwnd(hwnd);
-	if (!container)
-		return DefWindowProc(hwnd, message, wParam, lParam);
+    ContainerInfo *container = FindContainerInfoByHwnd(hwnd);
+    if (!container)
+        return DefWindowProc(hwnd, message, wParam, lParam);
 
-	switch (message)
-	{
-	case WM_MOUSEMOVE:
-		if (container->isSplitVertical)
-			SetCursor(gCursorSizeWE);
-		else
-			SetCursor(gCursorSizeNS);
+    switch (message)
+    {
+    case WM_MOUSEMOVE:
+        if (container->isSplitVertical)
+            SetCursor(gCursorSizeWE);
+        else
+            SetCursor(gCursorSizeNS);
 
-		if (hwnd == GetCapture()) {
-			ResizePanel(container);
-			return 0;
-		}
-		break;
-	case WM_PAINT:
-		PanelSplitterOnPaint(hwnd);
-		return 0;
-		break;
-	case WM_LBUTTONDOWN:
-		if (container->isSplitVertical)
-			SetCursor(gCursorSizeWE);
-		else
-			SetCursor(gCursorSizeNS);
-		SetCapture(hwnd);
-		break;
-	case WM_LBUTTONUP:
-		ReleaseCapture();
-		break;
-	case WM_ERASEBKGND:
-		return 1;
-		break;
-	}
-	return DefWindowProc(hwnd, message, wParam, lParam);
+        if (hwnd == GetCapture()) {
+            ResizePanel(container);
+            return 0;
+        }
+        break;
+    case WM_PAINT:
+        PanelSplitterOnPaint(hwnd);
+        return 0;
+        break;
+    case WM_LBUTTONDOWN:
+        if (container->isSplitVertical)
+            SetCursor(gCursorSizeWE);
+        else
+            SetCursor(gCursorSizeNS);
+        SetCapture(hwnd);
+        break;
+    case WM_LBUTTONUP:
+        ReleaseCapture();
+        break;
+    case WM_ERASEBKGND:
+        return 1;
+        break;
+    }
+    return DefWindowProc(hwnd, message, wParam, lParam);
 }
 
 static void SidebarSplitterOnPaint(HWND hwnd)
 {
-	int dx = ClientRect(hwnd).dx;
-	int dy = ClientRect(hwnd).dy;
+    int dx = ClientRect(hwnd).dx;
+    int dy = ClientRect(hwnd).dy;
 
-	PAINTSTRUCT ps;
-	HDC hdc = BeginPaint(hwnd, &ps);
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(hwnd, &ps);
 
-	RECT rc;
-	rc.left = 0;
-	rc.right = dx;
-	rc.top = 0;
-	rc.bottom = dy;
-	FillRect(hdc, &rc, gBrushSidebarSplitterBg);
+    RECT rc;
+    rc.left = 0;
+    rc.right = dx;
+    rc.top = 0;
+    rc.bottom = dy;
+    FillRect(hdc, &rc, gBrushSidebarSplitterBg);
 
-	EndPaint(hwnd, &ps);
+    EndPaint(hwnd, &ps);
 }
 
 static LRESULT CALLBACK WndProcSidebarSplitter(HWND hwnd, UINT message,
@@ -4376,19 +4422,19 @@ static LRESULT CALLBACK WndProcSidebarSplitter(HWND hwnd, UINT message,
                 return 0;
             }
             break;
-		case WM_PAINT:
-			SidebarSplitterOnPaint(hwnd);
-			return 0;
-			break;
+        case WM_PAINT:
+            SidebarSplitterOnPaint(hwnd);
+            return 0;
+            break;
         case WM_LBUTTONDOWN:
             SetCapture(hwnd);
             break;
         case WM_LBUTTONUP:
             ReleaseCapture();
             break;
-		case WM_ERASEBKGND:
-			return 1;
-			break;
+        case WM_ERASEBKGND:
+            return 1;
+            break;
     }
     return DefWindowProc(hwnd, message, wParam, lParam);
 }
@@ -4486,19 +4532,19 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible)
     //win->tocVisible = tocVisible;
     //gGlobalPrefs.favVisible = favVisible;
 
-	TopWindowInfo *WIN = FindTopWindowInfoByHwnd(win->hwndCanvas);
+    TopWindowInfo *WIN = FindTopWindowInfoByHwnd(win->hwndCanvas);
 
     int toolbarDy = 0;
     if (gGlobalPrefs.toolbarVisible && (gGlobalPrefs.toolbarForEachPanel == gGlobalPrefs.sidebarForEachPanel) && !win->fullScreen && !win->presentation)
         toolbarDy = WindowRect(win->toolBar()->hwndReBar).dy;
     
-	HWND hwndParent = win->panel->WIN->hwndFrame;
-	if (gGlobalPrefs.toolbarForEachPanel)
-		hwndParent = win->panel->hwndPanel; 
+    HWND hwndParent = win->panel->WIN->hwndFrame;
+    if (gGlobalPrefs.toolbarForEachPanel)
+        hwndParent = win->panel->hwndPanel; 
 
     ClientRect rParent(hwndParent);
 
-	int sidebarDy = rParent.dy - toolbarDy;
+    int sidebarDy = rParent.dy - toolbarDy;
 
     //if (!sidebarVisible) {
     //    if (GetFocus() == win->hwndTocTree || GetFocus() == win->hwndFavTree)
@@ -4533,17 +4579,17 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible)
     // limitValue() blows up with an assert() if frame.dx / 2 < SIDEBAR_MIN_WIDTH
     sidebarDx = limitValue(sidebarDx, SIDEBAR_MIN_WIDTH, rParent.dx / 2);
 
-	HWND hwnd = win->panel->container->hwndContainer;
-	if (gGlobalPrefs.sidebarForEachPanel)
-		hwnd = win->hwndCanvas;
+    HWND hwnd = win->panel->container->hwndContainer;
+    if (gGlobalPrefs.sidebarForEachPanel)
+        hwnd = win->hwndCanvas;
 
-	SetWindowPos(win->sideBar()->hwndSidebar, NULL, 0, y, sidebarDx, sidebarDy, SWP_NOZORDER);
-	SetWindowPos(win->sideBar()->hwndSidebarSplitter, NULL, sidebarDx, y, SPLITTER_DX, sidebarDy, SWP_NOZORDER);
+    SetWindowPos(win->sideBar()->hwndSidebar, NULL, 0, y, sidebarDx, sidebarDy, SWP_NOZORDER);
+    SetWindowPos(win->sideBar()->hwndSidebarSplitter, NULL, sidebarDx, y, SPLITTER_DX, sidebarDy, SWP_NOZORDER);
 
-	if (gGlobalPrefs.sidebarForEachPanel || GetParent(hwnd) == hwndParent)
-		SetWindowPos(hwnd, NULL, sidebarDx + SPLITTER_DX, y, rParent.dx - sidebarDx - SPLITTER_DX, sidebarDy,  SWP_NOZORDER);
-	else
-		SetWindowPos(WIN->container->hwndContainer, NULL, sidebarDx + SPLITTER_DX, y, rParent.dx - sidebarDx - SPLITTER_DX, sidebarDy,  SWP_NOZORDER);
+    if (gGlobalPrefs.sidebarForEachPanel || GetParent(hwnd) == hwndParent)
+        SetWindowPos(hwnd, NULL, sidebarDx + SPLITTER_DX, y, rParent.dx - sidebarDx - SPLITTER_DX, sidebarDy,  SWP_NOZORDER);
+    else
+        SetWindowPos(WIN->container->hwndContainer, NULL, sidebarDx + SPLITTER_DX, y, rParent.dx - sidebarDx - SPLITTER_DX, sidebarDy,  SWP_NOZORDER);
 }
 
 void SplitPanel(ContainerInfo *container, WCHAR const *direction)
@@ -4924,11 +4970,11 @@ static void ContainerOnSize(ContainerInfo* container, int dx, int dy)
 
         if (container->isSplitVertical) {
             SetWindowPos(container->container1->hwndContainer, NULL, 0, 0, dx_1, dy, SWP_NOZORDER);
-			SetWindowPos(container->hwndSplitter, NULL, dx_1, 0, SPLITTER_DX, dy, SWP_NOZORDER);
+            SetWindowPos(container->hwndSplitter, NULL, dx_1, 0, SPLITTER_DX, dy, SWP_NOZORDER);
             SetWindowPos(container->container2->hwndContainer, NULL, dx_1 + SPLITTER_DX, 0, dx - dx_1 - SPLITTER_DX, dy, SWP_NOZORDER);
         } else {
             SetWindowPos(container->container1->hwndContainer, NULL, 0, 0, dx, dy_1, SWP_NOZORDER);
-			SetWindowPos(container->hwndSplitter, NULL, 0, dy_1, dx, SPLITTER_DY, SWP_NOZORDER);
+            SetWindowPos(container->hwndSplitter, NULL, 0, dy_1, dx, SPLITTER_DY, SWP_NOZORDER);
             SetWindowPos(container->container2->hwndContainer, NULL, 0, dy_1 + SPLITTER_DY, dx, dy - dy_1 - SPLITTER_DY, SWP_NOZORDER);
         }
     }
@@ -4957,42 +5003,42 @@ static void PanelOnSize(PanelInfo* panel, int dx, int dy)
 
 static void ContainerOnPaint(ContainerInfo& container)
 {
-	int dx = ClientRect(container.hwndContainer).dx;
-	int dy = ClientRect(container.hwndContainer).dy;
+    int dx = ClientRect(container.hwndContainer).dx;
+    int dy = ClientRect(container.hwndContainer).dy;
 
-	PAINTSTRUCT ps;
-	HDC hdc = BeginPaint(container.hwndContainer, &ps);
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(container.hwndContainer, &ps);
 
-	RECT rc;
-	rc.left = 0;
-	rc.right = dx;
-	rc.top = 0 ;
-	rc.bottom = dy;
-	FillRect(hdc, &rc, gBrushNoDocBg);
+    RECT rc;
+    rc.left = 0;
+    rc.right = dx;
+    rc.top = 0 ;
+    rc.bottom = dy;
+    FillRect(hdc, &rc, gBrushNoDocBg);
 
-	EndPaint(container.hwndContainer, &ps);
+    EndPaint(container.hwndContainer, &ps);
 }
 
 static void PanelOnPaint(PanelInfo& panel)
 {
-	int rebBarDy = WindowRect(panel.win->toolBar()->hwndReBar).dy;
-	if (!gGlobalPrefs.toolbarVisible || !gGlobalPrefs.toolbarForEachPanel)
-		rebBarDy = 0;
+    int rebBarDy = WindowRect(panel.win->toolBar()->hwndReBar).dy;
+    if (!gGlobalPrefs.toolbarVisible || !gGlobalPrefs.toolbarForEachPanel)
+        rebBarDy = 0;
 
-	int dx = ClientRect(panel.hwndPanel).dx;
-	int dy = ClientRect(panel.hwndPanel).dy;
+    int dx = ClientRect(panel.hwndPanel).dx;
+    int dy = ClientRect(panel.hwndPanel).dy;
 
-	PAINTSTRUCT ps;
-	HDC hdc = BeginPaint(panel.hwndPanel, &ps);
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(panel.hwndPanel, &ps);
 
-	RECT rc;
-	rc.left = 0;
-	rc.right = dx;
-	rc.top = rebBarDy ;
-	rc.bottom = dy - rebBarDy;
-	FillRect(hdc, &rc, gBrushNoDocBg);
+    RECT rc;
+    rc.left = 0;
+    rc.right = dx;
+    rc.top = rebBarDy ;
+    rc.bottom = dy - rebBarDy;
+    FillRect(hdc, &rc, gBrushNoDocBg);
 
-	EndPaint(panel.hwndPanel, &ps);
+    EndPaint(panel.hwndPanel, &ps);
 }
 
 static LRESULT CALLBACK WndProcContainer(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -5006,13 +5052,13 @@ static LRESULT CALLBACK WndProcContainer(HWND hwnd, UINT msg, WPARAM wParam, LPA
             ContainerOnSize(container, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
             break;
 
-		case WM_PAINT:
-			ContainerOnPaint(*container);
-			break;
+        case WM_PAINT:
+            ContainerOnPaint(*container);
+            break;
 
-		case WM_ERASEBKGND:
-			return 1;
-			break;
+        case WM_ERASEBKGND:
+            return 1;
+            break;
 
         default:
             return DefWindowProc(hwnd, msg, wParam, lParam);
@@ -5031,13 +5077,13 @@ static LRESULT CALLBACK WndProcPanel(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
             PanelOnSize(panel, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
             break;
 
-		case WM_PAINT:
-			PanelOnPaint(*panel);
-			break;
+        case WM_PAINT:
+            PanelOnPaint(*panel);
+            break;
 
-		case WM_ERASEBKGND:
-			return 1;
-			break;
+        case WM_ERASEBKGND:
+            return 1;
+            break;
 
         default:
             return DefWindowProc(hwnd, msg, wParam, lParam);
@@ -5150,17 +5196,17 @@ static LRESULT CALLBACK WndProcCanvas(HWND hwnd, UINT msg, WPARAM wParam, LPARAM
 
 static LRESULT CALLBACK WndProcSidebar(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	return CallWindowProc(WndProcSidebarCB, hwnd, msg, wParam, lParam);
+    return CallWindowProc(WndProcSidebarCB, hwnd, msg, wParam, lParam);
 }
 
 static LRESULT CALLBACK WndProcSidebarTop(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	return CallWindowProc(WndProcSidebarTopCB, hwnd, msg, wParam, lParam);
+    return CallWindowProc(WndProcSidebarTopCB, hwnd, msg, wParam, lParam);
 }
 
 static LRESULT CALLBACK WndProcSidebarBottom(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	return CallWindowProc(WndProcSidebarBottomCB, hwnd, msg, wParam, lParam);
+    return CallWindowProc(WndProcSidebarBottomCB, hwnd, msg, wParam, lParam);
 }
 
 class RepaintCanvasTask : public UITask
