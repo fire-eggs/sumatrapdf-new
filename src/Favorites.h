@@ -118,5 +118,6 @@ void PopulateFavTreeIfNeeded(WindowInfo *win);
 void RememberFavTreeExpansionStateForAllWindows();
 void GoToFavoriteByMenuId(WindowInfo *win, int wmId);
 void UpdateFavoritesTreeForAllWindows();
+LRESULT CALLBACK WndProcFavBoxCB(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 #endif

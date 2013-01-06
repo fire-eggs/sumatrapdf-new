@@ -767,29 +767,15 @@ static LRESULT CALLBACK WndProcFavTree(HWND hwnd, UINT msg, WPARAM wParam, LPARA
     return CallWindowProc(DefWndProcFavTree, hwnd, msg, wParam, lParam);
 }
 
-static WNDPROC DefWndProcFavBox = NULL;
-static LRESULT CALLBACK WndProcFavBox(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WndProcFavBoxCB(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     WindowInfo *win = FindWindowInfoByHwnd(hwnd);
     if (!win)
-        return CallWindowProc(DefWndProcFavBox, hwnd, message, wParam, lParam);
-    switch (message) {
+        return DefWindowProc(hwnd, message, wParam, lParam);
 
+    switch (message) {
         case WM_SIZE:
             LayoutTreeContainer(hwnd, IDC_FAV_BOX);
-            break;
-
-        case WM_DRAWITEM:
-            if (IDC_FAV_CLOSE == wParam) {
-                DRAWITEMSTRUCT *dis = (DRAWITEMSTRUCT *)lParam;
-                DrawCloseButton(dis);
-                return TRUE;
-            }
-            break;
-
-        case WM_COMMAND:
-            if (LOWORD(wParam) == IDC_FAV_CLOSE && HIWORD(wParam) == STN_CLICKED)
-                ToggleFavorites(win);
             break;
 
         case WM_NOTIFY:
@@ -802,52 +788,40 @@ static LRESULT CALLBACK WndProcFavBox(HWND hwnd, UINT message, WPARAM wParam, LP
             break;
 
         case WM_CONTEXTMENU:
-            if (win->hwndFavTree == (HWND)wParam) {
+            if (win->sideBar()->hwndFavTree == (HWND)wParam) {
                 OnFavTreeContextMenu(win, PointI(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)));
                 return 0;
             }
             break;
 
     }
-    return CallWindowProc(DefWndProcFavBox, hwnd, message, wParam, lParam);
+    return DefWindowProc(hwnd, message, wParam, lParam);
 }
 
 void CreateFavorites(SidebarInfo *sideBar, HWND hwndParent)
 {
-    sideBar->hwndFavBox = CreateWindow(WC_STATIC, L"", WS_CHILD|WS_CLIPCHILDREN,
-                                   0, 0, gGlobalPrefs.sidebarDx, 0,
-                                   hwndParent, (HMENU)0, ghinst, NULL);
-    HWND title = CreateWindow(WC_STATIC, L"", WS_VISIBLE | WS_CHILD,
-                              0, 0, 0, 0, sideBar->hwndFavBox, (HMENU)IDC_FAV_TITLE, ghinst, NULL);
-    SetWindowFont(title, gDefaultGuiFont, FALSE);
-    win::SetText(title, _TR("Favorites"));
-
-    HWND hwndClose = CreateWindow(WC_STATIC, L"",
-                                  SS_OWNERDRAW | SS_NOTIFY | WS_CHILD | WS_VISIBLE,
-                                  0, 0, 16, 16, sideBar->hwndFavBox, (HMENU)IDC_FAV_CLOSE, ghinst, NULL);
-
+    sideBar->hwndFavBox = CreateWindowEx(
+        WS_CLIPCHILDREN,
+        L"SUMATRA_PDF_FAVBOX", L"",
+        WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE,
+        0, 0, gGlobalPrefs.sidebarDx, 0,
+        hwndParent, (HMENU)0,
+        ghinst, NULL);
+    if (!sideBar->hwndFavBox)
+        return;
+           
     sideBar->hwndFavTree = CreateWindowEx(WS_EX_STATICEDGE, WC_TREEVIEW, L"Fav",
-                                      TVS_HASBUTTONS|TVS_HASLINES|TVS_LINESATROOT|TVS_SHOWSELALWAYS|
-                                      TVS_TRACKSELECT|TVS_DISABLEDRAGDROP|TVS_NOHSCROLL|TVS_INFOTIP|
-                                      WS_TABSTOP|WS_VISIBLE|WS_CHILD,
-                                      0, 0, 0, 0, sideBar->hwndFavBox, (HMENU)IDC_FAV_TREE, ghinst, NULL);
+        TVS_HASBUTTONS|TVS_HASLINES|TVS_LINESATROOT|TVS_SHOWSELALWAYS|
+        TVS_TRACKSELECT|TVS_DISABLEDRAGDROP|TVS_NOHSCROLL|TVS_INFOTIP|
+        WS_TABSTOP|WS_VISIBLE|WS_CHILD,
+        0, 0, 0, 0, sideBar->hwndFavBox, (HMENU)IDC_FAV_TREE, ghinst, NULL);
 
-    // Note: those must be consecutive numbers and in title/close/tree order
-    STATIC_ASSERT(IDC_FAV_BOX + 1 == IDC_FAV_TITLE &&
-            IDC_FAV_BOX + 2 == IDC_FAV_CLOSE &&
-            IDC_FAV_BOX + 3 == IDC_FAV_TREE, consecutive_fav_ids);
+    STATIC_ASSERT(IDC_FAV_BOX + 0 == IDC_FAV_BOX &&
+        IDC_FAV_BOX + 3 == IDC_FAV_TREE, consecutive_fav_ids);
 
     TreeView_SetUnicodeFormat(sideBar->hwndFavTree, true);
 
     if (NULL == DefWndProcFavTree)
         DefWndProcFavTree = (WNDPROC)GetWindowLongPtr(sideBar->hwndFavTree, GWLP_WNDPROC);
     SetWindowLongPtr(sideBar->hwndFavTree, GWLP_WNDPROC, (LONG_PTR)WndProcFavTree);
-
-    if (NULL == DefWndProcFavBox)
-        DefWndProcFavBox = (WNDPROC)GetWindowLongPtr(sideBar->hwndFavBox, GWLP_WNDPROC);
-    SetWindowLongPtr(sideBar->hwndFavBox, GWLP_WNDPROC, (LONG_PTR)WndProcFavBox);
-
-    if (NULL == DefWndProcCloseButton)
-        DefWndProcCloseButton = (WNDPROC)GetWindowLongPtr(hwndClose, GWLP_WNDPROC);
-    SetWindowLongPtr(hwndClose, GWLP_WNDPROC, (LONG_PTR)WndProcCloseButton);
 }

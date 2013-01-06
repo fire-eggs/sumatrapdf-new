@@ -171,6 +171,10 @@
 #define IDC_PRINT_SCALE_NONE            1063
 #define IDC_SECTION_PRINT_COMPATIBILITY 1070
 #define IDC_PRINT_AS_IMAGE              1071
+#define IDC_SIDEBAR_TITLE_1             1064
+#define IDC_SIDEBAR_CLOSE_1             1065
+#define IDC_SIDEBAR_TITLE_2             1066
+#define IDC_SIDEBAR_CLOSE_2             1067
 #define IDC_TOC_BOX                     1100
 #define IDC_TOC_TITLE                   1101
 #define IDC_TOC_CLOSE                   1102
