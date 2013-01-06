@@ -122,10 +122,10 @@ LRESULT CALLBACK WndProcSidebarTopCB(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
         return 0;
         break;
 
-	case WM_COMMAND:
-		if (LOWORD(wParam) == IDC_SIDEBAR_CLOSE_1 && HIWORD(wParam) == STN_CLICKED)
-			ToggleTocBox(win);
-		break;
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDC_SIDEBAR_CLOSE_1 && HIWORD(wParam) == STN_CLICKED)
+            ToggleTocBox(win);
+        break;
 
     case WM_DRAWITEM:
         if (IDC_SIDEBAR_CLOSE_1 == wParam) {
@@ -157,10 +157,10 @@ LRESULT CALLBACK WndProcSidebarBottomCB(HWND hwnd, UINT msg, WPARAM wParam, LPAR
         return 0;
         break;
 
-	case WM_COMMAND:
-		if (LOWORD(wParam) == IDC_SIDEBAR_CLOSE_2 && HIWORD(wParam) == STN_CLICKED)
-			ToggleFavorites(win);
-		break;
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDC_SIDEBAR_CLOSE_2 && HIWORD(wParam) == STN_CLICKED)
+            ToggleFavorites(win);
+        break;
 
     case WM_DRAWITEM:
         if (IDC_SIDEBAR_CLOSE_2 == wParam) {

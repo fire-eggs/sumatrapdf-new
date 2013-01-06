@@ -4114,7 +4114,7 @@ static void UpdateUITextForLanguage()
 
 static void ResizePanel(ContainerInfo *container)
 {
-	HWND hwndC1 = container->container1->hwndContainer;
+    HWND hwndC1 = container->container1->hwndContainer;
     HWND hwndC2 = container->container2->hwndContainer;
     HWND hwndParent = container->hwndContainer;
 
