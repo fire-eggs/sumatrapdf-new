@@ -96,6 +96,16 @@ static bool RegisterWinClass(HINSTANCE hinst)
     atom = RegisterClassEx(&wcex);
     CrashIf(!atom);
 
+    FillWndClassEx(wcex, hinst, TOCBOX_CLASS_NAME, WndProcTocBox);
+    wcex.style |= CS_DBLCLKS;
+    atom = RegisterClassEx(&wcex);
+    CrashIf(!atom);
+
+    FillWndClassEx(wcex, hinst, FAVBOX_CLASS_NAME, WndProcFavBox);
+    wcex.style |= CS_DBLCLKS;
+    atom = RegisterClassEx(&wcex);
+    CrashIf(!atom);
+
     RegisterNotificationsWndClass(hinst);
     RegisterMobiWinClass(hinst);
 
@@ -143,6 +153,9 @@ static bool InstanceInit(HINSTANCE hInstance, int nCmdShow)
     gBrushPanelSplitterEdgeBg = CreateSolidBrush(PANEL_SPLITTER_EDGE_BG_COLOR);
     gBrushSidebarSplitterBg = CreateSolidBrush(SIDEBAR_SPLITTER_BG_COLOR);
     gBrushSidebarSplitterEdgeBg = CreateSolidBrush(SIDEBAR_SPLITTER_EDGE_BG_COLOR);
+
+    gBrushSepLineBg = gBrushNoDocBg;
+    gBrushStaticBg = gBrushPanelSplitterBg;
 
     NONCLIENTMETRICS ncm = { 0 };
     ncm.cbSize = sizeof(ncm);

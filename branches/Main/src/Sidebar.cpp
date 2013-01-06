@@ -21,12 +21,50 @@ using namespace Gdiplus;
 
 void SidebarTopOnSize(SidebarInfo *sideBar, int dx, int dy)
 {
-    SetWindowPos(sideBar->hwndTocBox, NULL, 0, 0, dx, dy, SWP_NOZORDER);
+    HWND hwndTitle = GetDlgItem(sideBar->hwndSidebarTop, IDC_SIDEBAR_TITLE_1);
+    HWND hwndClose = GetDlgItem(sideBar->hwndSidebarTop, IDC_SIDEBAR_CLOSE_1);
+
+    ScopedMem<TCHAR> title(win::GetText(hwndTitle));
+    SizeI size = TextSizeInHwnd(hwndTitle, title);
+
+    TopWindowInfo *WIN = FindTopWindowInfoByHwnd(sideBar->hwndSidebarTop);
+    assert(WIN);
+    int offset = WIN ? (int)(2 * WIN->uiDPIFactor) : 2;
+    if (size.dy < 16)
+        size.dy = 16;
+    size.dy += 2 * offset;
+
+    HDWP hdwp = BeginDeferWindowPos(3);
+
+    DeferWindowPos(hdwp, hwndTitle, NULL, offset, offset, dx - offset - 16, size.dy - 2 * offset, NULL);
+    DeferWindowPos(hdwp, hwndClose, NULL, dx - 16, (size.dy - 16) / 2, 16, 16, NULL);
+    DeferWindowPos(hdwp, sideBar->hwndTocBox, NULL, 0 , size.dy, dx, dy - size.dy, NULL);
+
+    EndDeferWindowPos(hdwp);
 }
 
 void SidebarBottomOnSize(SidebarInfo *sideBar, int dx, int dy)
 {
-    SetWindowPos(sideBar->hwndFavBox, NULL, 0, 0, dx, dy, SWP_NOZORDER);
+    HWND hwndTitle = GetDlgItem(sideBar->hwndSidebarBottom, IDC_SIDEBAR_TITLE_2);
+    HWND hwndClose = GetDlgItem(sideBar->hwndSidebarBottom, IDC_SIDEBAR_CLOSE_2);
+
+    ScopedMem<TCHAR> title(win::GetText(hwndTitle));
+    SizeI size = TextSizeInHwnd(hwndTitle, title);
+
+    TopWindowInfo *WIN = FindTopWindowInfoByHwnd(sideBar->hwndSidebarBottom);
+    assert(WIN);
+    int offset = WIN ? (int)(2 * WIN->uiDPIFactor) : 2;
+    if (size.dy < 16)
+        size.dy = 16;
+    size.dy += 2 * offset;
+
+    HDWP hdwp = BeginDeferWindowPos(3);
+
+    DeferWindowPos(hdwp, hwndTitle, NULL, offset, offset, dx - offset - 16, size.dy - 2 * offset, NULL);
+    DeferWindowPos(hdwp, hwndClose, NULL, dx - 16, (size.dy - 16) / 2, 16, 16, NULL);
+    DeferWindowPos(hdwp, sideBar->hwndFavBox, NULL, 0 , size.dy, dx, dy - size.dy, NULL);
+
+    EndDeferWindowPos(hdwp);
 }
 
 void SidebarOnSize(SidebarInfo *sideBar, int dx, int dy)
@@ -57,8 +95,14 @@ void SidebarOnPaint(HWND hwnd)
     rc.left = 0;
     rc.right = dx;
     rc.top = 0;
+    rc.bottom = 1;
+    FillRect(hdc, &rc, gBrushSepLineBg);
+
+    rc.left = 0;
+    rc.right = dx;
+    rc.top = 1;
     rc.bottom = dy;
-    FillRect(hdc, &rc, gBrushAboutBg);
+    FillRect(hdc, &rc, gBrushStaticBg);
 
     EndPaint(hwnd, &ps);
 }
@@ -72,9 +116,23 @@ LRESULT CALLBACK WndProcSidebarTopCB(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
         SidebarTopOnSize(win->sideBar(), GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
         return 0;
         break;
+
     case WM_PAINT:
         SidebarOnPaint(hwnd);
         return 0;
+        break;
+
+	case WM_COMMAND:
+		if (LOWORD(wParam) == IDC_SIDEBAR_CLOSE_1 && HIWORD(wParam) == STN_CLICKED)
+			ToggleTocBox(win);
+		break;
+
+    case WM_DRAWITEM:
+        if (IDC_SIDEBAR_CLOSE_1 == wParam) {
+            DRAWITEMSTRUCT *dis = (DRAWITEMSTRUCT *)lParam;
+            DrawCloseButton(dis);
+            return TRUE;
+        }
         break;
 
     case WM_ERASEBKGND:
@@ -93,9 +151,23 @@ LRESULT CALLBACK WndProcSidebarBottomCB(HWND hwnd, UINT msg, WPARAM wParam, LPAR
         SidebarBottomOnSize(win->sideBar(), GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
         return 0;
         break;
+
     case WM_PAINT:
         SidebarOnPaint(hwnd);
         return 0;
+        break;
+
+	case WM_COMMAND:
+		if (LOWORD(wParam) == IDC_SIDEBAR_CLOSE_2 && HIWORD(wParam) == STN_CLICKED)
+			ToggleFavorites(win);
+		break;
+
+    case WM_DRAWITEM:
+        if (IDC_SIDEBAR_CLOSE_2 == wParam) {
+            DRAWITEMSTRUCT *dis = (DRAWITEMSTRUCT *)lParam;
+            DrawCloseButton(dis);
+            return TRUE;
+        }
         break;
 
     case WM_ERASEBKGND:
@@ -152,6 +224,19 @@ void CreateSidebarBox(WinInfo& winInfo)
     if (!hwndSidebarTop)
         return;
 
+    HWND title = CreateWindow(WC_STATIC, L"", SS_NOTIFY | WS_VISIBLE | WS_CHILD,
+        0, 0, 0, 0, hwndSidebarTop, (HMENU)IDC_SIDEBAR_TITLE_1, ghinst, NULL);
+    SetWindowFont(title, gDefaultGuiFont, FALSE);
+    win::SetText(title, L"Sidebar 1");
+
+    HWND hwndClose = CreateWindow(WC_STATIC, L"",
+        SS_OWNERDRAW | SS_NOTIFY | WS_CHILD | WS_VISIBLE,
+        0, 0, 16, 16, hwndSidebarTop, (HMENU)IDC_SIDEBAR_CLOSE_1, ghinst, NULL);
+
+    if (NULL == DefWndProcCloseButton)
+        DefWndProcCloseButton = (WNDPROC)GetWindowLongPtr(hwndClose, GWLP_WNDPROC);
+    SetWindowLongPtr(hwndClose, GWLP_WNDPROC, (LONG_PTR)WndProcCloseButton);
+
     HWND hwndSidebarBottom = CreateWindowEx(
         WS_CLIPCHILDREN,
         SIDEBAR_BOTTOM_CLASS_NAME, NULL,
@@ -161,6 +246,19 @@ void CreateSidebarBox(WinInfo& winInfo)
         ghinst, NULL);
     if (!hwndSidebarBottom)
         return;
+
+    title = CreateWindow(WC_STATIC, L"", SS_NOTIFY | WS_VISIBLE | WS_CHILD,
+        0, 0, 0, 0, hwndSidebarBottom, (HMENU)IDC_SIDEBAR_TITLE_2, ghinst, NULL);
+    SetWindowFont(title, gDefaultGuiFont, FALSE);
+    win::SetText(title, L"Sidebar 2");
+
+    hwndClose = CreateWindow(WC_STATIC, L"",
+        SS_OWNERDRAW | SS_NOTIFY | WS_CHILD | WS_VISIBLE,
+        0, 0, 16, 16, hwndSidebarBottom, (HMENU)IDC_SIDEBAR_CLOSE_2, ghinst, NULL);
+
+    if (NULL == DefWndProcCloseButton)
+        DefWndProcCloseButton = (WNDPROC)GetWindowLongPtr(hwndClose, GWLP_WNDPROC);
+    SetWindowLongPtr(hwndClose, GWLP_WNDPROC, (LONG_PTR)WndProcCloseButton);
 
     HWND hwndFavSplitter = CreateWindowEx(
         NULL,

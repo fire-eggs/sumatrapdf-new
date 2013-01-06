@@ -109,6 +109,8 @@ WCHAR *          gPluginURL = NULL; // owned by CommandLineInfo in WinMain
 #define CONTAINER_CLASS_NAME         L"SUMATRA_PDF_CONTAINER"
 #define PANEL_CLASS_NAME             L"SUMATRA_PDF_PANEL"
 #define CANVAS_CLASS_NAME            L"SUMATRA_PDF_CANVAS"
+#define TOCBOX_CLASS_NAME            L"SUMATRA_PDF_TOCBOX"
+#define FAVBOX_CLASS_NAME            L"SUMATRA_PDF_FAVBOX"
 #define PANEL_SPLITTER_CLASS_NAME    L"PanelSplitter"
 #define SIDEBAR_SPLITTER_CLASS_NAME  L"SidebarSplitter"
 //#define FAV_SPLITTER_CLASS_NAME      L"FavSplitter"
@@ -148,6 +150,8 @@ HCURSOR                      gCursorHand;
 HCURSOR                      gCursorIBeam;
 HBRUSH                       gBrushLogoBg;
 HBRUSH                       gBrushAboutBg;
+HBRUSH                       gBrushSepLineBg;
+HBRUSH                       gBrushStaticBg;
 HFONT                        gDefaultGuiFont;
 
 // TODO: combine into Vec<SumatraWindow> (after 2.0) ?
@@ -196,6 +200,8 @@ static LRESULT CALLBACK WndProcCanvas(HWND hwnd, UINT msg, WPARAM wParam, LPARAM
 static LRESULT CALLBACK WndProcSidebar(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 static LRESULT CALLBACK WndProcSidebarTop(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 static LRESULT CALLBACK WndProcSidebarBottom(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+static LRESULT CALLBACK WndProcTocBox(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+static LRESULT CALLBACK WndProcFavBox(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam); 
 
 bool HasPermission(int permission)
 {
@@ -561,7 +567,7 @@ static void RememberDefaultWindowPosition(WindowInfo& win)
     else if (!IsIconic(win.hwndFrame))
         gGlobalPrefs.windowState = WIN_STATE_NORMAL;
 
-    gGlobalPrefs.sidebarDx = WindowRect(win.hwndTocBox).dx;
+    gGlobalPrefs.sidebarDx = WindowRect(win.sideBar()->hwndTocBox).dx;
 
     /* don't update the window's dimensions if it is maximized, mimimized or fullscreened */
     if (WIN_STATE_NORMAL == gGlobalPrefs.windowState &&
@@ -607,7 +613,7 @@ static void UpdateSidebarDisplayState(WindowInfo *win, DisplayState *ds)
 
     if (win->tocLoaded) {
         win->tocState.Reset();
-        HTREEITEM hRoot = TreeView_GetRoot(win->hwndTocTree);
+        HTREEITEM hRoot = TreeView_GetRoot(win->sideBar()->hwndTocTree);
         if (hRoot)
             UpdateTocExpansionState(win, hRoot);
     }
@@ -698,8 +704,8 @@ static void UpdateWindowRtlLayout(WindowInfo *win)
     // cf. http://www.microsoft.com/middleeast/msdn/mirror.aspx
     ToggleWindowStyle(win->hwndFrame, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
 
-    ToggleWindowStyle(win->hwndTocBox, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
-    HWND tocBoxTitle = GetDlgItem(win->hwndTocBox, IDC_TOC_TITLE);
+    ToggleWindowStyle(win->sideBar()->hwndTocBox, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
+    HWND tocBoxTitle = GetDlgItem(win->sideBar()->hwndTocBox, IDC_TOC_TITLE);
     ToggleWindowStyle(tocBoxTitle, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
 
     ToggleWindowStyle(win->hwndFavBox, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
@@ -722,7 +728,7 @@ static void UpdateWindowRtlLayout(WindowInfo *win)
     if (tocVisible || gGlobalPrefs.favVisible) {
         SetSidebarVisibility(win, tocVisible, gGlobalPrefs.favVisible);
         if (tocVisible)
-            SendMessage(win->hwndTocBox, WM_SIZE, 0, 0);
+            SendMessage(win->sideBar()->hwndTocBox, WM_SIZE, 0, 0);
         if (gGlobalPrefs.favVisible)
             SendMessage(win->hwndFavBox, WM_SIZE, 0, 0);
     }
@@ -3782,7 +3788,7 @@ void AdvanceFocus(WindowInfo* win)
         { win->hwndFrame,   true                                },
         { win->toolBar()->hwndPageBox, hasToolbar                          },
         { win->toolBar()->hwndFindBox, hasToolbar && NeedsFindUI(win)      },
-        { win->hwndTocTree, win->tocLoaded && win->tocVisible   },
+        { win->sideBar()->hwndTocTree, win->tocLoaded && win->tocVisible   },
         { win->hwndFavTree, gGlobalPrefs.favVisible             },
     };
 
@@ -4079,11 +4085,11 @@ static void FrameOnChar(WindowInfo& win, WPARAM key)
 
 static void UpdateSidebarTitles(WindowInfo& win)
 {
-    HWND tocTitle = GetDlgItem(win.hwndTocBox, IDC_TOC_TITLE);
+    HWND tocTitle = GetDlgItem(win.sideBar()->hwndTocBox, IDC_TOC_TITLE);
     win::SetText(tocTitle, _TR("Bookmarks"));
     if (win.tocVisible) {
-        InvalidateRect(win.hwndTocBox, NULL, TRUE);
-        UpdateWindow(win.hwndTocBox);
+        InvalidateRect(win.sideBar()->hwndTocBox, NULL, TRUE);
+        UpdateWindow(win.sideBar()->hwndTocBox);
     }
 
     HWND favTitle = GetDlgItem(win.hwndFavBox, IDC_FAV_TITLE);
@@ -4108,38 +4114,39 @@ static void UpdateUITextForLanguage()
 
 static void ResizePanel(ContainerInfo *container)
 {
-    //HWND hwndParent = win->panel->WIN->hwndFrame;
-    //HWND hwnd = win->panel->WIN->gContainer.At(0)->hwndContainer;
-    //if (gGlobalPrefs.sidebarForEachPanel) {
-    //    hwndParent = win->panel->hwndPanel;
-    //    hwnd = win->hwndCanvas;
-    //}
-
-    //HWN
-
-    HWND hwnd1 = container->container1->hwndContainer;
-    HWND hwnd2 = container->container2->hwndContainer;
+	HWND hwndC1 = container->container1->hwndContainer;
+    HWND hwndC2 = container->container2->hwndContainer;
     HWND hwndParent = container->hwndContainer;
 
     POINT pcur;
     GetCursorPosInHwnd(hwndParent, pcur);
-    int hwnd1D;
+    int newSizeC1;
     if (container->isSplitVertical)
-        hwnd1D = pcur.x; // without splitter
+        newSizeC1 = pcur.x; // without splitter
     else
-        hwnd1D = pcur.y;
+        newSizeC1 = pcur.y;
 
-    ClientRect r1(hwnd1);
+    ClientRect r1(hwndC1);
     ClientRect rParent(hwndParent);
 
-    // make sure to keep this in sync with the calculations in SetSidebarVisibility
-    // note: without the min/max(..., rToc.dx), the sidebar will be
-    //       stuck at its width if it accidentally got too wide or too narrow
-    //if (hwnd1Dx < min(SIDEBAR_MIN_WIDTH, r1.dx) ||
-    //    hwnd1Dx > max(rParent.dx / 2, r1.dx)) {
-    //        SetCursor(gCursorNo);
-    //        return;
-    //}
+    int parentD;
+    int D1;
+    if (container->isSplitVertical) {
+        parentD = rParent.dx;
+        D1 = r1.dx;
+    } else {
+        parentD = rParent.dy;
+        D1 = r1.dy;
+    }
+
+     //make sure to keep this in sync with the calculations in SetSidebarVisibility
+     //note: without the min/max(..., rToc.dx), the sidebar will be
+     //      stuck at its width if it accidentally got too wide or too narrow
+    if (newSizeC1 < min(1 * parentD / 4, D1) ||
+        newSizeC1 > max(3 * parentD / 4, D1)) {
+            SetCursor(gCursorNo);
+            return;
+    }
 
     if (container->isSplitVertical)
         SetCursor(gCursorSizeWE);
@@ -4151,21 +4158,20 @@ static void ResizePanel(ContainerInfo *container)
         totalD = rParent.dy;
     else 
         totalD = rParent.dx;
-    // rToc.y is always 0, as rToc is a ClientRect, so we first have
-    // to convert it into coordinates relative to hwndFrame:
-    //assert(MapRectToWindow(rSidebar, win->sideBar()->hwndSidebar, hwndParent).y == y);
-    //assert(totalDy == (rToc.dy + rFav.dy));
+
+    HDWP hdwp = BeginDeferWindowPos(3);
 
     if (container->isSplitVertical) {
-        MoveWindow(hwnd1, 0, 0, hwnd1D, totalD, TRUE);
-        MoveWindow(container->hwndSplitter, hwnd1D, 0, SPLITTER_DX, totalD, TRUE);
-        MoveWindow(hwnd2,hwnd1D + SPLITTER_DX, 0, rParent.dx - hwnd1D - SPLITTER_DX, totalD, TRUE);
-    } else
-    {
-        MoveWindow(hwnd1, 0, 0, totalD, hwnd1D, TRUE);
-        MoveWindow(container->hwndSplitter, 0, hwnd1D, totalD, SPLITTER_DY, TRUE);
-        MoveWindow(hwnd2, 0, hwnd1D + SPLITTER_DY, totalD, rParent.dy - hwnd1D - SPLITTER_DY, TRUE);
+        DeferWindowPos(hdwp, hwndC1, NULL, 0, 0, newSizeC1, totalD, SWP_NOZORDER);
+        DeferWindowPos(hdwp, container->hwndSplitter, NULL, newSizeC1, 0, SPLITTER_DX, totalD, SWP_NOZORDER);
+        DeferWindowPos(hdwp, hwndC2, NULL, newSizeC1 + SPLITTER_DX, 0, rParent.dx - newSizeC1 - SPLITTER_DX, totalD, SWP_NOZORDER);
+    } else {
+        DeferWindowPos(hdwp, hwndC1, NULL, 0, 0, totalD, newSizeC1, SWP_NOZORDER);
+        DeferWindowPos(hdwp, container->hwndSplitter, NULL, 0, newSizeC1, totalD, SPLITTER_DY, SWP_NOZORDER);
+        DeferWindowPos(hdwp, hwndC2, NULL, 0, newSizeC1 + SPLITTER_DY, totalD, rParent.dy - newSizeC1 - SPLITTER_DY, SWP_NOZORDER);
     }
+
+    EndDeferWindowPos(hdwp);
 
     TopWindowInfo *WIN = FindTopWindowInfoByHwnd(container->hwndContainer);
 
@@ -4409,6 +4415,18 @@ static void SidebarSplitterOnPaint(HWND hwnd)
     rc.bottom = dy;
     FillRect(hdc, &rc, gBrushSidebarSplitterBg);
 
+    rc.left = 0;
+    rc.right = 1;
+    rc.top = 0;
+    rc.bottom = dy;
+    FillRect(hdc, &rc, gBrushSidebarSplitterEdgeBg);
+
+    rc.left = dx - 1;
+    rc.right = dx;
+    rc.top = 0;
+    rc.bottom = dy;
+    FillRect(hdc, &rc, gBrushSidebarSplitterEdgeBg);
+
     EndPaint(hwnd, &ps);
 }
 
@@ -4452,24 +4470,9 @@ static LRESULT CALLBACK WndProcSidebarSplitter(HWND hwnd, UINT message,
 // on the container size.
 void LayoutTreeContainer(HWND hwndContainer, int id)
 {
-    HWND hwndTitle = GetDlgItem(hwndContainer, id + 1);
-    HWND hwndClose = GetDlgItem(hwndContainer, id + 2);
     HWND hwndTree  = GetDlgItem(hwndContainer, id + 3);
-
-    ScopedMem<WCHAR> title(win::GetText(hwndTitle));
-    SizeI size = TextSizeInHwnd(hwndTitle, title);
-
-    WindowInfo *win = FindWindowInfoByHwnd(hwndContainer);
-    assert(win);
-    int offset = win ? (int)(2 * win->panel->WIN->uiDPIFactor) : 2;
-    if (size.dy < 16)
-        size.dy = 16;
-    size.dy += 2 * offset;
-
-    WindowRect rc(hwndContainer);
-    MoveWindow(hwndTitle, offset, offset, rc.dx - 2 * offset - 16, size.dy - 2 * offset, TRUE);
-    MoveWindow(hwndClose, rc.dx - 16, (size.dy - 16) / 2, 16, 16, TRUE);
-    MoveWindow(hwndTree, 0, size.dy, rc.dx, rc.dy - size.dy, TRUE);
+    ClientRect rc(hwndContainer);
+    MoveWindow(hwndTree, 0, 0, rc.dx, rc.dy, TRUE);
 }
 
 WNDPROC DefWndProcCloseButton = NULL;
@@ -4530,7 +4533,7 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible)
     //bool sidebarVisible = tocVisible || favVisible;
 
     //if (tocVisible)
-    //    LoadTocTree(win);
+    LoadTocTree(win);
     //if (favVisible)
     //    PopulateFavTreeIfNeeded(win);
 
@@ -4552,12 +4555,12 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible)
     int sidebarDy = rParent.dy - toolbarDy;
 
     //if (!sidebarVisible) {
-    //    if (GetFocus() == win->hwndTocTree || GetFocus() == win->hwndFavTree)
+    //    if (GetFocus() == win->sideBar()->hwndTocTree || GetFocus() == win->hwndFavTree)
     //        SetFocus(win->hwndFrame);
 
     //    SetWindowPos(win->hwndCanvas, NULL, 0, toolbarDy, rFrame.dx, dy, SWP_NOZORDER);
     //    ShowWindow(win->hwndSidebarSplitter, SW_HIDE);
-    //    ShowWindow(win->hwndTocBox, SW_HIDE);
+    //    ShowWindow(win->sideBar()->hwndTocBox, SW_HIDE);
     //    ShowWindow(win->hwndFavSplitter, SW_HIDE);
     //    ShowWindow(win->hwndFavBox, SW_HIDE);
     //    return;
@@ -4752,12 +4755,12 @@ static LRESULT CanvasOnMouseWheel(WindowInfo& win, UINT message, WPARAM wParam, 
         return 0;
 
     // Scroll the ToC sidebar, if it's visible and the cursor is in it
-    if (win.tocVisible && IsCursorOverWindow(win.hwndTocTree) && !gWheelMsgRedirect) {
+    if (win.tocVisible && IsCursorOverWindow(win.sideBar()->hwndTocTree) && !gWheelMsgRedirect) {
         // Note: hwndTocTree's window procedure doesn't always handle
         //       WM_MOUSEWHEEL and when it's bubbling up, we'd return
         //       here recursively - prevent that
         gWheelMsgRedirect = true;
-        LRESULT res = SendMessage(win.hwndTocTree, message, wParam, lParam);
+        LRESULT res = SendMessage(win.sideBar()->hwndTocTree, message, wParam, lParam);
         gWheelMsgRedirect = false;
         return res;
     }
@@ -4843,12 +4846,12 @@ static LRESULT CanvasOnMouseHWheel(WindowInfo& win, UINT message, WPARAM wParam,
         return 0;
 
     // Scroll the ToC sidebar, if it's visible and the cursor is in it
-    if (win.tocVisible && IsCursorOverWindow(win.hwndTocTree) && !gWheelMsgRedirect) {
+    if (win.tocVisible && IsCursorOverWindow(win.sideBar()->hwndTocTree) && !gWheelMsgRedirect) {
         // Note: hwndTocTree's window procedure doesn't always handle
         //       WM_MOUSEHWHEEL and when it's bubbling up, we'd return
         //       here recursively - prevent that
         gWheelMsgRedirect = true;
-        LRESULT res = SendMessage(win.hwndTocTree, message, wParam, lParam);
+        LRESULT res = SendMessage(win.sideBar()->hwndTocTree, message, wParam, lParam);
         gWheelMsgRedirect = false;
         return res;
     }
@@ -4973,15 +4976,19 @@ static void ContainerOnSize(ContainerInfo* container, int dx, int dy)
         int dx_1 = ClientRect(container->container1->hwndContainer).dx;
         int dy_1 = ClientRect(container->container1->hwndContainer).dy;
 
+        HDWP hdwp = BeginDeferWindowPos(3);
+
         if (container->isSplitVertical) {
-            SetWindowPos(container->container1->hwndContainer, NULL, 0, 0, dx_1, dy, SWP_NOZORDER);
-            SetWindowPos(container->hwndSplitter, NULL, dx_1, 0, SPLITTER_DX, dy, SWP_NOZORDER);
-            SetWindowPos(container->container2->hwndContainer, NULL, dx_1 + SPLITTER_DX, 0, dx - dx_1 - SPLITTER_DX, dy, SWP_NOZORDER);
+            DeferWindowPos(hdwp, container->container1->hwndContainer, NULL, 0, 0, dx_1, dy, SWP_NOZORDER);
+            DeferWindowPos(hdwp, container->hwndSplitter, NULL, dx_1, 0, SPLITTER_DX, dy, SWP_NOZORDER);
+            DeferWindowPos(hdwp, container->container2->hwndContainer, NULL, dx_1 + SPLITTER_DX, 0, dx - dx_1 - SPLITTER_DX, dy, SWP_NOZORDER);
         } else {
-            SetWindowPos(container->container1->hwndContainer, NULL, 0, 0, dx, dy_1, SWP_NOZORDER);
-            SetWindowPos(container->hwndSplitter, NULL, 0, dy_1, dx, SPLITTER_DY, SWP_NOZORDER);
-            SetWindowPos(container->container2->hwndContainer, NULL, 0, dy_1 + SPLITTER_DY, dx, dy - dy_1 - SPLITTER_DY, SWP_NOZORDER);
+            DeferWindowPos(hdwp, container->container1->hwndContainer, NULL, 0, 0, dx, dy_1, SWP_NOZORDER);
+            DeferWindowPos(hdwp, container->hwndSplitter, NULL, 0, dy_1, dx, SPLITTER_DY, SWP_NOZORDER);
+            DeferWindowPos(hdwp, container->container2->hwndContainer, NULL, 0, dy_1 + SPLITTER_DY, dx, dy - dy_1 - SPLITTER_DY, SWP_NOZORDER);
         }
+
+        EndDeferWindowPos(hdwp);
     }
 }
 
@@ -5082,9 +5089,9 @@ static LRESULT CALLBACK WndProcPanel(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
             PanelOnSize(panel, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
             break;
 
-		case WM_MOUSEACTIVATE:
-			panel->WIN->panel = panel;
-			break;
+        case WM_MOUSEACTIVATE:
+            panel->WIN->panel = panel;
+            break;
 
         case WM_PAINT:
             PanelOnPaint(*panel);
@@ -5216,6 +5223,16 @@ static LRESULT CALLBACK WndProcSidebarTop(HWND hwnd, UINT msg, WPARAM wParam, LP
 static LRESULT CALLBACK WndProcSidebarBottom(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     return CallWindowProc(WndProcSidebarBottomCB, hwnd, msg, wParam, lParam);
+}
+
+static LRESULT CALLBACK WndProcTocBox(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    return CallWindowProc(WndProcTocBoxCB, hwnd, msg, wParam, lParam);
+}
+
+static LRESULT CALLBACK WndProcFavBox(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    return CallWindowProc(WndProcFavBoxCB, hwnd, msg, wParam, lParam);
 }
 
 class RepaintCanvasTask : public UITask
@@ -5564,7 +5581,7 @@ static LRESULT FrameOnCommand(WindowInfo *win, HWND hwnd, UINT msg, WPARAM wPara
             if (win->hwndFrame != GetFocus())
                 SetFocus(win->hwndFrame);
             else if (win->tocVisible)
-                SetFocus(win->hwndTocTree);
+                SetFocus(win->sideBar()->hwndTocTree);
             break;
 
         case IDM_GOTO_NAV_BACK:
@@ -5725,7 +5742,7 @@ static LRESULT CALLBACK WndProcFrame(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
             // opening the context menu with a keyboard doesn't call the canvas'
             // WM_CONTEXTMENU, as it never has the focus (mouse right-clicks are
             // handled as expected)
-            if (win && GET_X_LPARAM(lParam) == -1 && GET_Y_LPARAM(lParam) == -1 && GetFocus() != win->hwndTocTree)
+            if (win && GET_X_LPARAM(lParam) == -1 && GET_Y_LPARAM(lParam) == -1 && GetFocus() != win->sideBar()->hwndTocTree)
                 return SendMessage(win->hwndCanvas, WM_CONTEXTMENU, wParam, lParam);
             return DefWindowProc(hwnd, msg, wParam, lParam);
 
