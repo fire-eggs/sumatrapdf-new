@@ -151,6 +151,7 @@ static MenuDef menuDefDebug[] = {
     { "Toggle PDF/XPS renderer",            IDM_DEBUG_GDI_RENDERER,     MF_NO_TRANSLATE },
     { "Toggle ebook UI",                    IDM_DEBUG_EBOOK_UI,         MF_NO_TRANSLATE },
     { "Mui debug paint",                    IDM_DEBUG_MUI,              MF_NO_TRANSLATE },
+    { "Annotation from Selection",          IDM_DEBUG_ANNOTATION,       MF_NO_TRANSLATE },
 //    { SEP_ITEM,                             0,                          0 },
 //    { "Crash me",                           IDM_DEBUG_CRASH_ME,         MF_NO_TRANSLATE },
 };
@@ -315,7 +316,7 @@ void MenuUpdateZoom(WindowInfo* win)
 
 void MenuUpdatePrintItem(WindowInfo* win, HMENU menu, bool disableOnly=false) {
     bool filePrintEnabled = win->IsDocLoaded();
-    bool filePrintAllowed = !filePrintEnabled || win->dm->engine->IsPrintingAllowed();
+    bool filePrintAllowed = !filePrintEnabled || win->dm->engine->AllowsPrinting();
 
     int ix;
     for (ix = 0; ix < dimof(menuDefFile) && menuDefFile[ix].id != IDM_PRINT; ix++);
@@ -356,7 +357,7 @@ void MenuUpdateStateForWindow(WindowInfo* win) {
         // for broken XPS/CHM documents)
     };
     static UINT menusToDisableIfDirectory[] = {
-        IDM_SAVEAS, IDM_SEND_BY_EMAIL
+        IDM_RENAME_FILE, IDM_SEND_BY_EMAIL
     };
     static UINT menusToEnableIfBrokenPDF[] = {
         IDM_VIEW_WITH_ACROBAT, IDM_VIEW_WITH_FOXIT, IDM_VIEW_WITH_PDF_XCHANGE,
