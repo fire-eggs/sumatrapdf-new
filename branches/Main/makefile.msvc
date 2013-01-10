@@ -170,7 +170,7 @@ SUMATRA_OBJS = \
 	$(OS)\SumatraPDF.obj $(OS)\translations.obj $(OS)\FileWatch.obj \
 	$(OS)\PdfSync.obj $(OS)\RenderCache.obj $(OS)\TextSelection.obj \
 	$(OS)\WindowInfo.obj $(OS)\ParseCommandLine.obj $(OS)\StressTesting.obj \
-	$(OS)\UnitTests.obj $(OS)\AppTools.obj $(OS)\TableOfContents.obj \
+	$(OS)\UnitTests.obj $(OS)\AppTools.obj $(OS)\Tab.obj $(OS)\TableOfContents.obj \
 	$(OS)\Toolbar.obj $(OS)\Print.obj $(OS)\Notifications.obj \
 	$(OS)\Search.obj $(OS)\Menu.obj $(OS)\ExternalPdfViewer.obj \
 	$(OS)\Selection.obj $(SUMATRA_RES) $(OS)\Sidebar.obj \

@@ -315,6 +315,7 @@
     <ClCompile Include="src\SumatraPDF.cpp" />
     <ClCompile Include="src\SumatraProperties.cpp" />
     <ClCompile Include="src\SumatraStartup.cpp" />
+    <ClCompile Include="src\Tab.cpp" />
     <ClCompile Include="src\TableOfContents.cpp" />
     <ClCompile Include="src\Tester.cpp" />
     <ClCompile Include="src\TextSearch.cpp" />
@@ -504,6 +505,7 @@
     <ClInclude Include="src\SumatraPDF.h" />
     <ClInclude Include="src\SumatraProperties.h" />
     <ClInclude Include="src\SumatraWindow.h" />
+    <ClInclude Include="src\Tab.h" />
     <ClInclude Include="src\TableOfContents.h" />
     <ClInclude Include="src\TextSearch.h" />
     <ClInclude Include="src\TextSelection.h" />
