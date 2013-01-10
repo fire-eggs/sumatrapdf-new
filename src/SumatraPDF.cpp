@@ -42,6 +42,7 @@ using namespace Gdiplus;
 #include "SumatraProperties.h"
 #include "SumatraWindow.h"
 #include "StressTesting.h"
+#include "Tab.h"
 #include "TableOfContents.h"
 #include "Timer.h"
 #include "Toolbar.h"
@@ -1400,6 +1401,9 @@ static WindowInfo* CreateWindowInfo()
     // Here, it always creates a toolbar, either for WIN or for panel.
     CreateToolbar(WinInfo::Make(gGlobalPrefs.toolbarForEachPanel, WIN, panel));
     CreateSidebar(WinInfo::Make(gGlobalPrefs.sidebarForEachPanel, WIN, panel));
+
+    CreateTabControl(panel);
+
     UpdateFindbox(win);
     if (HasPermission(Perm_DiskAccess) && !gPluginMode)
         DragAcceptFiles(win->hwndCanvas, TRUE);
@@ -1413,6 +1417,8 @@ static WindowInfo* CreateWindowInfo()
         GESTURECONFIG gc = { 0, GC_ALLGESTURES, 0 };
         Touch::SetGestureConfig(win->hwndCanvas, 0, 1, &gc, sizeof(GESTURECONFIG));
     }
+
+    AddTab(win);
 
     return win;
 }
@@ -1537,6 +1543,8 @@ static WindowInfo* CreatePanel(ContainerInfo *container)
     // Here it doesn't create any toolbar if gGlobalPrefs.toolbarForEachPanel is false.
     CreateToolbar(WinInfo::Make(panel), gGlobalPrefs.toolbarForEachPanel);
     CreateSidebar(WinInfo::Make(panel), gGlobalPrefs.sidebarForEachPanel);
+
+    CreateTabControl(panel);
  
     UpdateFindbox(win);
     if (HasPermission(Perm_DiskAccess) && !gPluginMode)
@@ -1549,6 +1557,67 @@ static WindowInfo* CreatePanel(ContainerInfo *container)
         GESTURECONFIG gc = { 0, GC_ALLGESTURES, 0 };
         Touch::SetGestureConfig(win->hwndCanvas, 0, 1, &gc, sizeof(GESTURECONFIG));
     }
+
+    AddTab(win);
+
+    return win;
+}
+
+static WindowInfo* CreateCanvas(PanelInfo *panel)
+{
+    HWND hwndCanvas = CreateWindowEx(
+        NULL,
+        CANVAS_CLASS_NAME, NULL,
+        WS_CHILD | WS_HSCROLL | WS_VSCROLL | WS_CLIPSIBLINGS,
+        0, 0, 0, 0, /* position and size determined in OnSize */
+        panel->hwndPanel, NULL,
+        ghinst, NULL);
+    if (!hwndCanvas) {
+        return NULL;
+    }
+
+    WindowInfo *winOld = panel->win;
+
+    assert(NULL == FindWindowInfoByHwnd(hwndCanvas));
+
+    WindowInfo *win = new WindowInfo(hwndCanvas);
+    panel->gWin.Append(win);
+    panel->win = win;
+
+    win->panel = panel;
+    win->hwndFrame = panel->WIN->hwndFrame;
+
+    // hide scrollbars to avoid showing/hiding on empty window
+    ShowScrollBar(win->hwndCanvas, SB_BOTH, FALSE);
+
+    int dx = ClientRect(panel->hwndPanel).dx;
+    int dy = ClientRect(panel->hwndPanel).dy;
+
+    ShowWindow(winOld->hwndCanvas, SW_HIDE);
+
+    SendMessage(panel->hwndPanel, WM_SIZE, 0, MAKELPARAM(dx, dy));
+
+    ShowWindow(win->hwndCanvas, SW_SHOW);
+    // UpdateWindow(win->hwndCanvas);
+
+    win->hwndInfotip = CreateWindowEx(WS_EX_TOPMOST,
+        TOOLTIPS_CLASS, NULL, WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
+        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+        win->hwndCanvas, NULL, ghinst, NULL);
+
+    UpdateFindbox(win);
+    if (HasPermission(Perm_DiskAccess) && !gPluginMode)
+        DragAcceptFiles(win->hwndCanvas, TRUE);
+
+    gWindows.Append(win);
+    UpdateWindowRtlLayout(win);
+
+    if (Touch::SupportsGestures()) {
+        GESTURECONFIG gc = { 0, GC_ALLGESTURES, 0 };
+        Touch::SetGestureConfig(win->hwndCanvas, 0, 1, &gc, sizeof(GESTURECONFIG));
+    }
+
+    AddTab(win);
 
     return win;
 }
@@ -3847,7 +3916,18 @@ bool FrameOnKeydown(WindowInfo *win, WPARAM key, LPARAM lparam, bool inTextfield
         return true;
     }
 
-    if ('V' == key && IsCtrlPressed() && IsAltPressed()) {
+    if (VK_LEFT == key && IsCtrlPressed() && IsAltPressed()) {
+        ShowPreviousDocument(win->panel);
+        return true;
+    } else if (VK_RIGHT == key && IsCtrlPressed() && IsAltPressed()) {
+        ShowNextDocument(win->panel);
+        return true;
+    }
+
+    if ('T' == key && IsCtrlPressed() && !IsAltPressed()) {
+        OpenNewTab(win->panel);
+        return true;
+    } else if ('V' == key && IsCtrlPressed() && IsAltPressed()) {
         SplitPanel(win->panel->container, L"Vertically");
         return true;
     } else if ('H' == key && IsCtrlPressed() && IsAltPressed()) {
@@ -4620,6 +4700,39 @@ void SplitPanel(ContainerInfo *container, WCHAR const *direction)
     }
 }
 
+void ShowDocument(PanelInfo *panel, WindowInfo *win,  WindowInfo *winNew, bool HideOldDocument)
+{
+    if (win == winNew)
+        return;
+
+    if (win->fullScreen || win->presentation)
+        ExitFullscreen(*win);
+
+    panel->win = winNew;
+
+    if (HideOldDocument) {
+        ShowWindow(win->hwndCanvas, SW_HIDE);
+        UpdateWindow(win->hwndCanvas);
+    }
+
+    ShowWindow(winNew->hwndCanvas, SW_SHOW);
+}
+
+void ShowPreviousDocument(PanelInfo *panel){
+    WindowInfo *win = panel->gWin.At(max(panel->gWin.Find(panel->win) - 1, 0));
+    ShowDocument(panel, panel->win, win, true);
+}
+
+void ShowNextDocument(PanelInfo *panel){
+    WindowInfo *win = panel->gWin.At(min(panel->gWin.Find(panel->win) + 1, (int) panel->gWin.Count() - 1));
+    ShowDocument(panel, panel->win, win, true);
+}
+
+void OpenNewTab(PanelInfo *panel) {
+    WindowInfo *winOld = panel->win;
+    WindowInfo *win = CreateCanvas(panel);
+}
+
 static LRESULT OnSetCursor(WindowInfo& win, HWND hwnd)
 {
     POINT pt;
@@ -5004,12 +5117,18 @@ static void PanelOnSize(PanelInfo* panel, int dx, int dy)
     if (tocVisible || gGlobalPrefs.favVisible)
         SetSidebarVisibility(panel->win, tocVisible, gGlobalPrefs.favVisible);
     else {
-        if (gGlobalPrefs.toolbarForEachPanel)
-            SetWindowPos(panel->win->hwndCanvas, NULL, 0, rebBarDy, dx, dy - rebBarDy, SWP_NOZORDER);
-        else {
+        HDWP hwdp = BeginDeferWindowPos(2);
+
+        if (gGlobalPrefs.toolbarForEachPanel) {
+            DeferWindowPos(hwdp, panel->hwndTab, NULL, 0, rebBarDy, dx, TAB_CONTROL_DY, SWP_NOZORDER);
+            DeferWindowPos(hwdp, panel->win->hwndCanvas, NULL, 0, rebBarDy + TAB_CONTROL_DY + 1, dx, dy - rebBarDy - TAB_CONTROL_DY - 1, SWP_NOZORDER);
+        } else {
             //SetWindowPos(win->panel->WIN->gContainer.At(0)->hwndContainer, NULL, 0, 0, dx, dy, SWP_NOZORDER);
-            SetWindowPos(panel->win->hwndCanvas, NULL, 0, rebBarDy, dx, dy - rebBarDy, SWP_NOZORDER);
+            DeferWindowPos(hwdp, panel->hwndTab, NULL, 0, rebBarDy, dx, TAB_CONTROL_DY, SWP_NOZORDER);
+            DeferWindowPos(hwdp, panel->win->hwndCanvas, NULL, 0, rebBarDy + TAB_CONTROL_DY + 1, dx, dy - rebBarDy - TAB_CONTROL_DY - 1, SWP_NOZORDER);
         }
+        
+        EndDeferWindowPos(hwdp);
     }
 }
 
@@ -5044,10 +5163,11 @@ static void PanelOnPaint(PanelInfo& panel)
     HDC hdc = BeginPaint(panel.hwndPanel, &ps);
 
     RECT rc;
+
     rc.left = 0;
     rc.right = dx;
-    rc.top = rebBarDy ;
-    rc.bottom = dy - rebBarDy;
+    rc.top = rebBarDy + TAB_CONTROL_DY;
+    rc.bottom = rebBarDy + TAB_CONTROL_DY + 1;
     FillRect(hdc, &rc, gBrushNoDocBg);
 
     EndPaint(panel.hwndPanel, &ps);

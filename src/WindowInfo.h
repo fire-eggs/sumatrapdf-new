@@ -113,6 +113,8 @@ public:
     ~PanelInfo();
 
     HWND            hwndPanel;
+    HWND            hwndTab;
+    HWND            hwndTabTooltip;
 
     TopWindowInfo * WIN; // Need?
     ContainerInfo * container; // Need?
@@ -144,6 +146,7 @@ public:
     PanelInfo *     panel; // Need?
 
     WCHAR *         loadedFilePath;
+    WCHAR *            TabToolTipText;
     DisplayModel *  dm;
 
     HWND            hwndFrame;

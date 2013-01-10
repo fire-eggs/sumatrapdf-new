@@ -97,6 +97,7 @@ extern HBRUSH                   gBrushSepLineBg;
 extern HBRUSH                   gBrushStaticBg;
 extern HFONT                    gDefaultGuiFont;
 extern WCHAR *                  gPluginURL;
+extern Vec<TopWindowInfo*>      gWIN;
 extern Vec<WindowInfo*>         gWindows;
 extern Vec<EbookWindow*>        gEbookWindows;
 extern Favorites *              gFavorites;
@@ -140,7 +141,12 @@ void  QuitIfNoMoreWindows();
 bool  ShouldSaveThumbnail(DisplayState& ds);
 void  SaveThumbnailForFile(const WCHAR *filePath, RenderedBitmap *bmp);
 
+void ShowDocument(PanelInfo *panel, WindowInfo *win, WindowInfo *winNew, bool HideOldDocument);
+void ShowPreviousDocument(PanelInfo *panel);
+void ShowNextDocument(PanelInfo *panel);
+
 void SplitPanel(ContainerInfo *container, WCHAR const *direction);
+void OpenNewTab(PanelInfo *panel);
 
 TopWindowInfo* FindTopWindowInfoByHwnd(HWND hwnd);
 PanelInfo *FindPanelInfoByHwnd(HWND hwnd);

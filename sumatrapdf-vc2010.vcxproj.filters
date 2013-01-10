@@ -1016,6 +1016,9 @@
     <ClCompile Include="src\Sidebar.cpp">
       <Filter>sumatra</Filter>
     </ClCompile>
+    <ClCompile Include="src\Tab.cpp">
+      <Filter>sumatra</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ext\jbig2dec\config_win32.h">
@@ -1511,6 +1514,9 @@
       <Filter>mui</Filter>
     </ClInclude>
     <ClInclude Include="src\Sidebar.h">
+      <Filter>sumatra</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Tab.h">
       <Filter>sumatra</Filter>
     </ClInclude>
   </ItemGroup>

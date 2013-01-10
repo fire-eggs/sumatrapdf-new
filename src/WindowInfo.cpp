@@ -71,7 +71,8 @@ WindowInfo::WindowInfo(HWND hwnd) :
     xScrollSpeed(0), yScrollSpeed(0), wheelAccumDelta(0),
     delayedRepaintTimer(0), watcher(NULL),
     pdfsync(NULL), stressTest(NULL),
-    hwndFavBox(NULL), hwndFavTree(NULL)
+    hwndFavBox(NULL), hwndFavTree(NULL),
+    TabToolTipText(NULL)
 {
     ZeroMemory(&selectionRect, sizeof(selectionRect));
 
