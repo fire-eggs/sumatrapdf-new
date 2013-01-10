@@ -151,6 +151,7 @@ static MenuDef menuDefDebug[] = {
     { "Toggle PDF/XPS renderer",            IDM_DEBUG_GDI_RENDERER,     MF_NO_TRANSLATE },
     { "Toggle ebook UI",                    IDM_DEBUG_EBOOK_UI,         MF_NO_TRANSLATE },
     { "Mui debug paint",                    IDM_DEBUG_MUI,              MF_NO_TRANSLATE },
+    { "Annotation from Selection",          IDM_DEBUG_ANNOTATION,       MF_NO_TRANSLATE },
 //    { SEP_ITEM,                             0,                          0 },
 //    { "Crash me",                           IDM_DEBUG_CRASH_ME,         MF_NO_TRANSLATE },
 };
@@ -356,7 +357,7 @@ void MenuUpdateStateForWindow(WindowInfo* win) {
         // for broken XPS/CHM documents)
     };
     static UINT menusToDisableIfDirectory[] = {
-        IDM_SAVEAS, IDM_SEND_BY_EMAIL
+        IDM_RENAME_FILE, IDM_SEND_BY_EMAIL
     };
     static UINT menusToEnableIfBrokenPDF[] = {
         IDM_VIEW_WITH_ACROBAT, IDM_VIEW_WITH_FOXIT, IDM_VIEW_WITH_PDF_XCHANGE,
@@ -476,7 +477,7 @@ void OnContextMenu(WindowInfo* win, int x, int y)
     HMENU popup = BuildMenuFromMenuDef(menuDefContext, dimof(menuDefContext), CreatePopupMenu());
     if (!value || pageEl->GetType() != Element_Link)
         win::menu::Remove(popup, IDM_COPY_LINK_TARGET);
-    if (!value || pageEl->GetType() != Element_Annotation || pageEl->GetAnnot()->type != Annot_Comment)
+    if (!value || pageEl->GetType() != Element_Comment)
         win::menu::Remove(popup, IDM_COPY_COMMENT);
     if (!pageEl || pageEl->GetType() != Element_Image)
         win::menu::Remove(popup, IDM_COPY_IMAGE);

@@ -70,7 +70,7 @@ void DumpProperties(BaseEngine *engine, bool fullDump)
         Out("\t\tCreator=\"%s\"\n", str.Get());
     str.Set(Escape(engine->GetProperty(Prop_PdfProducer)));
     if (str)
-        Out("\t\tProducer=\"%s\"\n", str.Get());
+        Out("\t\tPdfProducer=\"%s\"\n", str.Get());
     str.Set(Escape(engine->GetProperty(Prop_PdfVersion)));
     if (str)
         Out("\t\tPdfVersion=\"%s\"\n", str.Get());
@@ -178,14 +178,8 @@ const char *ElementTypeToStr(PageElement *el)
     switch (el->GetType()) {
     case Element_Link: return "Link";
     case Element_Image: return "Image";
-    case Element_Annotation:
-        switch (el->GetAnnot()->type) {
-        case Annot_Comment: return "Comment";
-        case Annot_Highlight: return "Highlight";
-        }
-        // fall through
-    default:
-        return "Unknown";
+    case Element_Comment: return "Comment";
+    default: return "Unknown";
     }
 }
 

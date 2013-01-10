@@ -1544,18 +1544,17 @@ bool DoCachePageRendering(WindowInfo *win, int pageNo)
 }
 
 /* Send the request to render a given page to a rendering thread */
-void WindowInfo::RenderPage(int pageNo)
+void WindowInfo::RequestRendering(int pageNo)
 {
     assert(dm);
-    if (!dm)
-        return;
+    if (!dm) return;
     // don't render any plain images on the rendering thread,
     // they'll be rendered directly in DrawDocument during
     // WM_PAINT on the UI thread
     if (!DoCachePageRendering(this, pageNo))
         return;
 
-    gRenderCache.Render(dm, pageNo, NULL);
+    gRenderCache.RequestRendering(dm, pageNo);
 }
 
 void WindowInfo::CleanUp(DisplayModel *dm)
@@ -1868,8 +1867,6 @@ static void DebugShowLinks(DisplayModel& dm, HDC hdc)
         if (els) {
             for (size_t i = 0; i < els->Count(); i++) {
                 if (els->At(i)->GetType() == Element_Image)
-                    continue;
-                if (els->At(i)->GetType() == Element_Annotation && els->At(i)->GetAnnot()->type != Annot_Comment)
                     continue;
                 RectI rect = dm.CvtToScreen(pageNo, els->At(i)->GetRect());
                 RectI isect = viewPortRect.Intersect(rect);
@@ -2190,11 +2187,15 @@ static void OnMouseLeftButtonUp(WindowInfo& win, int x, int y, WPARAM key)
         OnSelectionStop(&win, x, y, !didDragMouse);
 
     PointD ptPage = win.dm->CvtFromScreen(PointI(x, y));
+    // TODO: win.linkHandler->GotoLink might spin the event loop
+    PageElement *activeLink = win.linkOnLastButtonDown;
+    win.linkOnLastButtonDown = NULL;
+    win.mouseAction = MA_IDLE;
 
     if (didDragMouse)
         /* pass */;
-    else if (win.linkOnLastButtonDown && win.linkOnLastButtonDown->GetRect().Contains(ptPage)) {
-        win.linkHandler->GotoLink(win.linkOnLastButtonDown->AsLink());
+    else if (activeLink && activeLink->GetRect().Contains(ptPage)) {
+        win.linkHandler->GotoLink(activeLink->AsLink());
         SetCursor(gCursorArrow);
     }
     /* if we had a selection and this was just a click, hide the selection */
@@ -2211,9 +2212,7 @@ static void OnMouseLeftButtonUp(WindowInfo& win, int x, int y, WPARAM key)
     else if (PM_BLACK_SCREEN == win.presentation || PM_WHITE_SCREEN == win.presentation)
         win.ChangePresentationMode(PM_ENABLED);
 
-    win.mouseAction = MA_IDLE;
-    delete win.linkOnLastButtonDown;
-    win.linkOnLastButtonDown = NULL;
+    delete activeLink;
 }
 
 static void OnMouseLeftButtonDblClk(WindowInfo& win, int x, int y, WPARAM key)
@@ -2323,6 +2322,8 @@ static void OnMouseRightButtonUp(WindowInfo& win, int x, int y, WPARAM key)
         abs(y - win.dragStart.y) > GetSystemMetrics(SM_CYDRAG);
     OnDraggingStop(win, x, y, !didDragMouse);
 
+    win.mouseAction = MA_IDLE;
+
     if (didDragMouse)
         /* pass */;
     else if (win.fullScreen || PM_ENABLED == win.presentation) {
@@ -2338,8 +2339,6 @@ static void OnMouseRightButtonUp(WindowInfo& win, int x, int y, WPARAM key)
         win.ChangePresentationMode(PM_ENABLED);
     else
         OnContextMenu(&win, x, y);
-
-    win.mouseAction = MA_IDLE;
 }
 
 static void OnMouseRightButtonDblClick(WindowInfo& win, int x, int y, WPARAM key)
@@ -2536,7 +2535,8 @@ void CloseWindow(WindowInfo *win, bool quitIfLast, bool forceClose)
     }
 }
 
-static void AppendFileFilterForDoc(DisplayModel *dm, str::Str<WCHAR>& fileFilter)
+// returns false if no filter has been appended
+static bool AppendFileFilterForDoc(DisplayModel *dm, str::Str<WCHAR>& fileFilter)
 {
     const WCHAR *defExt = dm->engine->GetDefaultFileExt();
     switch (dm->engineType) {
@@ -2544,6 +2544,7 @@ static void AppendFileFilterForDoc(DisplayModel *dm, str::Str<WCHAR>& fileFilter
         case Engine_DjVu:   fileFilter.Append(_TR("DjVu documents")); break;
         case Engine_ComicBook: fileFilter.Append(_TR("Comic books")); break;
         case Engine_Image:  fileFilter.AppendFmt(_TR("Image files (*.%s)"), defExt + 1); break;
+        case Engine_ImageDir: return false; // only show "All files"
         case Engine_PS:     fileFilter.Append(_TR("Postscript documents")); break;
         case Engine_Chm:    fileFilter.Append(_TR("CHM documents")); break;
         case Engine_Epub:   fileFilter.Append(_TR("EPUB ebooks")); break;
@@ -2555,6 +2556,7 @@ static void AppendFileFilterForDoc(DisplayModel *dm, str::Str<WCHAR>& fileFilter
         case Engine_Txt:    fileFilter.Append(_TR("Text documents")); break;
         default:            fileFilter.Append(_TR("PDF documents")); break;
     }
+    return true;
 }
 
 static void OnMenuSaveAs(WindowInfo& win)
@@ -2584,8 +2586,8 @@ static void OnMenuSaveAs(WindowInfo& win)
     // double-zero terminated string isn't cut by the string handling
     // methods too early on)
     str::Str<WCHAR> fileFilter(256);
-    AppendFileFilterForDoc(win.dm, fileFilter);
-    fileFilter.AppendFmt(L"\1*%s\1", defExt);
+    if (AppendFileFilterForDoc(win.dm, fileFilter))
+        fileFilter.AppendFmt(L"\1*%s\1", defExt);
     if (hasCopyPerm) {
         fileFilter.Append(_TR("Text documents"));
         fileFilter.Append(L"\1*.txt\1");
@@ -2666,6 +2668,12 @@ static void OnMenuSaveAs(WindowInfo& win)
     else if (!file::Exists(srcFileName)) {
         ok = win.dm->engine->SaveFileAs(realDstFileName);
     }
+#ifdef DEBUG
+    // ... as well as files containing annotations ...
+    else if (win.dm->engine->SupportsAnnotation(Annot_Highlight, true)) {
+        ok = win.dm->engine->SaveFileAs(realDstFileName);
+    }
+#endif
     // ... else just copy the file
     else {
         WCHAR *msgBuf;
@@ -2740,7 +2748,8 @@ static void OnMenuRenameFile(WindowInfo &win)
     // methods too early on)
     const WCHAR *defExt = win.dm->engine->GetDefaultFileExt();
     str::Str<WCHAR> fileFilter(256);
-    AppendFileFilterForDoc(win.dm, fileFilter);
+    bool ok = AppendFileFilterForDoc(win.dm, fileFilter);
+    CrashIf(!ok);
     fileFilter.AppendFmt(L"\1*%s\1", defExt);
     str::TransChars(fileFilter.Get(), L"\1", L"\0");
 
@@ -2765,7 +2774,7 @@ static void OnMenuRenameFile(WindowInfo &win)
     ofn.lpstrDefExt = defExt + 1;
     ofn.Flags = OFN_OVERWRITEPROMPT | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
 
-    bool ok = GetSaveFileName(&ofn);
+    ok = GetSaveFileName(&ofn);
     if (!ok)
         return;
 
@@ -2903,7 +2912,7 @@ void OnMenuOpen(SumatraWindow& win)
         bool available;
     } fileFormats[] = {
         { _TR("PDF documents"),         L"*.pdf",        true },
-        { _TR("XPS documents"),         L"*.xps",        true },
+        { _TR("XPS documents"),         L"*.xps;*.oxps", true },
         { _TR("DjVu documents"),        L"*.djvu",       true },
         { _TR("Postscript documents"),  L"*.ps;*.eps",   PsEngine::IsAvailable() },
         { _TR("Comic books"),           L"*.cbz;*.cbr",  true },
@@ -3688,9 +3697,9 @@ static void FrameOnChar(WindowInfo& win, WPARAM key)
                     annots.Append(PageAnnotation(Annot_Highlight, sel.pageNo, sel.rect));
                 }
                 win.dm->engine->UpdateUserAnnotations(&annots);
+                gRenderCache.CancelRendering(win.dm);
+                gRenderCache.KeepForDisplayModel(win.dm, win.dm);
                 ClearSearchResult(&win);
-                win.CleanUp(win.dm);
-                win.RepaintAsync();
             }
         }
 #endif
@@ -4875,6 +4884,11 @@ static LRESULT FrameOnCommand(WindowInfo *win, HWND hwnd, UINT msg, WPARAM wPara
         case IDM_DEBUG_MUI:
             SetDebugPaint(!IsDebugPaint());
             win::menu::SetChecked(GetMenu(win->hwndFrame), IDM_DEBUG_MUI, !IsDebugPaint());
+            break;
+
+        case IDM_DEBUG_ANNOTATION:
+            if (win)
+                FrameOnChar(*win, 0xA7);
             break;
 
         case IDM_DEBUG_CRASH_ME:
