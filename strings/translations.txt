@@ -1,5 +1,5 @@
 AppTranslator: SumatraPDF
-45085c29b0ab1de3b2cc45c6f7755de8a81644e1
+69652ec73d6857f642e7d45b7ccbc0446f31a166
 :&About
 af:&Omtrent
 am:&Ծրագրի մասին
@@ -7,7 +7,7 @@ ar:حول البرنامج
 az:Proqram &haqqında
 bg:За &програмата
 bn:&আমাদের সম্পর্কে
-br:S&obre o SumatraPDF
+br:S&obre
 bs:&O programu...
 by:Аб праграме
 ca-xv:&Quant a...
@@ -36,6 +36,7 @@ it:&Informazioni su...
 ja:バージョン情報(&A)
 ka:&პროგრამის შესახებ...
 kr:정보(&A)
+ku:دەربارەی&
 kw:&A-dro dhe...
 lt:Apie
 mk:&За SumatraPDF...
@@ -72,7 +73,7 @@ af:&Gewone Grootte\tCtrl+1
 am:Իրական &չափը\tCtrl+1
 ar:الحجم الحقيقي\tCtrl+1
 az:&Həqiqi ölçü\tCtrl+1
-bg:&Оригинален размер\tCtrl+1
+bg:&Оригинален (реален) размер\tCtrl+1
 bn:বাস্তবিক আকার\tCtrl+1
 br:&Tamanho real\tCtrl+1
 bs:Stvarna veličina\tCtrl+1
@@ -103,6 +104,7 @@ it:Dimensioni re&ali\t<Ctrl>+1
 ja:実際のサイズ(&A)\tCtrl+1
 ka:&თავდაპირველი ზომა\tCtrl+1
 kr:실제 크기(&A)\tCtrl+1
+ku:قەبارەی ڕاستەقینە &\tCtrl+1
 kw:&Braster gwir\tCtrl+1
 lt:&Originalus\tCtrl+1
 mk:&Реална големина\tCtrl+1
@@ -165,6 +167,7 @@ it:Tutte le p&agine selezionate
 ja:すべての選択されたページ(&A)
 ka:&ყველა მონიშნული გვერდი
 kr:선택한 모든 페이지(&A)
+ku:هەموو پەڕە دیاریکراوەکان&
 lt:&Visi pažymėti puslapiai
 mk:&Сите означени страници
 my:&Semua mukasurat pilihan
@@ -222,6 +225,7 @@ it:&Indietro\t<Alt>+<Freccia sinistra>
 ja:前に戻る(&B)\tAlt+←
 ka:&უკან\tAlt+მარცხენა ისარი
 kr:이전에 본 페이지(&B)\tAlt+왼쪽 방향키
+ku:&گەڕانەوە\tAlt+Left Arrow
 kw:War-lergh\tAlt+<-
 lt:At&gal\tAlt+Kairėn
 mk:Назад\tAlt+Left Arrow
@@ -278,6 +282,7 @@ it:Vista &libro\t<Ctrl>+8
 ja:ブック ビュー&(B)\tCtrl+B
 ka:&წიგნის რეჟიმი\tCtrl+8
 kr:책처럼 보기(&B)\tCtrl+8
+ku:شێوازی پەرتووک&\tCtrl+8
 lt:Knyga\tCtrl+8
 mk:Книга\tCtrl+8
 ne:&पुस्तिका दृश्य\tCtrl+8
@@ -336,6 +341,7 @@ it:&Chiudi\tCtrl+W
 ja:閉じる(&C)\tCtrl+W
 ka:&დახურვა\tCtrl+W
 kr:닫기(&C)\tCtrl+W
+ku:داخستن&\tCtrl+W
 kw:&Degea\tCtrl+W
 lt:&Užverti\tCtrl+W
 mk:&Затвори\tCtrl+W
@@ -397,6 +403,7 @@ it:&Copia selezione
 ja:選択範囲をコピー(&C)
 ka:მონიშნულის &კოპირება
 kr:선택한 부분 복사(&C)
+ku:لەبەرگرتنەوەی دیاریکراو&
 lt:&Kopijuoti pažymėtą sritį
 mk:&Копирај селекција
 ne:चयनको प्रति&लिपि बनाउनुहोस्
@@ -452,6 +459,7 @@ it:&Copia selezione\t<Ctrl>+C
 ja:選択範囲のコピー(&C)\tCtrl+C
 ka:მონიშნულის &კოპირება\tCtrl+C
 kr:선택한 부분 복사(&C)\tCtrl+C
+ku:لەبەرگرتنەوەی دیاریکراو&\tCtrl+C
 kw:Dasskrifa Dewis\tCtrl+C
 lt:&Kopijuoti pažymėtą sritį\tCtrl+C
 mk:Копирај селекција\tCtrl+C
@@ -514,6 +522,7 @@ it:Non chie&dermelo più
 ja:再び質問しない(&D)
 ka:&აღარ შემეკითხო
 kr:다시 묻지 않음(&D)
+ku:دووبارە پرسیار مەکەرەوە&
 kw:&Na wovyn orthiv arta
 lt:&Daugiau nebeklausti
 mk:Не ме прашувај повторно
@@ -575,6 +584,7 @@ it:Solo pagin&e pari
 ja:偶数ページのみ(&E)
 ka:მხოლოდ &ლუწი გვერდები
 kr:짝수 페이지만(&E)
+ku:تەنها پەڕە جووتەکان&
 lt:Tik &lyginiai puslapiai
 mk:Само &парни страници
 my:&Mukasurat genap sahaja
@@ -629,6 +639,7 @@ it:Pagine &affiancate\t<Ctrl>+7
 ja:見返し表示(&F)\tCtrl+7
 ka:&ურთიერთ-საპირისპიროდ\tCtrl+7
 kr:두 페이지씩(&F)\tCtrl+7
+ku:&ڕووکار\tCtrl+7
 lt:&Du puslapiai\tCtrl+7
 mk:Две страници\tCtrl+7
 ne:&सम्मुख\tCtrl+7
@@ -686,6 +697,7 @@ it:&File
 ja:ファイル(&F)
 ka:&ფაილი
 kr:파일(&F)
+ku:فایل&
 kw:&Restren
 lt:&Failas
 mk:&Датотека
@@ -811,6 +823,7 @@ it:&Prima pagina\t<Home>
 ja:最初のページ(&F)\tHome
 ka:&პირველი გვერდი\tHome
 kr:첫 페이지(&F)\tHome
+ku:پەڕەی یەکەم&\tHome
 kw:Kynsa Folen\tHome
 lt:Pi&rmąjį puslapį\tHome
 mk:Прва страница\tHome
@@ -933,6 +946,7 @@ it:&Vai a
 ja:移動(&G)
 ka:გადა&სვლა
 kr:이동(&G)
+ku:چوون بۆ&
 kw:&Mos dhe
 lt:&Eiti į
 mk:П&ојди на
@@ -997,6 +1011,7 @@ it:&Vai a pagina:
 ja:ページへ移動(&G):
 ka:გადასვლა &გვერდზე
 kr:이동할 페이지(&G):
+ku:چوون بۆ پەڕە&:
 kw:&Mos dhe folen:
 lt:&Eiti į puslapį:
 mk:&Појди на страница:
@@ -1058,6 +1073,7 @@ it:&Guida in linea
 ja:ヘルプ(&H)
 ka:&დახმარება
 kr:도움말(&H)
+ku:یارمەتی&
 kw:&Gweres
 lt:&Žinynas
 mk:&Помош
@@ -1125,6 +1141,7 @@ it:&Ultima pagina\t<Fine>
 ja:最後のページ(&L)\tEnd
 ka:&ბოლო გვერდი\tEnd
 kr:마지막 페이지(&L)\tEnd
+ku:دواین پەڕە&\tEnd
 kw:Diwettha folen\tEnd
 lt:Pa&skutinįjį puslapį\tEnd
 mk:Последна страница\tEnd
@@ -1248,6 +1265,7 @@ it:&Manuale in linea (in inglese)
 ja:マニュアル(&M)
 ka:&სახელმძღვანელო
 kr:설명서(&M)
+ku:دەستی&
 kw:&Kowethlyver
 lt:Naudotojo &vadovas
 mk:Прирачник за употреба
@@ -1369,6 +1387,7 @@ it:Pagi&na successiva\t<Freccia destra>
 ja:次のページ(&N)\t→
 ka:შ&ემდეგი გვერდი\tმარჯვენა ისარი
 kr:다음 페이지(&N)\t오른쪽 방향키
+ku:پەڕەی دواتر&\tRight Arrow
 kw:Nessa Folen\t->
 lt:&Kitas puslapis\tDešinėn
 mk:Следна страница\t->
@@ -1433,6 +1452,7 @@ it:&No
 ja:いいえ(&N)
 ka:&არა
 kr:아니오(&N)
+ku:نەخێر&
 kw:&Na
 lt:&Ne
 mk:&Не
@@ -1491,6 +1511,7 @@ it:&No, grazie
 ja:いいえ(&N)
 ka:&არა, გმადლობთ
 kr:아니오(&N)
+ku:نەخێر، سوپاس&
 kw:&Na, meur ras
 lt:Ačiū, &ne
 mk:&Не, благодарам
@@ -1601,6 +1622,7 @@ it:&Apri documento
 ja:ドキュメントを開く(&O)
 ka:&დოკუმენტის გახსნა
 kr:문서 열기(&O)
+ku:کردنەوەی بەڵگەنامە&
 lt:&Atverti dokumentą
 mk:Отвори документ
 ne:&कागजात खोल्नुहोस्
@@ -1658,6 +1680,7 @@ it:&Apri...\tCtrl+O
 ja:開く(&O)...\tCtrl+O
 ka:&გახსნა...\tCtrl+O
 kr:열기(&O)...\tCtrl+O
+ku:...کردنەوە&\tCtrl+O
 kw:&Ygor...\tCtrl+O
 lt:&Atverti...\tCtrl+O
 mk:&Отвори...\tCtrl+O
@@ -1722,6 +1745,7 @@ it:&Opzioni...
 ja:オプション(&O)...
 ka:&პარამეტრები...
 kr:옵션(&O)...
+ku:...هەڵبژاردنەکان&
 kw:&Etholyow...
 lt:&Nuostatos...
 mk:&Опции...
@@ -1780,6 +1804,7 @@ it:&Password:
 ja:パスワード(&P):
 ka:&პაროლი:
 kr:비밀번호(&P):
+ku:تێپەڕە ووشە&:
 kw:&Ger-tremena:
 lt:&Slaptažodis:
 mk:&Лозинка:
@@ -1892,6 +1917,7 @@ it:&Pagina precedente\t<Freccia sinistra>
 ja:前のページ(&P)\t←
 ka:წი&ნა გვერდი\tმარცხენა ისარი
 kr:이전 페이지(&P)\t왼쪽 방향키
+ku:پەڕەی پێشوو&\tLeft Arrow
 kw:Folen kyns\t<-
 lt:&Ankstesnis puslapis\tKairėn
 mk:Претходна страница\t<-
@@ -1953,6 +1979,7 @@ it:&Stampa
 ja:印刷(&P)...
 ka:&ამობეჭდვა...
 kr:인쇄(&P)...
+ku:چاپکردن&
 lt:&Spausdinti...
 mk:&Печати...
 ne:&छाप्नुहोस् ...
@@ -2066,6 +2093,7 @@ it:Stam&pa...\tCtrl+P
 ja:印刷(&P)...\tCtrl+P
 ka:&ამობეჭდვა...\tCtrl+P
 kr:인쇄(&P)...\tCtrl+P
+ku:...چاپکردن&\tCtrl+P
 kw:&Pryntya\tCtrl+P
 lt:&Spausdinti...\tCtrl+P
 mk:&Печати...\tCtrl+P
@@ -2240,6 +2268,7 @@ it:&Non ricordare documento
 ja:ドキュメントの削除(&R)
 ka:დოკუმენტის &წაშლა
 kr:고정 문서 제거(&R)
+ku:لابردنی بەڵگەنامە&
 lt:Pa&šalinti dokumentą
 mk:Отстрани документ
 ne:कागजात &हटाउनुहोस्
@@ -2291,6 +2320,7 @@ it:&Salva come...
 ja:名前を付けて保存(&S)...
 ka:შენახვა &როგორც...
 kr:다른 이름으로 저장(&S)...
+ku:...پاراستن وەکو&
 lt:Į&rašyti kaip...
 mk:&Зачувај како...
 ne:ब&चत गर्नुहोस्...
@@ -2413,6 +2443,7 @@ it:Impo&stazioni
 ja:設定(&S)
 ka:&გამართვა
 kr:설정(&S)
+ku:ڕێکخستنەکان&
 kw:&Settyansow
 lt:&Nuostatos
 mk:&Поставувања
@@ -2613,7 +2644,7 @@ vn:Bỏ qua phiên bản này.
 am:&Օգտագործել էջերի իրական չափը
 ar:&استخدام الحجم الأصلي للصفحة
 az:Səhifələrin &həqiqi ölçüsü
-bg:Използвай &оригиналната големина
+bg:Използване на &оригиналните размери на страниците
 br:&Usar tamanhos de página originais
 bs:Koristi &originalne veličine stranica
 ca-xv:&Usa la mida de pàgina original
@@ -2633,6 +2664,7 @@ fr:&Utiliser les dimensions d'origine
 ga:&Bain feidhm as méideanna bunaidh an leathanaigh
 gl:&Usar tamaños de páxina orixinais
 he:השתמש במידות דף מקוריות
+hi:एवं वास्तविक पृष्ठ आकार
 hr:Koristi &originalne veličine stranica
 hu:Eredeti oldalméret használata
 id:&Gunakan ukuran halaman sebenarnya
@@ -2699,6 +2731,7 @@ it:&Visualizza
 ja:表示(&V)
 ka:&ხედი
 kr:보기(&V)
+ku:پیشاندان&
 kw:&Gweles
 lt:&Rodymas
 mk:&Поглед
@@ -2756,6 +2789,7 @@ fy-nl:&Ja
 ga:&Déan sin
 gl:&Si
 he:כן
+hi:हां
 hr:&Da
 hu:&Igen
 id:&Ya
@@ -2763,6 +2797,7 @@ it:&Sì
 ja:はい(&Y)
 ka:&დიახ
 kr:예(&Y)
+ku:بەڵێ&
 kw:&Ya
 lt:&Taip
 mk:&Да
@@ -2999,6 +3034,7 @@ it:Informazioni su SumatraPDF
 ja:SumatraPDF のバージョン情報
 ka:SumatraPDF-ის შესახებ
 kr:SumatraPDF 정보
+ku:SumatraPDF دەربارەی
 kw:A-dro dhe SumatraPDF
 lt:Apie „SumatraPDF“
 mk:За SumatraPDF
@@ -3034,7 +3070,7 @@ vn:Giới thiệu SumatraPDF
 am:Ավելացնել ընտրյալներին
 ar:أضف للمفضلة
 az:Seçilmişlərə əlavə et
-bg:Добави Любими
+bg:Добавяне към любимите
 br:Adicionar Favorito
 bs:Dodaj favorit
 ca-xv:Afig un preferit
@@ -3049,10 +3085,11 @@ et:Lisa lemmik
 eu:Gehitu Gogokoena
 fa:افزودن به موارد برگزیده
 fi:Lisää suosikki
-fr:Ajouter des Favoris
+fr:Ajouter un favori
 ga:Cuir ceanán leis
 gl:Engadir Favorito
 he:הוסף מועדף
+hi:पसंदीदा करने के लिए जोड़
 hr:Dodaj favorita
 hu:Hozzáadás a kedvencekhez
 id:Tambah Favorit
@@ -3060,6 +3097,7 @@ it:Aggiungi ai Preferiti
 ja:お気に入りに追加
 ka:რჩეულებში დამატება
 kr:즐겨찾기 추가
+ku:زیادکردنی پەسەند
 lt:Sukurti žymą
 mk:Додади омилен
 ne:मनपर्नेमा थप्नुहोस्
@@ -3086,7 +3124,7 @@ vn:Thêm Ưa thích
 am:Ավելացնել %s էջը ընտրյալներին
 ar:أضف الصفحة %s للمفضلة
 az:%s. səhifəni seçilmişlərə əlavə et
-bg:Добави страница %s към любимите
+bg:Добавяне на страница %s към любимите
 br:Adicionar página %s aos Favoritos
 bs:Dodaj stranicu %s u favorite
 ca-xv:Afig la pàgina %s als preferits
@@ -3101,7 +3139,7 @@ et:Lisa lehekülg %s lemmikutesse
 eu:Gehitu %s Orrialdea Gogokoenetara
 fa:افزودن صفحه‌ی %s به موارد برگزیده
 fi:Lisää sivu %s suosikkeihin
-fr:Ajouter page %s aux favoris
+fr:Ajouter la page %s aux favoris
 ga:Cuir leathanach a %s le na ceanáin
 gl:Engadir páxina %s aos favoritos
 he:למועדפים %s הוסף עמוד
@@ -3112,6 +3150,7 @@ it:Aggiungi pagina %s ai Preferiti
 ja:ページ %s を追加
 ka:%s გვერდის რჩეულებში დამატება
 kr:%s 페이지를 즐겨찾기에 추가
+ku:بۆ پەسەندەکان %s زیادکردنی پەڕەی
 lt:Sukurti žymą į %s puslapį
 mk:Додади страница %s во омилени
 ne:पृष्ठ %s लाई मनपर्नेमा थप्नुहोस्
@@ -3138,7 +3177,7 @@ vn:Thêm trang %s vào Ưa thích
 am:Ավելացնել %s էջը ընտրյալներին հետևյալ անվամբ`
 ar:أضف الصفحة %s للمفضلة باسم (اختياري):
 az:%s. səhifəni bu (istənilən) adla seçilmişlərə əlavə et:
-bg:Добави страница %s към любимите с име (по избор):
+bg:Добавяне на страница %s към любимите с име (по избор):
 br:Adicionar página %s aos Favoritos com outro nome (opcional):
 bs:Dodaj stranicu %s u favorite sa (opcionalnim) nazivom:
 ca-xv:Afig la pàgina %s als preferits amb el nom (opcional):
@@ -3153,7 +3192,7 @@ et:Lisa lehekülg %s lemmikutesse (valikulise) nimega:
 eu:Gehitu %s Gogokoenetara Izenarekin (aukerazkoa):
 fa:افزودن صفحه‌ی %s به موارد برگزیده با نام(اختیاری):
 fi:Lisää sivu %s suosikkeihin (valinnaisella) nimellä:
-fr:Ajouter page %s aux favoris avec un nom (optionnel):
+fr:Ajouter la page %s aux favoris avec un nom (optionnel):
 ga:Cuir leathanach a %s le na ceanáin le ainm (roghnach):
 gl:Engadir páxina %s aos favoritos  cun nome (opcional):
 he:למועדפים בשם %s הוסף עמוד:
@@ -3164,6 +3203,7 @@ it:Aggiungi la pagina %s ai Preferiti con nome (opzionale):
 ja:ページ %s に名前を付けて追加
 ka:%s გვერდის დამატება რჩეულებში (არასავალდებულო) სახელწოდებით:
 kr:%s 페이지의 즐겨찾기 이름을 입력하세요. (옵션) :
+ku:(بۆ پەسەندەکان بەناوی (ئارەزوومەندانە %s زیادکردنی پەڕەی :
 lt:Sukurti žymą į %s puslapį, suteikiant jai šį pavadinimą (neprivalomas):
 mk:Додади страница %s во омилени со име по избор:
 ne:पृष्ठ %s लाई मनपर्नेमा (ऐच्छिक) नाम सहित थप्नुहोस्
@@ -3190,7 +3230,7 @@ vn:Thêm trang %s vào Ưa thích với tên (tùy chọn):
 am:Ավելացնել ընտրյալներին
 ar:أضف للمفضلة
 az:Seçilmişlərə əlavə et
-bg:Добави към любимите
+bg:Добавяне към любимите
 br:Adicionar aos Favoritos
 bs:Dodaj u favorite
 ca-xv:Afig als preferits
@@ -3209,6 +3249,7 @@ fr:Ajouter aux favoris
 ga:Cuir le na ceanáin
 gl:Engadir a favoritos
 he:הוסף למועדפים
+hi:पसंदीदा करने के लिए जोड़
 hr:Dodaj u favorite
 hu:Hozzáadás a kedvencekhez
 id:Tambah Ke Favorit
@@ -3216,6 +3257,7 @@ it:Aggiungi ai Preferiti
 ja:お気に入りに追加
 ka:რჩეულებში დამატება
 kr:즐겨찾기에 추가
+ku:زیادکردن بۆ پەسەندەکان
 lt:Sukurti žymą
 mk:Додади во омилени
 ne:मनपर्नेमा थप्नुहोस्
@@ -3242,7 +3284,7 @@ vn:Thêm vào Ưa thích
 am:Ընդլայնված
 ar:متقدم
 az:Əlavə
-bg:Допълнителни
+bg:Разширени (Допълнителни)
 br:Avançado
 bs:Napredno
 by:Дадаткова
@@ -3271,6 +3313,7 @@ it:Avanzate
 ja:詳細設定
 ka:დამატებითი
 kr:고급
+ku:پەرەسەندوو
 kw:Avonsyes
 lt:Kitos
 mk:Напредни
@@ -3322,6 +3365,7 @@ fy-nl:Alle bestannen
 ga:Gach comhad
 gl:Todos os arquivos
 he:כל הקבצים
+hi:समस्त फाइलें
 hr:Sve datoteke
 hu:Minden fájl
 id:Semua Berkas
@@ -3329,6 +3373,7 @@ it:Tutti i file
 ja:すべてのファイル
 ka:ყველა ფაილი
 kr:모든 파일
+ku:هەموو فایلەکان
 kw:Pub restren
 lt:Visi failai
 mk:Сите датотеки
@@ -3385,6 +3430,7 @@ it:Tutti i documenti supportati
 ja:すべての対応ドキュメント
 ka:ყველა მხარდაჭერილი დოკუმენტი
 kr:모든 지원되는 문서
+ku:هەموو بەڵگەنامە گونجاوەکان
 lt:Visų palaikomų tipų dokumentai
 mk:Сите поддражни документи
 ne:सबै समर्थनयोग्य कागजातहरू
@@ -3439,6 +3485,7 @@ it:Creato con:
 ja:アプリケーション:
 ka:პროგრამა:
 kr:프로그램:
+ku:بەرنامە:
 lt:Programa:
 mk:Апликација:
 my:Aplikasi
@@ -3469,7 +3516,7 @@ af:Assosieer Met PDF lêers?
 am:Ասոցիացնե՞լ PDF ֆայլերի հետ։
 ar:ربط مع ملفات البي دي إف
 az:PDF fayllarla əlaqə yaradılsın?
-bg:По подразбиране за PDF файлове?
+bg:Указване на програмата като такава по подразбиране за отваряне на PDF файлове?
 bn:পিডিএফ সঞ্চিকার সাথে সম্বন্ধ করা হবে?
 br:Associar com arquivos PDF?
 bs:Asocirati sa PDF datotekama?
@@ -3500,6 +3547,7 @@ it:Associare ai file PDF?
 ja:PDF ファイルと関連付けますか？
 ka:გსურთ PDF ფაილებთან ასოცირება?
 kr:PDF 파일 확장자를 연결할까요?
+ku:؟PDF پەیوەستکردن بە فایلەکانی
 kw:Keskelmi orth restrennow PDF?
 lt:Susieti su PDF failais?
 mk:Да управувам со PDF-датотеки?
@@ -3561,6 +3609,7 @@ it:Allegato: %s
 ja:添付: %s
 ka:დანართი: %s
 kr:첨부: %s
+ku:%s :پاشکۆ
 lt:Priedas: %s
 mk:Прилог: %s
 ne:संलग्नहरू: %s
@@ -3610,6 +3659,7 @@ fy-nl:Auteur:
 ga:Údar:
 gl:Autor:
 he:עורך:
+hi:लेखक
 hr:Autor:
 hu:Készítő:
 id:Pencipta:
@@ -3617,6 +3667,7 @@ it:Autore:
 ja:作者:
 ka:ავტორი:
 kr:저자:
+ku:دانەر:
 lt:Autorius:
 mk:Автор:
 ne:लेखक
@@ -3666,6 +3717,7 @@ fy-nl:Automatysk
 ga:Uathoibríoch
 gl:Automático
 he:אוטומטי
+hi:स्वचालित
 hr:Automatsko
 hu:Automatikus
 id:Otomatis
@@ -3673,6 +3725,7 @@ it:Automatica
 ja:自動
 ka:ავტომატური
 kr:자동
+ku:خۆکار
 kw:Awtomatek
 lt:Automatinis
 mk:Автоматски
@@ -3732,6 +3785,7 @@ it:Controlla a&utomaticamente aggiornamenti
 ja:自動的に更新をチェックする(&U)
 ka:განახლების &ავტომატურად შემოწმება
 kr:업데이트 자동 확인(&U)
+ku:پشکنین بۆ نوێکردنەوە بە &خۆکاری
 kw:Checkya rag nowythyansow yn awtomatek
 lt:Automatiškai &tikrinti, ar yra naujinimų
 mk:Проверувај за &надградби автоматски
@@ -3783,6 +3837,7 @@ fy-nl:Boekbyld
 ga:Leabhar-amharc
 gl:Vista Libro
 he:תצוגת ספר
+hi:पुस्तक दृश्य
 hr:Knjiški pregled
 hu:Könyv (oldalpár címlappal)
 id:Tampilan Buku
@@ -3790,6 +3845,7 @@ it:Vista libro
 ja:ブック ビュー
 ka:წიგნის რეჟიმი
 kr:책처럼 보기
+ku:شێوازی پەرتووک
 kw:Gwel-lyver
 lt:Knyga
 mk:Книга
@@ -3852,6 +3908,7 @@ it:Segna&libri\t<F12>
 ja:ブックマーク(&M)\tF12
 ka:&სანიშნები\tF12
 kr:책갈피(&M)\tF12
+ku:نیشانە&کراوەکان\tF12
 kw:Lyververkyow\tF12
 lt:Žymės\tF12
 mk:Обележувачи\tF12
@@ -3912,6 +3969,7 @@ it:Scorciatoie segnalibro
 ja:ショートカットをブックマーク
 ka:მალსახმობები
 kr:책갈피 바로가기
+ku:نیشانەکردنی کورتە ئایکۆنەکان
 mk:Кратенки од обележувачи
 ne:पुस्तकचिनो सर्टकटहरु
 nl:Bladwijzer maken
@@ -3963,6 +4021,7 @@ it:Segnalibro alla pagina %s di %s
 ja:ページ %s、ファイル %s に対するショートカットをブックマーク
 ka:%s-იდან %s გვერდის მალსახმობის ჩანიშვნა
 kr:%s / %s 페이지에 책갈피 바로가기
+ku:%s لە %s نیشانەکردنی کورتەئایکۆن بۆ پەڕە
 mk:Кратенки од обележувачи за страница %s од %s
 ne:पृष्ठ %s (कुल %s मध्ये) को सर्टकटलाई पुस्तकचिनो बनाउनुहोस्
 nl:Bladwijzer maken naar pagina %s van %s
@@ -4015,6 +4074,7 @@ it:Segnalibri
 ja:ブックマーク
 ka:სანიშნები
 kr:책갈피
+ku:نیشانەکراوەکان
 lt:Žymės
 mk:Обележувачи
 ne:पुस्तकचिनो
@@ -4064,6 +4124,7 @@ fy-nl:Bytes
 ga:Bearta
 gl:Bytes
 he:ביטים
+hi:बाइट्स
 hr:Bajtova
 hu:bájt
 id:Bytes
@@ -4071,6 +4132,7 @@ it:Byte
 ja:バイト
 ka:ბაიტი
 kr:바이트
+ku:بایت
 lt:baitų
 mk:бајти
 my:Bytes
@@ -4128,6 +4190,7 @@ it:Documenti CHM
 ja:CHM ドキュメント
 ka:CHM დოკუმენტები
 kr:CHM 문서
+ku:CHM بەڵگەنامەکانی جۆری
 lt:CHM dokumentai
 mk:CHM-документи
 ne:CHM कागजातहरु
@@ -4181,6 +4244,7 @@ it:Impossibile connettersi a internet (errore %#x).
 ja:インターネットへ接続できません (エラー %#x)。
 ka:ინტერნეტთან დაკავშირება ვერ მოხერხდა (შეცდომა %#x).
 kr:인터넷에 접속할 수 없습니다. (오류 %#x)
+ku:.(%#x ناتوانرێت پەیوەندی بکرێت بە ئینتەرنێتەوە (هەڵەی
 lt:Ryšys su internetu nutrūko (klaida %#x).
 mk:Не можам да се поврзам на Интернет (грешка %#x).
 ne:इन्टरनेट जडान गर्न सकिएन (त्रुटि %#x).
@@ -4231,6 +4295,7 @@ fy-nl:Annulearje
 ga:Cealaigh
 gl:Cancelar
 he:בטל
+hi:रद्द करें
 hr:Odustani
 hu:Mégse
 id:Batalkan
@@ -4238,6 +4303,7 @@ it:Annulla
 ja:キャンセル
 ka:გაუქმება
 kr:취소
+ku:پاشگەزبونەوە
 kw:Hedhi
 lt:Atsisakyti
 mk:Откажи
@@ -4297,6 +4363,7 @@ it:Impossibile stampare questo file
 ja:このファイルを印刷できません
 ka:ამ ფაილის ამობეჭდვა ვერ მოხერხდა
 kr:이 파일을 인쇄할 수 없습니다.
+ku:ناتوانرێت ئەم فایلە چاپ بکرێت
 kw:Ny yllir pryntya an restren ma
 lt:Nepavyko išspausdinti failo
 mk:Не можам да ја печатам оваа датотека
@@ -4416,6 +4483,7 @@ it:Lingua interfaccia (Change language)
 ja:言語の変更 (Change Language)
 ka:ენის შეცვლა (Change Language)
 kr:언어 바꾸기(Change Language)
+ku:گۆڕینی زمان
 kw:Chanjya yeth (Change Language)
 lt:Keisti kalbą (Change Language)
 mk:Смени јазик (Change Language)
@@ -4482,6 +4550,7 @@ it:Controlla &aggiornamenti
 ja:更新のチェック(&U)
 ka:&განახლების შემოწმება
 kr:업데이트 확인(&U)
+ku:پشکنین بۆ &نوێکردنەوە
 kw:&Checkya rag versyon nowyth
 lt:Tikrinti, ar yra &naujinimų
 mk:&Провери за надградби
@@ -4541,6 +4610,7 @@ it:Fumetti
 ja:マンガ本
 ka:CBR, CBZ დოკუმენტები (კომიქსები)
 kr:만화 책
+ku:(پەرتووکی کۆمیدی (گاڵتەجاڕی
 lt:Komiksų knygelės
 mk:Стрипови
 ne:कमिक पुस्तिका
@@ -4583,19 +4653,24 @@ fa:سازگاری
 fi:Yhteensopivuus
 fr:Compatibilité
 ga:Comhoiriúnacht
+he:תאימות
 hr:Kompatibilnost
+hu:Kompatibilitás
 id:Kompabilitas
 it:Compatibilità
 ja:互換性
 kr:호환성
+ku:گونجان
 mk:Компатибилност
 ne:मिल्दोजुल्दो
 nl:Compatibiliteit
 no:Kompatibilitet
 pl:Zgodność
 pt:Compatibilidade
+ro:Compatibilitate
 ru:Совместимость
 sl:Združljivost
+sp-rs:Kompatibilnost
 sq:Përputhja
 sr-rs:Компатибилност
 sv:Kompatibilitet
@@ -4642,6 +4717,7 @@ it:Pagina continua
 ja:連続
 ka:უწყვეტი
 kr:한 페이지씩 계속
+ku:بەردەوام
 kw:Heb aswa
 lt:Nenutrūkstama
 mk:Непрекинат поглед
@@ -4671,7 +4747,7 @@ tl:Tuloy-tuloy
 tr:Devamlı
 tw:連續頁面
 uk:Протяжний
-uz:To'xtovsiz
+uz:Uzluksiz
 vn:Liên tiếp
 :Continuous Book View
 am:Շարունակել գրքի տեսքով
@@ -4698,6 +4774,7 @@ fy-nl:Fierder mei boekbyld
 ga:Leabhar-amharc leanúnach
 gl:Vista continua de libro
 he:תצוגת ספר רציפה
+hi:निरंतरित पुस्तक दृश्य
 hr:Slijedni knjiški pogled
 hu:Folyamatos könyv
 id:Tampilan Buku Secara Kontinu
@@ -4705,6 +4782,7 @@ it:Vista libro continua
 ja:連続ブック ビュー
 ka:წიგნის რეჟიმი (უწყვეტი)
 kr:이어서 책처럼 보기
+ku:پیشاندانی پەرتووک بە بەردەوامی
 kw:Gwel-lyver heb aswa
 lt:Nenutrūkstama knygos peržiūra
 mk:Книга со непрекинат поглед
@@ -4729,7 +4807,7 @@ tl:Tuluy-tuloy na tinging pang-aklat
 tr:Devamlı Kitap Gibi Görünüm
 tw:連續書本模式
 uk:Книжковий безперервний
-uz:To'xtovsiz kitob ko'rinishi
+uz:Uzluksiz kitob ko'rinishi
 vn:Xem sách liên tiếp
 :Continuous Facing
 af:Vertoon Aanmekaar
@@ -4767,6 +4845,7 @@ it:Pagine affiancate continue
 ja:連続見返し
 ka:ურთიერთ-საპირისპიროდ (უწყვეტი)
 kr:두 페이지씩 계속
+ku:پیشاندانی ڕووکار بە بەردەوامی
 kw:A-dal heb aswa
 lt:Nenutrūkstama dviejų puslapių
 mk:Непрекинат поглед со две страници
@@ -4796,7 +4875,7 @@ tl:Tuloy-tuloy na Magkaharap
 tr:Devamlı çift sayfa
 tw:連續雙頁模式
 uk:Дві протяжні сторінки
-uz:To'xtovsiz ikkita betdan
+uz:Uzluksiz ikkita betdan
 vn:Trang kép liên tiếp
 :Contribute Translation
 af:Dra By Tot Ñ Vertaling.
@@ -4834,6 +4913,7 @@ it:Contribuisci alla traduzione
 ja:翻訳の提供
 ka:თარგმნაში მონაწილეობა
 kr:번역 기여
+ku:پێشنیارکردنی وەرگێڕان
 kw:Keworra treylyans
 lt:Prisidėti prie vertimo
 mk:Учествувај во преведувањето на оваа апликација
@@ -4885,12 +4965,14 @@ fa:رونوشت از &عکس
 fi:Kopioi &kuva
 fr:Copier l'&image
 ga:Macasamhlaigh &Íomhánna
+he:העתק תמונה
 hr:Kopiraj Sl&iku
 hu:&Kép másolása
 id:Salin &Gambar
 it:Copia &immagine
 ja:画像をコピー(&I)
 kr:이미지 복사(&I)
+ku:لەبەرگرتنەوەی &وێنە
 mk:Копирај &слика
 ne:&छवि प्रतिलिपि बनाउनुहोस्
 nl:Afbeelding kopiëren
@@ -4900,6 +4982,7 @@ pt:Copiar &imagem
 ru:Скопировать &изображение
 sk:Kopírovať &obrázok
 sl:Kopiraj &sliko
+sp-rs:Kopiraj sliku
 sq:Kopjoj &figurën
 sr-rs:Копирај слику
 sv:Kop&iera bild
@@ -4940,6 +5023,7 @@ it:Copia indirizzo co&llegamento
 ja:リンク先のアドレスをコピー(&L)
 ka:&ბმულის კოპირება
 kr:링크 주소 복사(&L)
+ku:لەبەرگرتنەوەی &ناونیشانی بەستەر
 lt:Kopijuoti &saito adresą
 mk:Копирај ја адресата на &врската
 ne:&लिङ्क ठेगानाको प्रतिलिपि बनाउनुहोस्
@@ -4993,6 +5077,7 @@ it:Copia co&mmento
 ja:コメントをコピー(&M)
 ka:კო&მენტარის კოპირება
 kr:주석(설명) 복사(&M)
+ku:لەبەرگرتنەوەی لێد&وانەکان
 lt:Kopijuoti ko&mentarą
 mk:Копирај коментар
 ne:&टिप्पणीको प्रतिलिपि बनाउनुहोस्
@@ -5036,7 +5121,7 @@ et:Teksti kopeerimine on keelatud (kopeerida saab vaid pildina)
 eu:Idazkia kopiatzea eragotzita (kopiatzea irudi bezala bakarrik)
 fa:رونوشت‌گیری از متن ممنوع است (رونوشت فقط به صورت عکس)
 fi:Tekstin kopioiminen kiellettiin (kopioidaan vain kuvana)
-fr:La copie en texte est refusée (seule une capture d’écran est faite)
+fr:La copie de texte est refusée (seule une capture d’écran est faite)
 ga:Níorbh fhéidir téacs a mhacasamhlú (macasamhlú mar íomhá amháin)
 gl:Copiar texto foi denegado (copiando só coma imaxe)
 he:העתקת טקסט נדחית (מועתק רק כתמונה)
@@ -5047,6 +5132,7 @@ it:Impossibile copiare il testo (copio solo come immagine)
 ja:テキストのコピーは拒否されました (イメージとしてのコピーのみ)
 ka:ტექსტის კოპირება აკრძალულია (კოპირდება როგორც სურათი)
 kr:문자열 복사가 거부되었습니다. (이미지만 복사됩니다.)
+ku:(لەبەرگرتنەوەی دەق ڕەتکرایەوە (تەنها لەبەرگرتنەوەی وێنە
 lt:Teksto kopijavimas uždraustas (kopijuojamas tik ekrano vaizdas)
 mk:Копирањето на текстот беше одбиено (копирање само во вид на слика)
 ne:पाठ प्रतिलिपि अस्वीकार भयो (छविको रुपमा प्रतिलिपि बनाईदैछ)
@@ -5091,12 +5177,14 @@ eu:Copyrighta:
 fa:حقّ نشر
 fr:Copyright :
 ga:Cóipcheart:
+he:זכויות יוצרים
 hr:Autorsko pravo
 hu:Szerzői jog:
 id:Hak Cipta
 it:Copyright:
 ja:コピーライト:
 kr:저작권:
+ku:مافی لەبەرگرتنەوە:
 mk:Авторско право:
 ne:प्रतिलिपिअधिकार:
 nl:Auteursrecht
@@ -5106,6 +5194,7 @@ pt:Direitos de autor:
 ru:Авторское право:
 sk:Autorské práva:
 sl:Avtorske pravice:
+sp-rs:Autorska prava:
 sq:Kopirajti:
 sr-rs:Ауторска права:
 sv:Copyright:
@@ -5146,6 +5235,7 @@ it:Impossibile ottenere info proprietà stampante
 ja:プリンターのプロパティを開けませんでした
 ka:პრინტერის თვისებების მიღება ვერ მოხერხდა
 kr:프린터 속성을 가져올 수 없습니다.
+ku:ناتوانرێت تایبەتمەندییەکانی چاپکەر(پرێنتەر) وەربگیرێت
 lt:Spausdintuvo savybių sužinoti nepavyko
 mk:Не можам да дојдам до својствата на печатачот
 ne:मुद्रक गुणहरु प्राप्त गर्न सकिएन
@@ -5165,7 +5255,7 @@ ta:அச்சுப்பொறியின் பண்புகள் ப
 th:ไม่ได้รับคุณสมบัติเครื่องพิมพ์
 tr:Yazıcı özellikleri temin edilemedi
 tw:無法取得印表機之屬性
-uk:Неможливо відобразити налаштування друкарки
+uk:Неможливо отримати налаштування друкарки
 uz:Printer xossalarini olib bo'lmadi
 vn:Không thể có được thuộc tính Máy in
 :Couldn't initialize printer
@@ -5200,6 +5290,7 @@ it:Impossibile inizializzare la stampante
 ja:プリンターを初期化できませんでした
 ka:პრინტერის ინიციალიზაცია ვერ მოხერხდა
 kr:프린터를 초기화할 수 없습니다.
+ku:ناتوانرێت جاپکەر ڕێکبخرێت
 kw:Ny yllys darbari pryntyer
 lt:Nepavyko prisijungti prie spausdintuvo
 mk:Не можам да го подготвам печатачот
@@ -5258,6 +5349,7 @@ it:Impossibile renderizzare la pagina
 ja:ページを描画できませんでした
 ka:გვერდის რენდერი ვერ მოხერხდა
 kr:페이지를 렌더링할 수 없습니다.
+ku:ناتوانرێت پەڕە پوختە بکرێت
 kw:Ny yllys rendra folen
 lt:Nepavyko atvaizduoti puslapio
 mk:Не можам да ја прикажам страницата
@@ -5315,6 +5407,7 @@ it:Data creazione:
 ja:作成日時:
 ka:შექმნილია:
 kr:만든 날짜:
+ku:دروستکراو:
 lt:Sukurtas:
 mk:Создадено на:
 ne:सिर्जना गरिएको:
@@ -5362,6 +5455,7 @@ fr:Fichier actuel
 ga:Comhad reatha
 gl:Ficheiro actual
 he:קובץ נוכחי
+hi:वर्तमान दस्तावेज़
 hr:Trenutna datoteka
 hu:Jelenlegi fájl
 id:Berkas sekarang
@@ -5369,6 +5463,7 @@ it:File attuale
 ja:現在のファイル
 ka:მიმდინარე ფაილი
 kr:현재 파일
+ku:فایلی ئێستا
 lt:Esamasis failas
 mk:Активна датотека
 ne:हालको फाइल
@@ -5423,6 +5518,7 @@ it:Ingrandimento personali&zzato\t<Ctrl>+Y
 ja:拡大率の指定(&Z)...\tCtrl+Y
 ka:&მასშტაბის მითითება...\tCtrl+Y
 kr:사용자 지정 배율(&Z)...\tCtrl+Y
+ku:...هێنانەپێشەوەی &تایبەت\tCtrl+Y
 kw:&Zoum arbennik...\tCtrl+Y
 lt:Pasirinkti &mastelį...\tCtrl+Y
 mk:&Зумирање по избор...\tCtrl+Y
@@ -5481,6 +5577,7 @@ it:&Vista predefinita:
 ja:既定のレイアウト(&L):
 ka:&ნაგულისხმევი განლაგება:
 kr:기본 구성(&L):
+ku:شێوازی &سەرەکی:
 kw:&Delinyans savonek:
 lt:Numatytasis iš&dėstymas:
 mk:&Основен поглед:
@@ -5539,6 +5636,7 @@ it:&Ingrandimento predefinito:
 ja:既定の拡大率(&Z):
 ka:ნაგულისხმევი &მასშტაბი
 kr:기본 배율(&Z):
+ku:هێنانەپێشەوەی  &سەرەکی:
 kw:&Zoum savonek:
 lt:Numatytasis &mastelis
 mk:Основно &зумирање:
@@ -5597,6 +5695,7 @@ it:Il lettore PDF predefinito non è modificabile in modalità "portable"
 ja:ポータブル モードでは変更できません
 ka:პორტატულ რეჟიმში, PDF-ის წამკითხველად დაყენება შეუძლებელია
 kr:기본 PDF 리더는 휴대용 방식에서는 바꿀 수 없습니다.
+ku:(ناتوانرێت بگۆڕدرێت لە شێوازی هەڵگرتندا (پۆرتەیبڵ  PDF پیشاندەری سەرەکی
 kw:Ny yll an pennredyer PDF bos chanjyes yn modh porthadow
 lt:Naudojant programą kaip portatyvią, numatytosios PDF žiūryklės keisti negalima
 mk:Основниот читач на PDF не може да работи во мобилен режим
@@ -5654,6 +5753,7 @@ it:Permessi rifiutati:
 ja:拒否された権限:
 ka:თქვენ არ გაქვთ საჭირო უფლებები:
 kr:거부된 사용 권한:
+ku:مۆڵەتپێدانە ڕەتکراوەکان:
 lt:Nesuteikti leidimai:
 mk:Одбиени привилегии:
 ne:अस्वीकृत अनुमतिहरु:
@@ -5710,6 +5810,7 @@ it:Documenti DjVu
 ja:DjVu ドキュメント
 ka:DjVu დოკუმენტები
 kr:DjVu 문서
+ku:DjVu بەڵگەنامەکانی
 lt:DjVu dokumentai
 mk:DjVu-документи
 ne:DjVu कागजातहरु
@@ -5764,6 +5865,7 @@ it:Proprietà del documento
 ja:ドキュメントのプロパティ
 ka:დოკუმენტის თვისებები
 kr:문서 속성
+ku:تایبەتمەندییەکانی بەڵگەنامە
 lt:Dokumento savybės
 mk:Својства на документ
 ne:कागजात गुणहरू
@@ -5821,6 +5923,7 @@ it:Scarica
 ja:ダウンロード
 ka:ჩამოტვირთვა
 kr:예
+ku:داگرتن
 kw:Iskarga
 lt:Atsisiųsti
 mk:Преземи
@@ -5882,6 +5985,7 @@ it:Es&ci\t<Ctrl>+Q
 ja:終了(&X)\tCtrl+Q
 ka:&გამოსვლა\tCtrl+Q
 kr:끝내기(&X)\tCtrl+Q
+ku:دە&رچوون\tCtrl+Q
 kw:&Degea\tCtrl+Q
 lt:&Baigti darbą\tCtrl+Q
 mk:&Излези\tCtrl+Q
@@ -5945,6 +6049,7 @@ it:Documenti EPUB
 ja:EPUB ドキュメント
 ka:EPUB დოკუმენტები
 kr:ePub 문서
+ku:EPUB پەرتووکە ئەلکترۆنیەکانی
 lt:EPUB dokumentai
 mk:EPUB-е-книги
 ne:EPUB ई-पुस्तकहरु
@@ -6002,6 +6107,7 @@ it:Inserisci password
 ja:パスワードの入力
 ka:შეიყვანეთ პაროლი
 kr:비밀번호 입력
+ku:تێپەڕە ووشە بنوسە
 kw:Ri ger-tremena
 lt:Įveskite slaptažodį
 mk:Внеси лозинка
@@ -6068,6 +6174,7 @@ it:Inserisci password per %s
 ja:%s のパスワードを入力します
 ka:შეიყვანეთ პაროლი %s-ისთვის
 kr:%s의 비밀번호를 입력하세요.
+ku:%s تێپەڕە ووشە بنوسە بۆ
 kw:Ri ger-tremena rag %s
 lt:Įveskite %s slaptažodį
 mk:Внеси лозинка за %s
@@ -6181,6 +6288,7 @@ it:Errore nel caricamento di %s
 ja:%s の読み込みに失敗
 ka:ჩატვირთვის შეცდომა %s
 kr:%s 불러오는 중 오류 발생
+ku:%s هەڵە ڕوویدا لە کردنەوەی
 lt:Nepavyko įkelti %s
 mk:Грешка при вчитување %s
 ne:%s लोड त्रुटि
@@ -6232,6 +6340,7 @@ it:&Preferiti
 ja:お気に入り(&A)
 ka:&რჩეულები
 kr:즐겨찾기(&A)
+ku:پە&سەندەکان
 lt:&Parankiniai
 mk:Омилени
 ne:&मनपर्ने
@@ -6285,6 +6394,7 @@ it:A&vanti\t<Alt>+<Freccia destra>
 ja:次に進む(&O)\tAlt+→
 ka:&წინ\tAlt+ისარი მარჯვნივ
 kr:이후에 본 페이지(&O)\tAlt+오른쪽 방향키
+ku:پێ&شتر\tAlt+Right Arrow
 kw:Yn-rag\tAlt+->
 lt:&Pirmyn\tAlt+Dešinėn
 mk:Напред\tAlt+Right Arrow
@@ -6345,6 +6455,7 @@ it:S&chermo intero\t<Ctrl>+<Maiusc>+L
 ja:全画面表示(&U)\tCtrl+Shift+L
 ka:მთელ &ეკრანზე\tCtrl+Shift+L
 kr:전체 화면(&U)\tCtrl+Shift+L
+ku:پڕ&بەشاشە\tCtrl+Shift+L
 kw:Skrin Leun\tCtrl+Shift+L
 lt:&Visas ekranas\tCtrl+Shift+L
 mk:На цел екран\tCtrl+Shift+L
@@ -6412,6 +6523,7 @@ it:Pagine affiancate
 ja:見返し
 ka:ურთიერთ-საპირისპიროდ
 kr:두 페이지씩
+ku:ڕووکار
 kw:A-dal
 lt:Du puslapiai
 mk:Две страници
@@ -6463,12 +6575,14 @@ eu:Hutsegitea agiria berrizendatzerakoan!
 fa:تغییر نام پرونده با شکست مواجه شد!
 fr:Impossible de renommer le fichier!
 ga:Theip ar athainmniú an chomhaid!
+he:פעולת שינוי שם הקובץ נכשלה!
 hr:Neuspjeh u preimenovanju datoteke!
 hu:A fájl átnevezése sikertelen
 id:Gagal mengganti nama berkas!
 it:Impossibile rinominare il file
 ja:ファイル名の変更に失敗しました！
 kr:파일 이름을 바꾸지 못했습니다!
+ku:!گۆڕینی ناوی فایل سەرکەوتونەبوو
 mk:Не успеав да ја преименувам датотеката!
 ne:नाम फेराई असफल
 nl:Naam niet kunnen wijzigen!
@@ -6478,6 +6592,7 @@ pt:Falha ao mudar o nome do ficheiro!
 ru:Ошибка переименования файла!
 sk:Súbor se nepodarilo premenovať!
 sl:Preimenovanje datoteke ni uspelo!
+sp-rs:Nemoguće je preimenovati datoteku!
 sq:Dështoi riemërtimi i skedës!
 sr-rs:Немогуће је преименовати датотеку!
 sv:Kunde inte döpa om filen!
@@ -6523,6 +6638,7 @@ it:Salvataggio file non riuscito
 ja:ファイルの保存に失敗しました
 ka:ფაილის შენახვა ვერ მოხერხდა
 kr:파일을 저장하지 못했습니다.
+ku:پاراستنی فایل سەرکەتونەبوو
 kw:Gwithyans restren a fyllis
 lt:Failo įrašyti nepavyko
 mk:Зачувување на PDF-документот не успеа
@@ -6569,7 +6685,9 @@ es:Visualización Rápida en Web
 et:Kiire veebivaade
 fr:Affichage Web rapide
 ga:Gréasáin dearcadh go tapa
+he:הצגת רשת מהירה
 hr:Brzi Web prikaz
+hu:Gyors web-nézet
 id:Tampilan Web Cepat
 it:Vista web veloce
 ja:高速ウェブ表示
@@ -6580,8 +6698,10 @@ nl:Snelle browserweergave
 no:Rask Nettvisning
 pl:Szybkie wyświetlanie w Internecie
 pt:Visualização rápida na web
+ro:Vizualizare rapidă web
 ru:Быстрый просмотр в Интернете
 sl:Hiter spletni prikaz
+sp-rs:Brzi pregled na mreži
 sq:Hapet shpejt në internet
 sr-rs:Брзи преглед на мрежи
 sv:Snabb Webb-Visning
@@ -6614,6 +6734,7 @@ fr:Favoris
 ga:Ceanáin
 gl:Favoritos
 he:מועדפים
+hi:पसंदीदा
 hr:Favoriti
 hu:Kedvencek
 id:Favorit
@@ -6621,6 +6742,7 @@ it:Preferiti
 ja:お気に入り
 ka:რჩეულები
 kr:즐겨찾기
+ku:پەسەندەکان
 lt:Parankiniai
 mk:Омилени
 ne:मनपर्नेहरु
@@ -6655,15 +6777,21 @@ el:Έγγραφα FictionBook
 es:Documentos FictionBook
 et:FictionBook-dokumendid
 fr:Documents FictionBook
+he:מסמכי FictionBook
 hr:FictionBook dokumenti
+hu:FictionBook fájlok
 id:Dokumen FictionBook
 it:Documenti FictionBook
 ja:フィクション文章
+kr:FictionBook 문서
+ku:FictionBook بەڵگەنامەکانی
 nl:FictionBook documenten
 no:FictionBook-dokumenter
 pl:Dokumenty FictionBook
 pt:Livros de ficção
 ru:Документы FictionBook
+sl:FictionBook dokumenti
+sp-rs:FictionBook dokumenti
 sq:Dokumente FictionBook
 sr-rs:FictionBook докуменат
 sv:FictionBook dokument
@@ -6694,6 +6822,7 @@ fi:Tiedosto %s ei löydy
 fr:Fichier %s non trouvé
 ga:NÃor aimsÃodh an comhad %s
 gl:Ficheiro %s non atopado
+he:קובץ %s לא נמצא
 hr:Datoteka %s nije pronađena
 hu:Fájl %s nem található
 id:File %s tak ditemukan
@@ -6701,6 +6830,7 @@ it:File %s non trovato
 ja:ファイル %s が見つかりません
 ka:%s ფაილი ვერ მოიძებნა
 kr:%s 파일을 찾을 수 없습니다.
+ku:نەدۆزرایەوە %s فایلی
 mk:Датотеката %s не е најдена
 ne:फाइल %s भेटिएन
 nl:Bestand %s niet gevonden
@@ -6752,6 +6882,7 @@ it:Dimensione file:
 ja:ファイル サイズ:
 ka:ფაილის ზომა:
 kr:파일 크기:
+ku:قەبارەی فایل:
 lt:Failo dydis:
 mk:Големина на датотека:
 my:Saiz fail:
@@ -6808,6 +6939,7 @@ it:File:
 ja:ファイル:
 ka:ფაილი:
 kr:파일:
+ku:فایل:
 lt:Failas:
 mk:Датотека:
 my:Fail:
@@ -6868,6 +7000,7 @@ it:Tro&va...\t<Ctrl>+F
 ja:検索(&D)...\tCtrl+F
 ka:&ძიება...\tCtrl+F
 kr:찾기(&D)...\tCtrl+F
+ku:...دۆ&زینەوە\tCtrl+F
 kw:Kavos...\tCtrl+F
 lt:&Ieškoti...\tCtrl+F
 mk:Најди...\tCtrl+F
@@ -6924,6 +7057,7 @@ fy-nl:Sykje
 ga:Aimsigh
 gl:Procurar
 he:חפש
+hi:खोजें
 hr:Pronađi
 hu:Keresés
 id:Cari
@@ -6931,6 +7065,7 @@ it:Trova
 ja:検索
 ka:ძიება
 kr:찾기
+ku:دۆزینەوە
 kw:Kavos
 lt:Ieškoti
 mk:Најди
@@ -6992,6 +7127,7 @@ it:Trova successivo
 ja:次を検索
 ka:შემდეგის პოვნა
 kr:다음 찾기
+ku:دۆزینەوەی پێشتر
 kw:Kavos Nessa
 lt:Rasti kitą
 mk:Најди следно
@@ -7124,6 +7260,7 @@ it:Trova:
 ja:検索:
 ka:ძიება:
 kr:찾기:
+ku:دۆزینەوە:
 kw:Kavos:
 lt:Ieškoti:
 mk:Најди:
@@ -7582,7 +7719,7 @@ tl:Pagkasyahin ang lapad at ipakita nang tuluy-tuloy ang mga pahina
 tr:Genişliğe ölçekle ve sayfaları devamlı göster
 tw:合適寬度且連續顯示頁面
 uk:Розмістити по ширині на безперервній сторінці
-uz:Eniga moslash va to'xtovsiz
+uz:Eniga moslash va uzluksiz
 vn:Vừa chiều rộng và Xem trang liên tiếp
 :Fit a Single Page
 am:Ձգել մեկ էջի չափով
@@ -7659,21 +7796,25 @@ fa:قلم‌ها:
 fi:Fontit:
 fr:Polices :
 ga:Clófhoirne:
+he:גופנים
 hr:Fontovi:
 hu:Betűk:
 id:Huruf
 it:Font:
 ja:フォント:
 kr:글꼴:
+ku:فۆنت:
 mk:Букви:
 ne:फन्टहरू:
 nl:Lettertypen:
 no:Skrifter:
 pl:Czcionki:
 pt:Tipo de letra:
+ro:Fonturi:
 ru:Шрифты:
 sk:Písma:
 sl:Pisave:
+sp-rs:Fontovi:
 sq:Fonte:
 sr-rs:Фонтови:
 sv:Typsnitt:
@@ -7704,6 +7845,7 @@ fa:قالب‌بندی کتاب... %d صفحه
 fi:Muotoillaan kirjaa... %d sivua
 fr:Mise en forme du livre... %d pages
 ga:Ag formáidiú an leabhair... %d leathanach
+he:מעצב את הספר... %d עמודים
 hr:Oblikovanje knjige... %d stranica
 hu:Könyv formázása... %d oldal
 id:Memformat buku... %d halaman
@@ -7716,9 +7858,11 @@ nl:Boek samenstellen... %d paginas
 no:Formater bok... %d sidene
 pl:Formatowanie książki... %d stron
 pt:A formatar livro... %d páginas
+ro:Formatează cartea... %d pagini
 ru:Форматирование книги... %d стр.
 sk:Formátovanie knihy... %d stránok
 sl:Oblikovanje knjige … %d strani
+sp-rs:Formatiranje knjige... %d stranica
 sq:Formaton librin... %d faqe
 sr-rs:Форматирање књиге... %d страница
 sv:Formatterar bok... %d sidor
@@ -7866,6 +8010,7 @@ it:Aperti recentemente
 ja:よく読むファイル
 ka:ბოლოს წაკითხული დოკუმენტები
 kr:최근에 읽은 파일
+ku:زۆرترین خوێندراوە
 lt:Dažniausiai skaitomi
 mk:Често читани
 ne:प्रायजसो पढिएको
@@ -7923,6 +8068,7 @@ it:GB
 ja:GB
 ka:გბ
 kr:GB
+ku:گێگابایت
 kw:GB
 lt:GB
 mk:GB
@@ -7990,6 +8136,7 @@ it:Vai a pagina
 ja:ページへ移動
 ka:გვერდის მითითება
 kr:이동할 페이지
+ku:چوون بۆ پەڕە
 kw:Mos dhe folen
 lt:Eiti į puslapį
 mk:Појди на страница
@@ -8050,6 +8197,7 @@ it:Nascondi letto frequentemente
 ja:よく読むファイルを表示しない
 ka:ბოლოს წაკითხული დოკუმენტების დამალვა
 kr:최근에 읽은 파일 감추기
+ku:شاردنەوەی زۆر خوێندراوەکان
 lt:Nerodyti dažniausiai skaitomų
 mk:Сокриј често читани
 ne:प्रायजसो पढिएको लुकाउनुहोस्
@@ -8157,6 +8305,7 @@ it:File immagine (*.%s)
 ja:画像ファイル (*.%s)
 ka:ნახატი ფაილები (*.%s)
 kr:이미지 파일 (*.%s)
+ku:(*.%s) فایلەکانی وێنە
 lt:Grafiniai failai (*.%s)
 mk:Слики (*.%s)
 ne:छवि फाइल (*.%s)
@@ -8214,6 +8363,7 @@ it:KB
 ja:KB
 ka:კბ
 kr:KB
+ku:کیلۆبایت
 kw:KB
 lt:KB
 mk:KB
@@ -8266,12 +8416,14 @@ fa:در حال بازکردن پرونده‌ی %s...
 fi:Ladataan tiedostoa %s...
 fr:Chargement du fichier %s...
 ga:Ag luchtú an comhad %s...
+he:פותח קובץ %s...
 hr:Pokretanje datoteke %s...
 hu:Fájl beolvasása %s...
 id:Memuat berkas %s...
 it:Caricamento file %s...
 ja:%s を読込中…
 kr:%s 파일 불러오는 중...
+ku:... %s کردنەوەی فایلی
 mk:Ја вчитувам датотеката %s...
 ne:%s फाइल लोड हुँदैछ ...
 nl:Bestand %s laden...
@@ -8281,6 +8433,7 @@ pt:A carregar o ficheiro %s...
 ru:Загрузка файла %s...
 sk:Načítavanie súboru %s...
 sl:Nalaganje datoteke %s …
+sp-rs:Učitavanje datoteke %s...
 sq:Hap skedën %s...
 sr-rs:Учитавање датотеке %s...
 sv:Laddar fil %s...
@@ -8326,6 +8479,7 @@ it:MB
 ja:MB
 ka:მბ
 kr:MB
+ku:مێگابایت
 kw:MB
 lt:MB
 mk:MB
@@ -8393,6 +8547,7 @@ it:Impostare SumatraPDF come programma predefinito per i file PDF?
 ja:SumatraPDF を PDF ファイルの既定のアプリケーションにしますか?
 ka:ნამდვილად გსურთ SumatraPDF თქვენს ნაგულისხმევი PDF წამკითხველად დაყენება?
 kr:SumatraPDF를 PDF 파일의 기본 프로그램으로 만들까요?
+ku:؟PDF وەکو بەرنامەی سەرەکی بۆ کردنەوەی فایلەکانی SumatraPDF ڕێکخستنی
 kw:Gul SumatraPDF towlen savonek rag restrennow PDF?
 lt:Ar nustatyti „SumatraPDF“ kaip numatytąją PDF žiūryklę?
 mk:Дали да ја направам SumatraPDF основна апликација за PDF-датотеки?
@@ -8585,6 +8740,7 @@ it:Documenti Mobi
 ja:Mobi ドキュメント
 ka:Mobi დოკუმენტები
 kr:Mobi 문서
+ku:Mobi بەڵگەنامەکانی
 lt:Mobi dokumentai
 mk:Mobi-документи
 ne:Mobi कागजातहरु
@@ -8638,6 +8794,7 @@ it:Data ultima modifica:
 ja:変更日時:
 ka:შეცვლილია:
 kr:수정한 날짜:
+ku:دەستکاریکراو:
 lt:Keistas:
 mk:Изменето на:
 ne:परिमार्जित:
@@ -8697,6 +8854,7 @@ it:È disponibile la versione %s. Scaricare la nuova versione?
 ja:新しいバージョン %s が利用可能です。新しいバージョンをダウンロードしますか？
 ka:ხელმიწვდომია ახალი ვერსია %s. გსურთ მისი ჩამოტვირთვა?
 kr:새 버전 %s (이)가 사용 가능합니다. 다운로드할까요?
+ku:ئامادەیە. داگرتنی وەشانی نوێ؟ %s وەشانی نوێی
 kw:Versyon nowyth %s yw parys. Iskarga versyon nowyth?
 lt:Yra nauja %s versija. Atsiųsti naują versiją?
 mk:Нова верзија %s е достапна. Сакате да ја преземам?
@@ -8761,6 +8919,7 @@ it:Pagina successiva
 ja:次のページ
 ka:შემდეგი გვერდი
 kr:다음 페이지
+ku:پەڕەی دواتر
 kw:Nessa Folen
 lt:Kitas puslapis
 mk:Следна страница
@@ -8825,6 +8984,7 @@ it:Nessuna corrispondenza trovata
 ja:一致が見つかりませんでした
 ka:სიტყვა არ მოიძებნა
 kr:일치하는 항목을 찾을 수 없습니다.
+ku:هیچ ئەنجامێک نەدۆزرایەوە
 kw:Ny veu keyvys par vyth
 lt:Nerasta atitikmenų
 mk:Не се пронајдени совпаѓања
@@ -9042,6 +9202,7 @@ fy-nl:Oantal sides:
 ga:Líon na leathanaigh:
 gl:Número de Páxinas:
 he:מספר עמודים:
+hi:पृषठ संख्या
 hr:Broj stranica:
 hu:Oldalak száma:
 id:Jumlah Halaman:
@@ -9049,6 +9210,7 @@ it:Numero pagine:
 ja:ページ数:
 ka:გვერდების რაოდენობა:
 kr:페이지 수:
+ku:ژمارەی پەڕەکان:
 lt:Puslapių skaičius:
 mk:Број на страници:
 my:Jumlah mukasurat:
@@ -9099,6 +9261,7 @@ fy-nl:OK
 ga:Tá go maith
 gl:OK
 he:אשר
+hi:ठीक
 hr:U redu
 hu:OK
 id:OK
@@ -9106,6 +9269,7 @@ it:OK
 ja:OK
 ka:კარგი
 kr:확인
+ku:باشە
 kw:Da lowr
 lt:Gerai
 mk:Во ред
@@ -9167,6 +9331,7 @@ it:Apri
 ja:開く
 ka:გახსნა
 kr:열기
+ku:کردنەوە
 kw:Ygeri
 lt:Atverti
 mk:Отвори
@@ -9231,6 +9396,7 @@ it:Apri con PDF-XChange
 ja:PDF-XChange で開く(&I)
 ka:გახსნა PDF-XChange-ში
 kr:PDF-XChange로 열기(&I)
+ku:PDF-XChange کردنەوە &بەهۆی
 kw:Ygeri yn PDF-XChange
 lt:Atverti naudojant „PDF-&XChange“
 mk:Отвори со PDF-XChange
@@ -9278,6 +9444,7 @@ fr:Ouvrir un document...
 ga:Oscail cáipéis...
 gl:Abrir un documento...
 he:פתח מסמך...
+hi:एक दस्तावेज़ खोलें
 hr:Otvori dokument...
 hu:Fájl megnyitása...
 id:Buka Dokumen...
@@ -9285,6 +9452,7 @@ it:Apri documento...
 ja:ドキュメントを開く...
 ka:დოკუმენტის გახსნა...
 kr:문서 열기...
+ku:...کردنەوەی بەڵگەنامە
 lt:Atverti dokumentą...
 mk:Отвори документ...
 ne:कागजात खोल्नुहोस्
@@ -9339,6 +9507,7 @@ it:Apri con &Adobe Reader
 ja:Adobe Reader で開く(&A)
 ka:გახსნა &Adobe Reader-ში
 kr:Adobe Reader로 열기(&A)
+ku:Adobe Reader کردنەوە &بەهۆی
 kw:Ygeri yn &Adobe Reader
 lt:Atverti naudojant „&Adobe Reader“
 mk:Отвори со &Adobe Reader
@@ -9396,6 +9565,7 @@ it:Apri con &Foxit Reader
 ja:Foxit Reader で開く(&F)
 ka:გახსნა &Foxit Reader-ში
 kr:Foxit Reader로 열기(&F)
+ku:Foxit Reader کردنەوە &بەهۆی
 kw:Ygeri yn &Foxit Reader
 lt:Atverti naudojant „&Foxit Reader“
 mk:Отвори со &Foxit Reader
@@ -9562,6 +9732,7 @@ it:Proprietà
 ja:プロパティ(&R)
 ka:&თვისებები...
 kr:속성(&R)
+ku:تایبە&تمەندییەکان
 lt:&Savybės
 mk:&Својства
 ne:&गुणहरु
@@ -9616,6 +9787,7 @@ it:P&roprietà\t<Ctrl>+D
 ja:プロパティ(&R)\tCtrl+D
 ka:&თვისებები...\tCtrl+D
 kr:속성(&R)\tCtrl+D
+ku:تا&یبەتمەندییەکان\tCtrl+D
 lt:&Savybės\tCtrl+D
 mk:С&војства...\tCtrl+D
 ne:&गुणहरु\tCtrl+D
@@ -9672,6 +9844,7 @@ it:Documento PDF
 ja:PDF ドキュメント
 ka:PDF დოკუმენტი
 kr:PDF 문서
+ku:PDF بەڵگەنامەی
 kw:Restren PDF
 lt:PDF dokumentas
 mk:PDF-документ
@@ -9712,7 +9885,9 @@ es:Optimizaciones de PDF:
 et:PDF-i optimeerimised:
 fr:Optimisations PDF
 ga:Optimisations PDF
+he:אופטימיזציות PDF:
 hr:PDF optimizacija:
+hu:PDF optimalizálás:
 id:Optimisasi PDF
 it:Ottimizzazioni PDF:
 ja:PDF 最適化:
@@ -9725,6 +9900,7 @@ pl:Optymalizacja PDF:
 pt:Otimizações PDF:
 ru:Оптимизация PDF:
 sl:Optimizacije PDF:
+sp-rs:PDF optimizacija:
 sq:PDF optimizimet:
 sr-rs:PDF оптимизација
 sv:PDF Optimeringar:
@@ -9766,6 +9942,7 @@ it:Produttore PDF:
 ja:PDF 出力:
 ka:PDF-ის მწარმოებელი:
 kr:PDF 제작자:
+ku:PDF بەرهەمهێنەری:
 lt:PDF leidėjas:
 mk:PDF-генератор:
 ne:PDF निर्माता
@@ -9821,6 +9998,7 @@ it:Versione PDF:
 ja:PDF バージョン:
 ka:PDF-ის ვერსია:
 kr:PDF 버전:
+ku::PDF وەشانی
 lt:PDF versija:
 mk:Верзија на PDF:
 my:Versi PDF:
@@ -9878,6 +10056,7 @@ it:Documenti PDF
 ja:PDF ドキュメント
 ka:PDF დოკუმენტები
 kr:PDF 문서
+ku:PDF بەڵگەنامەکانی
 kw:Restrennow PDF
 lt:PDF dokumentai
 mk:PDF-документи
@@ -9891,7 +10070,7 @@ ro:Documente PDF
 ru:Документы PDF
 si:PDF ගොනුව
 sk:PDF dokumenty
-sl:Dokumenti PDF
+sl:PDF dokumenti
 sp-rs:PDF dokumenti
 sq:Dokumente PDF
 sr-rs:PDF документи
@@ -9939,6 +10118,7 @@ it:Pa&gina...\t<Ctrl>+G
 ja:ページ指定(&G)...\tCtrl+G
 ka:&გვერდის მითითება...\tCtrl+G
 kr:페이지 이동(&G)...\tCtrl+G
+ku:...پە&ڕە\tCtrl+G
 kw:Folen...\tCtrl+G
 lt:P&uslapis...\tCtrl+G
 mk:Страница...\tCtrl+G
@@ -10000,6 +10180,7 @@ it:Pagina %s
 ja:ページ %s
 ka:%s გვერდი
 kr:%s 페이지
+ku:%s پەڕەی
 lt:%s puslapis
 mk:страница %s
 ne:पृष्ठ %s
@@ -10053,6 +10234,7 @@ it:Formato pagina:
 ja:ページ サイズ:
 ka:გვერდის ფორმატი:
 kr:페이지 크기:
+ku:قەبارەی پەڕە:
 lt:Puslapio dydis:
 mk:Големина на страница:
 my:Saiz mukasurat
@@ -10223,6 +10405,7 @@ it:Pagina:
 ja:ページ:
 ka:გვერდი:
 kr:페이지:
+ku:پەڕە:
 kw:Folen:
 lt:Puslapis:
 mk:Страница:
@@ -10285,6 +10468,7 @@ it:Rendering in corso - attendere...
 ja:描画中...
 ka:მიმდინარეობს რენდერი, გთხოვთ მოიცადეთ...
 kr:렌더링하는 중, 잠시만 기다리세요...
+ku:...تکایە چاوەڕوانبە - پوختە ئەکرێت
 kw:Gortos, mar pleg - ow rendra...
 lt:Prašome palaukti – atvaizduojama...
 mk:Ве молам почекајте - создавам приказ...
@@ -10328,7 +10512,7 @@ et:Postscript-dokumendid
 eu:Postscript agirak
 fa:Postscript اسناد
 fi:Postscript-asiakirjat
-fr:Documents Posrscript
+fr:Documents Postscript
 ga:Cáipéisí Postscript
 gl:Documentos Postscript
 he:מסמכי פוסטקריפט
@@ -10349,7 +10533,7 @@ pt:Documentos Postscript
 ro:Documente Postscript
 ru:Документы Postscript
 sk:Postscript dokumenty
-sl:Postscript dokument
+sl:Postscript dokumenti
 sp-rs:Postscript dokumenti
 sq:Dokumente Postscript
 sr-rs:Postscript документи
@@ -10449,6 +10633,7 @@ it:Pagina precedente
 ja:前のページ
 ka:წინა გვერდი
 kr:이전 페이지
+ku:پەڕەی پێشوو
 kw:Folen kyns
 lt:Ankstesnis puslapis
 mk:Претходна страница
@@ -10510,6 +10695,7 @@ it:Stampa
 ja:印刷
 ka:ამობეჭდვა
 kr:인쇄
+ku:چاپکردن
 lt:Spausdinti
 mk:Печати
 ne:छाप्नुहोस्
@@ -10551,7 +10737,9 @@ fa:چاپ به عنوان &عکس (حافظه‌ی بیشتری مصرف می‌
 fi:Tulosta &kuvana (kuluttaa enemmän muistia)
 fr:Imprimer en tant qu'&image (demande plus de mémoire)
 ga:Priontáil mar &íomhá (Tá gá le níos mó cuimhne)
+he:הדפס כתמונה (צורך יותר זכרון)
 hr:Ispiši kao sl&iku (zahtijeva više memorija)
+hu:Nyomtatás képként (több memóriát igényel)
 id:Cetak Sebagai Gambar (butuh banyak memori)
 it:Stampa come &immagine (richiede più memoria))
 ja:画像として印刷 (より多くのメモリを必要とします) (&I)
@@ -10562,8 +10750,10 @@ nl:Als afbeelding afdrukken (vereist meer geheugen)
 no:Skriv ut som &bilde (krever mer minne)
 pl:Wydrukuj jako &obraz (wymaga więcej pamięci)
 pt:Imprimir &como imagem (usa mais memória)
+ro:Printează ca &image (ocupă mai multă memorie)
 ru:Печатать как &изображение (требуется больше памяти)
 sl:Natisni kot sliko (zahteva več pomnilnika)
+sp-rs:Štampati kao sliku (zahteva više memorije)
 sq:Printoj si &figurë (kërkon shumë RAM)
 sr-rs:Штампати као слику (захтева више меморије)
 sv:Skr&iv ut som bild (mer minnekrävande)
@@ -10645,7 +10835,7 @@ et:Antud nimega printerit ei leidu
 eu:Ez dagi emandako izenik duen irarkailurik
 fa:چاپگری با نام داده شده وجود ندارد
 fi:Annetun nimistä tulostinta ei ole
-fr:l'immprimante avec le nom donné n'existe pas
+fr:Il n'y a pas d'imprimante de ce nom
 ga:Níl clóire leis an ainm sin ann
 gl:A impresora co nome indicado non existe
 he:אין מדפסת בשם שניתן
@@ -10679,19 +10869,59 @@ uz:Bunday printer mavjud emas
 vn:Máy in với tên được cho không tồn tại
 :Printing in progress.
 az:Çap davam edir.
+bg:Печатане...
 br:Imprimindo...
+cn:正在打印
 de:Drucken - SumatraPDF
+dk:Udskrift igang
+el:Εκτύπωση σε εξέλιξη
 es:Impresión en progreso.
 fr:Impression en cours
+he:נשלח להדפסה
+hu:Nyomtatás folyamatban.
+id:Dalam proses mencetak
+it:Stampa in corso...
+ja:印刷を実行中です。
+kr:프린트중입니다.
+nl:Aan het printen.
+pt:Impressão em curso.
 ru:Идёт печать.
+sl:Tiskanje v teku.
+sq:Printimi vijon.
+sv:Utskrift pågår.
+ta:அச்சு பணியில் உள்ளது
 tr:Baskı devam ediyor.
+tw:正在列印
+uk:Триває друк.
+uz:Bosib chiqarilmoqda.
+vn:Đang in.
 :Printing is still in progress. Abort and quit?
 az:Çap davam edir. Dayandırmaq və proqramdan çıxmaq?
+bg:Печатането все още е на ход. Сигурни ли сте, че искате принудително да го откажете и да излезете?
 br:Ainda imprimindo... Interromper e sair?
+cn:仍然在打印。中断并放弃？
 de:Bestehenden Druckvorgang abbrechen und Fenster schließen?
+dk:Udskrift er stadig igang. Afbryd?
+el:Η εκτύπωση είναι ακόμα σε εξέλιξη. Ακύρωση και Έξοδος;
 es:Impresión aún en progreso. ¿Cancelar y salir?
 fr:Impression toujours en cours. Annuler et quitter ?
+he:הדפסה עדיין לא הסתיימה. להפסיק פעולה ולצאת?
+hu:A nyomtatás még folyamatban van. Megszakítás és kilépés?
+id:Sedang dalam proses mencetak. Batalkan dan keluar?
+it:La stampa è ancora in corso. Vuoi interromperla e uscire?
+ja:印刷を実行中です。中止して終了しますか？
+kr:프린트중입니다. 취소후 종료하시겠습니까?
+nl:Nog steeds aan het printen. Annuleren en stoppen?
+pt:Impressão ainda em curso. Abortar e sair?
 ru:Печать продолжается. Отменить и выйти?
+sl:Tiskanje je še vedno v teku. Prekinem in končam?
+sq:Printimi vijon. Do e ndërprisni dhe e pezulloni?
+sv:Utskrift pågår fortfarande. Avbryt och avsluta?
+ta:அச்சடித்தல் செயலில் உள்ளது. நிறுத்தி ரத்து செய்?
+tw:正在列印，要中止並放棄嗎？
+uk:Друк ще не завершено. Перервати та вийти?
+uz:Bosib chiqarilmoqda. Bekor qilib chiqilsinmi?
+vn:Vẫn còn đang in. Hủy bỏ và thoát ra?
 :Printing is still in progress. Abort and start over?
 am:Տպվում է։ Կանգնեցնե՞լ։
 ar:الطباعة جارية. أوقفها وأعدها مرة أخرى؟
@@ -10711,7 +10941,7 @@ et:Printimine on pooleli. Kas katkestada ja alustada uuesti?
 eu:Irarketa oraindik garatzen ari da. Utzi eta berriro hasi?
 fa:در حال چاپ کردن.انصراف و شروع مجدد؟
 fi:Tulostaminen on vielä käynnissä. Keskeytetäänkö ja aloitetaan uudelleen?
-fr:Une impression est déjà en cours. L'annuler et recommencer ?
+fr:Impression toujours en cours. Annuler et recommencer ?
 ga:Tá sé fós ag clóbhualadh. Tobscoir agus tosaigh arís?
 gl:A impresión está aínda en curso. Detela e recomezar?
 he:הדפסה בתהליך. לבטל ולהתחיל מחדש?
@@ -10734,13 +10964,13 @@ ru:Печать ещё не завершена. Отменить и начать
 sk:Prebieha tlač. Prerušiť a začať znova?
 sl:Tiskanje je še vedno v teku. Prekinem in začnem znova?
 sp-rs:Štampanje je još uvek u toku. Želite li da prekinete štampanje i počnete ponovo?
-sq:Printimi vijon. Do e ndërprisni apo do e filloni nga e para?
+sq:Printimi vijon. Do e ndërprisni dhe e filloni nga e para?
 sr-rs:Штампање је још увек у току. Желите ли да прекинете штампање и почнете поново?
 sv:Utskriften pågår fortfarande. Avbryt och börja om?
 ta:அச்சிடுதல் செயல்பாட்டில் உள்ளது. கைவிட்டு மீண்டும் தொடங்கவா?
 tr:Yazıcı hala kullanımda. Durdurup yeniden başlatılsınmı?
 tw:正在列印，是否要放棄並重新設定？
-uk:Друк і далі активний. Відмінити та розпочати знову?
+uk:Друк ще не завершено. Перервати та розпочати знову?
 uz:Bosib chiqarish tugatilmagan. Bekor qilinib qaytadan boshlansinmi?
 vn:Vẫn còn đang in. Thoát và bắt đầu lại?
 :Printing page %d of %d...
@@ -10881,12 +11111,14 @@ eu:Be&rrizendatu...\tF2
 fa:تغییر  &نام...\tF2
 fr:Re&nommer...\tF2
 ga:Athainmnigh...\tF2
+he:שנה שם...\tF2
 hr:Preime&novati...\tF2
 hu:Átnevezés...\tF2
 id:&Ganti Nama...\tF2
 it:Ri&nomina...\tF2
 ja:名前を変更(&N)...\tF2
 kr:이름 바꾸기(&N)...\tF2
+ku:...گۆڕینی&ناو\tF2
 mk:Преименувај... \tF2
 ne:नाम &फेर्नुहोस्...\tF2
 nl:&Naam wijzigen...\tF2
@@ -10896,6 +11128,7 @@ pt:Mudar &nome...\tF2
 ru:Пере&именовать...\tF2
 sk:Preme&novať...\tF2
 sl:Preime&nuj …\tF2
+sp-rs:Preimenuj...\tF2
 sq:Rie&mërtoj...\tF2
 sr-rs:Преименуј...\tF2
 sv:Döp om
@@ -10938,6 +11171,7 @@ it:Ric&orda file aperti
 ja:開かれたファイルを記憶する(&O)
 ka:&ფაილის პოზიციის დამახსოვრება
 kr:열었던 파일들 기억(&O)
+ku:بیرخستنەوەی فایلە &کراوەکان
 kw:Kovhe restrennow ygerys
 lt:Įsiminti &atvertus failus
 mk:Запомни ги &отворените датотеки
@@ -10992,6 +11226,7 @@ it:Rimuovi dai Preferiti
 ja:お気に入りから削除
 ka:რჩეულებიდან წაშლა
 kr:즐겨찾기에서 제거
+ku:لابردن لە پەسەندەکاندا
 lt:Pašalinti iš parankinių
 mk:Отстрани од омилени
 ne:मनपर्ने बाट हटाउनुहोस्
@@ -11084,21 +11319,25 @@ eu:Berrizendatu Honela
 fa:تغییر نام به
 fr:Renommer En
 ga:Athainmnigh chuig
+he:שנה שם ל
 hr:Preimenuj u
 hu:Átnevezés
 id:Ganti Nama Menjadi
 it:Rinomina in
 ja:名前の変更名
 kr:바꿀 이름
+ku:گۆڕینی ناو بۆ
 mk:Преименувај во
 ne:नाम फेर्नुहोस्
 nl:Naam wijzigen in
 no:Endre Navn Til
 pl:Zmień nazwę na
 pt:Mudar nome para
+ro:Redenumește la
 ru:Переименовать в
 sk:Premenovať na
 sl:Preimenuj v
+sp-rs:Preimenuj u
 sq:Riemërtoj si
 sr-rs:Преименуј у
 sv:Döp om till
@@ -11128,6 +11367,7 @@ eu:Ordeztu agiri &margoak Windowsen margo eskemarekin
 fa:جایگزینی &رنگ‌های سند با طرح رنگ ویندوز
 fr:Remplacer les &couleurs du document par le schéma de couleurs Windows
 ga:Ionadaigh dathanna na cáipéise le córas dathanna Windows
+he:החלף את צבעי המסמך עם ערכת צבעי חלונות
 hr:Zamijeni boje dokumenta s postavkama &Windows boja
 hu:Helyettesíti a dokumentum &színeket Windows színsémával
 id:Ganti &warna dokumen dengan skema warna Windows
@@ -11140,6 +11380,7 @@ nl:Vervang de documentkleuren met Windows kleurenschema
 no:Erstatt dokument &farger med Windows fargeskjema
 pl:Wymień kolory dokumentu na kolory systemowe Windows
 pt:Substituir &cores do documento pelas cores do Windows
+ro:Înlocuiește &colors documentului cu schema de culori Windows.
 ru:Применить к документу цветовую схему Windows
 sk:&Farby dokumentu nahradiť farebnou schémou systému Windows
 sl:Zamenjaj &barve dokumenta z barvno shemo Windows
@@ -11322,6 +11563,7 @@ it:Salva come
 ja:名前を付けて保存
 ka:შენახვა როგორც
 kr:다른 이름으로 저장
+ku:پاراستن وەکو
 kw:Gwitha avel
 lt:Įrašyti kaip
 mk:Зачувај како
@@ -11490,6 +11732,7 @@ it:Seleziona &tutto
 ja:すべて選択(&A)
 ka:ყ&ველას მონიშვნა
 kr:모두 선택(&A)
+ku:دیاریکردنی &هەمووی
 lt:Pažymėti &viską
 mk:Избери сè
 ne:सबै &चयन गर्नुहोस्
@@ -11674,7 +11917,7 @@ ta:மின்மடல்லாக அனுப்பு...
 tl:Ipadala sa &email...
 tr:&E-mail ile yolla...
 tw:發送電郵...(&E)
-uk:Відішліть через E-mail...
+uk:Надіслати через E-mail...
 uz:&Elektron pochta orqali yuborish...
 vn:Gửi qua &email...
 :Set inverse search command-line
@@ -11760,7 +12003,9 @@ fa:ن&شانه‌ها را نشان بده
 fi:Näytä &Kirjanmerkit
 fr:Voir les &Marque-pages
 ga:Lea&bharmharcanna a taispeáint
+he:הראה סימניות
 hr:Prikaži &oznake
+hu:Könyvjelzők mutatása
 id:Tampilkan &Markah
 it:Visualizza segnali&bri
 ja:ブックマークを表示(&B)
@@ -11846,7 +12091,7 @@ th:แสดงแถบเครื่องมือ
 tl:Ipakita ang toolbar
 tr:&Araç çubuğunu göster
 tw:顯示工具列(&T)
-uk:Показати пенал
+uk:Показати панель інструментів
 uz:&Asboblar panelini ko'rsatish
 vn:Hiện thanh công cụ
 :Show &pages continuously
@@ -11904,7 +12149,7 @@ tl:Ipakita nang tuloy-tuloy ang mga &pahina
 tr:&Sayfaları devamlı göster
 tw:連續顯示頁面(&P)
 uk:Відображати сторінки безперервно
-uz:&Betlarni to'xtovsiz ko'rsatish
+uz:&Betlarni uzluksiz ko'rsatish
 vn:Xem trang liên tiếp
 :Show Favorites
 am:Ցուցադրել ընտրյալները
@@ -12062,7 +12307,7 @@ ta:புத்தககுறி பட்டை இருந்தல் க�
 tl:Ipakita ang &bookmarks sidebar kung naangkop
 tr:Yer &imleri yan çubuğunu bulunduğunda göster
 tw:顯示書籤欄(&B)
-uk:Якщо доступно відображати полосу закладок
+uk:Якщо доступно, показати бокову панель закладок
 uz:Mavjud bo'lganda &xatcho'plar panelini ko'rsatish
 vn:Hiện chỉ dấu sách nếu có
 :Single Page
@@ -12136,7 +12381,7 @@ vn:Trang đơn
 am:Կներեք, սա չպետք է տեղի ունենար։\n\nՍեղմեք 'Մերժել'՝եթե ցանկանում եք օգնել մեզ վերացնելու այս սխալը։
 ar:عذرا, لا يجدر أن يحدث ما حدث!\n\n الرجاء الضغط على 'إلغاء', إذا كنت تريد مساعدتنا في حل هذه المشكلة
 az:Bağışlayın, gözlənilməz xəta baş verdi!\n\nProblemin həllində bizə kömək etmək üçün "İmtina" düyməsinə basın.
-bg:Извинете, това не би трябвало да се случва!\n\nНатиснете 'Отказ', ако искате да ни помогнете да поправим причината за това спиране.
+bg:Извинете, това не би трябвало да се случва!\n\nМоля, натиснете „Отказ“, ако искате да ни помогнете да поправим причината за този срив (спиране).
 br:Desculpe, isso não deveria ter acontecido!\n\nAperte 'Cancelar' se quiser nos ajudar a corrigir a causa deste erro.
 bs:Oprostite, ovo se nije trebalo dogoditi!\n\nMolimo kliknite 'Otkaži' ako nam želite pomoći ispraviti uzrok ovog rušenja.
 ca-xv:Això no hauria d'haver passat!\n\nFeu clic a 'Cancel·la', si voleu ajudar-nos a corregir la causa d'este error
@@ -12187,7 +12432,7 @@ vn:Xin lỗi, điều đó không nên xảy ra!\n\nVui lòng bấm 'Cancel', n�
 am:%s ֆայլը չունի համաժամեցման կետ
 ar:الملف المصدر %s لم تتم مزامنته عند هذه النقطة
 az:%s mənbə faylının sinxronlaşdırma mövqeyi yoxdur
-bg:Източникът %s няма точка на синхронизация
+bg:Файлът-източник %s няма точка на синхронизация
 br:O arquivo fonte %s não tem ponto de sincronização
 bs:Izvorni fajl %s nema sinhronizacijske tačke
 by:Адсутнічае кропка сінхранізацыі ў зыходным файле %s
@@ -12244,7 +12489,7 @@ vn:Tập tin nguồn %s không có điểm đồng bộ
 am:Ֆայլը.
 ar:الموضوع
 az:Mövzu:
-bg:Относно:
+bg:Относно (тема):
 br:Assunto:
 bs:Tema:
 ca-xv:Assumpte:
@@ -12271,6 +12516,7 @@ it:Oggetto:
 ja:題名:
 ka:თემა:
 kr:주제:
+ku:سەردێڕ:
 lt:Tema:
 mk:Предмет:
 my:Subjek
@@ -12410,7 +12656,7 @@ vn:Cập nhật SumatraPDF
 am:SumatraPDF-ի ձախողում
 ar:مشكلة في SumatraPDF
 az:SumatraPDF əməliyyatı qəza ilə nəticələndi
-bg:SumatraPDF спря
+bg:SumatraPDF се срина (спря внезапно)
 br:O SumatraPDF travou
 bs:SumatraPDF se srušio
 ca-xv:El SumatraPDF ha fallat
@@ -12463,7 +12709,7 @@ vn:SumatraPDF đã ngưng hoạt đọng
 am:PDF ֆայլերը ասոցիացվել են SumatraPDF-ի հետ
 ar:قارئ SumatraPDF هو الافتراضي
 az:SumatraPDF PDF faylları ilə əlaqələndirilmişdir
-bg:SumatraPDF е вашият PDF четец
+bg:SumatraPDF е вашият PDF четец по подразбиране
 br:O SumatraPDF é o seu leitor PDF padrão
 bs:SumatraPDF je vaš glavni čitač PDF fajlova
 by:SumatraPDF асацыявана з файламі PDF
@@ -12521,7 +12767,7 @@ vn:SumatraPDF là trình đọc PDF chính của bạn
 am:PDF ֆայլերը ասոցիացվեցին SumatraPDF-ի հետ
 ar:قارئ SumatraPDF يجب أن يكون القارئ الافتراضي
 az:SumatraPDF artıq PDF faylları ilə əlaqələndirilmişdir
-bg:SumatraPDF вече трябва да е четец на PDF по подразбиране
+bg:SumatraPDF вече трябва да е указана като подразбиращ се четец на/за PDF файлове
 br:O SumatraPDF deve ser agora seu leitor PDF padrão
 bs:SumatraPDF bi sad trebao biti vaš glavni čitač PDF fajlova
 by:Зараз SumatraPDF асацыявана з файламі PDF
@@ -12634,6 +12880,7 @@ vn:Không mở được tập tin đồng bộ
 :Tagged PDF
 ar:البي دي إف الموسومة
 az:Teqlənmiş PDF
+bg:Етикетирен .PDF файл (Tagged PDF)
 br:PDF com marcações (tags)
 ca-xv:PDF etiquetat
 ca:PDF etiquetat
@@ -12645,7 +12892,9 @@ es:PDF Etiquetado
 et:Siltidega PDF
 fr:PDF balisé
 ga:PDF formáid chlibeáilte
+he:PDF מתוייג
 hr:Strukturirani PDF
+hu:Címkézett PDF
 id:PDF Terlabeli
 it:PDF marcati
 ja:タグ付き PDF
@@ -12655,8 +12904,10 @@ ne:ट्याग गरिएको PDF
 nl:Tagged PDF
 no:Merket PDF
 pt:PDF com tags
+ro:PDF etichetat
 ru:Размеченный PDF
 sl:Označen PDF
+sp-rs:Označeni PDF
 sq:PDF me etiketa
 sr-rs:Означени PDF
 sv:Taggad PDF
@@ -12782,7 +13033,7 @@ vn:Tựa đề
 am:Անհայտ ֆայլ (%s)
 ar:ملف مصدري غير معروف (%s)
 az:Naməlum mənbə faylı (%s)
-bg:Непознат файлов източник (%s)
+bg:Файлът, избран за източник, е непознат (%s)
 br:Arquivo fonte desconhecido (%s)
 bs:Nepoznat izvorni fajl (%s)
 by:Невядомы зыходны файл (%s)
@@ -12907,7 +13158,7 @@ af:&Besoek Webtuiste
 am:Ծրագրի &կայքը
 ar:&زيارة موقع البرنامج
 az:Proqramın &vebsaytına keç
-bg:Посетете &сайта
+bg:Посетете &уебсайта
 bn:&আমাদের অন্তর্জালস্থান দর্শন করুন
 br:&Visitar a página do SumatraPDF
 bs:&Posjeti web stranicu
@@ -13258,7 +13509,7 @@ sp-rs:Uvećaj
 sq:Përshtat
 sr-rs:Увећај
 sv:Zoom
-ta:பெரிதக்கு
+ta:உரு அளவு
 tl:Laki
 tr:Yakınlaştırma
 tw:縮放
@@ -13270,7 +13521,7 @@ af:Zoem In
 am:Մեծացնել
 ar:تكبير
 az:Böyüt
-bg:Увеличи
+bg:Увеличаване
 bn:বৃহৎ বিবর্ধন
 br:Aumentar zoom
 bs:Uvećaj
@@ -13337,7 +13588,7 @@ af:Zoem Uit
 am:Փոքրացնել
 ar:تصغير
 az:Kiçilt
-bg:Намали
+bg:Намаляне
 bn:ক্ষুদ্র বিবর্ধন
 br:Diminuir zoom
 bs:Umanji
@@ -13448,7 +13699,7 @@ sp-rs:Procenat uvećanja
 sq:Koeficienti i zmadhimit
 sr-rs:Проценат увећања
 sv:Zoomfaktor
-ta:பெரிதக்கக்காரணி
+ta:உருக்காரணி
 tl:Antas ng laki
 tr:Yakınlaştırma faktörü
 tw:縮放比例
@@ -13487,6 +13738,7 @@ it:[Individuati cambiamenti; aggiornmento] %s
 ja:[変更を検出: 更新中] %s
 ka:[აღმოჩენილია ცვლილებები; მიმდინარეობს განახლება...] %s
 kr:[변경 감지됨. 새로 고치는 중...] %s
+ku:%s [گۆڕانکاری تێداکرا؛ نوێکردنەوە ]
 kw:[Nowythyansow kevys; owth arnowytha] %s
 lt:[Aptikta pakitimų; atnaujinama] %s
 mk:[Забележав промени; освежувам...] %s
@@ -13532,7 +13784,7 @@ et:teksti kopeerimine
 eu:idazkia kopiatzen
 fa:در حال رونوشت متن
 fi:Kopioidaan tekstiä
-fr:copie du texte
+fr:copie de texte
 ga:ag macasamhlú an téacs
 gl:copiando texto
 he:מעתיק טקסט
@@ -13543,6 +13795,7 @@ it:Copia del testo...
 ja:コピーするテキスト
 ka:ტექსტი კოპირდება
 kr:문자열 복사하는 중
+ku:لەبەرگرتنەوەی دەق
 lt:kopijuojamas tekstas
 mk:копирам текст
 my:menyalin teks

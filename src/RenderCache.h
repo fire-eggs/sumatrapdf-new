@@ -16,19 +16,20 @@ public:
 };
 
 /* A page is split into tiles of at most TILE_MAX_W x TILE_MAX_H pixels.
- * A given tile starts at (col / 2^res * page_width, row / 2^res * page_height). */
+   A given tile starts at (col / 2^res * page_width, row / 2^res * page_height). */
 struct TilePosition {
     USHORT res, row, col;
 
-    bool operator==(TilePosition other) {
+    TilePosition(USHORT res=INVALID_TILE_RES, USHORT row=-1, USHORT col=-1) :
+        res(res), row(row), col(col) { }
+    bool operator==(TilePosition other) const {
         return res == other.res && row == other.row && col == other.col;
     }
 };
 
 /* We keep a cache of rendered bitmaps. BitmapCacheEntry keeps data
    that uniquely identifies rendered page (dm, pageNo, rotation, zoom)
-   and corresponding rendered bitmap.
-*/
+   and the corresponding rendered bitmap. */
 struct BitmapCacheEntry {
     DisplayModel *   dm;
     int              pageNo;
@@ -36,8 +37,14 @@ struct BitmapCacheEntry {
     float            zoom;
     TilePosition     tile;
 
+    // owned by the BitmapCacheEntry
     RenderedBitmap * bitmap;
+    bool             outOfDate;
     int              refs;
+
+    BitmapCacheEntry(DisplayModel *dm, int pageNo, int rotation, float zoom, TilePosition tile, RenderedBitmap *bitmap) :
+        dm(dm), pageNo(pageNo), rotation(rotation), zoom(zoom), tile(tile), bitmap(bitmap), outOfDate(false), refs(1) { }
+    ~BitmapCacheEntry() { delete bitmap; }
 };
 
 /* Even though this looks a lot like a BitmapCacheEntry, we keep it
@@ -90,13 +97,13 @@ public:
     RenderCache();
     ~RenderCache();
 
-    void    Render(DisplayModel *dm, int pageNo, RenderingCallback *callback=NULL);
+    void    RequestRendering(DisplayModel *dm, int pageNo);
     void    Render(DisplayModel *dm, int pageNo, int rotation, float zoom,
                    RectD pageRect, RenderingCallback& callback);
     void    CancelRendering(DisplayModel *dm);
     bool    Exists(DisplayModel *dm, int pageNo, int rotation,
                    float zoom=INVALID_ZOOM, TilePosition *tile=NULL);
-    bool    FreeForDisplayModel(DisplayModel *dm);
+    void    FreeForDisplayModel(DisplayModel *dm) { FreePage(dm); }
     void    KeepForDisplayModel(DisplayModel *oldDm, DisplayModel *newDm);
     UINT    Paint(HDC hdc, RectI bounds, DisplayModel *dm, int pageNo,
                   PageInfo *pageInfo, bool *renderOutOfDateCue);
@@ -108,7 +115,6 @@ protected:
     bool    ClearCurrentRequest();
     bool    GetNextRequest(PageRenderRequest *req);
     void    Add(PageRenderRequest &req, RenderedBitmap *bitmap);
-    bool    FreeNotVisible();
 
 private:
     USHORT  GetTileRes(DisplayModel *dm, int pageNo);
@@ -118,8 +124,7 @@ private:
                 return requestCount == MAX_PAGE_REQUESTS;
             }
     UINT    GetRenderDelay(DisplayModel *dm, int pageNo, TilePosition tile);
-    void    Render(DisplayModel *dm, int pageNo, TilePosition tile,
-                   bool clearQueue=true, RenderingCallback *callback=NULL);
+    void    RequestRendering(DisplayModel *dm, int pageNo, TilePosition tile, bool clearQueueForPage=true);
     bool    Render(DisplayModel *dm, int pageNo, int rotation, float zoom,
                    TilePosition *tile=NULL, RectD *pageRect=NULL,
                    RenderingCallback *callback=NULL);
@@ -132,7 +137,8 @@ private:
     BitmapCacheEntry *  Find(DisplayModel *dm, int pageNo, int rotation,
                              float zoom=INVALID_ZOOM, TilePosition *tile=NULL);
     void    DropCacheEntry(BitmapCacheEntry *entry);
-    bool    FreePage(DisplayModel *dm=NULL, int pageNo=-1, TilePosition *tile=NULL);
+    void    FreePage(DisplayModel *dm=NULL, int pageNo=-1, TilePosition *tile=NULL);
+    void    FreeNotVisible() { FreePage(); }
 
     UINT    PaintTile(HDC hdc, RectI bounds, DisplayModel *dm, int pageNo,
                       TilePosition tile, RectI tileOnScreen, bool renderMissing,

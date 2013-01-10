@@ -87,7 +87,7 @@ void PaintTransparentRectangles(HDC hdc, RectI screenRc, Vec<RectI>& rects, COLO
     for (size_t i = 0; i < rects.Count(); i++) {
         RectI rc = rects.At(i).Intersect(screenRc);
         if (!rc.IsEmpty())
-            path.AddRectangle(Rect(rc.x, rc.y, rc.dx, rc.dy));
+            path.AddRectangle(rc.ToGdipRect());
     }
 
     // fill path (and draw optional outline margin)
@@ -221,7 +221,7 @@ void CopySelectionToClipboard(WindowInfo *win)
     if (!OpenClipboard(NULL)) return;
     EmptyClipboard();
 
-    if (!win->dm->engine->IsCopyingTextAllowed())
+    if (!win->dm->engine->AllowsCopyingText())
         ShowNotification(win, _TR("Copying text was denied (copying as image only)"));
     else if (!win->dm->engine->IsImageCollection()) {
         ScopedMem<WCHAR> selText;

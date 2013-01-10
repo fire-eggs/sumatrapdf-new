@@ -223,6 +223,21 @@ int pdf_field_type(pdf_document *doc, pdf_obj *obj)
 		else
 			return FZ_WIDGET_TYPE_LISTBOX;
 	}
+	/* SumatraPDF: support more annotation types */
+	else if (!*(type = pdf_to_name(pdf_dict_gets(obj, "Subtype"))))
+		return FZ_WIDGET_TYPE_NOT_WIDGET;
+	else if (!strcmp(type, "Link"))
+		return FZ_WIDGET_TYPE_LINK;
+	else if (!strcmp(type, "Text"))
+		return FZ_WIDGET_TYPE_TEXT_ICON;
+	else if (!strcmp(type, "FileAttachment"))
+		return FZ_WIDGET_TYPE_FILE;
+	else if (!strcmp(type, "Highlight"))
+		return FZ_WIDGET_TYPE_TEXT_HIGHLIGHT;
+	else if (!strcmp(type, "Underline") || !strcmp(type, "StrikeOut") || !strcmp(type, "Squiggly"))
+		return FZ_WIDGET_TYPE_TEXT_MARKUP;
+	else if (!strcmp(type, "FreeText"))
+		return FZ_WIDGET_TYPE_FREETEXT;
 	else
 		return FZ_WIDGET_TYPE_NOT_WIDGET;
 }
@@ -298,7 +313,7 @@ static void parse_da(fz_context *ctx, char *da, da_info *di)
 {
 	float stack[32];
 	int top = 0;
-	int tok;
+	pdf_token tok;
 	char *name = NULL;
 	pdf_lexbuf lbuf;
 	fz_stream *str = fz_open_memory(ctx, (unsigned char *)da, strlen(da));
@@ -943,7 +958,7 @@ static fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_ma
 static void update_marked_content(pdf_document *doc, pdf_xobject *form, fz_buffer *fzbuf)
 {
 	fz_context *ctx = doc->ctx;
-	int tok;
+	pdf_token tok;
 	pdf_lexbuf lbuf;
 	fz_stream *str_outer = NULL;
 	fz_stream *str_inner = NULL;
@@ -1176,6 +1191,7 @@ static pdf_xobject *load_or_create_form(pdf_document *doc, pdf_obj *obj, fz_rect
 			tobj = pdf_new_dict(ctx, 1);
 			pdf_dict_puts(obj, "AP", tobj);
 			ap = tobj;
+			pdf_drop_obj(tobj);
 			tobj = NULL;
 		}
 
@@ -1185,6 +1201,7 @@ static pdf_xobject *load_or_create_form(pdf_document *doc, pdf_obj *obj, fz_rect
 			tobj = pdf_new_xobject(doc, rect, &mat);
 			pdf_dict_puts(ap, dn, tobj);
 			formobj = tobj;
+			pdf_drop_obj(tobj);
 			tobj = NULL;
 			create_form = 1;
 		}
