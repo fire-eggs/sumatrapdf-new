@@ -787,12 +787,23 @@ fz_unlock_context_cs(void *user, int lock)
     LeaveCriticalSection(cs);
 }
 
-static void fz_run_user_annots(Vec<PageAnnotation>& userAnnots, int pageNo, fz_device *dev, fz_matrix ctm, fz_bbox clipbox, fz_cookie *cookie)
+static Vec<PageAnnotation> fz_get_user_page_annots(Vec<PageAnnotation>& userAnnots, int pageNo)
 {
-    for (size_t i = 0; i < userAnnots.Count() && (!cookie || !cookie->abort); i++) {
+    Vec<PageAnnotation> result;
+    for (size_t i = 0; i < userAnnots.Count(); i++) {
         PageAnnotation& annot = userAnnots.At(i);
-        if (pageNo != annot.pageNo || Annot_Highlight != annot.type)
-            continue;
+        // include all annotations for pageNo that can be rendered by fz_run_user_annots
+        if (pageNo == annot.pageNo && Annot_Highlight == annot.type)
+            result.Append(annot);
+    }
+    return result;
+}
+
+static void fz_run_user_page_annots(Vec<PageAnnotation>& pageAnnots, fz_device *dev, fz_matrix ctm, fz_bbox clipbox, fz_cookie *cookie)
+{
+    for (size_t i = 0; i < pageAnnots.Count() && (!cookie || !cookie->abort); i++) {
+        PageAnnotation& annot = pageAnnots.At(i);
+        CrashIf(Annot_Highlight != annot.type);
         // skip annotation if it isn't visible
         fz_rect rect = fz_RectD_to_rect(annot.rect);
         rect = fz_transform_rect(ctm, rect);
@@ -816,13 +827,9 @@ static void fz_run_user_annots(Vec<PageAnnotation>& userAnnots, int pageNo, fz_d
     }
 }
 
-static void fz_run_page_transparency(Vec<PageAnnotation>& userAnnots, int pageno, fz_device *dev, fz_bbox clipbox, bool endGroup, bool hasTransparency=false)
+static void fz_run_page_transparency(Vec<PageAnnotation>& pageAnnots, fz_device *dev, fz_bbox clipbox, bool endGroup, bool hasTransparency=false)
 {
-    if (hasTransparency)
-        return;
-    for (size_t i = 0; i < userAnnots.Count() && !hasTransparency; i++)
-        hasTransparency = pageno == userAnnots.At(i).pageNo;
-    if (!hasTransparency)
+    if (hasTransparency || pageAnnots.Count() == 0)
         return;
     if (!endGroup)
         fz_begin_group(dev, fz_bbox_to_rect(clipbox), 1, 0, 0, 1);
@@ -931,10 +938,10 @@ WCHAR *FormatPageLabel(const char *type, int pageNo, const WCHAR *prefix)
 void BuildPageLabelRec(pdf_obj *node, int pageCount, Vec<PageLabelInfo>& data)
 {
     pdf_obj *obj;
-    if ((obj = pdf_dict_gets(node, "Kids")) && !pdf_dict_mark(node)) {
+    if ((obj = pdf_dict_gets(node, "Kids")) && !pdf_obj_mark(node)) {
         for (int i = 0; i < pdf_array_len(obj); i++)
             BuildPageLabelRec(pdf_array_get(obj, i), pageCount, data);
-        pdf_dict_unmark(node);
+        pdf_obj_unmark(node);
     }
     else if ((obj = pdf_dict_gets(node, "Nums"))) {
         for (int i = 0; i < pdf_array_len(obj); i += 2) {
@@ -1151,6 +1158,7 @@ protected:
     bool            IsLinearizedFile();
 
     bool            SaveEmbedded(LinkSaverUI& saveUI, int num, int gen);
+    bool            SaveUserAnnots(const WCHAR *fileName);
 
     RectD         * _mediaboxes;
     fz_outline    * outline;
@@ -1202,11 +1210,10 @@ public:
     PdfComment(const WCHAR *content, RectD rect, int pageNo) :
         annot(Annot_Comment, pageNo, rect), content(str::Dup(content)) { }
 
-    virtual PageElementType GetType() const { return Element_Annotation; }
+    virtual PageElementType GetType() const { return Element_Comment; }
     virtual int GetPageNo() const { return annot.pageNo; }
     virtual RectD GetRect() const { return annot.rect; }
     virtual WCHAR *GetValue() const { return str::Dup(content); }
-    virtual PageAnnotation *GetAnnot() { return &this->annot; }
 };
 
 class PdfTocItem : public DocTocItem {
@@ -1806,11 +1813,12 @@ bool PdfEngineImpl::RunPage(pdf_page *page, fz_device *dev, fz_matrix ctm, Rende
     PdfPageRun *run;
     if (Target_View == target && (run = GetPageRun(page, !cacheRun))) {
         EnterCriticalSection(&ctxAccess);
+        Vec<PageAnnotation> pageAnnots = fz_get_user_page_annots(userAnnots, GetPageNo(page));
         fz_try(ctx) {
-            fz_run_page_transparency(userAnnots, GetPageNo(page), dev, clipbox, false, page->transparency);
+            fz_run_page_transparency(pageAnnots, dev, clipbox, false, page->transparency);
             fz_run_display_list(run->list, dev, ctm, clipbox, cookie ? &cookie->cookie : NULL);
-            fz_run_page_transparency(userAnnots, GetPageNo(page), dev, clipbox, true, page->transparency);
-            fz_run_user_annots(userAnnots, GetPageNo(page), dev, ctm, clipbox, cookie ? &cookie->cookie : NULL);
+            fz_run_page_transparency(pageAnnots, dev, clipbox, true, page->transparency);
+            fz_run_user_page_annots(pageAnnots, dev, ctm, clipbox, cookie ? &cookie->cookie : NULL);
         }
         fz_catch(ctx) {
             ok = false;
@@ -1822,11 +1830,12 @@ bool PdfEngineImpl::RunPage(pdf_page *page, fz_device *dev, fz_matrix ctm, Rende
         ScopedCritSec scope(&ctxAccess);
         char *targetName = target == Target_Print ? "Print" :
                            target == Target_Export ? "Export" : "View";
+        Vec<PageAnnotation> pageAnnots = fz_get_user_page_annots(userAnnots, GetPageNo(page));
         fz_try(ctx) {
-            fz_run_page_transparency(userAnnots, GetPageNo(page), dev, clipbox, false, page->transparency);
+            fz_run_page_transparency(pageAnnots, dev, clipbox, false, page->transparency);
             pdf_run_page_with_usage(_doc, page, dev, ctm, targetName, cookie ? &cookie->cookie : NULL);
-            fz_run_page_transparency(userAnnots, GetPageNo(page), dev, clipbox, true, page->transparency);
-            fz_run_user_annots(userAnnots, GetPageNo(page), dev, ctm, clipbox, cookie ? &cookie->cookie : NULL);
+            fz_run_page_transparency(pageAnnots, dev, clipbox, true, page->transparency);
+            fz_run_user_page_annots(pageAnnots, dev, ctm, clipbox, cookie ? &cookie->cookie : NULL);
         }
         fz_catch(ctx) {
             ok = false;
@@ -2402,9 +2411,9 @@ static void pdf_extract_fonts(pdf_obj *res, Vec<pdf_obj *>& fontList)
     for (int k = 0; k < pdf_dict_len(xobjs); k++) {
         pdf_obj *xobj = pdf_dict_get_val(xobjs, k);
         pdf_obj *xres = pdf_dict_gets(xobj, "Resources");
-        if (xobj && xres && !pdf_dict_mark(xobj)) {
+        if (xobj && xres && !pdf_obj_mark(xobj)) {
             pdf_extract_fonts(xres, fontList);
-            pdf_dict_unmark(xobj);
+            pdf_obj_unmark(xobj);
         }
     }
 }
@@ -2558,8 +2567,6 @@ WCHAR *PdfEngineImpl::GetProperty(DocumentProperty prop)
 
 bool PdfEngineImpl::SupportsAnnotation(PageAnnotType type, bool forSaving) const
 {
-    if (forSaving)
-        return false; // for now
     return Annot_Highlight == type;
 }
 
@@ -2633,11 +2640,124 @@ bool PdfEngineImpl::SaveFileAs(const WCHAR *copyFileName)
     if (data) {
         bool ok = file::WriteAll(copyFileName, data.Get(), dataLen);
         if (ok)
-            return true;
+            return SaveUserAnnots(copyFileName);
     }
     if (!_fileName)
         return false;
-    return CopyFile(_fileName, copyFileName, FALSE);
+    bool ok = CopyFile(_fileName, copyFileName, FALSE);
+    if (!ok)
+        return false;
+    return SaveUserAnnots(copyFileName);
+}
+
+bool PdfEngineImpl::SaveUserAnnots(const WCHAR *fileName)
+{
+    if (!userAnnots.Count())
+        return true;
+
+    ScopedCritSec scope1(&pagesAccess);
+    ScopedCritSec scope2(&ctxAccess);
+
+    static const char *ap_dict = "<< /Type /XObject /Subtype /Form /BBox [0 0 1 1] /Resources << /ExtGState << /GS << /Type /ExtGState /ca 0.8 /AIS false /BM /Multiply >> >> /ProcSet [/PDF] >> >>";
+    static const char *ap_stream = "q /GS gs 0.886275 0.768627 0.886275 rg 0 0 1 1 re f Q";
+    static const char *annot_dict = "<< /Type /Annot /Subtype /Highlight /C [0.886275 0.768627 0.886275] /AP << >> >>";
+
+    bool ok = true;
+    pdf_obj *obj = NULL, *obj2 = NULL, *page = NULL;
+    fz_buffer *buf = NULL;
+    pdf_file_update_list *list = NULL;
+    int next_num = _doc->len;
+
+    fz_var(obj);
+    fz_var(obj2);
+    fz_var(page);
+    fz_var(buf);
+    fz_var(list);
+
+    fz_try(ctx) {
+        list = pdf_file_update_start_w(ctx, fileName, next_num + PageCount() + userAnnots.Count() + 1);
+        if (!_doc->crypt) {
+            // append appearance stream for all highlights (required e.g. for Chrome's built-in viewer)
+            int ap_num = next_num++;
+            obj = pdf_new_obj_from_str(ctx, ap_dict);
+            buf = fz_new_buffer(ctx, (int)str::Len(ap_stream));
+            memcpy(buf->data, ap_stream, (buf->len = (int)str::Len(ap_stream)));
+            pdf_file_update_append(list, obj, ap_num, 0, buf);
+            pdf_drop_obj(obj);
+            obj = NULL;
+            fz_drop_buffer(ctx, buf);
+            buf = NULL;
+            // prepare the annotation template object
+            obj = pdf_new_obj_from_str(ctx, annot_dict);
+            pdf_dict_puts_drop(pdf_dict_gets(obj, "AP"), "N", pdf_new_indirect(ctx, ap_num, 0, NULL));
+        }
+        else {
+            // prepare the annotation template object
+            obj = pdf_new_obj_from_str(ctx, annot_dict);
+            // TODO: else we'd have to encrypt the appearance stream
+            pdf_dict_dels(obj, "AP");
+        }
+        // append annotations per page
+        for (int pageNo = 1; pageNo <= PageCount(); pageNo++) {
+            // TODO: this will skip annotations for broken documents
+            if (!GetPdfPage(pageNo) || !pdf_to_num(_doc->page_refs[pageNo-1])) {
+                ok = false;
+                break;
+            }
+            Vec<PageAnnotation> pageAnnots = fz_get_user_page_annots(userAnnots, pageNo);
+            if (pageAnnots.Count() == 0)
+                continue;
+            // get the page's /Annots array for appending
+            page = pdf_copy_dict(ctx, _doc->page_objs[pageNo-1]);
+            if (!pdf_is_array(pdf_dict_gets(page, "Annots")))
+                pdf_dict_puts_drop(page, "Annots", pdf_new_array(ctx, pageAnnots.Count()));
+            pdf_obj *annots = pdf_dict_gets(page, "Annots");
+            // append all annotations for the current page
+            for (size_t i = 0; i < pageAnnots.Count(); i++) {
+                PageAnnotation& annot = pageAnnots.At(i);
+                CrashIf(annot.type != Annot_Highlight);
+                // update the annotation's /Rect (converted to raw user space)
+                fz_rect r = fz_RectD_to_rect(annot.rect);
+                r = fz_transform_rect(fz_invert_matrix(GetPdfPage(pageNo)->ctm), r);
+                pdf_dict_puts_drop(obj, "Rect", pdf_new_rect(ctx, &r));
+                // all /QuadPoints must lie within /Rect
+                ScopedMem<char> quadpoints(str::Format("[%.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f]",
+                                                       r.x0, r.y1, r.x1, r.y1, r.x0, r.y0, r.x1, r.y0));
+                pdf_dict_puts_drop(obj, "QuadPoints", pdf_new_obj_from_str(ctx, quadpoints));
+                // add a reference back to the page
+                pdf_dict_puts_drop(obj, "P", pdf_new_indirect(ctx, pdf_to_num(_doc->page_refs[pageNo-1]), pdf_to_gen(_doc->page_refs[pageNo-1]), NULL));
+                // append a reference to the annotation to the page's /Annots entry
+                obj2 = pdf_new_indirect(ctx, next_num, 0, NULL);
+                pdf_array_push(annots, obj2);
+                pdf_drop_obj(obj2);
+                obj2 = NULL;
+                // finally write the annotation to the file
+                pdf_file_update_append(list, obj, next_num++, 0, NULL);
+            }
+            // write the page object with the update /Annots array back to the file
+            pdf_dict_dels(pdf_dict_gets(page, "Resources"), ".useBM");
+            pdf_file_update_append(list, page, pdf_to_num(_doc->page_refs[pageNo-1]), pdf_to_gen(_doc->page_refs[pageNo-1]), NULL);
+            pdf_drop_obj(page);
+            page = NULL;
+        }
+    }
+    fz_always(ctx) {
+        pdf_drop_obj(obj);
+        pdf_drop_obj(obj2);
+        pdf_drop_obj(page);
+        fz_drop_buffer(ctx, buf);
+        if (list) {
+            // write xref, trailer and startxref entries and clean up
+            fz_try(ctx) {
+                pdf_file_update_end(list, _doc->trailer, _doc->startxref);
+            }
+            fz_catch(ctx) { }
+        }
+    }
+    fz_catch(ctx) {
+        return false;
+    }
+    return ok;
 }
 
 bool PdfEngineImpl::SaveEmbedded(LinkSaverUI& saveUI, int num, int gen)
@@ -3392,11 +3512,12 @@ bool XpsEngineImpl::RunPage(xps_page *page, fz_device *dev, fz_matrix ctm, fz_bb
     XpsPageRun *run = GetPageRun(page, !cacheRun);
     if (run) {
         EnterCriticalSection(&ctxAccess);
+        Vec<PageAnnotation> pageAnnots = fz_get_user_page_annots(userAnnots, GetPageNo(page));
         fz_try(ctx) {
-            fz_run_page_transparency(userAnnots, GetPageNo(page), dev, clipbox, false);
+            fz_run_page_transparency(pageAnnots, dev, clipbox, false);
             fz_run_display_list(run->list, dev, ctm, clipbox, cookie ? &cookie->cookie : NULL);
-            fz_run_page_transparency(userAnnots, GetPageNo(page), dev, clipbox, true);
-            fz_run_user_annots(userAnnots, GetPageNo(page), dev, ctm, clipbox, cookie ? &cookie->cookie : NULL);
+            fz_run_page_transparency(pageAnnots, dev, clipbox, true);
+            fz_run_user_page_annots(pageAnnots, dev, ctm, clipbox, cookie ? &cookie->cookie : NULL);
         }
         fz_catch(ctx) {
             ok = false;
@@ -3406,11 +3527,12 @@ bool XpsEngineImpl::RunPage(xps_page *page, fz_device *dev, fz_matrix ctm, fz_bb
     }
     else {
         ScopedCritSec scope(&ctxAccess);
+        Vec<PageAnnotation> pageAnnots = fz_get_user_page_annots(userAnnots, GetPageNo(page));
         fz_try(ctx) {
-            fz_run_page_transparency(userAnnots, GetPageNo(page), dev, clipbox, false);
+            fz_run_page_transparency(pageAnnots, dev, clipbox, false);
             xps_run_page(_doc, page, dev, ctm, cookie ? &cookie->cookie : NULL);
-            fz_run_page_transparency(userAnnots, GetPageNo(page), dev, clipbox, true);
-            fz_run_user_annots(userAnnots, GetPageNo(page), dev, ctm, clipbox, cookie ? &cookie->cookie : NULL);
+            fz_run_page_transparency(pageAnnots, dev, clipbox, true);
+            fz_run_user_page_annots(pageAnnots, dev, ctm, clipbox, cookie ? &cookie->cookie : NULL);
         }
         fz_catch(ctx) {
             ok = false;
@@ -3965,7 +4087,7 @@ bool XpsEngine::IsSupportedFile(const WCHAR *fileName, bool sniff)
                zip.GetFileIndex(L"_rels/.rels/[0].last.piece") != (size_t)-1;
     }
 
-    return str::EndsWithI(fileName, L".xps");
+    return str::EndsWithI(fileName, L".xps") || str::EndsWithI(fileName, L".oxps");
 }
 
 XpsEngine *XpsEngine::CreateFromFile(const WCHAR *fileName)

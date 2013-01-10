@@ -148,6 +148,9 @@ public:
     virtual PageLayoutType PreferredLayout() { return Layout_NonContinuous; }
     virtual bool IsImageCollection() const { return true; }
 
+    virtual bool SupportsAnnotation(PageAnnotType type, bool forSaving=false) const { return false; }
+    virtual void UpdateUserAnnotations(Vec<PageAnnotation> *list) { }
+
     virtual const WCHAR *GetDefaultFileExt() const { return fileExt; }
 
     virtual Vec<PageElement *> *GetElements(int pageNo);
@@ -208,7 +211,7 @@ bool ImagesEngine::RenderPage(HDC hDC, RectI screenRect, int pageNo, float zoom,
     g.SetPageUnit(UnitPixel);
 
     Color white(0xFF, 0xFF, 0xFF);
-    Rect screenR(screenRect.x, screenRect.y, screenRect.dx, screenRect.dy);
+    Rect screenR(screenRect.ToGdipRect());
     g.SetClip(screenR);
     g.FillRectangle(&SolidBrush(white), screenR);
 
@@ -220,14 +223,13 @@ bool ImagesEngine::RenderPage(HDC hDC, RectI screenRect, int pageNo, float zoom,
     RectI pageRcI = PageMediabox(pageNo).Round();
     ImageAttributes imgAttrs;
     imgAttrs.SetWrapMode(WrapModeTileFlipXY);
-    Status ok = g.DrawImage(bmp, Rect(0, 0, pageRcI.dx, pageRcI.dy), 0, 0, pageRcI.dx, pageRcI.dy, UnitPixel, &imgAttrs);
+    Status ok = g.DrawImage(bmp, pageRcI.ToGdipRect(), 0, 0, pageRcI.dx, pageRcI.dy, UnitPixel, &imgAttrs);
     return ok == Ok;
 }
 
 void ImagesEngine::GetTransform(Matrix& m, int pageNo, float zoom, int rotation)
 {
-    SizeD size = PageMediabox(pageNo).Size();
-    GetBaseTransform(m, RectF(0, 0, (REAL)size.dx, (REAL)size.dy), zoom, rotation);
+    GetBaseTransform(m, PageMediabox(pageNo).ToGdipRectF(), zoom, rotation);
 }
 
 PointD ImagesEngine::Transform(PointD pt, int pageNo, float zoom, int rotation, bool inverse)
@@ -479,7 +481,7 @@ bool ImageEngine::IsSupportedFile(const WCHAR *fileName, bool sniff)
            str::EndsWithI(fileName, L".bmp") ||
            str::EndsWithI(fileName, L".tga") ||
            str::EndsWithI(fileName, L".jxr") || str::EndsWithI(fileName, L".hdp") ||
-                                                   str::EndsWithI(fileName, L".wdp");
+                                                str::EndsWithI(fileName, L".wdp");
 }
 
 ImageEngine *ImageEngine::CreateFromFile(const WCHAR *fileName)
@@ -515,7 +517,7 @@ public:
     virtual RectD PageMediabox(int pageNo);
 
     virtual unsigned char *GetFileData(size_t *cbCount) { return NULL; }
-    virtual bool SaveFileAs(const WCHAR *copyFileName) { return false; }
+    virtual bool SaveFileAs(const WCHAR *copyFileName);
 
     virtual WCHAR *GetProperty(DocumentProperty prop) { return NULL; }
 
@@ -634,6 +636,20 @@ DocTocItem *ImageDirEngineImpl::GetTocTree()
         root->AddSibling(item);
     }
     return root;
+}
+
+bool ImageDirEngineImpl::SaveFileAs(const WCHAR *copyFileName)
+{
+    // only copy the files if the target directory doesn't exist yet
+    if (!CreateDirectory(copyFileName, NULL))
+        return false;
+    bool ok = true;
+    for (size_t i = 0; i < pageFileNames.Count(); i++) {
+        const WCHAR *filePathOld = pageFileNames.At(i);
+        ScopedMem<WCHAR> filePathNew(path::Join(copyFileName, path::GetBaseName(filePathOld)));
+        ok = ok && CopyFile(filePathOld, filePathNew, TRUE);
+    }
+    return ok;
 }
 
 bool ImageDirEngine::IsSupportedFile(const WCHAR *fileName, bool sniff)
