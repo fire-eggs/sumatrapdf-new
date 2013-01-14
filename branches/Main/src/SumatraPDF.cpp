@@ -5165,6 +5165,21 @@ static void ContainerOnPaint(ContainerInfo& container)
     EndPaint(container.hwndContainer, &ps);
 }
 
+static void PanelOnNotify(PanelInfo *panel, WPARAM wParam, LPARAM lParam)
+{
+    LPNMHDR lpnmhdr = (LPNMHDR)lParam;
+
+    switch(lpnmhdr->code) {
+        case TTN_GETDISPINFO:
+            int tabIndex = (int) wParam;
+            if (IsCursorOverWindow(panel->hwndTab)) {
+                LPNMTTDISPINFO lpnmtdi = (LPNMTTDISPINFO)lParam;
+                lpnmtdi->lpszText = panel->gWin.At(tabIndex)->TabToolTipText;
+            }
+            break;
+    }
+}
+
 static void PanelOnPaint(PanelInfo& panel)
 {
     int rebBarDy = WindowRect(panel.win->toolBar()->hwndReBar).dy;
@@ -5226,6 +5241,10 @@ static LRESULT CALLBACK WndProcPanel(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 
         case WM_MOUSEACTIVATE:
             panel->WIN->panel = panel;
+            break;
+
+        case WM_NOTIFY:
+            PanelOnNotify(panel, wParam, lParam);
             break;
 
         case WM_PAINT:

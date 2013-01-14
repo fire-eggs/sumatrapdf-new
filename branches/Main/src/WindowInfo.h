@@ -146,7 +146,7 @@ public:
     PanelInfo *     panel; // Need?
 
     WCHAR *         loadedFilePath;
-    WCHAR *            TabToolTipText;
+    WCHAR *         TabToolTipText;
     DisplayModel *  dm;
 
     HWND            hwndFrame;

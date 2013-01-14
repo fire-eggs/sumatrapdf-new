@@ -85,15 +85,17 @@ using namespace Gdiplus;
 //
 //    return CallWindowProc(DefWndProcTabStatic, hwnd, msg, wParam, lParam);
 //}
-//
-static WNDPROC DefWndProcTabTooltip= NULL;
+
+static WNDPROC DefWndProcTabTooltip = NULL;
 static LRESULT CALLBACK WndProcTabTooltip(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    if (message == WM_WINDOWPOSCHANGING) {
+    // Remark: In order to set breakpoints here, we can't set breakpoints only inside if statement below,
+    //         otherwise it doesn't work.
+    //         Set breakpoints at "if (message == WM_WINDOWPOSCHANGING) {" and "return...".
 
-        PanelInfo *panel = NULL;
-        if (gWIN.Count()> 0 && gWIN.At(0)->gPanel.Count() > 0)
-            panel = gWIN.At(0)->gPanel.At(0);
+    if (message == WM_WINDOWPOSCHANGING) {    // WM_WINDOWPOSCHANGING == 70 in Decimal.
+
+        PanelInfo *panel = (PanelInfo *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
         if (!panel)
             return CallWindowProc(DefWndProcTabTooltip, hwnd, message, wParam, lParam);
 
@@ -101,16 +103,13 @@ static LRESULT CALLBACK WndProcTabTooltip(HWND hwnd, UINT message, WPARAM wParam
 
         WindowRect rCanvas(panel->win->hwndCanvas);
 
-        POINT pt = {rCanvas.x, rCanvas.y};
-
-        winPos->x = winPos->x + 15;
-        winPos->y = rCanvas.y - 1;
-        return 0;
+        winPos->x = winPos->x + 13; // Make sure that the tooltip shows up on the right of the cursor. // Could one get the size of the cursor?
+        winPos->y = rCanvas.y - 1;  // The top edge of a tooltip will cover the separator between the tab control and the canvas.
     }
 
     return CallWindowProc(DefWndProcTabTooltip, hwnd, message, wParam, lParam);
 }
-//
+
 //void ToggleTabPreview(PanelInfo *panel)
 //{
 //    // We don't want to create hwndTabPreview at start up.
@@ -407,20 +406,27 @@ void CreateTabControl(PanelInfo *panel)
 
     panel->hwndTab = hwndTab;
 
-    // We don't need this.
     ShowWindow(panel->hwndTab, SW_SHOW);
     UpdateWindow(panel->hwndTab);
 
-    // Get the tooltip handle for hwndTab.
+    // Get the handle of the tooltip of hwndTab.
     panel->hwndTabTooltip = (HWND) SendMessage(hwndTab, TCM_GETTOOLTIPS, NULL, NULL);
 
-    SetParent(panel->hwndTabTooltip, panel->hwndPanel);
+    // It seems that we can't set a tooltip to be a child of an application window.
+    // Otherwise, hwndTabtooltip never receives WM_WINDOWPOSCHANGING message.
+    //SetParent(panel->hwndTabTooltip, panel->hwndPanel);
+
+    // In WndProcTabTooltip, we need to find the panel to which the hwndTabTooltip
+    // is associated. Since hwndTabTooltip is not a child of hwndPanel,
+    // FindPanelInfoByHwnd will return NULL hence we won't have the desired result.
+    // Hence we embed the data "panel" into hwndTabTooltip.
+    SetWindowLongPtr(panel->hwndTabTooltip, GWLP_USERDATA, (LONG_PTR)panel);
 
     if (NULL == DefWndProcTabTooltip)
         DefWndProcTabTooltip = (WNDPROC)GetWindowLongPtr(panel->hwndTabTooltip, GWLP_WNDPROC);
     SetWindowLongPtr(panel->hwndTabTooltip, GWLP_WNDPROC, (LONG_PTR)WndProcTabTooltip);
 
-    //// Set the timeout of hwndTabTooltip.
+    // Set the timeout of hwndTabTooltip.
     SendMessage(panel->hwndTabTooltip, TTM_SETDELAYTIME, TTDT_AUTOPOP, MAKELPARAM((30000),(0)));
     SendMessage(panel->hwndTabTooltip, TTM_SETDELAYTIME, TTDT_INITIAL, MAKELPARAM((1),(0)));
 }
@@ -431,16 +437,22 @@ void AddTab(WindowInfo *win)
 
     int tabIndex = (int) panel->gWin.Count() - 1;
 
+    // =====================================================================================
+    // Prepare the TCITEM structure that specifies the attributes of the tab.
+
     TCITEM tie;
+
     tie.mask = TCIF_TEXT | TCIF_IMAGE;
     tie.iImage = -1;
 
-    ScopedMem<TCHAR> title;
+    ScopedMem<WCHAR> title;
     title.Set(str::Format(L"%s", L"Start Page     "));
     tie.pszText = title;
 
-    SendMessage(panel->hwndTab, TCM_INSERTITEM, tabIndex, (LPARAM)&tie); // Insert a new tab.
-    SendMessage(panel->hwndTab, TCM_SETCURSEL, tabIndex, 0); // Change selected tab.
+    // =====================================================================================
+
+    SendMessage(panel->hwndTab, TCM_INSERTITEM, tabIndex, (LPARAM)&tie); // Insert a new tab item.
+    SendMessage(panel->hwndTab, TCM_SETCURSEL, tabIndex, 0); // Change selected tab item.
 
     SetTabToolTipText(win);
 
@@ -577,24 +589,19 @@ void AddTab(WindowInfo *win)
 //
 //    SendMessage(panel->hwndTab, TCM_SETITEM, tabIndex, (LPARAM)&tie);
 //}
-//
+
 void SetTabToolTipText(WindowInfo *win)
 {
-    // We don't have to use ScopedMem here, since we don't need to modify it.
-
     if (!win->TabToolTipText == NULL)
         free(win->TabToolTipText);
 
-    if (win->IsDocLoaded()){
-    
-        const TCHAR *baseName = path::GetBaseName(win->dm->FilePath()); // We don't have to worry about this! No multiple objects are created.
-
-        win->TabToolTipText = str::Format(L"%s", baseName); // See WCHAR *FmtV(const WCHAR *fmt, va_list args) in StrUtil.cpp. We need to keep this until win is deleted. We use free(), not delete, since it is not created by using new.
-    } else {
-        win->TabToolTipText = str::Format(L"%s", L"Start Page");
-    }
+    if (win->IsDocLoaded()) {
+        const WCHAR *baseName = path::GetBaseName(win->dm->FilePath());
+        win->TabToolTipText = str::Format(L"%s", baseName);
+    } else
+        win->TabToolTipText = L"Start Page"; // Should we use win->TabToolTipText = str::Format(L"%s", L"Start Page"); ?
 }
-//
+
 //// Used to communicate with tab close buttons.
 //void SetHoverState(WindowInfo *win, bool hover)
 //{
