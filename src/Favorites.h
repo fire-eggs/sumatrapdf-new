@@ -98,7 +98,6 @@ public:
        return favs.Count();
    }
 
-
    FileFavs *GetByMenuId(int menuId, size_t& idx);
    FileFavs *GetByFavName(FavName *fn);
    void ResetMenuIds();
