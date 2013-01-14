@@ -392,15 +392,28 @@ unsigned char *SerializeBitmap(HBITMAP hbmp, size_t *bmpBytesOut)
                 tgaData.Append(line + i * 3, 3);
             } else {
                 // determine the length of a run of different pixels
-                while (i + j < w && j < 128 && !memeq3(line + (i + j - 1) * 3, line + (i + j) * 3)) {
+                while (i + j < w && j <= 128 && !memeq3(line + (i + j - 1) * 3, line + (i + j) * 3)) {
                     j++;
                 }
+                if (i + j < w || j > 128)
+                    j--;
                 tgaData.Append(j - 1);
                 tgaData.Append(line + i * 3, j * 3);
             }
         }
     }
     tgaData.Append((char *)&footerLE, sizeof(footerLE));
+
+    // don't compress the image data if that increases the file size
+    if (tgaData.Size() > sizeof(headerLE) + w * h * 3 + sizeof(footerLE)) {
+        tgaData.RemoveAt(0, tgaData.Size());
+        headerLE.imageType = Type_Truecolor;
+        tgaData.Append((char *)&headerLE, sizeof(headerLE));
+        for (int k = 0; k < h; k++) {
+            tgaData.Append(bmpData + k * stride, w * 3);
+        }
+        tgaData.Append((char *)&footerLE, sizeof(footerLE));
+    }
 
     if (bmpBytesOut)
         *bmpBytesOut = tgaData.Size();
