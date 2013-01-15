@@ -4738,7 +4738,8 @@ void ShowDocument(PanelInfo *panel, WindowInfo *win,  WindowInfo *winNew, bool H
     ClearTocBox(win);
 
     // Should we put this into SetSidebarVisibility()?
-    LoadTocTree(winNew);
+    if (winNew->IsDocLoaded() && winNew->dm->HasTocTree())
+        LoadTocTree(winNew);
 
     if (HideOldDocument) {
         ShowWindow(win->hwndCanvas, SW_HIDE);
