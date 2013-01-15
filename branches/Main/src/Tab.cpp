@@ -435,7 +435,7 @@ void AddTab(WindowInfo *win)
 {
     PanelInfo *panel = win->panel;
 
-    int tabIndex = (int) panel->gWin.Count() - 1;
+    int tabIndex = (int) panel->gWin.Find(win);
 
     // =====================================================================================
     // Prepare the TCITEM structure that specifies the attributes of the tab.
@@ -549,46 +549,43 @@ void AddTab(WindowInfo *win)
 //    UpdateWindow(win->hwndTabStatic);
 //}
 
-//void SetTabTitle(WindowInfo *win)
-//{
-//    PanelInfo *panel = win->panel;
-//
-//    // tabIndex is used in SendMessage for sending TCM_SETITEM.
-//    int tabIndex = (int) panel->gWin.Find(win);
-//
-//    TCITEM tie;
-//    tie.mask = TCIF_TEXT | TCIF_IMAGE;
-//    tie.iImage = -1;
-//
-//    // We use ScopedMem here, since BaseName is not modifiable.
-//    ScopedMem<TCHAR> TabTitle;
-//
-//    if (win->IsDocLoaded()) {
-//        const TCHAR *baseName = path::GetBaseName(win->dm->FilePath());
-//        TabTitle.Set(str::Format(_T("%s"), baseName));
-//        // p.s: Format returns a TCHAR* to a new created object.
-//    } else
-//        TabTitle.Set(str::Format(_T("%s"), _T("Start Page")));
-//
-//    if ( _tcslen(TabTitle) > 30 ) {
-//
-//        TabTitle[27] = _T('.');
-//        TabTitle[28] = _T('.');
-//        TabTitle[29] = _T('.');
-//
-//        int i;
-//        for(i = 30; i < (int) _tcslen(TabTitle) + 1; i++)
-//            TabTitle[i] = _T('\0');
-//    }
-//
-//    // When we use Set.(T *o), it will free the object first. See the definitioin.
-//    // So we don't have to already memory leak.
-//    TabTitle.Set(str::Format(_T("%s%s"), TabTitle, _T("     "))); 
-//
-//    tie.pszText = TabTitle;
-//
-//    SendMessage(panel->hwndTab, TCM_SETITEM, tabIndex, (LPARAM)&tie);
-//}
+void SetTabTitle(WindowInfo *win)
+{
+    PanelInfo *panel = win->panel;
+
+    // tabIndex is used in SendMessage for sending TCM_SETITEM.
+    int tabIndex = (int) panel->gWin.Find(win);
+
+    TCITEM tie;
+    tie.mask = TCIF_TEXT | TCIF_IMAGE;
+    tie.iImage = -1;
+
+    ScopedMem<TCHAR> title;
+
+    if (win->IsDocLoaded()) {
+        const TCHAR *baseName = path::GetBaseName(win->dm->FilePath());
+        title.Set(str::Format(L"%s", baseName));
+    } else
+        title.Set(str::Format(L"%s", L"Start Page")); // When one closes the only one document in a panel, we have to set the title of its tab item to "Start Page". 
+
+	// ==============================================================
+	// Make the text of a tab item have 30 characters at most.
+
+    if (wcslen(title) > 30 ) {
+        for(int i = 27; i < (int)wcslen(title) + 1; i++)
+            title[i] = i < 30 ? L'.' : L'\0';
+    }
+
+	// ==============================================================
+
+    // When one uses ScopedMem<Type>::Set.(Type *o), it will free the object first. See the definitioin.
+    // So we don't have to worry about memory leak here.
+	title.Set(str::Format(L"%s%s", title, L"     ")); 
+
+    tie.pszText = title;
+
+    SendMessage(panel->hwndTab, TCM_SETITEM, tabIndex, (LPARAM)&tie);
+}
 
 void SetTabToolTipText(WindowInfo *win)
 {
@@ -599,7 +596,10 @@ void SetTabToolTipText(WindowInfo *win)
         const WCHAR *baseName = path::GetBaseName(win->dm->FilePath());
         win->TabToolTipText = str::Format(L"%s", baseName);
     } else
-        win->TabToolTipText = L"Start Page"; // Should we use win->TabToolTipText = str::Format(L"%s", L"Start Page"); ?
+        win->TabToolTipText = str::Format(L"%s", L"Start Page");
+	    // We have to use "str::Format(L"%s", L"Start Page");",
+	    // otherwsie the "free" above causes heap problem.
+	    // free() can't be used for a pointer to read-only data.
 }
 
 //// Used to communicate with tab close buttons.

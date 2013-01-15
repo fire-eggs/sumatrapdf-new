@@ -1872,6 +1872,9 @@ static WindowInfo* LoadDocumentOld(LoadArgs& args)
         return win;
     }
 
+    SetTabTitle(win);
+    SetTabToolTipText(win);
+
     if (!win->watcher)
         win->watcher = new FileWatcher(new FileChangeCallback(win));
     win->watcher->Init(fullPath);
