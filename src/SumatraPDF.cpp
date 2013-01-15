@@ -4747,6 +4747,18 @@ void ShowDocument(PanelInfo *panel, WindowInfo *win,  WindowInfo *winNew, bool H
     }
 
     ShowWindow(winNew->hwndCanvas, SW_SHOW);
+
+    // We have a document opened. Then press "Ctrl + T" to open a
+    // "Start Page" in a new tab. Go back to the original document.
+    // Click on the FindBox. Then use "Ctrl + Arrow" to switch to the
+    // "Start Page".
+    // Without the following code, we get stuck, i.e "Ctrl + Arrow"
+    // doesn't work anymore.
+
+    if (!winNew->IsDocLoaded())
+        SetFocus(panel->WIN->hwndFrame);
+    //else if (winNew->IsChm() && GetFocus() == panel->hwndFindBox)
+    //    SetFocus(winNew->hwndCanvas);
 }
 
 void ShowPreviousDocument(PanelInfo *panel){
