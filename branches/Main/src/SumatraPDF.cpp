@@ -1605,6 +1605,10 @@ static WindowInfo* CreateCanvas(PanelInfo *panel)
         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
         win->hwndCanvas, NULL, ghinst, NULL);
 
+    // We need to delete winOld's TOC first, otherwise the new win's TOC
+    // will be inserted after the old one's. See PopulateTocTreeView, AddTocItemToView and LoadTocTree.
+    ClearTocBox(winOld);
+
     UpdateFindbox(win);
     if (HasPermission(Perm_DiskAccess) && !gPluginMode)
         DragAcceptFiles(win->hwndCanvas, TRUE);
@@ -4727,6 +4731,14 @@ void ShowDocument(PanelInfo *panel, WindowInfo *win,  WindowInfo *winNew, bool H
         ExitFullscreen(*win);
 
     panel->win = winNew;
+
+    // We need to remember the tocState.
+    UpdateCurrentFileDisplayStateForWin(SumatraWindow::Make(win));
+
+    ClearTocBox(win);
+
+    // Should we put this into SetSidebarVisibility()?
+    LoadTocTree(winNew);
 
     if (HideOldDocument) {
         ShowWindow(win->hwndCanvas, SW_HIDE);
