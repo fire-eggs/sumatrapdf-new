@@ -107,6 +107,15 @@ static LRESULT CALLBACK WndProcTabTooltip(HWND hwnd, UINT message, WPARAM wParam
         winPos->y = rCanvas.y - 1;  // The top edge of a tooltip will cover the separator between the tab control and the canvas.
     }
 
+    if (message == WM_TIMER && wParam == 4) {
+        static int counter = 0;
+        counter++;
+        if (counter != 60 * 2)
+            return 0;
+        else
+            counter = 0;
+    }
+
     return CallWindowProc(DefWndProcTabTooltip, hwnd, message, wParam, lParam);
 }
 

@@ -4759,6 +4759,12 @@ void ShowDocument(PanelInfo *panel, WindowInfo *win,  WindowInfo *winNew, bool H
         SetFocus(panel->WIN->hwndFrame);
     //else if (winNew->IsChm() && GetFocus() == panel->hwndFindBox)
     //    SetFocus(winNew->hwndCanvas);
+
+    // With the code below, ShowDocument() is still called only once when we use
+    // keyboard to switch between tab pages. This is because using
+    // TCM_SETCURSEL to change selection won't generate TCN_SELCHANGE notification code.
+    // See Remarks in http://msdn.microsoft.com/en-us/library/windows/desktop/bb760612%28v=vs.85%29.aspx
+    SendMessage(panel->hwndTab, TCM_SETCURSEL, panel->gWin.Find(winNew), NULL);
 }
 
 void ShowPreviousDocument(PanelInfo *panel){
