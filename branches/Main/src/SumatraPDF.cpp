@@ -5173,6 +5173,19 @@ static void PanelOnNotify(PanelInfo *panel, WPARAM wParam, LPARAM lParam)
     LPNMHDR lpnmhdr = (LPNMHDR)lParam;
 
     switch(lpnmhdr->code) {
+        case TCN_SELCHANGE:
+            if (IsCursorOverWindow(panel->hwndTab)) {
+                int tabIndex = SendMessage(panel->hwndTab, TCM_GETCURSEL, NULL, NULL); // tabIndex is the new index.
+                ShowDocument(panel, panel->win, panel->gWin.At(tabIndex), true); // panel->win is the current win before calling ShowDocument().
+
+                //RECT rc;
+                //SendMessage(panel->hwndTab, TCM_GETITEMRECT, tabIndex, (LPARAM)&rc); // For new selected tab item.
+                //SetWindowPos(panel->gWin.At(tabIndex)->hwndTabStatic, NULL, rc.right - 16, 7, 12, 12, SWP_NOZORDER);
+                //SendMessage(panel->hwndTab, TCM_GETITEMRECT, panel->gWin.Find(panel->win), (LPARAM)&rc); // For selected tab item before change.
+                //SetWindowPos(panel->win->hwndTabStatic, NULL, rc.right - 16, 8, 12, 12, SWP_NOZORDER);
+            }
+            break;
+
         case TTN_GETDISPINFO:
             int tabIndex = (int) wParam;
             if (IsCursorOverWindow(panel->hwndTab)) {
