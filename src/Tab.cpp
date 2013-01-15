@@ -568,19 +568,19 @@ void SetTabTitle(WindowInfo *win)
     } else
         title.Set(str::Format(L"%s", L"Start Page")); // When one closes the only one document in a panel, we have to set the title of its tab item to "Start Page". 
 
-	// ==============================================================
-	// Make the text of a tab item have 30 characters at most.
+    // ==============================================================
+    // Make the text of a tab item have 30 characters at most.
 
     if (wcslen(title) > 30 ) {
         for(int i = 27; i < (int)wcslen(title) + 1; i++)
             title[i] = i < 30 ? L'.' : L'\0';
     }
 
-	// ==============================================================
+    // ==============================================================
 
     // When one uses ScopedMem<Type>::Set.(Type *o), it will free the object first. See the definitioin.
     // So we don't have to worry about memory leak here.
-	title.Set(str::Format(L"%s%s", title, L"     ")); 
+    title.Set(str::Format(L"%s%s", title, L"     ")); 
 
     tie.pszText = title;
 
@@ -597,9 +597,9 @@ void SetTabToolTipText(WindowInfo *win)
         win->TabToolTipText = str::Format(L"%s", baseName);
     } else
         win->TabToolTipText = str::Format(L"%s", L"Start Page");
-	    // We have to use "str::Format(L"%s", L"Start Page");",
-	    // otherwsie the "free" above causes heap problem.
-	    // free() can't be used for a pointer to read-only data.
+        // We have to use "str::Format(L"%s", L"Start Page");",
+        // otherwsie the "free" above causes heap problem.
+        // free() can't be used for a pointer to read-only data.
 }
 
 //// Used to communicate with tab close buttons.
