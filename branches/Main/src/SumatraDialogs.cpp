@@ -899,8 +899,12 @@ static HBITMAP LoadExternalBitmap(HINSTANCE hInst, WCHAR * filename, INT resourc
     return LoadBitmap(hInst, MAKEINTRESOURCE(resourceId));
 }
 
-void SetColorDlgButtonColor(HWND hDlg, int nIDDlgItem, COLORREF color)
+void SetColorDlgButtonColor(HWND hDlg, int nIDTextDlgItem, int nIDDlgItem, COLORREF color)
 {
+    HWND hText = NULL;
+    if (nIDTextDlgItem != NULL)
+        hText = GetDlgItem(hDlg, nIDTextDlgItem);
+
     HWND hButton = GetDlgItem(hDlg, nIDDlgItem);
 
     HDC hdc = GetDC(hButton);
@@ -925,8 +929,11 @@ void SetColorDlgButtonColor(HWND hDlg, int nIDDlgItem, COLORREF color)
     SelectObject(memDC, hOldBmp);
     SendMessage(GetDlgItem(hDlg, nIDDlgItem), BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hMemBmp);
     DeleteObject(brush);
-    DeleteObject(hMemBmp);
+    // DeleteObject(hMemBmp); // If we delete hMemBmp immediately after sending BM_SETIMAGE message, then the images are not shown in XP.
     DeleteObject(memDC);
+
+    if (hText != NULL)
+        SetWindowLongPtr(hText, GWLP_USERDATA, (LONG_PTR)hMemBmp);
 }
 
 static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -948,10 +955,10 @@ static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LP
             colorOld[2] = prefs->docBgColor;
             colorOld[3] = prefs->docTextColor;
 
-            SetColorDlgButtonColor(hDlg, IDC_SET_START_PAGE_BG, prefs->bgColor);
-            SetColorDlgButtonColor(hDlg, IDC_SET_WINDOW_BG, prefs->noDocBgColor);
-            SetColorDlgButtonColor(hDlg, IDC_SET_DOC_BG, prefs->docBgColor);
-            SetColorDlgButtonColor(hDlg, IDC_SET_DOC_TEXT_COLOR, prefs->docTextColor);
+            SetColorDlgButtonColor(hDlg, IDC_START_PAGE_BG, IDC_SET_START_PAGE_BG, prefs->bgColor);
+            SetColorDlgButtonColor(hDlg, IDC_WINDOW_BG, IDC_SET_WINDOW_BG, prefs->noDocBgColor);
+            SetColorDlgButtonColor(hDlg, IDC_DOC_BG, IDC_SET_DOC_BG, prefs->docBgColor);
+            SetColorDlgButtonColor(hDlg, IDC_DOC_TEXT, IDC_SET_DOC_TEXT_COLOR, prefs->docTextColor);
 
             return FALSE;
         }
@@ -985,6 +992,15 @@ static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LP
 
                 UpdateDocumentColors(prefs->docTextColor, prefs->docBgColor);
 
+                HBITMAP hMemBmp = (HBITMAP)GetWindowLongPtr(GetDlgItem(hDlg, IDC_START_PAGE_BG), GWLP_USERDATA);
+                DeleteObject(hMemBmp);
+                hMemBmp = (HBITMAP)GetWindowLongPtr(GetDlgItem(hDlg, IDC_WINDOW_BG), GWLP_USERDATA);
+                DeleteObject(hMemBmp);
+                hMemBmp = (HBITMAP)GetWindowLongPtr(GetDlgItem(hDlg, IDC_DOC_BG), GWLP_USERDATA);
+                DeleteObject(hMemBmp);
+                hMemBmp = (HBITMAP)GetWindowLongPtr(GetDlgItem(hDlg, IDC_DOC_TEXT), GWLP_USERDATA);
+                DeleteObject(hMemBmp);
+
                 return TRUE;
             }
         case IDCANCEL:
@@ -1008,7 +1024,7 @@ static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LP
                 ChooseColor(&color);
                 SetWindowLongPtr(hButton, GWLP_USERDATA, (LONG_PTR)(color.rgbResult + 1));
 
-                SetColorDlgButtonColor(hDlg, LOWORD(wParam), color.rgbResult);
+                SetColorDlgButtonColor(hDlg, NULL, LOWORD(wParam), color.rgbResult);
 
                 return TRUE;
             }
