@@ -111,33 +111,36 @@ LRESULT CALLBACK WndProcSidebarTopCB(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 {
     WindowInfo *win = FindWindowInfoByHwnd(hwnd);
 
+    if (!win || !win->sideBar())
+        return DefWindowProc(hwnd, msg, wParam, lParam);
+
     switch (msg) {
-    case WM_SIZE:
-        SidebarTopOnSize(win->sideBar(), GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-        return 0;
-        break;
+        case WM_SIZE:
+            SidebarTopOnSize(win->sideBar(), GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+            return 0;
+            break;
 
-    case WM_PAINT:
-        SidebarOnPaint(hwnd);
-        return 0;
-        break;
+        case WM_PAINT:
+            SidebarOnPaint(hwnd);
+            return 0;
+            break;
 
-    case WM_COMMAND:
-        if (LOWORD(wParam) == IDC_SIDEBAR_CLOSE_1 && HIWORD(wParam) == STN_CLICKED)
-            ToggleTocBox(win);
-        break;
+        case WM_COMMAND:
+            if (LOWORD(wParam) == IDC_SIDEBAR_CLOSE_1 && HIWORD(wParam) == STN_CLICKED)
+                ToggleTocBox(win);
+            break;
 
-    case WM_DRAWITEM:
-        if (IDC_SIDEBAR_CLOSE_1 == wParam) {
-            DRAWITEMSTRUCT *dis = (DRAWITEMSTRUCT *)lParam;
-            DrawCloseButton(dis);
-            return TRUE;
-        }
-        break;
+        case WM_DRAWITEM:
+            if (IDC_SIDEBAR_CLOSE_1 == wParam) {
+                DRAWITEMSTRUCT *dis = (DRAWITEMSTRUCT *)lParam;
+                DrawCloseButton(dis);
+                return TRUE;
+            }
+            break;
 
-    case WM_ERASEBKGND:
-        return 1;
-        break;
+        case WM_ERASEBKGND:
+            return 1;
+            break;
     }
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
@@ -146,33 +149,36 @@ LRESULT CALLBACK WndProcSidebarBottomCB(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 {
     WindowInfo *win = FindWindowInfoByHwnd(hwnd);
 
+    if (!win || !win->sideBar())
+        return DefWindowProc(hwnd, msg, wParam, lParam);
+
     switch (msg) {
-    case WM_SIZE:
-        SidebarBottomOnSize(win->sideBar(), GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-        return 0;
-        break;
+        case WM_SIZE:
+            SidebarBottomOnSize(win->sideBar(), GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+            return 0;
+            break;
 
-    case WM_PAINT:
-        SidebarOnPaint(hwnd);
-        return 0;
-        break;
+        case WM_PAINT:
+            SidebarOnPaint(hwnd);
+            return 0;
+            break;
 
-    case WM_COMMAND:
-        if (LOWORD(wParam) == IDC_SIDEBAR_CLOSE_2 && HIWORD(wParam) == STN_CLICKED)
-            ToggleFavorites(win);
-        break;
+        case WM_COMMAND:
+            if (LOWORD(wParam) == IDC_SIDEBAR_CLOSE_2 && HIWORD(wParam) == STN_CLICKED)
+                ToggleFavorites(win);
+            break;
 
-    case WM_DRAWITEM:
-        if (IDC_SIDEBAR_CLOSE_2 == wParam) {
-            DRAWITEMSTRUCT *dis = (DRAWITEMSTRUCT *)lParam;
-            DrawCloseButton(dis);
-            return TRUE;
-        }
-        break;
+        case WM_DRAWITEM:
+            if (IDC_SIDEBAR_CLOSE_2 == wParam) {
+                DRAWITEMSTRUCT *dis = (DRAWITEMSTRUCT *)lParam;
+                DrawCloseButton(dis);
+                return TRUE;
+            }
+            break;
 
-    case WM_ERASEBKGND:
-        return 1;
-        break;
+        case WM_ERASEBKGND:
+            return 1;
+            break;
     }
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
@@ -185,19 +191,19 @@ LRESULT CALLBACK WndProcSidebarCB(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
         return DefWindowProc(hwnd, msg, wParam, lParam);
 
     switch (msg) {
-    case WM_SIZE:
-        SidebarOnSize(win->sideBar(), GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-        return 0;
-        break;
+        case WM_SIZE:
+            SidebarOnSize(win->sideBar(), GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+            return 0;
+            break;
 
-    case WM_PAINT:
-        SidebarOnPaint(hwnd);
-        return 0;
-        break;
+        case WM_PAINT:
+            SidebarOnPaint(hwnd);
+            return 0;
+            break;
 
-    case WM_ERASEBKGND:
-        return 1;
-        break;
+        case WM_ERASEBKGND:
+            return 1;
+            break;
     }
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
