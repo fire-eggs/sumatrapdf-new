@@ -4345,9 +4345,18 @@ static void ResizeSidebar(WindowInfo *win)
     assert(MapRectToWindow(rSidebar, win->sideBar()->hwndSidebar, hwndParent).y == sidebar_y);
     //assert(totalDy == (rToc.dy + rFav.dy));
 
-    MoveWindow(win->sideBar()->hwndSidebar, 0, sidebar_y, sidebarDx, sidebarDy, TRUE);
-    MoveWindow(win->sideBar()->hwndSidebarSplitter, sidebarDx, sidebar_y, SPLITTER_DX, sidebarDy, TRUE);
-    MoveWindow(hwnd, sidebarDx + SPLITTER_DX, y, rParent.dx - sidebarDx - SPLITTER_DX, Dy, TRUE);
+    HDWP hdwp = BeginDeferWindowPos(3);
+
+    // Using this reduces flicker.
+    DeferWindowPos(hdwp, win->sideBar()->hwndSidebar, NULL, 0, sidebar_y, sidebarDx, sidebarDy, SWP_NOZORDER);
+    DeferWindowPos(hdwp, win->sideBar()->hwndSidebarSplitter, NULL,  sidebarDx, sidebar_y, SPLITTER_DX, sidebarDy, SWP_NOZORDER);
+    DeferWindowPos(hdwp, hwnd, NULL, sidebarDx + SPLITTER_DX, y, rParent.dx - sidebarDx - SPLITTER_DX, Dy, SWP_NOZORDER);
+
+    //MoveWindow(win->sideBar()->hwndSidebar, 0, sidebar_y, sidebarDx, sidebarDy, TRUE);
+    //MoveWindow(win->sideBar()->hwndSidebarSplitter, sidebarDx, sidebar_y, SPLITTER_DX, sidebarDy, TRUE);
+    //MoveWindow(hwnd, sidebarDx + SPLITTER_DX, y, rParent.dx - sidebarDx - SPLITTER_DX, Dy, TRUE);
+
+    EndDeferWindowPos(hdwp);
 
     InvalidateRect(win->panel->WIN->hwndFrame, NULL, TRUE);
     UpdateWindow(win->panel->WIN->hwndFrame);
@@ -4528,6 +4537,8 @@ static LRESULT CALLBACK WndProcPanelSplitter(HWND hwnd, UINT message,
 
 static void SidebarSplitterOnPaint(HWND hwnd)
 {
+    // Using memDC doesn't solve flicker.
+
     int dx = ClientRect(hwnd).dx;
     int dy = ClientRect(hwnd).dy;
 
@@ -4536,23 +4547,23 @@ static void SidebarSplitterOnPaint(HWND hwnd)
 
     // Interior
     RECT rc;
-    rc.left = 0;
-    rc.right = dx;
-    rc.top = 0;
+    rc.left = 1;
+    rc.right = dx - 1;
+    rc.top = 1;
     rc.bottom = dy;
     FillRect(hdc, &rc, gBrushSidebarSplitterBg);
 
     // Left boundary
     rc.left = 0;
     rc.right = 1;
-    rc.top = 0;
+    rc.top = 1;
     rc.bottom = dy;
     FillRect(hdc, &rc, gBrushSidebarSplitterEdgeBg);
 
     // Right boundary
     rc.left = dx - 1;
     rc.right = dx;
-    rc.top = 0;
+    rc.top = 1;
     rc.bottom = dy;
     FillRect(hdc, &rc, gBrushSidebarSplitterEdgeBg);
 
@@ -4566,8 +4577,7 @@ static void SidebarSplitterOnPaint(HWND hwnd)
     EndPaint(hwnd, &ps);
 }
 
-static LRESULT CALLBACK WndProcSidebarSplitter(HWND hwnd, UINT message,
-                                               WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK WndProcSidebarSplitter(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     WindowInfo *win = FindWindowInfoByHwnd(hwnd);
     if (!win)
