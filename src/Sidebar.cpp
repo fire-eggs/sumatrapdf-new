@@ -30,14 +30,23 @@ void SidebarTopOnSize(SidebarInfo *sideBar, int dx, int dy)
     TopWindowInfo *WIN = FindTopWindowInfoByHwnd(sideBar->hwndSidebarTop);
     assert(WIN);
     int offset = WIN ? (int)(2 * WIN->uiDPIFactor) : 2;
+    int offset_extra_for_top_boundary = 1;
+    int offset_extra = 1;
+
     if (size.dy < 16)
         size.dy = 16;
-    size.dy += 2 * offset;
+
+    int title_y = offset_extra_for_top_boundary + offset_extra + offset;
+    int title_dy = size.dy;
+
+    int close_y = title_y + (title_dy - 16) / 2;
+
+    size.dy = title_y + title_dy + offset;
 
     HDWP hdwp = BeginDeferWindowPos(3);
 
-    DeferWindowPos(hdwp, hwndTitle, NULL, offset, offset, dx - offset - 16, size.dy - 2 * offset, NULL);
-    DeferWindowPos(hdwp, hwndClose, NULL, dx - 16, (size.dy - 16) / 2, 16, 16, NULL);
+    DeferWindowPos(hdwp, hwndTitle, NULL, offset, title_y, dx - offset - 16, title_dy, NULL);
+    DeferWindowPos(hdwp, hwndClose, NULL, dx - 16, close_y, 16, 16, NULL);
     DeferWindowPos(hdwp, sideBar->hwndTocBox, NULL, 0 , size.dy, dx, dy - size.dy, NULL);
 
     EndDeferWindowPos(hdwp);
@@ -54,14 +63,23 @@ void SidebarBottomOnSize(SidebarInfo *sideBar, int dx, int dy)
     TopWindowInfo *WIN = FindTopWindowInfoByHwnd(sideBar->hwndSidebarBottom);
     assert(WIN);
     int offset = WIN ? (int)(2 * WIN->uiDPIFactor) : 2;
+    int offset_extra_for_top_boundary = 1;
+    int offset_extra = 1;
+
     if (size.dy < 16)
         size.dy = 16;
-    size.dy += 2 * offset;
+
+    int title_y = offset_extra_for_top_boundary + offset_extra + offset;
+    int title_dy = size.dy;
+
+    int close_y = title_y + (title_dy - 16) / 2;
+
+    size.dy = title_y + title_dy + offset;
 
     HDWP hdwp = BeginDeferWindowPos(3);
 
-    DeferWindowPos(hdwp, hwndTitle, NULL, offset, offset, dx - offset - 16, size.dy - 2 * offset, NULL);
-    DeferWindowPos(hdwp, hwndClose, NULL, dx - 16, (size.dy - 16) / 2, 16, 16, NULL);
+    DeferWindowPos(hdwp, hwndTitle, NULL, offset, title_y, dx - offset - 16, title_dy, NULL);
+    DeferWindowPos(hdwp, hwndClose, NULL, dx - 16, close_y, 16, 16, NULL);
     DeferWindowPos(hdwp, sideBar->hwndFavBox, NULL, 0 , size.dy, dx, dy - size.dy, NULL);
 
     EndDeferWindowPos(hdwp);
