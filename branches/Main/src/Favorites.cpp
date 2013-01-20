@@ -361,7 +361,7 @@ void ToggleFavorites(WindowInfo *win)
         SetSidebarVisibility(win, win->tocVisible, false);
     } else {
         SetSidebarVisibility(win, win->tocVisible, true);
-        SetFocus(win->hwndFavTree);
+        SetFocus(win->sideBar()->hwndFavTree);
     }
 }
 
@@ -503,7 +503,7 @@ static HTREEITEM InsertFavTopLevelNode(HWND hwnd, FileFavs *fav, bool isExpanded
 
 void PopulateFavTreeIfNeeded(WindowInfo *win)
 {
-    HWND hwndTree = win->hwndFavTree;
+    HWND hwndTree = win->sideBar()->hwndFavTree;
     if (TreeView_GetCount(hwndTree) > 0)
         return;
 
@@ -526,7 +526,7 @@ void PopulateFavTreeIfNeeded(WindowInfo *win)
 
 static void UpdateFavoritesTreeIfNecessary(WindowInfo *win)
 {
-    HWND hwndTree = win->hwndFavTree;
+    HWND hwndTree = win->sideBar()->hwndFavTree;
     if (0 == TreeView_GetCount(hwndTree))
         return;
 
@@ -607,23 +607,23 @@ void DelFavorite(WindowInfo *win)
 void RememberFavTreeExpansionState(WindowInfo *win)
 {
     FreeVecMembers(win->expandedFavorites);
-    HTREEITEM treeItem = TreeView_GetRoot(win->hwndFavTree);
+    HTREEITEM treeItem = TreeView_GetRoot(win->sideBar()->hwndFavTree);
     while (treeItem) {
         TVITEM item;
         item.hItem = treeItem;
         item.mask = TVIF_PARAM | TVIF_STATE;
         item.stateMask = TVIS_EXPANDED;
-        TreeView_GetItem(win->hwndFavTree, &item);
+        TreeView_GetItem(win->sideBar()->hwndFavTree, &item);
         if ((item.state & TVIS_EXPANDED) != 0) {
-            item.hItem = TreeView_GetChild(win->hwndFavTree, treeItem);
+            item.hItem = TreeView_GetChild(win->sideBar()->hwndFavTree, treeItem);
             item.mask = TVIF_PARAM;
-            TreeView_GetItem(win->hwndFavTree, &item);
+            TreeView_GetItem(win->sideBar()->hwndFavTree, &item);
             FavName *fn = (FavName*)item.lParam;
             FileFavs *f = gFavorites->GetByFavName(fn);
             win->expandedFavorites.Append(str::Dup(f->filePath));
         }
 
-        treeItem = TreeView_GetNextSibling(win->hwndFavTree, treeItem);
+        treeItem = TreeView_GetNextSibling(win->sideBar()->hwndFavTree, treeItem);
     }
 }
 
@@ -682,38 +682,38 @@ static void OnFavTreeContextMenu(WindowInfo *win, PointI pt)
         ht.pt.x = pt.x;
         ht.pt.y = pt.y;
 
-        MapWindowPoints(HWND_DESKTOP, win->hwndFavTree, &ht.pt, 1);
-        TreeView_HitTest(win->hwndFavTree, &ht);
+        MapWindowPoints(HWND_DESKTOP, win->sideBar()->hwndFavTree, &ht.pt, 1);
+        TreeView_HitTest(win->sideBar()->hwndFavTree, &ht);
         if ((ht.flags & TVHT_ONITEM) == 0)
             return; // only display menu if over a node in tree
 
-        TreeView_SelectItem(win->hwndFavTree, ht.hItem);
+        TreeView_SelectItem(win->sideBar()->hwndFavTree, ht.hItem);
         item.hItem = ht.hItem;
     }
     else {
-        item.hItem = TreeView_GetSelection(win->hwndFavTree);
+        item.hItem = TreeView_GetSelection(win->sideBar()->hwndFavTree);
         if (!item.hItem)
             return;
         RECT rcItem;
-        if (TreeView_GetItemRect(win->hwndFavTree, item.hItem, &rcItem, TRUE)) {
-            MapWindowPoints(win->hwndFavTree, HWND_DESKTOP, (POINT *)&rcItem, 2);
+        if (TreeView_GetItemRect(win->sideBar()->hwndFavTree, item.hItem, &rcItem, TRUE)) {
+            MapWindowPoints(win->sideBar()->hwndFavTree, HWND_DESKTOP, (POINT *)&rcItem, 2);
             pt.x = rcItem.left;
             pt.y = rcItem.bottom;
         }
         else {
-            WindowRect rc(win->hwndFavTree);
+            WindowRect rc(win->sideBar()->hwndFavTree);
             pt = rc.TL();
         }
     }
 
     item.mask = TVIF_PARAM;
-    TreeView_GetItem(win->hwndFavTree, &item);
+    TreeView_GetItem(win->sideBar()->hwndFavTree, &item);
     FavName *toDelete = (FavName *)item.lParam;
 
     HMENU popup = BuildMenuFromMenuDef(menuDefFavContext, dimof(menuDefFavContext), CreatePopupMenu());
 
     INT cmd = TrackPopupMenu(popup, TPM_RETURNCMD | TPM_RIGHTBUTTON,
-                             pt.x, pt.y, 0, win->hwndFavTree, NULL);
+                             pt.x, pt.y, 0, win->sideBar()->hwndFavTree, NULL);
     DestroyMenu(popup);
     if (IDM_FAV_DEL == cmd) {
         RememberFavTreeExpansionStateForAllWindows();
@@ -722,9 +722,9 @@ static void OnFavTreeContextMenu(WindowInfo *win, PointI pt)
             gFavorites->Remove(f->filePath, toDelete->pageNo);
         } else {
             // toDelete == NULL => this is a parent node signifying all bookmarks in a file
-            item.hItem = TreeView_GetChild(win->hwndFavTree, item.hItem);
+            item.hItem = TreeView_GetChild(win->sideBar()->hwndFavTree, item.hItem);
             item.mask = TVIF_PARAM;
-            TreeView_GetItem(win->hwndFavTree, &item);
+            TreeView_GetItem(win->sideBar()->hwndFavTree, &item);
             toDelete = (FavName*)item.lParam;
             FileFavs *f = gFavorites->GetByFavName(toDelete);
             gFavorites->RemoveAllForFile(f->filePath);
@@ -759,7 +759,7 @@ static LRESULT CALLBACK WndProcFavTree(HWND hwnd, UINT msg, WPARAM wParam, LPARA
         case WM_MOUSEWHEEL:
         case WM_MOUSEHWHEEL:
             // scroll the canvas if the cursor isn't over the ToC tree
-            if (!IsCursorOverWindow(win->hwndFavTree))
+            if (!IsCursorOverWindow(win->sideBar()->hwndFavTree))
                 return SendMessage(win->hwndCanvas, msg, wParam, lParam);
             break;
     }
