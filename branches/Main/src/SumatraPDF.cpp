@@ -4393,9 +4393,16 @@ static void ResizeFav(WindowInfo *win)
     int bottomDy = totalDy - topDy - SPLITTER_DY;
     assert(bottomDy >= 0);
 
-    MoveWindow(win->sideBar()->hwndSidebarTop, 0, 0, topDx, topDy, TRUE);
-    MoveWindow(win->sideBar()->hwndFavSplitter, 0, topDy, topDx, SPLITTER_DY, TRUE);
-    MoveWindow(win->sideBar()->hwndSidebarBottom, 0, topDy + SPLITTER_DY, topDx, bottomDy, TRUE);
+    HDWP hdwp = BeginDeferWindowPos(3);
+
+    DeferWindowPos(hdwp, win->sideBar()->hwndSidebarTop, NULL, 0, 0, topDx, topDy, SWP_NOZORDER);
+    DeferWindowPos(hdwp, win->sideBar()->hwndFavSplitter, NULL, 0, topDy, topDx, SPLITTER_DY, SWP_NOZORDER);
+    DeferWindowPos(hdwp, win->sideBar()->hwndSidebarBottom, NULL, 0, topDy + SPLITTER_DY, topDx, bottomDy, SWP_NOZORDER);
+
+    EndDeferWindowPos(hdwp);
+
+    //InvalidateRect(win->panel->WIN->hwndFrame, NULL, TRUE);
+    //UpdateWindow(win->panel->WIN->hwndFrame);
 
     gGlobalPrefs.tocDy = topDy;
 }
@@ -4759,9 +4766,15 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible)
     // limitValue() blows up with an assert() if frame.dx / 2 < SIDEBAR_MIN_WIDTH
     sidebarDx = limitValue(sidebarDx, SIDEBAR_MIN_WIDTH, rParentForSidebar.dx / 2);
 
-    SetWindowPos(win->sideBar()->hwndSidebar, NULL, 0, sidebar_y, sidebarDx, sidebar_Dy, SWP_NOZORDER);
-    SetWindowPos(win->sideBar()->hwndSidebarSplitter, NULL, sidebarDx, sidebar_y, SPLITTER_DX, sidebar_Dy, SWP_NOZORDER);
-    SetWindowPos(hwnd, NULL, sidebarDx + SPLITTER_DX, y, rParentForSidebar.dx - sidebarDx - SPLITTER_DX, Dy,  SWP_NOZORDER);
+    HDWP hdwp = BeginDeferWindowPos(3);
+
+    DeferWindowPos(hdwp, win->sideBar()->hwndSidebar, NULL, 0, sidebar_y, sidebarDx, sidebar_Dy, SWP_NOZORDER);
+    DeferWindowPos(hdwp, win->sideBar()->hwndSidebarSplitter, NULL, sidebarDx, sidebar_y, SPLITTER_DX, sidebar_Dy, SWP_NOZORDER);
+    DeferWindowPos(hdwp, hwnd, NULL, sidebarDx + SPLITTER_DX, y, rParentForSidebar.dx - sidebarDx - SPLITTER_DX, Dy,  SWP_NOZORDER);
+
+    EndDeferWindowPos(hdwp);
+
+    ShowWindow(win->sideBar()->hwndSidebar, SW_SHOW);
 }
 
 void SplitPanel(ContainerInfo *container, WCHAR const *direction)
