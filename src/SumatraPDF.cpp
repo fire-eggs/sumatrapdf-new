@@ -709,10 +709,10 @@ static void UpdateWindowRtlLayout(WindowInfo *win)
     HWND tocBoxTitle = GetDlgItem(win->sideBar()->hwndTocBox, IDC_TOC_TITLE);
     ToggleWindowStyle(tocBoxTitle, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
 
-    ToggleWindowStyle(win->hwndFavBox, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
-    HWND favBoxTitle = GetDlgItem(win->hwndFavBox, IDC_FAV_TITLE);
+    ToggleWindowStyle(win->sideBar()->hwndFavBox, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
+    HWND favBoxTitle = GetDlgItem(win->sideBar()->hwndFavBox, IDC_FAV_TITLE);
     ToggleWindowStyle(favBoxTitle, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
-    ToggleWindowStyle(win->hwndFavTree, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
+    ToggleWindowStyle(win->sideBar()->hwndFavTree, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
 
     ToggleWindowStyle(toolBar->hwndReBar, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
     ToggleWindowStyle(toolBar->hwndToolbar, WS_EX_LAYOUTRTL | WS_EX_NOINHERITLAYOUT, isRTL, GWL_EXSTYLE);
@@ -731,7 +731,7 @@ static void UpdateWindowRtlLayout(WindowInfo *win)
         if (tocVisible)
             SendMessage(win->sideBar()->hwndTocBox, WM_SIZE, 0, 0);
         if (gGlobalPrefs.favVisible)
-            SendMessage(win->hwndFavBox, WM_SIZE, 0, 0);
+            SendMessage(win->sideBar()->hwndFavBox, WM_SIZE, 0, 0);
     }
 }
 
@@ -3893,7 +3893,7 @@ void AdvanceFocus(WindowInfo* win)
         { win->toolBar()->hwndPageBox, hasToolbar                          },
         { win->toolBar()->hwndFindBox, hasToolbar && NeedsFindUI(win)      },
         { win->sideBar()->hwndTocTree, win->tocLoaded && win->tocVisible   },
-        { win->hwndFavTree, gGlobalPrefs.favVisible             },
+        { win->sideBar()->hwndFavTree, gGlobalPrefs.favVisible             },
     };
 
     /* // make sure that at least one element is available
