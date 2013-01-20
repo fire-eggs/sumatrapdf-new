@@ -3552,23 +3552,36 @@ static void FrameOnSize(WindowInfo* win, int dx, int dy)
 
     int rebBarDy = 0;
     if (!gGlobalPrefs.toolbarForEachPanel && gGlobalPrefs.toolbarVisible && !(win->presentation || win->fullScreen)) {
-        SetWindowPos(win->toolBar()->hwndReBar, NULL, 0, 0, dx, 0, SWP_NOZORDER);
+        SetWindowPos(win->toolBar()->hwndReBar, NULL, 0, 0, dx, 0, SWP_NOZORDER); // win->toolBar() is not null, see CreateWindowInfo.
         rebBarDy = WindowRect(win->toolBar()->hwndReBar).dy;
     }
 
-    bool tocVisible = win->tocLoaded && win->tocVisible;
-    if (tocVisible || gGlobalPrefs.favVisible)
-        SetSidebarVisibility(win, tocVisible, gGlobalPrefs.favVisible);
-    else {
-        if (gGlobalPrefs.toolbarForEachPanel) { // The top container fills the client area of hwndFrame.
-            // SetWindowPos(win->panel->WIN->gContainer.At(0)->hwndContainer, NULL, 0, 0, dx, dy, SWP_NOZORDER);
-            SetWindowPos(win->panel->WIN->gContainer.At(0)->hwndContainer, NULL, 0, rebBarDy, dx, dy - rebBarDy, SWP_NOZORDER);
-            // We should not use this. This is a bad solution to ensure that containers are resized.
-            // SendMessage(win->panel->WIN->gContainer.At(0)->hwndContainer, WM_SIZE, NULL, MAKELPARAM(dx, dy - rebBarDy));
-        } else { // On should combine this with above, but now we separate them for clearness.
-            SetWindowPos(win->panel->WIN->gContainer.At(0)->hwndContainer, NULL, 0, rebBarDy, dx, dy - rebBarDy, SWP_NOZORDER);
+    // If using only one sidebar, which is a child of hwndFrame,
+    if (!gGlobalPrefs.sidebarForEachPanel) {
+
+        bool tocVisible = false;
+
+        // show sidebar if one of the gPanel.At(i)->win's toc is visible.
+        TopWindowInfo *WIN = win->panel->WIN;
+
+        for (size_t i = 0; i < WIN->gPanel.Count(); i++) {
+            PanelInfo *panel = WIN->gPanel.At(i);
+            if (panel->win->IsDocLoaded() && panel->win->tocVisible) {
+                tocVisible = true;
+                break;
+            }
+        }
+
+        if (tocVisible || gGlobalPrefs.favVisible) {
+            SetSidebarVisibility(win, tocVisible, gGlobalPrefs.favVisible);
+            return;
         }
     }
+
+    if (gGlobalPrefs.toolbarForEachPanel) // The top container fills the client area of hwndFrame.
+        SetWindowPos(win->panel->WIN->container->hwndContainer, NULL, 0, rebBarDy, dx, dy - rebBarDy, SWP_NOZORDER); // SetWindowPos(win->panel->WIN->gContainer.At(0)->hwndContainer, NULL, 0, 0, dx, dy, SWP_NOZORDER);
+    else // One should combine this with above, but now we separate them for clearness.
+        SetWindowPos(win->panel->WIN->container->hwndContainer, NULL, 0, rebBarDy, dx, dy - rebBarDy, SWP_NOZORDER);
 
     if (win->presentation || win->fullScreen) {
         RectI fullscreen = GetFullscreenRect(win->hwndFrame);
@@ -4310,20 +4323,31 @@ static void ResizeSidebar(WindowInfo *win)
 
     SetCursor(gCursorSizeWE);
 
-    int y = 0;
-    int totalDy = rParent.dy;
+    int toolbarDy = 0;
+    int tabControlDy = 0;
+
     if (gGlobalPrefs.toolbarVisible && (gGlobalPrefs.toolbarForEachPanel == gGlobalPrefs.sidebarForEachPanel) && !win->fullScreen && !win->presentation)
-        y = WindowRect(win->toolBar()->hwndReBar).dy;
-    totalDy -= y;
+        toolbarDy = WindowRect(win->toolBar()->hwndReBar).dy;
+
+    if (gGlobalPrefs.sidebarForEachPanel)
+        tabControlDy = TAB_CONTROL_DY;
+
+    int sidebar_y = toolbarDy + tabControlDy;
+
+    int y = 0;
+    y += gGlobalPrefs.sidebarForEachPanel ? sidebar_y + 1 : sidebar_y;
+    
+    int sidebarDy = rParent.dy - sidebar_y;
+    int Dy = rParent.dy - y;
 
     // rToc.y is always 0, as rToc is a ClientRect, so we first have
     // to convert it into coordinates relative to hwndFrame:
-    assert(MapRectToWindow(rSidebar, win->sideBar()->hwndSidebar, hwndParent).y == y);
+    assert(MapRectToWindow(rSidebar, win->sideBar()->hwndSidebar, hwndParent).y == sidebar_y);
     //assert(totalDy == (rToc.dy + rFav.dy));
 
-    MoveWindow(win->sideBar()->hwndSidebar, 0, y, sidebarDx, totalDy, TRUE);
-    MoveWindow(win->sideBar()->hwndSidebarSplitter, sidebarDx, y, SPLITTER_DX, totalDy, TRUE);
-    MoveWindow(hwnd, sidebarDx + SPLITTER_DX, y, rParent.dx - sidebarDx - SPLITTER_DX, totalDy, TRUE);
+    MoveWindow(win->sideBar()->hwndSidebar, 0, sidebar_y, sidebarDx, sidebarDy, TRUE);
+    MoveWindow(win->sideBar()->hwndSidebarSplitter, sidebarDx, sidebar_y, SPLITTER_DX, sidebarDy, TRUE);
+    MoveWindow(hwnd, sidebarDx + SPLITTER_DX, y, rParent.dx - sidebarDx - SPLITTER_DX, Dy, TRUE);
 
     InvalidateRect(win->panel->WIN->hwndFrame, NULL, TRUE);
     UpdateWindow(win->panel->WIN->hwndFrame);
@@ -4510,6 +4534,7 @@ static void SidebarSplitterOnPaint(HWND hwnd)
     PAINTSTRUCT ps;
     HDC hdc = BeginPaint(hwnd, &ps);
 
+    // Interior
     RECT rc;
     rc.left = 0;
     rc.right = dx;
@@ -4517,17 +4542,26 @@ static void SidebarSplitterOnPaint(HWND hwnd)
     rc.bottom = dy;
     FillRect(hdc, &rc, gBrushSidebarSplitterBg);
 
+    // Left boundary
     rc.left = 0;
     rc.right = 1;
     rc.top = 0;
     rc.bottom = dy;
     FillRect(hdc, &rc, gBrushSidebarSplitterEdgeBg);
 
+    // Right boundary
     rc.left = dx - 1;
     rc.right = dx;
     rc.top = 0;
     rc.bottom = dy;
     FillRect(hdc, &rc, gBrushSidebarSplitterEdgeBg);
+
+    // Top boundary
+    rc.left = 0;
+    rc.right = dx;
+    rc.top = 0;
+    rc.bottom = 1;
+    FillRect(hdc, &rc, gBrushNoDocBg);
 
     EndPaint(hwnd, &ps);
 }
@@ -4621,85 +4655,103 @@ static void SetWinPos(HWND hwnd, RectI r, bool isVisible)
 
 void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible)
 {
-    //if (gPluginMode || !HasPermission(Perm_DiskAccess))
-    //    favVisible = false;
+    if (gPluginMode || !HasPermission(Perm_DiskAccess))
+        favVisible = false;
 
-    //if (!win->IsDocLoaded() || !win->dm->HasTocTree())
-    //    tocVisible = false;
+    if (!win->IsDocLoaded() || !win->dm->HasTocTree())
+        tocVisible = false;
 
-    //if (PM_BLACK_SCREEN == win->presentation || PM_WHITE_SCREEN == win->presentation) {
-    //    tocVisible = false;
-    //    favVisible = false;
-    //}
+    if (PM_BLACK_SCREEN == win->presentation || PM_WHITE_SCREEN == win->presentation) {
+        tocVisible = false;
+        favVisible = false;
+    }
 
-    //bool sidebarVisible = tocVisible || favVisible;
+    if (tocVisible)
+        LoadTocTree(win);
+    if (favVisible)
+        PopulateFavTreeIfNeeded(win);
 
-    //if (tocVisible)
-    LoadTocTree(win);
-    //if (favVisible)
-    //    PopulateFavTreeIfNeeded(win);
+    win->tocVisible = tocVisible;
+    gGlobalPrefs.favVisible = favVisible;
 
-    //win->tocVisible = tocVisible;
-    //gGlobalPrefs.favVisible = favVisible;
+    bool sidebarVisible = tocVisible || favVisible;
 
     TopWindowInfo *WIN = FindTopWindowInfoByHwnd(win->hwndCanvas);
 
+    // If using only one sidebar, which is a child of hwndFrame.
+    if (!gGlobalPrefs.sidebarForEachPanel) {
+        for (size_t i = 0; i < WIN->gPanel.Count(); i++) {
+            PanelInfo *panel = WIN->gPanel.At(i);
+            if (panel->win->IsDocLoaded() && panel->win->tocVisible)
+                sidebarVisible = true;
+        }
+    }
+
+    // Determine the geometry of the toolbar and the tab control.
     int toolbarDy = 0;
+    int tabControlDy = 0;
+
     if (gGlobalPrefs.toolbarVisible && (gGlobalPrefs.toolbarForEachPanel == gGlobalPrefs.sidebarForEachPanel) && !win->fullScreen && !win->presentation)
         toolbarDy = WindowRect(win->toolBar()->hwndReBar).dy;
-    
-    HWND hwndParent = win->panel->WIN->hwndFrame;
+
+    if (gGlobalPrefs.sidebarForEachPanel)
+        tabControlDy = TAB_CONTROL_DY;
+
+    HWND hwndParentForToolbar = win->panel->WIN->hwndFrame;
     if (gGlobalPrefs.toolbarForEachPanel)
-        hwndParent = win->panel->hwndPanel; 
+        hwndParentForToolbar = win->panel->hwndPanel;
 
-    ClientRect rParent(hwndParent);
+    HWND hwndParentForSidebar = win->panel->WIN->hwndFrame;
+    if (gGlobalPrefs.sidebarForEachPanel)
+        hwndParentForSidebar = win->panel->hwndPanel;
 
-    int sidebarDy = rParent.dy - toolbarDy;
+    HWND hwnd = WIN->container->hwndContainer;
+    if (gGlobalPrefs.sidebarForEachPanel)
+        hwnd = win->hwndCanvas;
 
-    //if (!sidebarVisible) {
-    //    if (GetFocus() == win->sideBar()->hwndTocTree || GetFocus() == win->hwndFavTree)
-    //        SetFocus(win->hwndFrame);
+    ClientRect rParentForToolbar(hwndParentForToolbar);
+    ClientRect rParentForSidebar(hwndParentForSidebar);
 
-    //    SetWindowPos(win->hwndCanvas, NULL, 0, toolbarDy, rFrame.dx, dy, SWP_NOZORDER);
-    //    ShowWindow(win->hwndSidebarSplitter, SW_HIDE);
-    //    ShowWindow(win->sideBar()->hwndTocBox, SW_HIDE);
-    //    ShowWindow(win->hwndFavSplitter, SW_HIDE);
-    //    ShowWindow(win->hwndFavBox, SW_HIDE);
-    //    return;
-    //}
+    int y;
+    int sidebar_y = y = toolbarDy + tabControlDy;
+    if (gGlobalPrefs.sidebarForEachPanel)
+        y++;
 
-    //if (rFrame.IsEmpty()) {
-    //    // don't adjust the ToC sidebar size while the window is minimized
-    //    if (win->tocVisible)
-    //        UpdateTocSelection(win, win->dm->CurrentPageNo());
-    //    return;
-    //}
+    int sidebar_Dy = rParentForToolbar.dy - sidebar_y;
+    int Dy = rParentForToolbar.dy - y;
 
-    int y = toolbarDy;
+    if (!sidebarVisible) {
+        if (GetFocus() == win->sideBar()->hwndTocTree || GetFocus() == win->sideBar()->hwndFavTree)
+            SetFocus(win->panel->WIN->hwndFrame);
+
+        SetWindowPos(hwnd, NULL, 0, y, rParentForSidebar.dx, Dy, SWP_NOZORDER);
+        ShowWindow(win->sideBar()->hwndSidebar, SW_HIDE);
+        return;
+    }
+
+    if (!gGlobalPrefs.sidebarForEachPanel && rParentForSidebar.IsEmpty()) {
+        // don't adjust the ToC sidebar size while the window is minimized
+        if (win->sideBar()->tocVisible)
+            UpdateTocSelection(win, win->dm->CurrentPageNo());
+        return;
+    }
+
     ClientRect sidebarRc(win->sideBar()->hwndSidebar);
     int sidebarDx = sidebarRc.dx;
     if (sidebarDx == 0) {
         // TODO: use saved panelDx from saved preferences
-        sidebarDx = rParent.dx / 4;
+        sidebarDx = rParentForSidebar.dx / 4;
     }
 
     // make sure that the sidebar is never too wide or too narrow
     // (when changing these values, also adjust ResizeSidebar() and ResizeFav())
     // TODO: we should also limit minimum size of the frame or else
     // limitValue() blows up with an assert() if frame.dx / 2 < SIDEBAR_MIN_WIDTH
-    sidebarDx = limitValue(sidebarDx, SIDEBAR_MIN_WIDTH, rParent.dx / 2);
+    sidebarDx = limitValue(sidebarDx, SIDEBAR_MIN_WIDTH, rParentForSidebar.dx / 2);
 
-    HWND hwnd = win->panel->container->hwndContainer;
-    if (gGlobalPrefs.sidebarForEachPanel)
-        hwnd = win->hwndCanvas;
-
-    SetWindowPos(win->sideBar()->hwndSidebar, NULL, 0, y, sidebarDx, sidebarDy, SWP_NOZORDER);
-    SetWindowPos(win->sideBar()->hwndSidebarSplitter, NULL, sidebarDx, y, SPLITTER_DX, sidebarDy, SWP_NOZORDER);
-
-    if (gGlobalPrefs.sidebarForEachPanel || GetParent(hwnd) == hwndParent)
-        SetWindowPos(hwnd, NULL, sidebarDx + SPLITTER_DX, y, rParent.dx - sidebarDx - SPLITTER_DX, sidebarDy,  SWP_NOZORDER);
-    else
-        SetWindowPos(WIN->container->hwndContainer, NULL, sidebarDx + SPLITTER_DX, y, rParent.dx - sidebarDx - SPLITTER_DX, sidebarDy,  SWP_NOZORDER);
+    SetWindowPos(win->sideBar()->hwndSidebar, NULL, 0, sidebar_y, sidebarDx, sidebar_Dy, SWP_NOZORDER);
+    SetWindowPos(win->sideBar()->hwndSidebarSplitter, NULL, sidebarDx, sidebar_y, SPLITTER_DX, sidebar_Dy, SWP_NOZORDER);
+    SetWindowPos(hwnd, NULL, sidebarDx + SPLITTER_DX, y, rParentForSidebar.dx - sidebarDx - SPLITTER_DX, Dy,  SWP_NOZORDER);
 }
 
 void SplitPanel(ContainerInfo *container, WCHAR const *direction)
@@ -5162,23 +5214,21 @@ static void PanelOnSize(PanelInfo* panel, int dx, int dy)
         rebBarDy = WindowRect(panel->toolBar->hwndReBar).dy;
     }
 
-    bool tocVisible = panel->win->tocLoaded && panel->win->tocVisible;
-    if (tocVisible || gGlobalPrefs.favVisible)
-        SetSidebarVisibility(panel->win, tocVisible, gGlobalPrefs.favVisible);
-    else {
-        HDWP hwdp = BeginDeferWindowPos(2);
+    SetWindowPos(panel->hwndTab, NULL, 0, rebBarDy, dx, TAB_CONTROL_DY, SWP_NOZORDER);
 
-        if (gGlobalPrefs.toolbarForEachPanel) {
-            DeferWindowPos(hwdp, panel->hwndTab, NULL, 0, rebBarDy, dx, TAB_CONTROL_DY, SWP_NOZORDER);
-            DeferWindowPos(hwdp, panel->win->hwndCanvas, NULL, 0, rebBarDy + TAB_CONTROL_DY + 1, dx, dy - rebBarDy - TAB_CONTROL_DY - 1, SWP_NOZORDER);
-        } else {
-            //SetWindowPos(win->panel->WIN->gContainer.At(0)->hwndContainer, NULL, 0, 0, dx, dy, SWP_NOZORDER);
-            DeferWindowPos(hwdp, panel->hwndTab, NULL, 0, rebBarDy, dx, TAB_CONTROL_DY, SWP_NOZORDER);
-            DeferWindowPos(hwdp, panel->win->hwndCanvas, NULL, 0, rebBarDy + TAB_CONTROL_DY + 1, dx, dy - rebBarDy - TAB_CONTROL_DY - 1, SWP_NOZORDER);
+    if (gGlobalPrefs.sidebarForEachPanel) {
+
+        bool tocVisible = panel->win->tocLoaded && panel->win->tocVisible;
+        if (tocVisible || gGlobalPrefs.favVisible) {
+            SetSidebarVisibility(panel->win, tocVisible, gGlobalPrefs.favVisible);
+            return;
         }
-        
-        EndDeferWindowPos(hwdp);
     }
+
+    if (gGlobalPrefs.toolbarForEachPanel)
+        SetWindowPos(panel->win->hwndCanvas, NULL, 0, rebBarDy + TAB_CONTROL_DY + 1, dx, dy - rebBarDy - TAB_CONTROL_DY - 1, SWP_NOZORDER);
+    else
+        SetWindowPos(panel->win->hwndCanvas, NULL, 0, rebBarDy + TAB_CONTROL_DY + 1, dx, dy - rebBarDy - TAB_CONTROL_DY - 1, SWP_NOZORDER);
 }
 
 static void ContainerOnPaint(ContainerInfo& container)
