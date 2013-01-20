@@ -4307,7 +4307,9 @@ static void ResizeSidebar(WindowInfo *win)
 
     POINT pcur;
     GetCursorPosInHwnd(hwndParent, pcur);
-    int sidebarDx = pcur.x; // without splitter
+    int sidebarDx = pcur.x - (SPLITTER_DX - 1) / 2; // without splitter
+
+
 
     ClientRect rSidebar(win->sideBar()->hwndSidebar);
     ClientRect rParent(hwndParent);
@@ -4368,7 +4370,7 @@ static void ResizeFav(WindowInfo *win)
 {
     POINT pcur;
     GetCursorPosInHwnd(win->sideBar()->hwndSidebar, pcur);
-    int topDy = pcur.y; // without splitter
+    int topDy = pcur.y - (SPLITTER_DY - 1) / 2; // without splitter
 
     ClientRect rTop(win->sideBar()->hwndSidebarTop);
     ClientRect rBottom(win->sideBar()->hwndSidebarBottom);
