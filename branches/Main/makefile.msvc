@@ -11,6 +11,11 @@
 #WITH_ANALYZE=yes
 #   use /analyze for all code
 
+# Set default platform
+!if "$(PLATFORM)"==""
+PLATFORM=X86
+!endif
+
 # Set default configuration
 !if "$(CFG)"==""
 CFG=dbg
