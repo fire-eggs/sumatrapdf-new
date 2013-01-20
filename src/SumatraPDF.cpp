@@ -4418,9 +4418,15 @@ static void FavSplitterOnPaint(HWND hwnd)
     RECT rc;
     rc.left = 0;
     rc.right = dx;
-    rc.top = 0;
+    rc.top = 1;
     rc.bottom = dy;
     FillRect(hdc, &rc, gBrushSidebarSplitterBg);
+
+    rc.left = 0;
+    rc.right = dx;
+    rc.top = 0;
+    rc.bottom = 1;
+    FillRect(hdc, &rc, gBrushSidebarSplitterEdgeBg);
 
     EndPaint(hwnd, &ps);
 }
