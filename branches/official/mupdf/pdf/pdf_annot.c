@@ -908,7 +908,7 @@ pdf_create_markup_annot(pdf_document *xref, pdf_obj *obj, char *type)
 		fz_buffer_printf(ctx, content, "q %.4f %.4f %.4f RG 1 0 0 1 -%.4f -%.4f cm 0.5 w ",
 			rgb[0], rgb[1], rgb[2], rect.x0, rect.y0);
 		if (!strcmp(type, "Squiggly"))
-			fz_buffer_printf(ctx, content, "[1 1] d ");
+			fz_buffer_printf(ctx, content, "[1] 1.5 d ");
 		for (i = 0, n = pdf_array_len(quad_points) / 8; i < n; i++)
 		{
 			pdf_get_quadrilaterals(quad_points, i, &a, &b);
@@ -917,6 +917,8 @@ pdf_create_markup_annot(pdf_document *xref, pdf_obj *obj, char *type)
 					(a.x0 + b.x0) / 2, (a.y0 + b.y0) / 2, (a.x1 + b.x1) / 2, (a.y1 + b.y1) / 2);
 			else
 				fz_buffer_printf(ctx, content, "%.4f %.4f m %.4f %.4f l ", b.x0, b.y0, a.x1, a.y1);
+			if (!strcmp(type, "Squiggly"))
+				fz_buffer_printf(ctx, content, "S [1] 0.5 d %.4f %.4f m %.4f %.4f l ", b.x0, b.y0 + 0.5f, a.x1, a.y1 + 0.5f);
 		}
 		fz_buffer_printf(ctx, content, "S Q");
 	}
@@ -1421,7 +1423,7 @@ pdf_load_annots(pdf_document *xref, pdf_obj *annots, fz_matrix page_ctm)
 		/* SumatraPDF: synthesize appearance streams for a few more annotations */
 		/* cf. http://bugs.ghostscript.com/show_bug.cgi?id=692078 */
 		if ((annot = pdf_update_tx_widget_annot(xref, obj)) ||
-			!pdf_is_dict(pdf_dict_gets(obj, "AP")) && (annot = pdf_create_annot_with_appearance(xref, obj)))
+			!pdf_is_dict(pdf_dict_getp(obj, "AP/N")) && (annot = pdf_create_annot_with_appearance(xref, obj)))
 		{
 			if (!head)
 				head = tail = annot;
