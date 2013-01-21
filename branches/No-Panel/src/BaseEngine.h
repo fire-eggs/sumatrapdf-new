@@ -19,7 +19,10 @@ enum PageDestType { Dest_None,
     Dest_GoToPageDialog, Dest_PrintDialog, Dest_SaveAsDialog, Dest_ZoomToDialog,
 };
 
-enum PageAnnotType { Annot_None, Annot_Comment, Annot_Highlight };
+enum PageAnnotType {
+    Annot_None,
+    Annot_Highlight, Annot_Underline, Annot_StrikeOut, Annot_Squiggly,
+};
 
 enum DocumentProperty {
     Prop_Title, Prop_Author, Prop_Copyright, Prop_Subject,
@@ -238,9 +241,9 @@ public:
     virtual WCHAR *GetProperty(DocumentProperty prop) = 0;
 
     // TODO: generalize from PageAnnotation to PageModification
-    // whether this engine supports adding user annotations of a given type
+    // whether this engine supports adding user annotations of all available types
     // (either for rendering or for saving)
-    virtual bool SupportsAnnotation(PageAnnotType type, bool forSaving=false) const = 0;
+    virtual bool SupportsAnnotation(bool forSaving=false) const = 0;
     // informs the engine about annotations the user made so that they can be rendered, etc.
     // (this call supercedes any prior call to UpdateUserAnnotations)
     virtual void UpdateUserAnnotations(Vec<PageAnnotation> *list) = 0;
