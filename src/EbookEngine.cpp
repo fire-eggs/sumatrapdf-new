@@ -94,7 +94,7 @@ public:
     virtual bool HasClipOptimizations(int pageNo) { return false; }
     virtual PageLayoutType PreferredLayout() { return Layout_Book; }
 
-    virtual bool SupportsAnnotation(PageAnnotType type, bool forSaving=false) const;
+    virtual bool SupportsAnnotation(bool forSaving=false) const { return !forSaving; }
     virtual void UpdateUserAnnotations(Vec<PageAnnotation> *list);
 
     virtual Vec<PageElement *> *GetElements(int pageNo);
@@ -346,13 +346,48 @@ static Color Unblend(COLORREF c, BYTE alpha)
     return Color(alpha, R, G, B);
 }
 
+static Color FromColorRef(COLORREF c)
+{
+    return Color(GetRValue(c), GetGValue(c), GetBValue(c));
+}
+
 static void DrawAnnotations(Graphics& g, Vec<PageAnnotation>& userAnnots, int pageNo)
 {
     for (size_t i = 0; i < userAnnots.Count(); i++) {
         PageAnnotation& annot = userAnnots.At(i);
-        if (annot.pageNo != pageNo || annot.type != Annot_Highlight)
+        if (annot.pageNo != pageNo)
             continue;
-        g.FillRectangle(&SolidBrush(Unblend(annot.color, 95)), annot.rect.ToGdipRectF());
+        PointF p1, p2;
+        switch (annot.type) {
+        case Annot_Highlight:
+            g.FillRectangle(&SolidBrush(Unblend(annot.color, 95)), annot.rect.ToGdipRectF());
+            break;
+        case Annot_Underline:
+            p1 = PointF((float)annot.rect.x, (float)annot.rect.BR().y);
+            p2 = PointF((float)annot.rect.BR().x, p1.Y);
+            g.DrawLine(&Pen(FromColorRef(annot.color)), p1, p2);
+            break;
+        case Annot_StrikeOut:
+            p1 = PointF((float)annot.rect.x, (float)annot.rect.y + (float)annot.rect.dy / 2);
+            p2 = PointF((float)annot.rect.BR().x, p1.Y);
+            g.DrawLine(&Pen(FromColorRef(annot.color)), p1, p2);
+            break;
+        case Annot_Squiggly:
+            {
+                Pen p(FromColorRef(annot.color), 0.5f);
+                REAL dash[2] = { 2, 2 };
+                p.SetDashPattern(dash, dimof(dash));
+                p.SetDashOffset(1);
+                p1 = PointF((float)annot.rect.x, (float)annot.rect.BR().y - 0.25f);
+                p2 = PointF((float)annot.rect.BR().x, p1.Y);
+                g.DrawLine(&p, p1, p2);
+                p.SetDashOffset(3);
+                p1.Y += 0.5f;
+                p2.Y += 0.5f;
+                g.DrawLine(&p, p1, p2);
+            }
+            break;
+        }
     }
 }
 
@@ -467,11 +502,6 @@ WCHAR *EbookEngine::ExtractPageText(int pageNo, WCHAR *lineSep, RectI **coords_o
         memcpy(*coords_out, coords.LendData(), coords.Count() * sizeof(RectI));
     }
     return content.StealData();
-}
-
-bool EbookEngine::SupportsAnnotation(PageAnnotType type, bool forSaving) const
-{
-    return !forSaving && Annot_Highlight == type;
 }
 
 void EbookEngine::UpdateUserAnnotations(Vec<PageAnnotation> *list)
