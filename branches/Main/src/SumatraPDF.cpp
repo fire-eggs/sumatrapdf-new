@@ -4919,6 +4919,7 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible)
 
         SetWindowPos(hwnd, NULL, 0, y, rParentForSidebar.dx, Dy, SWP_NOZORDER);
         ShowWindow(win->sideBar()->hwndSidebar, SW_HIDE);
+		ShowWindow(win->sideBar()->hwndSidebarSplitter, SW_HIDE);
         return;
     }
 
@@ -4951,6 +4952,7 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible)
     EndDeferWindowPos(hdwp);
 
     ShowWindow(win->sideBar()->hwndSidebar, SW_SHOW);
+    ShowWindow(win->sideBar()->hwndSidebarSplitter, SW_SHOW);
 }
 
 void SplitPanel(ContainerInfo *container, WCHAR const *direction)
