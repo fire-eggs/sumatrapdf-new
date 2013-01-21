@@ -147,6 +147,7 @@ public:
 
     WCHAR *         loadedFilePath;
     WCHAR *         TabToolTipText;
+    WCHAR *         title;
     DisplayModel *  dm;
 
     HWND            hwndFrame;
