@@ -128,7 +128,7 @@ void  ReloadDocument(WindowInfo *win, bool autorefresh=false);
 bool  CanSendAsEmailAttachment(WindowInfo *win=NULL);
 bool  DoCachePageRendering(WindowInfo *win, int pageNo);
 void  OnMenuSettings(HWND hwnd);
-void  OnMenuExit();
+void  OnMenuExit(TopWindowInfo *WIN, HWND hwnd);
 void  AutoUpdateCheckAsync(HWND hwnd, bool autoCheck);
 void  OnMenuChangeLanguage(HWND hwnd);
 void  OnDropFiles(HDROP hDrop);

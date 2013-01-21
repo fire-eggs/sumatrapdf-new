@@ -311,7 +311,7 @@ static LRESULT OnCommand(EbookWindow *win, UINT msg, WPARAM wParam, LPARAM lPara
             break;
 
         case IDM_EXIT:
-            OnMenuExit();
+            OnMenuExit(NULL, win->hwndFrame);
             break;
 
         case IDM_GOTO_NEXT_PAGE:

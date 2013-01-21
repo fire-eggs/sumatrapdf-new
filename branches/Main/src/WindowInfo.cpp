@@ -24,7 +24,9 @@ TopWindowInfo::TopWindowInfo(HWND hwnd) :
 
 TopWindowInfo::~TopWindowInfo()
 {    
-
+    delete container;
+    delete toolBar;
+    delete sideBar;
 }
 
 ContainerInfo::ContainerInfo(HWND hwnd) :
@@ -38,7 +40,8 @@ ContainerInfo::ContainerInfo(HWND hwnd) :
 
 ContainerInfo::~ContainerInfo()
 {    
-
+    delete container1;
+    delete container2;
 }
 
 PanelInfo::PanelInfo(HWND hwnd) :
@@ -49,7 +52,8 @@ PanelInfo::PanelInfo(HWND hwnd) :
 
 PanelInfo::~PanelInfo()
 {
-
+    delete toolBar;
+    delete sideBar;
 }
 
 WindowInfo::WindowInfo(HWND hwnd) :
@@ -101,6 +105,7 @@ WindowInfo::~WindowInfo()
     delete dm;
 
     free(loadedFilePath);
+    free(TabToolTipText);
 }
 
 ToolbarInfo * WindowInfo::toolBar() const
