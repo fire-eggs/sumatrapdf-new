@@ -1647,16 +1647,52 @@ WindowInfo *CreateAndShowWindowInfo()
 
 static void DeleteWindowInfo(WindowInfo *win)
 {
-    DeletePropertiesWindow(win->hwndFrame);
-    gWindows.Remove(win);
+    // Need to check this function.
+    DeletePropertiesWindow(win->panel->WIN->hwndFrame);
 
-    ImageList_Destroy((HIMAGELIST)SendMessage(win->toolBar()->hwndToolbar, TB_GETIMAGELIST, 0, 0));
+    gWindows.Remove(win);
+    // Even if win is removed from panel in CloseDocumentInWindow, it is still safe to remove again,
+    // because Remove() don't remove if it can't find win.
+    win->panel->gWin.Remove(win);
+
     DragAcceptFiles(win->hwndCanvas, FALSE);
 
     AbortFinding(win);
     AbortPrinting(win);
 
     delete win;
+}
+
+static void DeletePanelInfo(PanelInfo *panel)
+{
+    if (gGlobalPrefs.toolbarForEachPanel)
+        ImageList_Destroy((HIMAGELIST)SendMessage(panel->toolBar->hwndToolbar, TB_GETIMAGELIST, 0, 0));    
+
+    size_t CountWinInPanel = panel->gWin.Count();
+
+    for (size_t i = 0; i < CountWinInPanel; i++) {
+        WindowInfo *win = panel->gWin.At(0);
+        panel->gWin.Remove(win);
+        DeleteWindowInfo(win);
+    }
+    delete panel;
+}
+
+static void DeleteTopWindowInfo(TopWindowInfo *WIN)
+{
+    gWIN.Remove(WIN);
+
+    if (!gGlobalPrefs.toolbarForEachPanel)
+        ImageList_Destroy((HIMAGELIST)SendMessage(WIN->toolBar->hwndToolbar, TB_GETIMAGELIST, 0, 0));   
+
+    size_t CountPanelInWIN = WIN->gPanel.Count();
+
+    for (int i = 0; i < CountPanelInWIN; i++) {
+        PanelInfo *panel = WIN->gPanel.At(0);
+        WIN->gPanel.Remove(panel);
+        DeletePanelInfo(panel);
+    }
+    delete WIN;    
 }
 
 class FileChangeCallback : public UITask, public FileChangeObserver
@@ -2815,24 +2851,52 @@ static void OnPaint(WindowInfo& win)
     EndPaint(win.hwndCanvas, &ps);
 }
 
-void OnMenuExit()
+void OnMenuExit(TopWindowInfo *WIN, HWND hwnd)
 {
     if (gPluginMode)
         return;
 
-    for (size_t i = 0; i < gWindows.Count(); i++) {
-        WindowInfo *win = gWindows.At(i);
-        if (win->printThread && !win->printCanceled) {
-            int res = MessageBox(win->hwndFrame, _TR("Printing is still in progress. Abort and quit?"), _TR("Printing in progress."), MB_ICONEXCLAMATION | MB_YESNO | (IsUIRightToLeft() ? MB_RTLREADING : 0));
-            if (IDNO == res)
-                return;
+    ShowWindow(hwnd, SW_HIDE);
+
+    HWND hwndToDestroy = hwnd;
+
+    bool lastTopWindow = (1 == gWIN.Count() + gEbookWindows.Count());
+
+    // WIN == NULL means that we want to exit a Ebook Window.
+    if (WIN != NULL) {
+
+        size_t CountPanelInWIN = WIN->gPanel.Count();
+
+        for (size_t i = 0; i < CountPanelInWIN; i++) {
+            PanelInfo *panel = WIN->gPanel.At(i);
+
+            size_t CountWinInPanel = panel->gWin.Count();
+
+            for (size_t j = 0; j < CountWinInPanel; j++) {
+                WindowInfo *win = panel->gWin.At(j);
+
+                if (win->printThread && !win->printCanceled) {
+                    int res = MessageBox(win->hwndFrame, _TR("Printing is still in progress. Abort and quit?"), _TR("Printing in progress."), MB_ICONEXCLAMATION | MB_YESNO | (IsUIRightToLeft() ? MB_RTLREADING : 0));
+                    if (IDNO == res)
+                        return;
+                }
+
+                AbortFinding(win);
+                AbortPrinting(win);
+
+                // Need to check this function.
+                SavePrefs();
+            }
         }
-        AbortFinding(win);
-        AbortPrinting(win);
+        DeleteTopWindowInfo(WIN);
     }
 
-    SavePrefs();
-    PostQuitMessage(0);
+    DestroyWindow(hwndToDestroy);
+
+    if (lastTopWindow) {
+        assert(0 == gWIN.Count());
+        PostQuitMessage(0);
+    }
 }
 
 size_t TotalWindowsCount()
@@ -2846,34 +2910,85 @@ void CloseDocumentInWindow(WindowInfo *win)
 {
     // TODO: remove time logging before release
     Timer t(true);
+
     bool wasChm = win->IsChm();
     if (wasChm)
         UnsubclassCanvas(win->hwndCanvas);
-    delete win->watcher;
-    win->watcher = NULL;
-    SetSidebarVisibility(win, false, gGlobalPrefs.favVisible);
-    ClearTocBox(win);
-    AbortFinding(win, true);
-    delete win->dm;
-    win->dm = NULL;
-    str::ReplacePtr(&win->loadedFilePath, NULL);
-    delete win->pdfsync;
-    win->pdfsync = NULL;
-    win->notifications->RemoveAllInGroup(NG_RESPONSE_TO_ACTION);
-    win->notifications->RemoveAllInGroup(NG_PAGE_INFO_HELPER);
 
-    DeletePropertiesWindow(win->hwndFrame);
-    UpdateToolbarPageText(win, 0);
-    UpdateToolbarFindText(win);
-    if (wasChm) {
-        // restore the non-Chm menu
-        RebuildMenuBarForWindow(win);
+    PanelInfo *panel = win->panel;
+
+    // We have to make sure that : if we can use menu->close to close a window and it's already the last win in a panel, then there is a doc loaded.
+    if (1 == panel->gWin.Count()) {
+
+        CrashIf(!win->IsDocLoaded());
+
+        delete win->watcher;
+        win->watcher = NULL;
+
+        // We need to hide hwndCanvas first, otherwise we will see the scroll bar for a while after start page is shown.
+        // Another may be: don't update hwndCanvas in SetSidebarVisibility.
+        // This is similar to the fixed issue in rev. 164.
+        ShowWindow(win->hwndCanvas, SW_HIDE);
+        SetSidebarVisibility(win, false, gGlobalPrefs.favVisible);
+        ShowWindow(win->hwndCanvas, SW_SHOW); // We need to show it again, since it doesn't set hwndCanvas to be shown in the call to SetSidebarVisibility.
+
+        ClearTocBox(win); // When load a doc, it will clear toc also. But we still to make sure everything is cleaned.
+        AbortFinding(win, true);
+        delete win->dm;
+        win->dm = NULL;
+        str::ReplacePtr(&win->loadedFilePath, NULL);
+        delete win->pdfsync;
+        win->pdfsync = NULL;
+        win->notifications->RemoveAllInGroup(NG_RESPONSE_TO_ACTION);
+        win->notifications->RemoveAllInGroup(NG_PAGE_INFO_HELPER);
+
+        // Need to look the property window careful.
+        DeletePropertiesWindow(win->hwndFrame);
+
+        UpdateToolbarPageText(win, 0); // Make sure no page text remains on toolbar.
+        // We don't these one here, because we have UpdateToolbarAndScrollbarState(*win); below.
+        // UpdateToolbarFindText(win);
+        if (wasChm) {
+            // restore the non-Chm menu
+            RebuildMenuBarForWindow(win);
+        }
+
+        DeleteOldSelectionInfo(win, true);
     }
 
-    DeleteOldSelectionInfo(win, true);
-    win->RedrawAll();
-    UpdateFindbox(win);
-    SetFocus(win->hwndFrame);
+    int tabIndex = panel->gWin.Find(win);
+    int tabIndexNew;
+
+    if ( ! (1 == panel->gWin.Count()) ) {
+
+        if (!(win == panel->win)) { // We don't have to change panel->win.
+            panel->gWin.Remove(win); // We need this to get the new tab index.
+            tabIndexNew = panel->gWin.Find(panel->win);
+        } else {
+            if ( tabIndex < (int) panel->gWin.Count() - 1) // Show the next doc.
+                tabIndexNew = tabIndex;
+            else
+                tabIndexNew = tabIndex - 1; // Show the previous doc.
+
+            panel->gWin.Remove(win);
+            panel->win = panel->gWin.At(tabIndexNew);
+
+            ShowDocument(panel, win, panel->win, true);
+        }
+
+        SendMessage(panel->hwndTab, TCM_DELETEITEM, tabIndex, NULL);
+        SendMessage(panel->hwndTab, TCM_SETCURSEL, tabIndexNew, NULL);
+
+    } else {
+        win->RedrawAll();
+        UpdateFindbox(win); // Need to check this function.
+        // UpdateToolbarAndScrollbarState will set the title also, so we don't need it here.
+        // win::SetText(win->panel->WIN->hwndFrame, APP_NAME_STR);
+        UpdateToolbarAndScrollbarState(*win); // This will call ToolbarUpdateStateForWindow -> UpdateToolbarFindText, which positions FindText (label).
+        // SetWinTitle(win); // Update win->title;
+        SetFocus(win->panel->WIN->hwndFrame);
+    }
+
     t.Stop();
     dbglog::LogF("CloseDocumentInWindow() time: %.2f", t.GetTimeInMs());
 
@@ -2908,15 +3023,26 @@ void CloseDocumentAndDeleteWindowInfo(WindowInfo *win)
    menu item. */
 void CloseWindow(WindowInfo *win, bool quitIfLast, bool forceClose)
 {
+    // forceClose is true only when CloseWindow is call from WM_DESTROY.
+    // But in my version, WM_DESTROY calls OnMenuExit, so forceClose is
+    // not used, and is always false.
+
+    PanelInfo *panel = win->panel;
+    TopWindowInfo *WIN = panel->WIN;
+
     CrashIf(!win);
     if (!win) return;
+
+    // Not used, but keep it.
     CrashIf(forceClose && !quitIfLast);
-    if (forceClose) quitIfLast = true;
+        if (forceClose) quitIfLast = true;
+
+    // In original version, WM_DESTROY call CloseWindow with forceClose == true;
 
     // when used as an embedded plugin, closing should happen automatically
     // when the parent window is destroyed (cf. WM_DESTROY)
-    if (gPluginMode && gWindows.Find(win) == 0 && !forceClose)
-        return;
+    //if (gPluginMode && gWindows.Find(win) == 0 && !forceClose)
+    //    return;
 
     if (win->printThread && !win->printCanceled) {
         int res = MessageBox(win->hwndFrame, _TR("Printing is still in progress. Abort and quit?"), _TR("Printing in progress."), MB_ICONEXCLAMATION | MB_YESNO | (IsUIRightToLeft() ? MB_RTLREADING : 0));
@@ -2929,33 +3055,46 @@ void CloseWindow(WindowInfo *win, bool quitIfLast, bool forceClose)
     if (win->presentation)
         ExitFullscreen(*win);
 
-    bool lastWindow = (1 == TotalWindowsCount());
-    // hide the window before saving prefs (closing seems slightly faster that way)
-    if (lastWindow && quitIfLast && !forceClose)
-        ShowWindow(win->hwndFrame, SW_HIDE);
-    if (lastWindow)
+    bool lastWinInPanel = (1 == panel->gWin.Count());
+    bool lastPanelInWIN = (1 == WIN->gPanel.Count());
+    bool lastWIN = (1 == gWIN.Count());
+
+    if (lastWinInPanel && lastPanelInWIN && lastWIN) {
+        // Saves the preference.
+        if (quitIfLast && !forceClose) // forceClose is not used and is false.
+            // hide the window before saving prefs (closing seems slightly faster that way)
+            ShowWindow(win->panel->WIN->hwndFrame, SW_HIDE);
         SavePrefs();
-    else
+    } else
+        // This saves the file display state.
         UpdateCurrentFileDisplayStateForWin(SumatraWindow::Make(win));
 
-    if (forceClose) {
-        // WM_DESTROY has already been sent, so don't destroy win->hwndFrame again
-        DeleteWindowInfo(win);
-    } else if (lastWindow && !quitIfLast) {
-        /* last window - don't delete it */
+    if (quitIfLast && lastWinInPanel && lastPanelInWIN && lastWIN) {
+        OnMenuExit(WIN, WIN->hwndFrame);
+    }  else if (!quitIfLast && lastWinInPanel && lastPanelInWIN && lastWIN) {
         CloseDocumentInWindow(win);
-    } else {
-        HWND hwndToDestroy = win->hwndFrame;
+    }  else if (!lastWinInPanel && lastPanelInWIN && lastWIN) {
+        CloseDocumentInWindow(win);
+        DestroyWindow(win->hwndCanvas);
         DeleteWindowInfo(win);
-        DestroyWindow(hwndToDestroy);
-    }
-
-    if (lastWindow && quitIfLast) {
-        assert(0 == gWindows.Count());
-        PostQuitMessage(0);
-    } else if (lastWindow && !quitIfLast) {
-        assert(gWindows.Find(win) != -1);
-        UpdateToolbarAndScrollbarState(*win);
+    } else if (lastWinInPanel && !lastPanelInWIN && lastWIN) {
+        CloseDocumentInWindow(win);
+    }  else if (!lastWinInPanel && !lastPanelInWIN && lastWIN) {
+        CloseDocumentInWindow(panel->win);
+        DestroyWindow(win->hwndCanvas);
+        DeleteWindowInfo(win);
+    }  else if (lastWinInPanel && lastPanelInWIN && !lastWIN) {
+        OnMenuExit(WIN, WIN->hwndFrame);
+    }  else if (!lastWinInPanel && lastPanelInWIN && !lastWIN) {
+        CloseDocumentInWindow(win);
+        DestroyWindow(win->hwndCanvas);
+        DeleteWindowInfo(win);
+    }  else if (lastWinInPanel && !lastPanelInWIN && !lastWIN) {
+        CloseDocumentInWindow(win);
+    }  else if (!lastWinInPanel && !lastPanelInWIN && !lastWIN) {
+        CloseDocumentInWindow(win);
+        DestroyWindow(win->hwndCanvas);
+        DeleteWindowInfo(win);
     }
 }
 
@@ -4754,9 +4893,9 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible)
         return;
     }
 
-    if (!gGlobalPrefs.sidebarForEachPanel && rParentForSidebar.IsEmpty()) {
+    if (rParentForSidebar.IsEmpty()) {
         // don't adjust the ToC sidebar size while the window is minimized
-        if (win->sideBar()->tocVisible)
+        if (win->tocVisible)
             UpdateTocSelection(win, win->dm->CurrentPageNo());
         return;
     }
@@ -5652,7 +5791,7 @@ static LRESULT FrameOnCommand(WindowInfo *win, HWND hwnd, UINT msg, WPARAM wPara
             break;
 
         case IDM_EXIT:
-            OnMenuExit();
+            OnMenuExit(win->panel->WIN, win->panel->WIN->hwndFrame);
             break;
 
         case IDM_REFRESH:
@@ -6066,7 +6205,7 @@ InitMouseWheelInfo:
             return SendMessage(win->hwndCanvas, msg, wParam, lParam);
 
         case WM_CLOSE:
-            CloseWindow(win, true);
+            OnMenuExit(win->panel->WIN, win->panel->WIN->hwndFrame);
             break;
 
         case WM_DESTROY:
@@ -6074,8 +6213,9 @@ InitMouseWheelInfo:
                or if we explicitly call DestroyWindow()
                It might be sent as a result of File\Close, in which
                case CloseWindow() has already been called. */
-            if (win)
-                CloseWindow(win, true, true);
+            if (win) {
+                OnMenuExit(win->panel->WIN, win->panel->WIN->hwndFrame);
+            }
             break;
 
         case WM_DDE_INITIATE:

@@ -313,7 +313,7 @@ public:
     HWND            hwndPageBg;
     HWND            hwndPageTotal;
 };
-
+    
 class SidebarInfo
 {
 public:
@@ -329,13 +329,6 @@ public:
 
     HWND            hwndTocBox;
     HWND            hwndTocTree;
-    bool            tocLoaded;
-    bool            tocVisible;
-    // set to temporarily disable UpdateTocSelection
-    bool            tocKeepSelection;
-    // an array of ids for ToC items that have been expanded/collapsed by user
-    Vec<int>        tocState;
-    DocTocItem *    tocRoot;
 
     // state related to favorites
     HWND            hwndFavBox;
