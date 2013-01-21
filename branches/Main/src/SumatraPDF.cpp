@@ -979,6 +979,23 @@ static void UnsubclassCanvas(HWND hwnd)
     SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)0);
 }
 
+void SetWinTitle(WindowInfo *win)
+{
+    // Notice that we have to initialize win->title to NULL in WindowInfo.cpp.
+    // Otherwise a bug.
+    if (!win->title == NULL)
+        free(win->title);
+
+    if (win->IsDocLoaded()) {
+        WCHAR title[MAX_PATH] = {'\0'};
+        GetWindowText(win->panel->WIN->hwndFrame, title, MAX_PATH);
+        // We need to free win->title when we do not need it anymore, since it is something global (created by new).
+        // This is why we need the check above.
+        win->title = str::Format(L"%s", title);
+    } else
+        win->title = str::Format(L"%s", APP_NAME_STR);
+}
+
 // isNewWindow : if true then 'win' refers to a newly created window that needs
 //   to be resized and placed
 // allowFailure : if false then keep displaying the previously loaded document
@@ -1150,6 +1167,9 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
     if (needRefresh)
         title.Set(str::Format(_TR("[Changes detected; refreshing] %s"), title));
     win::SetText(win->hwndFrame, title);
+
+    // This just set win->title to be title; // We don't have to reset the window's title.
+    SetWinTitle(win);
 
     if (HasPermission(Perm_DiskAccess) && Engine_PDF == win->dm->engineType) {
         int res = Synchronizer::Create(args.fileName,
@@ -1418,6 +1438,8 @@ static WindowInfo* CreateWindowInfo()
         Touch::SetGestureConfig(win->hwndCanvas, 0, 1, &gc, sizeof(GESTURECONFIG));
     }
 
+    SetWinTitle(win); // We need to initialize win->title.
+
     AddTab(win);
 
     return win;
@@ -1558,6 +1580,8 @@ static WindowInfo* CreatePanel(ContainerInfo *container)
         Touch::SetGestureConfig(win->hwndCanvas, 0, 1, &gc, sizeof(GESTURECONFIG));
     }
 
+    SetWinTitle(win); // We need to initialize win->title.
+
     AddTab(win);
 
     return win;
@@ -1620,6 +1644,8 @@ static WindowInfo* CreateCanvas(PanelInfo *panel)
         GESTURECONFIG gc = { 0, GC_ALLGESTURES, 0 };
         Touch::SetGestureConfig(win->hwndCanvas, 0, 1, &gc, sizeof(GESTURECONFIG));
     }
+
+    SetWinTitle(win); // We need to initialize win->title.
 
     AddTab(win);
 
@@ -4957,20 +4983,22 @@ void ShowDocument(PanelInfo *panel, WindowInfo *win,  WindowInfo *winNew, bool H
 
     panel->win = winNew;
 
-    // We need to remember the tocState.
+    // We need to remember the tocState and this works.
     UpdateCurrentFileDisplayStateForWin(SumatraWindow::Make(win));
 
     ClearTocBox(win);
 
     // Should we put this into SetSidebarVisibility()?
-    if (winNew->IsDocLoaded() && winNew->dm->HasTocTree())
-        LoadTocTree(winNew);
+    //if (winNew->IsDocLoaded() && winNew->dm->HasTocTree())
+    //    LoadTocTree(winNew);
 
+    // I think it always needs to hide the old document.
     if (HideOldDocument) {
         ShowWindow(win->hwndCanvas, SW_HIDE);
         UpdateWindow(win->hwndCanvas);
     }
-
+    
+    SetSidebarVisibility(winNew, winNew->tocVisible, gGlobalPrefs.favVisible);
     ShowWindow(winNew->hwndCanvas, SW_SHOW);
 
     // We have a document opened. Then press "Ctrl + T" to open a
@@ -4985,11 +5013,29 @@ void ShowDocument(PanelInfo *panel, WindowInfo *win,  WindowInfo *winNew, bool H
     //else if (winNew->IsChm() && GetFocus() == panel->hwndFindBox)
     //    SetFocus(winNew->hwndCanvas);
 
+    if (winNew->IsDocLoaded()) {
+        int pageCount = winNew->dm->PageCount();
+        UpdateToolbarPageText(winNew, pageCount); // Change positions. Update page count (Page Total).
+        ScrollState ss = winNew->dm->GetScrollState();
+        winNew->dm->SetScrollState(ss); // Update page number (PageBox).
+    } else {
+        UpdateToolbarPageText(winNew, 0); // Change positions. Update page count (Page Total).
+    }
+
+    UpdateToolbarFindText(win); // Update ToolbarFindText (label)'s position.
+    UpdateFindbox(win); // Enable or disable FindBox and change cursor.
+    UpdateToolbarAndScrollbarState(*winNew); // We need it to update the toolbar buttons. // Fix chm <-> pdf issue. (?)
+
     // With the code below, ShowDocument() is still called only once when we use
     // keyboard to switch between tab pages. This is because using
     // TCM_SETCURSEL to change selection won't generate TCN_SELCHANGE notification code.
     // See Remarks in http://msdn.microsoft.com/en-us/library/windows/desktop/bb760612%28v=vs.85%29.aspx
     SendMessage(panel->hwndTab, TCM_SETCURSEL, panel->gWin.Find(winNew), NULL);
+
+    // Update title;
+    win::SetText(winNew->panel->WIN->hwndFrame, winNew->title);
+
+    RebuildMenuBarForWindow(winNew);
 }
 
 void ShowPreviousDocument(PanelInfo *panel){
@@ -5509,8 +5555,10 @@ static LRESULT CALLBACK WndProcPanel(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
             PanelOnSize(panel, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
             break;
 
-        case WM_MOUSEACTIVATE:
+        // When LBUTTONDOWN on a panel, change WIN->panel.
+        case WM_MOUSEACTIVATE:            
             panel->WIN->panel = panel;
+            win::SetText(panel->WIN->hwndFrame, panel->win->title);
             break;
 
         case WM_NOTIFY:

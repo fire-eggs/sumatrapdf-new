@@ -76,7 +76,7 @@ WindowInfo::WindowInfo(HWND hwnd) :
     delayedRepaintTimer(0), watcher(NULL),
     pdfsync(NULL), stressTest(NULL),
     hwndFavBox(NULL), hwndFavTree(NULL),
-    TabToolTipText(NULL)
+    TabToolTipText(NULL), title(NULL)
 {
     ZeroMemory(&selectionRect, sizeof(selectionRect));
 
@@ -106,6 +106,7 @@ WindowInfo::~WindowInfo()
 
     free(loadedFilePath);
     free(TabToolTipText);
+    free(title);
 }
 
 ToolbarInfo * WindowInfo::toolBar() const
