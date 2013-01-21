@@ -177,6 +177,8 @@ def main():
   config = "CFG=rel"
   if build_test_installer and not build_prerelease:
     obj_dir = "obj-dbg"
+  if target_platform == "X64":
+    obj_dir += "64"		
     config = "CFG=dbg"
   extcflags = ""
   if build_prerelease:
