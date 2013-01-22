@@ -10,6 +10,7 @@ import apptransul, apptransdl
 g_new_translation_system = True
 
 args = sys.argv[1:]
+vcpath               = test_for_flag(args, "-vcpath", True)
 upload               = test_for_flag(args, "-upload")
 upload_tmp           = test_for_flag(args, "-uploadtmp")
 testing              = test_for_flag(args, "-test") or test_for_flag(args, "-testing")
@@ -21,7 +22,7 @@ svn_revision         = test_for_flag(args, "-svn-revision", True)
 target_platform      = test_for_flag(args, "-platform", True)
 
 def usage():
-  print("build-release.py [-upload][-uploadtmp][-test][-test-installer][-prerelease][-platform=X64]")
+  print("build-release.py [-vcpath='path to VC'][-upload][-uploadtmp][-test][-test-installer][-prerelease][-platform=X64]")
   sys.exit(1)
 
 # Terms:
@@ -132,9 +133,16 @@ def main():
       print("Please verify and checkin src/Translations_txt.cpp and strings/translations.txt")
       sys.exit(1)
 
-  filename_base = "SumatraPDF-%s" % ver
+  # filename_base = "SumatraPDF-%s" % ver
+  # if build_prerelease:
+    # filename_base = "SumatraPDF-prerelease-%s" % ver
+
+  filename_base    = "SumatraPDF-"
+  if target_platform == "X64":
+      filename_base += "X64-"
   if build_prerelease:
-    filename_base = "SumatraPDF-prerelease-%s" % ver
+    filename_base += "prerelease-"
+  filename_base += "-%s" % ver
 
   s3_dir = "sumatrapdf/rel"
   if build_prerelease:
@@ -167,8 +175,6 @@ def main():
     cert_pwd = conf.GetCertPwdMustExist()
 
   obj_dir = "obj-rel"
-  if target_platform == "X64":
-    obj_dir += "64"
 
   if not testing and not build_test_installer and not build_rel_installer:
     shutil.rmtree(obj_dir, ignore_errors=True)
@@ -177,9 +183,11 @@ def main():
   config = "CFG=rel"
   if build_test_installer and not build_prerelease:
     obj_dir = "obj-dbg"
-  if target_platform == "X64":
-    obj_dir += "64"		
     config = "CFG=dbg"
+
+  if target_platform == "X64":
+    obj_dir += "64"
+
   extcflags = ""
   if build_prerelease:
     extcflags = "EXTCFLAGS=-DSVN_PRE_RELEASE_VER=%s" % ver
@@ -209,6 +217,10 @@ def main():
   zip_file(pdb_zip, os.path.join(obj_dir, "SumatraPDF.pdb"), append=True)
 
   builds_dir = os.path.join("builds", ver)
+
+  if target_platform == "X64":
+    builds_dir += "_X64"
+
   if os.path.exists(builds_dir):
     shutil.rmtree(builds_dir)
   os.makedirs(builds_dir)

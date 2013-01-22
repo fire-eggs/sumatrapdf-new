@@ -79,10 +79,10 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">obj-dbg64\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">obj-dbg\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">obj-dbg64\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\scripts\build-release.bat -testinst</NMakeBuildCommandLine>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\scripts\build-release64.bat "$(VCInstallDir)" -testinst -platform=X64</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\scripts\build-release.bat -testinst</NMakeReBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\scripts\build-release64.bat "$(VCInstallDir)" -testinst -platform=X64</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\scripts\build-release.bat -vcpath="$(VCInstallDir)" -testinst</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\scripts\build-release64.bat -vcpath="$(VCInstallDir)" -testinst -platform=X64</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\scripts\build-release.bat -vcpath="$(VCInstallDir)" -testinst</NMakeReBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\scripts\build-release64.bat -vcpath="$(VCInstallDir)" -testinst -platform=X64</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">rmdir /s /q obj-dbg</NMakeCleanCommandLine>
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">rmdir /s /q obj-dbg64</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">obj-dbg\Installer.exe</NMakeOutput>
@@ -105,14 +105,14 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">obj-rel64\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release analyze|Win32'">obj-rel\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release analyze|x64'">obj-rel64\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\scripts\build-release.bat -testrelinst</NMakeBuildCommandLine>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\scripts\build-release64.bat "$(VCInstallDir)" -testrelinst -platform=X64</NMakeBuildCommandLine>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release analyze|Win32'">.\scripts\build-release.bat -testrelinst</NMakeBuildCommandLine>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release analyze|x64'">.\scripts\build-release64.bat "$(VCInstallDir)" -testrelinst -platform=X64</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\scripts\build-release.bat -testrelinst</NMakeReBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\scripts\build-release64.bat "$(VCInstallDir)" -testrelinst -platform=X64</NMakeReBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release analyze|Win32'">.\scripts\build-release.bat -testrelinst</NMakeReBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release analyze|x64'">.\scripts\build-release64.bat "$(VCInstallDir)" -testrelinst -platform=X64</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\scripts\build-release.bat -vcpath="$(VCInstallDir)" -testrelinst</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\scripts\build-release64.bat -vcpath="$(VCInstallDir)" -testrelinst -platform=X64</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release analyze|Win32'">.\scripts\build-release.bat -vcpath="$(VCInstallDir)" -testrelinst</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release analyze|x64'">.\scripts\build-release64.bat -vcpath="$(VCInstallDir)" -testrelinst -platform=X64</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\scripts\build-release.bat -vcpath="$(VCInstallDir)" -testrelinst</NMakeReBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\scripts\build-release64.bat -vcpath="$(VCInstallDir)" -testrelinst -platform=X64</NMakeReBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release analyze|Win32'">.\scripts\build-release.bat -vcpath="$(VCInstallDir)" -testrelinst</NMakeReBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release analyze|x64'">.\scripts\build-release64.bat -vcpath="$(VCInstallDir)" -testrelinst -platform=X64</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">rmdir /s /q obj-rel</NMakeCleanCommandLine>
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|x64'">rmdir /s /q obj-rel64</NMakeCleanCommandLine>
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Release analyze|Win32'">rmdir /s /q obj-rel</NMakeCleanCommandLine>
