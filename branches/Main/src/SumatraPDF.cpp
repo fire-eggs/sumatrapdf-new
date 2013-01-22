@@ -1624,6 +1624,11 @@ static WindowInfo* CreateCanvas(PanelInfo *panel)
     ShowWindow(win->hwndCanvas, SW_SHOW);
     // UpdateWindow(win->hwndCanvas);
 
+    if (gGlobalPrefs.sidebarForEachPanel) {
+        ShowWindow(win->sideBar()->hwndSidebar, SW_HIDE);
+        ShowWindow(win->sideBar()->hwndSidebarSplitter, SW_HIDE);
+    }
+
     win->hwndInfotip = CreateWindowEx(WS_EX_TOPMOST,
         TOOLTIPS_CLASS, NULL, WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
@@ -4919,7 +4924,7 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible)
 
         SetWindowPos(hwnd, NULL, 0, y, rParentForSidebar.dx, Dy, SWP_NOZORDER);
         ShowWindow(win->sideBar()->hwndSidebar, SW_HIDE);
-		ShowWindow(win->sideBar()->hwndSidebarSplitter, SW_HIDE);
+        ShowWindow(win->sideBar()->hwndSidebarSplitter, SW_HIDE);
         return;
     }
 
