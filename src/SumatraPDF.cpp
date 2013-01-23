@@ -4880,8 +4880,11 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible)
     if (!gGlobalPrefs.sidebarForEachPanel) {
         for (size_t i = 0; i < WIN->gPanel.Count(); i++) {
             PanelInfo *panel = WIN->gPanel.At(i);
-            if (panel->win->IsDocLoaded() && panel->win->tocVisible)
-                sidebarVisible = true;
+            for (size_t j = 0; j < panel->gWin.Count(); j++) {
+                WindowInfo *win = panel->gWin.At(j);
+                if (win->IsDocLoaded() && win->tocVisible)
+                    sidebarVisible = true;
+            }
         }
     }
 
@@ -5029,8 +5032,8 @@ void ShowDocument(PanelInfo *panel, WindowInfo *win,  WindowInfo *winNew, bool H
         UpdateToolbarPageText(winNew, 0); // Change positions. Update page count (Page Total).
     }
 
-    UpdateToolbarFindText(win); // Update ToolbarFindText (label)'s position.
-    UpdateFindbox(win); // Enable or disable FindBox and change cursor.
+    UpdateToolbarFindText(winNew); // Update ToolbarFindText (label)'s position.
+    UpdateFindbox(winNew); // Enable or disable FindBox and change cursor.
     UpdateToolbarAndScrollbarState(*winNew); // We need it to update the toolbar buttons. // Fix chm <-> pdf issue. (?)
 
     // With the code below, ShowDocument() is still called only once when we use
