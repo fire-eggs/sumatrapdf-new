@@ -847,8 +847,8 @@ static INT_PTR CALLBACK Dialog_View_Proc(HWND hDlg, UINT msg, WPARAM wParam, LPA
             assert(prefs);
             prefs->enableSplitWindow = (BST_CHECKED == IsDlgButtonChecked(hDlg, IDC_ENABLE_SPLIT_WINDOW));
             prefs->enableTab = (BST_CHECKED == IsDlgButtonChecked(hDlg, IDC_ENABLE_TAB));
-            prefs->toolbarForEachPanel = (BST_CHECKED == IsDlgButtonChecked(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL));
-            prefs->sidebarForEachPanel = (BST_CHECKED == IsDlgButtonChecked(hDlg, IDC_SIDEBAR_FOR_EACH_PANEL));
+            prefs->toolbarForEachPanelNew = (BST_CHECKED == IsDlgButtonChecked(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL));
+            prefs->sidebarForEachPanelNew = (BST_CHECKED == IsDlgButtonChecked(hDlg, IDC_SIDEBAR_FOR_EACH_PANEL));
             return TRUE;
 
         case IDC_ENABLE_SPLIT_WINDOW:
@@ -861,9 +861,9 @@ static INT_PTR CALLBACK Dialog_View_Proc(HWND hDlg, UINT msg, WPARAM wParam, LPA
                 EnableWindow(GetDlgItem(hDlg, IDC_SIDEBAR_FOR_EACH_PANEL), enableSplitWindow);
                 bool sidebarForEachPanel = (BST_CHECKED == IsDlgButtonChecked(hDlg, IDC_SIDEBAR_FOR_EACH_PANEL));
                 EnableWindow(GetDlgItem(hDlg, IDC_TOOLBAR_FOR_EACH_PANEL), enableSplitWindow && sidebarForEachPanel);
-
             }
             return TRUE;
+
         case IDC_SIDEBAR_FOR_EACH_PANEL:
             {
                 bool sidebarForEachPanel = (BST_CHECKED == IsDlgButtonChecked(hDlg, IDC_SIDEBAR_FOR_EACH_PANEL));

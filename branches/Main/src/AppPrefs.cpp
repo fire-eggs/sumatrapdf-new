@@ -41,6 +41,8 @@
 #define ENABLE_TAB_STR              "Enable Tab"
 #define TOOLBAR_FOR_EACH_PANEL_STR  "Toolbar For Each Panel"
 #define SIDEBAR_FOR_EACH_PANEL_STR  "Sidebar For Each Panel"
+#define TOOLBAR_FOR_EACH_PANEL_NEW_STR  "Toolbar For Each Panel"
+#define SIDEBAR_FOR_EACH_PANEL_NEW_STR  "Sidebar For Each Panel New"
 // for backwards compatibility the string si "ShowToolbar" and not
 // (more appropriate now) "ToolbarVisible"
 #define TOOLBAR_VISIBLE_STR         "ShowToolbar"
@@ -102,7 +104,9 @@ SerializableGlobalPrefs gGlobalPrefs = {
     false, // bool enableSplitWindow
     false, // bool enableTab
     false, // bool toolbarForEachPanel
-    false, // bool sidebarFor EachPanel
+    false, // bool sidebarForEachPanel
+    false, // bool toolbarForEachPanelNew
+    false, // bool sidebarForEachPanelNew
     true, // bool toolbarVisible
     false, // bool favVisible
     false, // bool pdfAssociateDontAskAgain
@@ -162,6 +166,9 @@ static BencDict* SerializeGlobalPrefs(SerializableGlobalPrefs& globalPrefs)
 
     prefs->Add(TOOLBAR_FOR_EACH_PANEL_STR, globalPrefs.toolbarForEachPanel);
     prefs->Add(SIDEBAR_FOR_EACH_PANEL_STR, globalPrefs.sidebarForEachPanel);
+
+    prefs->Add(TOOLBAR_FOR_EACH_PANEL_NEW_STR, globalPrefs.toolbarForEachPanelNew);
+    prefs->Add(SIDEBAR_FOR_EACH_PANEL_NEW_STR, globalPrefs.sidebarForEachPanelNew);
 
     prefs->Add(TOOLBAR_VISIBLE_STR, globalPrefs.toolbarVisible);
     prefs->Add(TOC_VISIBLE_STR, globalPrefs.tocVisible);
@@ -528,6 +535,9 @@ static void DeserializePrefs(const char *prefsTxt, SerializableGlobalPrefs& glob
     Retrieve(global, TOOLBAR_FOR_EACH_PANEL_STR, globalPrefs.toolbarForEachPanel);
     Retrieve(global, SIDEBAR_FOR_EACH_PANEL_STR, globalPrefs.sidebarForEachPanel);
 
+    Retrieve(global, TOOLBAR_FOR_EACH_PANEL_NEW_STR, globalPrefs.toolbarForEachPanelNew);
+    Retrieve(global, SIDEBAR_FOR_EACH_PANEL_NEW_STR, globalPrefs.sidebarForEachPanelNew);
+
     Retrieve(global, TOOLBAR_VISIBLE_STR, globalPrefs.toolbarVisible);
     Retrieve(global, TOC_VISIBLE_STR, globalPrefs.tocVisible);
     Retrieve(global, FAV_VISIBLE_STR, globalPrefs.favVisible);
@@ -636,6 +646,9 @@ void Load(WCHAR *filepath, SerializableGlobalPrefs& globalPrefs,
 
     if (!*favs)
         *favs = new Favorites();
+
+    gGlobalPrefs.toolbarForEachPanel = gGlobalPrefs.toolbarForEachPanelNew;
+    gGlobalPrefs.sidebarForEachPanel = gGlobalPrefs.sidebarForEachPanelNew;
 
     // TODO: add a check if a file exists, to filter out deleted files
     // but only if a file is on a non-network drive (because

@@ -37,6 +37,9 @@ struct SerializableGlobalPrefs {
     bool toolbarForEachPanel;
     bool sidebarForEachPanel;
 
+    bool toolbarForEachPanelNew;
+    bool sidebarForEachPanelNew;
+
     bool toolbarVisible;
     bool favVisible;
 
