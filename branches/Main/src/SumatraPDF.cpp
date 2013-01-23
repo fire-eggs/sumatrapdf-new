@@ -3751,9 +3751,12 @@ static void FrameOnSize(WindowInfo* win, int dx, int dy)
 
         for (size_t i = 0; i < WIN->gPanel.Count(); i++) {
             PanelInfo *panel = WIN->gPanel.At(i);
-            if (panel->win->IsDocLoaded() && panel->win->tocVisible) {
-                tocVisible = true;
-                break;
+            for (size_t j = 0; j < panel->gWin.Count(); j++) {
+                WindowInfo *win = panel->gWin.At(j);
+                if (win->IsDocLoaded() && win->tocVisible) {
+                    tocVisible = true;
+                    break;
+                }
             }
         }
 
@@ -4866,7 +4869,7 @@ static void SetWinPos(HWND hwnd, RectI r, bool isVisible)
     SetWindowPos(hwnd, NULL, r.x, r.y, r.dx, r.dy, flags);
 }
 
-void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible)
+void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible, bool switchDoc)
 {
     if (gPluginMode || !HasPermission(Perm_DiskAccess))
         favVisible = false;
@@ -4922,7 +4925,7 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible)
         hwndParentForSidebar = win->panel->hwndPanel;
 
     HWND hwnd = WIN->container->hwndContainer;
-    if (gGlobalPrefs.sidebarForEachPanel)
+    if (switchDoc || gGlobalPrefs.sidebarForEachPanel)
         hwnd = win->hwndCanvas;
 
     ClientRect rParentForToolbar(hwndParentForToolbar);
@@ -4935,6 +4938,12 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible)
 
     int sidebar_Dy = rParentForToolbar.dy - sidebar_y;
     int Dy = rParentForToolbar.dy - y;
+
+    if (switchDoc && !gGlobalPrefs.sidebarForEachPanel) {
+        ClientRect rPanel(win->panel->hwndPanel);
+        SetWindowPos(hwnd, NULL, 0, TAB_CONTROL_DY + 1, rPanel.dx, rPanel.dy - 0 - TAB_CONTROL_DY - 1, SWP_NOZORDER);
+        return;
+    }
 
     if (!sidebarVisible) {
         if (GetFocus() == win->sideBar()->hwndTocTree || GetFocus() == win->sideBar()->hwndFavTree)
@@ -5023,7 +5032,9 @@ void ShowDocument(PanelInfo *panel, WindowInfo *win,  WindowInfo *winNew, bool H
         UpdateWindow(win->hwndCanvas);
     }
     
-    SetSidebarVisibility(winNew, winNew->tocVisible, gGlobalPrefs.favVisible);
+    // If sidebarForEachPanel, we need to use the original SetSidebarVisibility.
+    // Only if not sidebarForEachPanel, we need to resize win->hwndCanvas manually.
+    SetSidebarVisibility(winNew, winNew->tocVisible, gGlobalPrefs.favVisible, !gGlobalPrefs.sidebarForEachPanel);
     ShowWindow(winNew->hwndCanvas, SW_SHOW);
 
     // We have a document opened. Then press "Ctrl + T" to open a
