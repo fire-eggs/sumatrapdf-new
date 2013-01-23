@@ -113,7 +113,7 @@ bool  LaunchBrowser(const WCHAR *url);
 bool  OpenFileExternally(const WCHAR *path);
 void  AssociateExeWithPdfExtension();
 void  CloseWindow(WindowInfo *win, bool quitIfLast, bool forceClose=false);
-void  SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible);
+void  SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible, bool switchDoc=false);
 void  RememberFavTreeExpansionState(WindowInfo *win);
 void  LayoutTreeContainer(HWND hwndContainer, int id);
 void  AdvanceFocus(WindowInfo* win);
