@@ -157,10 +157,18 @@
 #define IDC_WINDOW_BG                   1073
 #define IDC_DOC_BG                      1074
 #define IDC_DOC_TEXT                    1075
+
+#define IDC_TOC_BG                      1081
+#define IDC_FAV_BG                      1082
+
 #define IDC_SET_START_PAGE_BG           1076
 #define IDC_SET_WINDOW_BG               1077
 #define IDC_SET_DOC_BG                  1078
 #define IDC_SET_DOC_TEXT_COLOR          1079
+
+#define IDC_SET_TOC_BG_COLOR            1083
+#define IDC_SET_FAV_BG_COLOR            1084
+
 #define IDC_APPLY                       1080
 #define IDC_SECTION_PRINT_RANGE         1050
 #define IDC_PRINT_RANGE_ALL             1051

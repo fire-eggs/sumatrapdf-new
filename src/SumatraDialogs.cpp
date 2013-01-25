@@ -940,7 +940,7 @@ static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LP
 {
     SerializableGlobalPrefs *prefs;
 
-    static COLORREF colorOld[4];
+    static COLORREF colorOld[6];
 
     switch (msg)
     {
@@ -954,11 +954,15 @@ static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LP
             colorOld[1] = prefs->noDocBgColor;
             colorOld[2] = prefs->docBgColor;
             colorOld[3] = prefs->docTextColor;
+            colorOld[4] = prefs->tocBgColor;
+            colorOld[5] = prefs->favBgColor;
 
             SetColorDlgButtonColor(hDlg, IDC_START_PAGE_BG, IDC_SET_START_PAGE_BG, prefs->bgColor);
             SetColorDlgButtonColor(hDlg, IDC_WINDOW_BG, IDC_SET_WINDOW_BG, prefs->noDocBgColor);
             SetColorDlgButtonColor(hDlg, IDC_DOC_BG, IDC_SET_DOC_BG, prefs->docBgColor);
             SetColorDlgButtonColor(hDlg, IDC_DOC_TEXT, IDC_SET_DOC_TEXT_COLOR, prefs->docTextColor);
+            SetColorDlgButtonColor(hDlg, IDC_TOC_BG, IDC_SET_TOC_BG_COLOR, prefs->tocBgColor);
+            SetColorDlgButtonColor(hDlg, IDC_FAV_BG, IDC_SET_FAV_BG_COLOR, prefs->favBgColor);
 
             return FALSE;
         }
@@ -989,8 +993,15 @@ static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LP
                 prefs->docBgColor = (int) color ? color - 1 : gGlobalPrefs.docBgColor;
                 color = (COLORREF)GetWindowLongPtr(GetDlgItem(hDlg, IDC_SET_DOC_TEXT_COLOR), GWLP_USERDATA);
                 prefs->docTextColor = (int) color ? color - 1 : gGlobalPrefs.docTextColor;
+                color = (COLORREF)GetWindowLongPtr(GetDlgItem(hDlg, IDC_SET_TOC_BG_COLOR), GWLP_USERDATA);
+                prefs->tocBgColor = (int) color ? color - 1 : gGlobalPrefs.tocBgColor;
+                color = (COLORREF)GetWindowLongPtr(GetDlgItem(hDlg, IDC_SET_FAV_BG_COLOR), GWLP_USERDATA);
+                prefs->favBgColor = (int) color ? color - 1 : gGlobalPrefs.favBgColor;
 
                 UpdateDocumentColors(prefs->docTextColor, prefs->docBgColor);
+
+                UpdateTocColor(prefs->tocBgColor);
+                UpdateFavColor(prefs->favBgColor);
 
                 HBITMAP hMemBmp = (HBITMAP)GetWindowLongPtr(GetDlgItem(hDlg, IDC_START_PAGE_BG), GWLP_USERDATA);
                 DeleteObject(hMemBmp);
@@ -999,6 +1010,10 @@ static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LP
                 hMemBmp = (HBITMAP)GetWindowLongPtr(GetDlgItem(hDlg, IDC_DOC_BG), GWLP_USERDATA);
                 DeleteObject(hMemBmp);
                 hMemBmp = (HBITMAP)GetWindowLongPtr(GetDlgItem(hDlg, IDC_DOC_TEXT), GWLP_USERDATA);
+                DeleteObject(hMemBmp);
+                hMemBmp = (HBITMAP)GetWindowLongPtr(GetDlgItem(hDlg, IDC_TOC_BG), GWLP_USERDATA);
+                DeleteObject(hMemBmp);
+                hMemBmp = (HBITMAP)GetWindowLongPtr(GetDlgItem(hDlg, IDC_FAV_BG), GWLP_USERDATA);
                 DeleteObject(hMemBmp);
 
                 return TRUE;
@@ -1009,6 +1024,8 @@ static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LP
                 prefs->noDocBgColor = colorOld[1];
                 prefs->docBgColor = colorOld[2];
                 prefs->docTextColor = colorOld[3];
+                prefs->tocBgColor = colorOld[4];
+                prefs->favBgColor = colorOld[5];
 
                 UpdateDocumentColors(prefs->docTextColor, prefs->docBgColor);
 
@@ -1018,6 +1035,8 @@ static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LP
         case IDC_SET_WINDOW_BG:
         case IDC_SET_DOC_BG:
         case IDC_SET_DOC_TEXT_COLOR:
+        case IDC_SET_TOC_BG_COLOR:
+        case IDC_SET_FAV_BG_COLOR:
             {
                 HWND hButton = GetDlgItem(hDlg, LOWORD(wParam));
 
@@ -1036,8 +1055,7 @@ static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LP
 
 INT_PTR Dialog_Color(HWND hwnd, SerializableGlobalPrefs *prefs)
 {
-    return CreateDialogBox(IDD_DIALOG_COLOR, hwnd,
-        Dialog_Color_Proc, (LPARAM)prefs);
+    return CreateDialogBox(IDD_DIALOG_COLOR, hwnd, Dialog_Color_Proc, (LPARAM)prefs);
 }
 
 static INT_PTR CALLBACK Dialog_Preference_Proc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)

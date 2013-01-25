@@ -555,6 +555,7 @@ void CreateToc(SidebarInfo *sideBar, HWND hwndParent)
     STATIC_ASSERT(IDC_TOC_BOX + 0 == IDC_TOC_BOX &&
         IDC_TOC_BOX + 3 == IDC_TOC_TREE, consecutive_toc_ids);
 
+    TreeView_SetBkColor(sideBar->hwndTocTree, gGlobalPrefs.tocBgColor);
     TreeView_SetUnicodeFormat(sideBar->hwndTocTree, true);
 
     if (NULL == DefWndProcTocTree)

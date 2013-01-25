@@ -66,6 +66,9 @@ struct SerializableGlobalPrefs {
     int docBgColor;
     int docTextColor;
 
+    int tocBgColor;
+    int favBgColor;
+
     /* pattern used to launch the editor when doing inverse search */
     WCHAR *inverseSearchCmdLine;
     /* whether to expose the SyncTeX enhancements to the user */

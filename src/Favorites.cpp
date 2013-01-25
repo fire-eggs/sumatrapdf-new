@@ -819,6 +819,7 @@ void CreateFavorites(SidebarInfo *sideBar, HWND hwndParent)
     STATIC_ASSERT(IDC_FAV_BOX + 0 == IDC_FAV_BOX &&
         IDC_FAV_BOX + 3 == IDC_FAV_TREE, consecutive_fav_ids);
 
+    TreeView_SetBkColor(sideBar->hwndFavTree, gGlobalPrefs.favBgColor);
     TreeView_SetUnicodeFormat(sideBar->hwndFavTree, true);
 
     if (NULL == DefWndProcFavTree)

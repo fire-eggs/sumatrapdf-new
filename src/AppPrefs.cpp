@@ -62,6 +62,8 @@
 #define NO_DOC_BG_COLOR_STR         "NoDocBgColor"
 #define DOC_TEXT_COLOR_STR          "DocTextColor"
 #define DOC_BG_COLOR_STR            "DocBgColor"
+#define TOC_BG_COLOR_STR            "TocBgColor"
+#define FAV_BG_COLOR_STR            "FavBgColor"
 #define ESC_TO_EXIT_STR             "EscToExit"
 #define USE_SYS_COLORS_STR          "UseSysColors"
 #define INVERSE_SEARCH_COMMANDLINE  "InverseSearchCommandLine"
@@ -119,6 +121,8 @@ SerializableGlobalPrefs gGlobalPrefs = {
     NO_DOC_BG_COLOR_DEFAULT, // int noDocBgColor
     DOC_BG_COLOR_DEFAULT, //int docBgColor
     DOC_TEXT_COLOR_DEFAULT, // int docTextColor
+    TOC_BG_COLOR_DEFAULT, // int tocBgColor
+    FAV_BG_COLOR_DEFAULT, // int favBgColor
     NULL, // WCHAR *inverseSearchCmdLine
     false, // bool enableTeXEnhancements
     NULL, // WCHAR *versionToSkip
@@ -185,6 +189,10 @@ static BencDict* SerializeGlobalPrefs(SerializableGlobalPrefs& globalPrefs)
     prefs->Add(NO_DOC_BG_COLOR_STR, globalPrefs.noDocBgColor);
     prefs->Add(DOC_TEXT_COLOR_STR, gGlobalPrefs.docTextColor);
     prefs->Add(DOC_BG_COLOR_STR, gGlobalPrefs.docBgColor);
+
+    prefs->Add(TOC_BG_COLOR_STR, gGlobalPrefs.tocBgColor);
+    prefs->Add(FAV_BG_COLOR_STR, gGlobalPrefs.favBgColor);
+
     prefs->Add(ENABLE_AUTO_UPDATE_STR, globalPrefs.enableAutoUpdate);
     prefs->Add(REMEMBER_OPENED_FILES_STR, globalPrefs.rememberOpenedFiles);
     prefs->Add(GLOBAL_PREFS_ONLY_STR, globalPrefs.globalPrefsOnly);
@@ -551,6 +559,10 @@ static void DeserializePrefs(const char *prefsTxt, SerializableGlobalPrefs& glob
     Retrieve(global, NO_DOC_BG_COLOR_STR, globalPrefs.noDocBgColor);
     Retrieve(global, DOC_TEXT_COLOR_STR, globalPrefs.docTextColor);
     Retrieve(global, DOC_BG_COLOR_STR, globalPrefs.docBgColor);
+
+    Retrieve(global, TOC_BG_COLOR_STR, globalPrefs.tocBgColor);
+    Retrieve(global, FAV_BG_COLOR_STR, globalPrefs.favBgColor);
+
     Retrieve(global, BG_COLOR_STR, globalPrefs.bgColor);
     Retrieve(global, ENABLE_AUTO_UPDATE_STR, globalPrefs.enableAutoUpdate);
     Retrieve(global, REMEMBER_OPENED_FILES_STR, globalPrefs.rememberOpenedFiles);
