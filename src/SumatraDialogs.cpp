@@ -970,7 +970,7 @@ static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LP
         prefs = (SerializableGlobalPrefs *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
         assert(prefs);
 
-        COLORREF customColor[4];
+        COLORREF customColor[16];
         COLORREF selcolor = prefs->bgColor;
         CHOOSECOLOR color;
         color.lStructSize  = sizeof(CHOOSECOLOR);
