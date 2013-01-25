@@ -2522,6 +2522,34 @@ void UpdateDocumentColors(COLORREF fore, COLORREF back)
 #endif
 }
 
+void  UpdateTocColor(COLORREF back)
+{
+    for (size_t i = 0; i < gWIN.Count(); i++) {
+        TopWindowInfo *WIN = gWIN.At(i);
+        for (size_t j = 0; j < WIN->gPanel.Count(); j++) {
+            PanelInfo *panel = WIN->gPanel.At(j);
+            for (size_t k = 0; k < panel->gWin.Count(); k++) {
+                WindowInfo *win = panel->gWin.At(k);
+                TreeView_SetBkColor(win->sideBar()->hwndTocTree, back);
+            }
+        }
+    }
+}
+
+void  UpdateFavColor(COLORREF back)
+{
+    for (size_t i = 0; i < gWIN.Count(); i++) {
+        TopWindowInfo *WIN = gWIN.At(i);
+        for (size_t j = 0; j < WIN->gPanel.Count(); j++) {
+            PanelInfo *panel = WIN->gPanel.At(j);
+            for (size_t k = 0; k < panel->gWin.Count(); k++) {
+                WindowInfo *win = panel->gWin.At(k);
+                TreeView_SetBkColor(win->sideBar()->hwndFavTree, back);
+            }
+        }
+    }
+}
+
 static void ToggleGdiDebugging()
 {
     gUseGdiRenderer = !gUseGdiRenderer;

@@ -76,6 +76,9 @@ enum MenuToolbarFlags {
 #define DOC_TEXT_COLOR_DEFAULT  RGB(0x00, 0x00, 0x00)
 #define DOC_BG_COLOR_DEFAULT    RGB(0xFF, 0xFF, 0xFF)
 
+#define TOC_BG_COLOR_DEFAULT    RGB(0xFF, 0xFF, 0xFF)
+#define FAV_BG_COLOR_DEFAULT    RGB(0xFF, 0xFF, 0xFF)
+
 class TopWindowInfo;
 class ContainerInfo;
 class PanelInfo;
@@ -121,6 +124,8 @@ bool  WindowInfoStillValid(WindowInfo *win);
 void  ChangeLanguage(const char *langName);
 void  ShowOrHideToolbarGlobally();
 void  UpdateDocumentColors(COLORREF fore=RGB(0x00, 0x00, 0x00), COLORREF back=RGB(0xFF, 0xFF, 0xFF));
+void  UpdateTocColor(COLORREF back);
+void  UpdateFavColor(COLORREF back);
 void  UpdateCurrentFileDisplayStateForWin(SumatraWindow& win);
 bool  FrameOnKeydown(WindowInfo* win, WPARAM key, LPARAM lparam, bool inTextfield=false);
 void  SwitchToDisplayMode(WindowInfo *win, DisplayMode displayMode, bool keepContinuous=false);
