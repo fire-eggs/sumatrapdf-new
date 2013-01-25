@@ -2,26 +2,26 @@
 SETLOCAL ENABLEDELAYEDEXPANSION
 
 REM assumes we're being run from top-level directory as:
-REM scripts\build-release.bat
+REM scripts\build-release64.bat
 
 REM You can add Python to PATH if it's not already there
 REM SET PATH=C:\Python;%PATH%
 
-SET var1=%1
-SET var2=%2
-SET var3=%3
-SET var4=%4
-SET var5=%5
-SET var6=%6
-SET var7=%7
-SET var8=%8
-SET var9=%9
+SET i=0
+
+FOR %%A IN (%*) DO (
+  SET /a i+=1
+  SET var!i!=%%A
+)
 
 SET VCINSTALL=""
+SET PLATFORM=""
 
 FOR %%A IN (var1 var2 var3 var4 var5 var6 var7 var8 var9) DO (
 
   SET var=!%%A!
+
+  IF "!var!"=="X64" SET PLATFORM=X64
 
   IF "!var!"=="" (
     @ECHO "Parameter is empty."
@@ -41,6 +41,11 @@ FOR %%A IN (var1 var2 var3 var4 var5 var6 var7 var8 var9) DO (
       SET VCINSTALL=!var!
     )
   )
+)
+
+IF NOT %PLATFORM%==X64 (
+  @ECHO Target Platform is X86, please use build-release.bat or add -platform=X64
+  EXIT /B 1
 )
 
 SET VCPATH="!VCINSTALL:"=!\bin\x86_amd64\vcvarsx86_amd64.bat"
