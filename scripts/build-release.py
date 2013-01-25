@@ -104,33 +104,35 @@ def sign(file_path, cert_pwd):
   os.chdir(curr_dir)
 
 def main():
-
-  print "%s%s%s" % ("Visual Studio Installation Path = ",vcpath,"\\")
-  print "SVN Revisionsvn =", svn_revision
-  print "Target Platform =", target_platform
-  
-  if build_prerelease:
-    print("Build prerelease")
-  else:
-    print("Not Build prerelease")
-  if build_test_installer:
-    print("Build Test Installer")
-  else:
-    print("Not Build Test")  
-  if build_rel_installer:
-    print("Build Relese Installer")
-  else:
-    print("Not Build Release")
-  if upload:
-    print("Upload")
-  else:
-    print("Not Upload")
-  if upload_tmp:
-    print("Upload Temp")
-  else:
-    print("Not Upload Temp")
-
   global upload
+
+# ====================================================================
+# Should to be deleted
+  # print "%s%s%s" % ("Visual Studio Installation Path = ",vcpath,"\\")
+  # print "SVN Revisionsvn =", svn_revision
+  # print "Target Platform =", target_platform
+  
+  # if build_prerelease:
+    # print("Build prerelease")
+  # else:
+    # print("Not Build prerelease")
+  # if build_test_installer:
+    # print("Build Test Installer")
+  # else:
+    # print("Not Build Test")  
+  # if build_rel_installer:
+    # print("Build Relese Installer")
+  # else:
+    # print("Not Build Release")
+  # if upload:
+    # print("Upload")
+  # else:
+    # print("Not Upload")
+  # if upload_tmp:
+    # print("Upload Temp")
+  # else:
+    # print("Not Upload Temp")
+# ====================================================================  
   
   if len(args) != 0:
     usage()
