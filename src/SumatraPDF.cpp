@@ -5532,32 +5532,162 @@ static void ContainerOnPaint(ContainerInfo& container)
     EndPaint(container.hwndContainer, &ps);
 }
 
-static void PanelOnNotify(PanelInfo *panel, WPARAM wParam, LPARAM lParam)
+static LRESULT CustomDrawReBar(HWND hwnd, LPARAM lParam)
+{
+    LPNMCUSTOMDRAW lpnmcustom = (LPNMCUSTOMDRAW)lParam;
+
+    switch(lpnmcustom->dwDrawStage) {
+
+        case CDDS_PREPAINT:
+        {
+            HDC hdc = lpnmcustom->hdc;
+
+            RECT rc;
+            GetClientRect(hwnd, &rc);
+
+            int dx = rc.right - rc.left;
+            int dy = rc.bottom - rc.top;
+
+            rc.left = 0;
+            rc.right = dx;
+            rc.top = 0;
+            rc.bottom = 1;
+            FillRect(hdc, &rc, CreateSolidBrush(RGB(0x6B, 0x6B, 0x6B)));
+
+            rc.left = 0;
+            rc.right = dx;
+            rc.top = 1;
+            rc.bottom = dy;
+            FillRect(hdc, &rc, CreateSolidBrush(RGB(0xEF, 0xEF, 0xEF)));
+
+            TRIVERTEX        vert[2];
+            GRADIENT_RECT    gRect;
+
+            vert[0].x      = 0;
+            vert[0].y      = 2;
+            vert[0].Red    = 0xEE00;
+            vert[0].Green  = 0xEE00;
+            vert[0].Blue   = 0xEE00;
+            vert[0].Alpha  = 0x0000;
+
+            vert[1].x      = 2;
+            vert[1].y      = dy; 
+            vert[1].Red    = 0xD900;
+            vert[1].Green  = 0xD900;
+            vert[1].Blue   = 0xD900;
+            vert[1].Alpha  = 0x0000;
+
+            gRect.UpperLeft  = 0;
+            gRect.LowerRight = 1;
+
+            GradientFill(hdc, vert, 2, &gRect, 1, GRADIENT_FILL_RECT_V);
+
+            return CDRF_NOTIFYITEMDRAW;
+        }
+
+        default:
+            return CDRF_DODEFAULT;
+    }
+
+    return CDRF_DODEFAULT;
+}
+
+static LRESULT CustomDrawToolbar(HWND hwnd, LPARAM lParam)
+{
+    LPNMTBCUSTOMDRAW lpnmtbcustom = (LPNMTBCUSTOMDRAW)lParam;
+
+    switch(lpnmtbcustom->nmcd.dwDrawStage) {
+
+        case CDDS_PREPAINT:
+        {
+            HDC hdc = lpnmtbcustom->nmcd.hdc;
+
+            RECT rc;
+            GetClientRect(hwnd, &rc);
+
+            int dx = rc.right - rc.left;
+            int dy = rc.bottom - rc.top;
+
+            TRIVERTEX        vert[2];
+            GRADIENT_RECT    gRect;
+
+            vert[0].x      = 0;
+            vert[0].y      = 0;
+            vert[0].Red    = 0xEE00;
+            vert[0].Green  = 0xEE00;
+            vert[0].Blue   = 0xEE00;
+            vert[0].Alpha  = 0x0000;
+
+            vert[1].x      = dx;
+            vert[1].y      = dy; 
+            vert[1].Red    = 0xD900;
+            vert[1].Green  = 0xD900;
+            vert[1].Blue   = 0xD900;
+            vert[1].Alpha  = 0x0000;
+
+            gRect.UpperLeft  = 0;
+            gRect.LowerRight = 1;
+
+            GradientFill(hdc, vert, 2, &gRect, 1, GRADIENT_FILL_RECT_V);
+
+            return CDRF_NOTIFYITEMDRAW;
+        }
+
+        default:
+            return CDRF_DODEFAULT;
+    }
+
+    return CDRF_DODEFAULT;
+}
+
+static LRESULT CustomDrawInPanel(PanelInfo *panel, HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    LPNMHDR lpnmhdr = (LPNMHDR)lParam;
+    HWND hwndFrom = lpnmhdr->hwndFrom;
+
+    if (hwndFrom == panel->win->toolBar()->hwndReBar)
+        return CustomDrawReBar(hwndFrom, lParam);
+    else if (hwndFrom == panel->win->toolBar()->hwndToolbar)
+        return CustomDrawToolbar(hwndFrom, lParam);
+
+    return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
+static LRESULT PanelOnNotify(PanelInfo *panel, HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     LPNMHDR lpnmhdr = (LPNMHDR)lParam;
 
     switch(lpnmhdr->code) {
-        case TCN_SELCHANGE:
-            if (IsCursorOverWindow(panel->hwndTab)) {
-                int tabIndex = SendMessage(panel->hwndTab, TCM_GETCURSEL, NULL, NULL); // tabIndex is the new index.
-                ShowDocument(panel, panel->win, panel->gWin.At(tabIndex), true); // panel->win is the current win before calling ShowDocument().
+    case TCN_SELCHANGE:
+        if (IsCursorOverWindow(panel->hwndTab)) {
+            int tabIndex = SendMessage(panel->hwndTab, TCM_GETCURSEL, NULL, NULL); // tabIndex is the new index.
+            ShowDocument(panel, panel->win, panel->gWin.At(tabIndex), true); // panel->win is the current win before calling ShowDocument().
 
-                //RECT rc;
-                //SendMessage(panel->hwndTab, TCM_GETITEMRECT, tabIndex, (LPARAM)&rc); // For new selected tab item.
-                //SetWindowPos(panel->gWin.At(tabIndex)->hwndTabStatic, NULL, rc.right - 16, 7, 12, 12, SWP_NOZORDER);
-                //SendMessage(panel->hwndTab, TCM_GETITEMRECT, panel->gWin.Find(panel->win), (LPARAM)&rc); // For selected tab item before change.
-                //SetWindowPos(panel->win->hwndTabStatic, NULL, rc.right - 16, 8, 12, 12, SWP_NOZORDER);
-            }
-            break;
+            //RECT rc;
+            //SendMessage(panel->hwndTab, TCM_GETITEMRECT, tabIndex, (LPARAM)&rc); // For new selected tab item.
+            //SetWindowPos(panel->gWin.At(tabIndex)->hwndTabStatic, NULL, rc.right - 16, 7, 12, 12, SWP_NOZORDER);
+            //SendMessage(panel->hwndTab, TCM_GETITEMRECT, panel->gWin.Find(panel->win), (LPARAM)&rc); // For selected tab item before change.
+            //SetWindowPos(panel->win->hwndTabStatic, NULL, rc.right - 16, 8, 12, 12, SWP_NOZORDER);
+        }
+        break;
 
-        case TTN_GETDISPINFO:
-            int tabIndex = (int) wParam;
-            if (IsCursorOverWindow(panel->hwndTab)) {
-                LPNMTTDISPINFO lpnmtdi = (LPNMTTDISPINFO)lParam;
-                lpnmtdi->lpszText = panel->gWin.At(tabIndex)->TabToolTipText;
-            }
-            break;
+    case TTN_GETDISPINFO:
+        int tabIndex;
+        tabIndex = (int) wParam;
+        if (IsCursorOverWindow(panel->hwndTab)) {
+            LPNMTTDISPINFO lpnmtdi = (LPNMTTDISPINFO)lParam;
+            lpnmtdi->lpszText = panel->gWin.At(tabIndex)->TabToolTipText;
+        }
+        break;
+
+    case NM_CUSTOMDRAW:
+        return CustomDrawInPanel(panel, hwnd, msg, wParam, lParam);
+
+    default:
+        return DefWindowProc(hwnd, msg, wParam, lParam);
     }
+
+    return 0;
 }
 
 static void PanelOnPaint(PanelInfo& panel)
@@ -5626,8 +5756,7 @@ static LRESULT CALLBACK WndProcPanel(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
             break;
 
         case WM_NOTIFY:
-            PanelOnNotify(panel, wParam, lParam);
-            break;
+            return PanelOnNotify(panel, hwnd, msg, wParam, lParam);
 
         case WM_PAINT:
             PanelOnPaint(*panel);
@@ -6205,6 +6334,29 @@ static LRESULT OnFrameGetMinMaxInfo(MINMAXINFO *info)
     return 0;
 }
 
+static LRESULT CustomDrawInWIN(TopWindowInfo *WIN, HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    LPNMHDR lpnmhdr = (LPNMHDR)lParam;
+    HWND hwndFrom = lpnmhdr->hwndFrom;
+
+    if (hwndFrom == WIN->panel->win->toolBar()->hwndReBar)
+        return CustomDrawReBar(hwndFrom, lParam);
+    else if (hwndFrom == WIN->panel->win->toolBar()->hwndToolbar)
+        return CustomDrawToolbar(hwndFrom, lParam);
+
+    return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
+static LRESULT FrameOnNotify(TopWindowInfo *WIN, HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    LPNMHDR lpnmhdr = (LPNMHDR)lParam;
+
+    if (lpnmhdr->code == NM_CUSTOMDRAW)
+        return CustomDrawInWIN(WIN, hwnd, msg, wParam, lParam);
+
+     return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
 static LRESULT CALLBACK WndProcFrame(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     WindowInfo *    win;
@@ -6245,6 +6397,12 @@ static LRESULT CALLBACK WndProcFrame(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 
         case WM_COMMAND:
             return FrameOnCommand(win, hwnd, msg, wParam, lParam);
+
+        case WM_NOTIFY:
+            if (win)
+                return FrameOnNotify(win->panel->WIN, hwnd, msg, wParam, lParam);
+            else
+                return DefWindowProc(hwnd, msg, wParam, lParam);
 
         case WM_APPCOMMAND:
             // both keyboard and mouse drivers should produce WM_APPCOMMAND
