@@ -1,4 +1,4 @@
-/* Copyright 2012 the SumatraPDF project authors (see AUTHORS file).
+/* Copyright 2013 the SumatraPDF project authors (see AUTHORS file).
    License: GPLv3 */
 
 // TODO: for the moment it needs to be included from SumatraPDF.cpp
@@ -245,6 +245,8 @@ static void RunUnitTests()
     HtmlPullParser_UnitTests();
     extern void TrivialHtmlParser_UnitTests();
     TrivialHtmlParser_UnitTests();
+    extern void CssParser_UnitTests();
+    CssParser_UnitTests();
     extern void SumatraPDF_UnitTests();
     SumatraPDF_UnitTests();
 #endif

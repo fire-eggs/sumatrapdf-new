@@ -1,4 +1,4 @@
-/* Copyright 2012 the SumatraPDF project authors (see AUTHORS file).
+/* Copyright 2013 the SumatraPDF project authors (see AUTHORS file).
    License: Simplified BSD (see COPYING.BSD) */
 
 #ifndef HtmlFormatter_h
@@ -62,6 +62,26 @@ struct DrawInstr {
     static DrawInstr Anchor(const char *s, size_t len, RectF bbox);
 };
 
+class CssPullParser;
+
+struct StyleRule {
+    HtmlTag     tag;
+    uint32_t    classHash;
+
+    enum Unit { px, pt, em, inherit };
+
+    float       textIndent;
+    Unit        textIndentUnit;
+    AlignAttr   textAlign;
+
+    StyleRule() : tag(Tag_NotFound), textIndentUnit(inherit), textAlign(Align_NotFound) { }
+
+    void Merge(StyleRule& source);
+
+    static StyleRule Parse(CssPullParser *parser);
+    static StyleRule Parse(const char *s, size_t len);
+};
+
 struct DrawStyle {
     Font *font;
     AlignAttr align;
@@ -70,20 +90,15 @@ struct DrawStyle {
 
 class HtmlPage {
 public:
-    HtmlPage() : reparseIdx(0), listDepth(0), preFormatted(false), dirRtl(false) { }
+    HtmlPage(int reparseIdx=0) : reparseIdx(reparseIdx) { }
 
     Vec<DrawInstr>  instructions;
     // if we start parsing html again from reparseIdx, we should
     // get the same instructions. reparseIdx is an offset within
     // html data
+    // TODO: reparsing from reparseIdx can lead to different styling
+    // due to internal state of HtmlFormatter not being properly set
     int             reparseIdx;
-    // a copy of the current style stack, so that styling
-    // doesn't change on a relayout from reparseIdx
-    Vec<DrawStyle>  styleStack;
-    // further information that is required for reliable relayouting
-    int listDepth;
-    bool preFormatted;
-    bool dirRtl;
 };
 
 // just to pack args to HtmlFormatter
@@ -119,17 +134,19 @@ struct HtmlFormatterArgs {
 
 class HtmlPullParser;
 struct HtmlToken;
+struct CssSelector;
 
 class HtmlFormatter
 {
 protected:
     void HandleTagBr();
-    void HandleTagP(HtmlToken *t);
+    void HandleTagP(HtmlToken *t, bool isDiv=false);
     void HandleTagFont(HtmlToken *t);
     bool HandleTagA(HtmlToken *t, const char *linkAttr="href", const char *attrNS=NULL);
     void HandleTagHx(HtmlToken *t);
     void HandleTagList(HtmlToken *t);
     void HandleTagPre(HtmlToken *t);
+    void HandleTagStyle(HtmlToken *t);
 
     void HandleAnchorAttr(HtmlToken *t, bool idsOnly=false);
     void HandleDirAttr(HtmlToken *t);
@@ -141,6 +158,7 @@ protected:
     // blank convenience methods to override
     virtual void HandleTagImg(HtmlToken *t) { }
     virtual void HandleTagPagebreak(HtmlToken *t) { }
+    virtual void HandleTagLink(HtmlToken *t) { }
 
     float CurrLineDx();
     float CurrLineDy();
@@ -161,13 +179,17 @@ protected:
     void  ForceNewPage();
     bool  EnsureDx(float dx);
 
-    DrawStyle *CurrStyle() { return &currLineStyleStack.Last(); }
+    DrawStyle *CurrStyle() { return &styleStack.Last(); }
     Font *CurrFont() { return CurrStyle()->font; }
     void  SetFont(const WCHAR *fontName, FontStyle fs, float fontSize=-1);
     void  SetFont(Font *origFont, FontStyle fs, float fontSize=-1);
     void  ChangeFontStyle(FontStyle fs, bool isStart);
     void  SetAlignment(AlignAttr align);
     void  RevertStyleChange();
+
+    void  ParseStyleSheet(const char *data, size_t len);
+    StyleRule *FindStyleRule(HtmlTag tag, const char *clazz, size_t clazzLen);
+    StyleRule ComputeStyleRule(HtmlToken *t);
 
     void  AppendInstr(DrawInstr di);
     bool  IsCurrLineEmpty();
@@ -184,10 +206,10 @@ protected:
     Allocator *         textAllocator;
     RectF            (* measureAlgo)(Graphics *g, Font *f, const WCHAR *s, size_t len);
 
-    Vec<DrawStyle>      styleStack;
     // style stack of the current line
-    // (might be pushed to the next page)
-    Vec<DrawStyle>      currLineStyleStack;
+    Vec<DrawStyle>      styleStack;
+    // style for the start of the next page
+    DrawStyle           nextPageStyle;
     // current position in a page
     float               currX, currY;
     // remembered when we start a new line, used when we actually
@@ -202,6 +224,8 @@ protected:
     // TODO: HtmlPullParser::tagNesting is updated too soon for our purposes
     Vec<HtmlTag>        tagNesting;
     bool                keepTagNesting;
+    // set from CSS and to be checked by the individual tag handlers
+    Vec<StyleRule>      styleRules;
 
     // isntructions for the current line
     Vec<DrawInstr>      currLineInstr;
