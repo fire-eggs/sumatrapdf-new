@@ -333,6 +333,56 @@ static LRESULT CALLBACK WndProcTabTooltip(HWND hwnd, UINT message, WPARAM wParam
 static WNDPROC DefWndProcTabControl = NULL;
 static LRESULT CALLBACK WndProcTabControl(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {   
+    if (message == WM_PAINT) {
+
+        CallWindowProc(DefWndProcTabControl, hwnd, message, wParam, lParam);
+
+        HDC hdc = GetDC(hwnd);
+
+        RECT rc;
+        GetClientRect(hwnd, &rc);
+
+        int dx = rc.right - rc.left;
+        int dy = rc.bottom - rc.top;
+
+        rc.top = 0;
+        rc.bottom = 1;
+        FillRect(hdc, &rc, CreateSolidBrush(RGB(0x6B, 0x6B, 0x6B)));
+
+        int tabItemCount = SendMessage(hwnd, TCM_GETITEMCOUNT, 0, 0);
+        RECT rcLastItem;
+        SendMessage(hwnd, TCM_GETITEMRECT, tabItemCount - 1, (LPARAM)&rcLastItem);
+        int start = rcLastItem.right + 2;
+        if (tabItemCount - 1 != SendMessage(hwnd, TCM_GETCURSEL, 0, 0))
+            start -= 4;
+
+        TRIVERTEX        vert[2];
+        GRADIENT_RECT    gRect;
+
+        vert[0].x      = start;
+        vert[0].y      = 1;
+        vert[0].Red    = 0xEF00;
+        vert[0].Green  = 0xEF00;
+        vert[0].Blue   = 0xEF00;
+        vert[0].Alpha  = 0x0000;
+
+        vert[1].x      = dx;
+        vert[1].y      = dy; 
+        vert[1].Red    = 0xD900;
+        vert[1].Green  = 0xD900;
+        vert[1].Blue   = 0xD900;
+        vert[1].Alpha  = 0x0000;
+
+        gRect.UpperLeft  = 0;
+        gRect.LowerRight = 1;
+
+        GradientFill(hdc, vert, 2, &gRect, 1, GRADIENT_FILL_RECT_V);
+
+        ReleaseDC(hwnd, hdc);
+
+        return 0;
+    }
+
     // hwnd is hwndTab;
     //PanelInfo *panel = FindPanelInfoByHwnd(hwnd);
     //

@@ -217,6 +217,15 @@ static HBITMAP LoadExternalBitmap(HINSTANCE hInst, WCHAR * filename, INT resourc
     return LoadBitmap(hInst, MAKEINTRESOURCE(resourceId));
 }
 
+static WNDPROC DefWndProcReBar = NULL;
+static LRESULT CALLBACK WndProcReBar(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    if (WM_ERASEBKGND == message) {
+        return 1;
+    }
+    return CallWindowProc(DefWndProcReBar, hwnd, message, wParam, lParam);
+}
+
 static WNDPROC DefWndProcToolbar = NULL;
 static LRESULT CALLBACK WndProcToolbar(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -384,6 +393,10 @@ static void CreateFindBox(ToolbarInfo *toolBar)
 
     SetWindowFont(label, gDefaultGuiFont, FALSE);
     SetWindowFont(find, gDefaultGuiFont, FALSE);
+
+    if (!DefWndProcReBar)
+        DefWndProcReBar = (WNDPROC)GetWindowLongPtr(toolBar->hwndReBar, GWLP_WNDPROC);
+    SetWindowLongPtr(toolBar->hwndReBar, GWLP_WNDPROC, (LONG_PTR)WndProcReBar);
 
     if (!DefWndProcToolbar)
         DefWndProcToolbar = (WNDPROC)GetWindowLongPtr(toolBar->hwndToolbar, GWLP_WNDPROC);
