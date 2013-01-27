@@ -5690,6 +5690,75 @@ static LRESULT PanelOnNotify(PanelInfo *panel, HWND hwnd, UINT msg, WPARAM wPara
     return 0;
 }
 
+static LRESULT PanelOnCommand(PanelInfo *panel, HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    WindowInfo *win = panel->win;
+    if (!win)
+        return DefWindowProc(hwnd, msg, wParam, lParam);
+
+    int wmId = LOWORD(wParam);
+
+    // most of them require a win, the few exceptions are no-ops
+    switch (wmId)
+    {
+        case IDM_PRINT:
+            OnMenuPrint(win);
+            break;
+
+        case IDT_VIEW_FIT_WIDTH:
+            ChangeZoomLevel(win, ZOOM_FIT_WIDTH, true);
+            break;
+
+        case IDT_VIEW_FIT_PAGE:
+            ChangeZoomLevel(win, ZOOM_FIT_PAGE, false);
+            break;
+
+        case IDT_VIEW_ZOOMIN:
+            if (win->IsDocLoaded())
+                ZoomToSelection(win, win->dm->NextZoomStep(ZOOM_MAX));
+            break;
+
+        case IDT_VIEW_ZOOMOUT:
+            if (win->IsDocLoaded())
+                ZoomToSelection(win, win->dm->NextZoomStep(ZOOM_MIN));
+            break;
+
+        case IDM_GOTO_NEXT_PAGE:
+            if (win->IsDocLoaded())
+                win->dm->GoToNextPage(0);
+            break;
+
+        case IDM_GOTO_PREV_PAGE:
+            if (win->IsDocLoaded())
+                win->dm->GoToPrevPage(0);
+            break;
+
+        case IDM_GOTO_PAGE:
+            OnMenuGoToPage(*win);
+            break;
+
+        case IDM_FIND_FIRST:
+            OnMenuFind(win);
+            break;
+
+        case IDM_FIND_NEXT:
+            OnMenuFindNext(win);
+            break;
+
+        case IDM_FIND_PREV:
+            OnMenuFindPrev(win);
+            break;
+
+        case IDM_FIND_MATCH:
+            OnMenuFindMatchCase(win);
+            break;
+
+        default:
+            return DefWindowProc(hwnd, msg, wParam, lParam);
+    }
+    return 0;
+}
+
 static void PanelOnPaint(PanelInfo& panel)
 {
     int rebBarDy = WindowRect(panel.win->toolBar()->hwndReBar).dy;
@@ -5757,6 +5826,9 @@ static LRESULT CALLBACK WndProcPanel(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 
         case WM_NOTIFY:
             return PanelOnNotify(panel, hwnd, msg, wParam, lParam);
+
+        case WM_COMMAND:
+            return PanelOnCommand(panel, hwnd, msg, wParam, lParam);
 
         case WM_PAINT:
             PanelOnPaint(*panel);
