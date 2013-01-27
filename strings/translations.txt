@@ -1,5 +1,5 @@
 AppTranslator: SumatraPDF
-06a99374324dcceb2694767013d2bdd13f296671
+5014928f41adeed491c12d598d04457eef123496
 :&About
 af:&Omtrent
 am:&Ծրագրի մասին
@@ -2532,7 +2532,7 @@ tl:Paliitin ang pahina sa printable na area (kung kinakailangan)
 tr:Sayfaları baskı alanına &indirgele (gerekirse)
 tw:如有需要，縮小頁面以符合可列印區域(&S)
 uk:Урізати сторінки до зони друку (при необхідності)
-uz:&Betlarni printerga moslab kichiktirish (zarur bo'lganda)
+uz:&Betlarni printerga moslab kichraytirish (zarur bo'lganda)
 vn:Nén vừa trang in (nếu cần thiết)
 :&Single Page\tCtrl+6
 am:&Մեկ էջով\tCtrl+6
@@ -6741,7 +6741,7 @@ az:Seçilmişlər
 bg:Любими
 br:Favoritos
 bs:Favoriti
-ca-xv:Favorits
+ca-xv:Preferits
 ca:Preferits
 cn:收藏
 cz:Oblíbené položky
@@ -10929,7 +10929,8 @@ am:Տպվում է:
 az:Çap davam edir.
 bg:Печатане...
 br:Imprimindo...
-ca:Impressio en procés.
+ca-xv:La impresió és en procés.
+ca:La impressio és en procés.
 cn:正在打印
 cz:Probíhá tisk
 de:Drucken - SumatraPDF
@@ -10963,6 +10964,7 @@ am:Տպվում է: Ընդհատե՞լ և փակել:
 az:Çap davam edir. Dayandırmaq və proqramdan çıxmaq?
 bg:Печатането все още е на ход. Сигурни ли сте, че искате принудително да го откажете и да излезете?
 br:Ainda imprimindo... Interromper e sair?
+ca-xv:La impressió encara és en procés. Voleu aturar i sortir?
 ca:La impressió encara està en procés. Voleu aturar i sortir?
 cn:仍然在打印。中断并放弃？
 cz:Tisk stále probíhá. Přerušit a odejít?
@@ -13693,7 +13695,7 @@ tl:Palakihin
 tr:Yakınlaştır
 tw:放大
 uk:Збільшити
-uz:Kattartirish
+uz:Kattalashtirish
 vn:Phóng to
 :Zoom Out
 af:Zoem Uit
@@ -13761,7 +13763,7 @@ tl:Paliitin
 tr:Uzaklaştır
 tw:縮小
 uk:Зменшити
-uz:Kichiktirish
+uz:Kichraytirish
 vn:Thu nhỏ
 :Zoom factor
 am:Չափի գործակիցը

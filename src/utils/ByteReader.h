@@ -1,4 +1,4 @@
-/* Copyright 2012 the SumatraPDF project authors (see AUTHORS file).
+/* Copyright 2013 the SumatraPDF project authors (see AUTHORS file).
    License: Simplified BSD (see COPYING.BSD) */
 
 #ifndef ByteReader_h
@@ -14,9 +14,9 @@ class ByteReader {
         int repeat = 0;
         size_t idx = 0;
         for (const char *c = format; *c; c++) {
-            if (isdigit((wint_t)*c)) {
+            if (isdigit((unsigned char)*c)) {
                 repeat = atoi(c);
-                for (c++; isdigit((wint_t)*c); c++);
+                for (c++; isdigit((unsigned char)*c); c++);
             }
             switch (*c) {
             case 'b':
