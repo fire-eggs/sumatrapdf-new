@@ -154,7 +154,7 @@ static bool InstanceInit(HINSTANCE hInstance, int nCmdShow)
     gBrushSidebarSplitterBg = CreateSolidBrush(SIDEBAR_SPLITTER_BG_COLOR);
     gBrushSidebarSplitterEdgeBg = CreateSolidBrush(SIDEBAR_SPLITTER_EDGE_BG_COLOR);
 
-    gBrushSepLineBg = gBrushNoDocBg;
+    gBrushSepLineBg = CreateSolidBrush(SEPARATOR_BG_COLOR);
     gBrushStaticBg = gBrushPanelSplitterBg;
 
     NONCLIENTMETRICS ncm = { 0 };

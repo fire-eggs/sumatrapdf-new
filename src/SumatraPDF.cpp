@@ -103,9 +103,11 @@ WCHAR *          gPluginURL = NULL; // owned by CommandLineInfo in WinMain
 #endif
 
 #define PANEL_SPLITTER_BG_COLOR         RGB(0xF0, 0xF0, 0xF0)
-#define PANEL_SPLITTER_EDGE_BG_COLOR    RGB(0xA0, 0xA0, 0xA0)
+#define PANEL_SPLITTER_EDGE_BG_COLOR    RGB(0x6B, 0x6B, 0x6B)
 #define SIDEBAR_SPLITTER_BG_COLOR       RGB(0xF0, 0xF0, 0xF0)
-#define SIDEBAR_SPLITTER_EDGE_BG_COLOR  RGB(0xA0, 0xA0, 0xA0)
+#define SIDEBAR_SPLITTER_EDGE_BG_COLOR  RGB(0x6B, 0x6B, 0x6B)
+
+#define SEPARATOR_BG_COLOR              RGB(0x6B, 0x6B, 0x6B)
 
 #define CONTAINER_CLASS_NAME         L"SUMATRA_PDF_CONTAINER"
 #define PANEL_CLASS_NAME             L"SUMATRA_PDF_PANEL"
@@ -4706,11 +4708,11 @@ static void PanelSplitterOnPaint(HWND hwnd)
         rc.bottom = 1;
         FillRect(hdc, &rc, gBrushPanelSplitterEdgeBg);
 
-        rc.left = 0;
-        rc.right = dx;
-        rc.top = dy - 1;
-        rc.bottom = dy;
-        FillRect(hdc, &rc, gBrushPanelSplitterEdgeBg);
+        //rc.left = 0;
+        //rc.right = dx;
+        //rc.top = dy - 1;
+        //rc.bottom = dy;
+        //FillRect(hdc, &rc, gBrushPanelSplitterEdgeBg);
     } else {
         rc.left = 0;
         rc.right = 1;
@@ -4723,6 +4725,12 @@ static void PanelSplitterOnPaint(HWND hwnd)
         rc.top = 0;
         rc.bottom = dy;
         FillRect(hdc, &rc, gBrushPanelSplitterEdgeBg);
+
+        rc.left = 0;
+        rc.right = dx;
+        rc.top = 0;
+        rc.bottom = 1;
+        FillRect(hdc, &rc, gBrushSepLineBg);
     }
 
     EndPaint(hwnd, &ps);
@@ -4806,7 +4814,7 @@ static void SidebarSplitterOnPaint(HWND hwnd)
     rc.right = dx;
     rc.top = 0;
     rc.bottom = 1;
-    FillRect(hdc, &rc, gBrushNoDocBg);
+    FillRect(hdc, &rc, gBrushSepLineBg);
 
     EndPaint(hwnd, &ps);
 }
@@ -5552,7 +5560,7 @@ static LRESULT CustomDrawReBar(HWND hwnd, LPARAM lParam)
             rc.right = dx;
             rc.top = 0;
             rc.bottom = 1;
-            FillRect(hdc, &rc, CreateSolidBrush(RGB(0x6B, 0x6B, 0x6B)));
+            FillRect(hdc, &rc, gBrushSepLineBg);
 
             rc.left = 0;
             rc.right = dx;
@@ -5777,7 +5785,7 @@ static void PanelOnPaint(PanelInfo& panel)
     rc.right = dx;
     rc.top = rebBarDy + TAB_CONTROL_DY;
     rc.bottom = rebBarDy + TAB_CONTROL_DY + 1;
-    FillRect(hdc, &rc, gBrushNoDocBg);
+    FillRect(hdc, &rc, gBrushSepLineBg);
 
     EndPaint(panel.hwndPanel, &ps);
 }
