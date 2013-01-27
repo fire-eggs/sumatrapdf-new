@@ -1,4 +1,4 @@
-/* Copyright 2012 the SumatraPDF project authors (see AUTHORS file).
+/* Copyright 2013 the SumatraPDF project authors (see AUTHORS file).
    License: GPLv3 */
 
 #ifndef EbookFormatter_h
@@ -34,6 +34,7 @@ class EpubDoc;
 class EpubFormatter : public HtmlFormatter {
     virtual void HandleTagImg(HtmlToken *t);
     virtual void HandleTagPagebreak(HtmlToken *t);
+    virtual void HandleTagLink(HtmlToken *t);
     virtual void HandleHtmlTag(HtmlToken *t);
     virtual bool IgnoreText();
 
@@ -89,6 +90,7 @@ class HtmlDoc;
 class HtmlFileFormatter : public HtmlFormatter {
 protected:
     virtual void HandleTagImg(HtmlToken *t);
+    virtual void HandleTagLink(HtmlToken *t);
 
     HtmlDoc *htmlDoc;
 
