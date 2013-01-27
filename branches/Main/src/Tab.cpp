@@ -347,14 +347,18 @@ static LRESULT CALLBACK WndProcTabControl(HWND hwnd, UINT message, WPARAM wParam
 
         rc.top = 0;
         rc.bottom = 1;
-        FillRect(hdc, &rc, CreateSolidBrush(RGB(0x6B, 0x6B, 0x6B)));
+        FillRect(hdc, &rc, gBrushSepLineBg);
 
         int tabItemCount = SendMessage(hwnd, TCM_GETITEMCOUNT, 0, 0);
         RECT rcLastItem;
         SendMessage(hwnd, TCM_GETITEMRECT, tabItemCount - 1, (LPARAM)&rcLastItem);
         int start = rcLastItem.right + 2;
-        if (tabItemCount - 1 != SendMessage(hwnd, TCM_GETCURSEL, 0, 0))
-            start -= 4;
+        if (tabItemCount - 1 != SendMessage(hwnd, TCM_GETCURSEL, 0, 0)) {
+            if (IsAppThemed())
+                start -= 4;
+            else
+                start -= 2;
+        }
 
         TRIVERTEX        vert[2];
         GRADIENT_RECT    gRect;
