@@ -1,8 +1,9 @@
-/* Copyright 2012 the SumatraPDF project authors (see AUTHORS file).
+/* Copyright 2013 the SumatraPDF project authors (see AUTHORS file).
    License: GPLv3 */
 
 #include "BaseUtil.h"
 #include "EbookFormatter.h"
+
 #include "EbookDoc.h"
 using namespace Gdiplus;
 #include "GdiPlusUtil.h"
@@ -63,12 +64,17 @@ MobiFormatter::MobiFormatter(HtmlFormatterArgs* args, MobiDoc *doc) :
 // to be passed by the caller
 static float ParseSizeAsPixels(const char *s, size_t len, float emInPoints)
 {
-    float x = 0;
     float sizeInPoints = 0;
-    if (str::Parse(s, len, "%fem", &x)) {
-        sizeInPoints = x * emInPoints;
-    } else if (str::Parse(s, len, "%fpt", &x)) {
-        sizeInPoints = x;
+    if (str::Parse(s, len, "%fem", &sizeInPoints)) {
+        sizeInPoints *= emInPoints;
+    } else if (str::Parse(s, len, "%fin", &sizeInPoints)) {
+        sizeInPoints *= 72;
+    } else if (str::Parse(s, len, "%fpt", &sizeInPoints)) {
+        // no conversion needed
+    } else if (str::Parse(s, len, "%fpx", &sizeInPoints)) {
+        return sizeInPoints;
+    } else {
+        return 0;
     }
     // TODO: take dpi into account
     float sizeInPixels = sizeInPoints;
@@ -77,7 +83,7 @@ static float ParseSizeAsPixels(const char *s, size_t len, float emInPoints)
 
 void MobiFormatter::HandleSpacing_Mobi(HtmlToken *t)
 {
-    if (t->IsEndTag())
+    if (!t->IsStartTag())
         return;
 
     // best I can tell, in mobi <p width="1em" height="3pt> means that
@@ -174,7 +180,31 @@ void EpubFormatter::HandleTagPagebreak(HtmlToken *t)
         RectF bbox(0, currY, pageDx, 0);
         currPage->instructions.Append(DrawInstr::Anchor(attr->val, attr->valLen, bbox));
         pagePath.Set(str::DupN(attr->val, attr->valLen));
+        // reset CSS style rules for the new document
+        styleRules.Reset();
     }
+}
+
+void EpubFormatter::HandleTagLink(HtmlToken *t)
+{
+    CrashIf(!epubDoc);
+    if (t->IsEndTag())
+        return;
+    AttrInfo *attr = t->GetAttrByName("rel");
+    if (!attr || !attr->ValIs("stylesheet"))
+        return;
+    attr = t->GetAttrByName("type");
+    if (attr && !attr->ValIs("text/css"))
+        return;
+    attr = t->GetAttrByName("href");
+    if (!attr)
+        return;
+
+    size_t len;
+    ScopedMem<char> src(str::DupN(attr->val, attr->valLen));
+    ScopedMem<char> data(epubDoc->GetFileData(src, pagePath, &len));
+    if (data)
+        ParseStyleSheet(data, len);
 }
 
 void EpubFormatter::HandleTagSvgImage(HtmlToken *t)
@@ -307,6 +337,8 @@ void Fb2Formatter::HandleHtmlTag(HtmlToken *t)
         if (!t->IsEndTag())
             EmitParagraph(0);
     }
+    else if (t->NameIs("stylesheet"))
+        HandleTagAsHtml(t, "style");
 }
 
 /* standalone HTML-specific formatting methods */
@@ -323,4 +355,26 @@ void HtmlFileFormatter::HandleTagImg(HtmlToken *t)
     ImageData *img = htmlDoc->GetImageData(src);
     if (img)
         EmitImage(img);
+}
+
+void HtmlFileFormatter::HandleTagLink(HtmlToken *t)
+{
+    CrashIf(!htmlDoc);
+    if (t->IsEndTag())
+        return;
+    AttrInfo *attr = t->GetAttrByName("rel");
+    if (!attr || !attr->ValIs("stylesheet"))
+        return;
+    attr = t->GetAttrByName("type");
+    if (attr && !attr->ValIs("text/css"))
+        return;
+    attr = t->GetAttrByName("href");
+    if (!attr)
+        return;
+
+    size_t len;
+    ScopedMem<char> src(str::DupN(attr->val, attr->valLen));
+    ScopedMem<char> data(htmlDoc->GetFileData(src, &len));
+    if (data)
+        ParseStyleSheet(data, len);
 }
