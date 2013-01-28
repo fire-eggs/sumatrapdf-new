@@ -333,14 +333,15 @@ void MenuUpdatePrintItem(WindowInfo* win, HMENU menu, bool disableOnly=false) {
     win::menu::SetEnabled(menu, IDM_PRINT, filePrintEnabled && filePrintAllowed);
 }
 
-static bool IsFileCloseMenuEnabled()
+static bool IsFileCloseMenuEnabled(WindowInfo *win)
 {
     if (gEbookWindows.Count() > 0)
         return true;
-    for (size_t i = 0; i < gWindows.Count(); i++) {
-        if (!gWindows.At(i)->IsAboutWindow())
-            return true;
-    }
+
+	PanelInfo *panel = win->panel;
+    if (panel->gWin.Count() > 1 || !win->IsAboutWindow())
+        return true;
+    
     return false;
 }
 
@@ -364,8 +365,8 @@ void MenuUpdateStateForWindow(WindowInfo* win) {
         IDM_VIEW_WITH_ACROBAT, IDM_VIEW_WITH_FOXIT, IDM_VIEW_WITH_PDF_XCHANGE,
     };
 
-    assert(IsFileCloseMenuEnabled() == !win->IsAboutWindow());
-    win::menu::SetEnabled(win->menu, IDM_CLOSE, IsFileCloseMenuEnabled());
+    assert(IsFileCloseMenuEnabled(win) == (!win->IsAboutWindow() || win->panel->gWin.Count() > 1));
+    win::menu::SetEnabled(win->menu, IDM_CLOSE, IsFileCloseMenuEnabled(win));
 
     MenuUpdatePrintItem(win, win->menu);
 
