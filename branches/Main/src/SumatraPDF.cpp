@@ -3061,7 +3061,7 @@ void CloseDocumentInWindow(WindowInfo *win)
         // UpdateToolbarAndScrollbarState will set the title also, so we don't need it here.
         // win::SetText(win->panel->WIN->hwndFrame, APP_NAME_STR);
         UpdateToolbarAndScrollbarState(*win); // This will call ToolbarUpdateStateForWindow -> UpdateToolbarFindText, which positions FindText (label).
-        // SetWinTitle(win); // Update win->title;
+        SetWinTitle(win); // Update win->title;
         SetFocus(win->panel->WIN->hwndFrame);
     }
 
