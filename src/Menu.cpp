@@ -338,7 +338,7 @@ static bool IsFileCloseMenuEnabled(WindowInfo *win)
     if (gEbookWindows.Count() > 0)
         return true;
 
-	PanelInfo *panel = win->panel;
+    PanelInfo *panel = win->panel;
     if (panel->gWin.Count() > 1 || !win->IsAboutWindow())
         return true;
     
