@@ -234,6 +234,10 @@ $(OS)\Favorites.obj: src\utils\Allocator.h src\utils\BaseUtil.h src\utils\FileUt
 $(OS)\Favorites.obj: src\utils\GdiPlusUtil.h src\utils\GeomUtil.h src\utils\Scoped.h
 $(OS)\Favorites.obj: src\utils\StrUtil.h src\utils\UITask.h src\utils\Vec.h
 $(OS)\Favorites.obj: src\utils\WinUtil.h src\WindowInfo.h
+$(OS)\FileModifications.obj: src\BaseEngine.h src\FileModifications.h src\utils\Allocator.h
+$(OS)\FileModifications.obj: src\utils\BaseUtil.h src\utils\CssParser.h src\utils\FileUtil.h
+$(OS)\FileModifications.obj: src\utils\GeomUtil.h src\utils\HtmlParserLookup.h src\utils\Scoped.h
+$(OS)\FileModifications.obj: src\utils\StrUtil.h src\utils\Vec.h
 $(OS)\FileWatch.obj: src\FileWatch.h src\utils\Allocator.h src\utils\BaseUtil.h
 $(OS)\FileWatch.obj: src\utils\FileUtil.h src\utils\GeomUtil.h src\utils\Scoped.h
 $(OS)\FileWatch.obj: src\utils\StrUtil.h src\utils\Vec.h src\utils\WinUtil.h
@@ -399,7 +403,7 @@ $(OS)\SumatraPDF.obj: src\AppPrefs.h src\AppTools.h src\BaseEngine.h
 $(OS)\SumatraPDF.obj: src\ChmEngine.h src\CrashHandler.h src\DisplayModel.h
 $(OS)\SumatraPDF.obj: src\DisplayState.h src\Doc.h src\EbookController.h
 $(OS)\SumatraPDF.obj: src\EbookWindow.h src\ExternalPdfViewer.h src\Favorites.h
-$(OS)\SumatraPDF.obj: src\FileHistory.h src\FileWatch.h src\Menu.h
+$(OS)\SumatraPDF.obj: src\FileHistory.h src\FileModifications.h src\FileWatch.h src\Menu.h
 $(OS)\SumatraPDF.obj: src\mui\Mui.h src\mui\MuiBase.h src\mui\MuiButton.h
 $(OS)\SumatraPDF.obj: src\mui\MuiControl.h src\mui\MuiCss.h src\mui\MuiEventMgr.h
 $(OS)\SumatraPDF.obj: src\mui\MuiGrid.h src\mui\MuiHwndWrapper.h src\mui\MuiLayout.h
