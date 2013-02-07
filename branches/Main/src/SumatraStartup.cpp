@@ -375,14 +375,13 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     mui::Initialize();
     uitask::Initialize();
 
+    gFavorites = new Favorites();
     ScopedMem<WCHAR> prefsFilename(GetPrefsFileName());
     if (!file::Exists(prefsFilename)) {
         // guess the ui language on first start
         CurrLangNameSet(trans::GuessLanguage());
-        gFavorites = new Favorites();
     } else {
-        assert(gFavorites == NULL);
-        Prefs::Load(prefsFilename, gGlobalPrefs, gFileHistory, &gFavorites);
+        Prefs::Load(prefsFilename, gGlobalPrefs, gFileHistory, gFavorites);
         CurrLangNameSet(gGlobalPrefs.currentLanguage);
     }
     prefsFilename.Set(NULL);
@@ -499,6 +498,11 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     if (i.stressTestPath)
         StartStressTest(&i, win, &gRenderCache);
 
+    if (gFileHistory.Get(0)) {
+        gFileExistenceChecker = new FileExistenceChecker();
+        gFileExistenceChecker->Start();
+    }
+
     retCode = RunMessageLoop();
 
     CleanUpThumbnailCache(gFileHistory);
@@ -516,6 +520,8 @@ Exit:
     // (as recommended for a quick exit)
     ExitProcess(retCode);
 #endif
+
+    CrashIf(gFileExistenceChecker);
 
     DeleteObject(gBrushNoDocBg);
     DeleteObject(gBrushLogoBg);
