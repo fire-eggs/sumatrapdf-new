@@ -1,5 +1,5 @@
 AppTranslator: SumatraPDF
-f94b23ab180f5827e3f13b47c9f968836156c7ac
+8980179760b4c25787144c9d250e06e6b9ca2752
 :&About
 af:&Omtrent
 am:&Ծրագրի մասին
@@ -160,6 +160,7 @@ fr:&Toutes les pages sélectionnées
 ga:&Gach leathanach roghnaithe
 gl:&Todas as páxinas seleccionadas
 he:כל העמודים הנבחרים
+hi:&सभी चयनित पृष्ठों
 hr:Sve obilježene str&anice
 hu:Az összes kiválasztott oldal
 id:&Semua halaman yang dipilih
@@ -755,6 +756,7 @@ fy-nl:&Sykje nei:
 ga:&Aimsigh céard:
 gl:&Atopar que:
 he:מה למצוא:
+hi:क्या ढूँढ़ें:(&F)
 hr:&Što tražiti:
 hu:Mit keres:
 id:&Cari:
@@ -1006,6 +1008,7 @@ fy-nl:&Gean nei side:
 ga:&Téigh chuig lch:
 gl:&Ir á páxina:
 he:עבור לעמוד
+hi:पृष्ठ पर जायें (&G)
 hr:&Idi na stranicu:
 hu:&Ugrás oldal:
 id:&Pergi ke halaman:
@@ -1449,6 +1452,7 @@ fy-nl:&Nee
 ga:&Ná déan
 gl:&Non
 he:לא
+hi:नहीं(&N)
 hr:&Ne
 hu:&Nem
 id:&Tidak
@@ -1508,6 +1512,7 @@ fy-nl:&Nee, tankewol
 ga:&Níl, go raibh maith agat
 gl:&Non, grazas
 he:לא, תודה
+hi:नहीं, धन्यवाद(&N)
 hr:&Ne, hvala
 hu:Köszönöm,&nem
 id:&Tidak, terima kasih
@@ -2677,7 +2682,7 @@ fr:&Utiliser les dimensions d'origine
 ga:&Bain feidhm as méideanna bunaidh an leathanaigh
 gl:&Usar tamaños de páxina orixinais
 he:השתמש במידות דף מקוריות
-hi:एवं वास्तविक पृष्ठ आकार
+hi:वास्तविक पृष्ठ आकार का उपयोग(&U) करें
 hr:Koristi &originalne veličine stranica
 hu:Eredeti oldalméret használata
 id:&Gunakan ukuran halaman sebenarnya
@@ -2803,7 +2808,7 @@ fy-nl:&Ja
 ga:&Déan sin
 gl:&Si
 he:כן
-hi:हां
+hi:हां(&Y)
 hr:&Da
 hu:&Igen
 id:&Ya
@@ -3384,7 +3389,7 @@ fy-nl:Alle bestannen
 ga:Gach comhad
 gl:Todos os arquivos
 he:כל הקבצים
-hi:समस्त फाइलें
+hi:सभी फाइलें
 hr:Sve datoteke
 hu:Minden fájl
 id:Semua Berkas
@@ -4207,6 +4212,7 @@ fy-nl:CHM-bestannen
 ga:Cáipéisí CHM
 gl:Documentos CHM
 he:CHM מסמכי
+hi:CHM दस्तावेजों
 hr:CHM dokumenti
 hu:CHM fájlok
 id:Dokumen CHM
@@ -4261,6 +4267,7 @@ fr:Impossible de se connecter à Internet (erreur %#x)
 ga:Ní féidir ceangailt leis an idirlíon (botún %#x).
 gl:Non se pode conectar a Internet (error %#x).
 he:לא יכול להתקשר לאינטרנט (error %#x).
+hi:इंटरनेट से जुड़​ नहीं पा रहा है ( ग़लती %#x )
 hr:Internet nedostupan (greška %#x)
 hu:Nem sikerült kapcsolódni az Internetre (hiba %#x).
 id:Tidak bisa menghubungi Internet (kesalahan %#x).
@@ -4380,6 +4387,7 @@ fy-nl:Dit bestân kin net ôfdrukt wurde
 ga:Ní féidir an comhad seo a chlóbhualadh
 gl:Non se pode imprimir este ficheiro
 he:לא ניתן להדפיס הקובץ
+hi:इस फ़ाइल का छपाई नहीं किया जा सकता
 hr:Ne mogu ispisati ovu datoteku
 hu:Ez a file nem nyomtatható
 id:Tidak dapat mencetak berkas ini
@@ -4439,6 +4447,7 @@ fy-nl:Kin de omkearde sykrjochting net starte. Kontrolearje de opdrachtrigel yn 
 ga:Ní féidir ordú cuardaigh aisiompaithe a thosú. Dearbháil líne na n-orduithe sna socruithe.
 gl:Non se pode iniciar comando de búsqueda inversa. Por favor, revisa a liña de comandos nos axustes.
 he:לא ניתן להריץ פקודת חיפוש הפוך. אנא בדוק הפקודה בהגדרות
+hi:उलटा खोज कमांड शुरू हो पा रहा । कृपया सेटिंग्स में कमांड लाइन की जाँच करें ।
 hr:Ne mogu pokrenuti naredbu unazadnog pretraživanja. Molim provjerite naredbeni redak u postavkama.
 hu:Nem indítható a fordított keresési parancs. Ellenőrizze a parancssorban, a beállításokat.
 id:Tidak dapat memulai perintah pencarian terbalik. Harap periksa baris perintah di bagian pengaturan.
@@ -4628,6 +4637,7 @@ fr:Bandes dessinées
 ga:Greannáin
 gl:Albumes de cómic
 he:ספרי קומיקס
+hi:हास्य किताबें
 hr:Stripovi
 hu:Képregény fájlok
 id:Buku Komik
@@ -5151,6 +5161,7 @@ fr:La copie de texte est refusée (seule une capture d’écran est faite)
 ga:Níorbh fhéidir téacs a mhacasamhlú (macasamhlú mar íomhá amháin)
 gl:Copiar texto foi denegado (copiando só coma imaxe)
 he:העתקת טקסט נדחית (מועתק רק כתמונה)
+hi:टेक्स्ट कि प्रतियां बनाने से अस्वीकृत ( केवल छवि के रूप में प्रतिलिपिकरण )
 hr:Kopiranje teksta je nemoguće (kopirano kao slika)
 hu:Szöveg másolása tiltott (csak képként másolva)
 id:Menyalin teks ditolak (menyalin sebagai gambar saja)
@@ -5310,6 +5321,7 @@ fy-nl:Kin de printer net inisjalisearje
 ga:Níorbh fhéidir an clóire a thúsú
 gl:Non se pode inicializar a impresora
 he:לא ניתן לאתחל מדפסת
+hi:प्रिंटर प्रारंभ नहीं हो पा रहा
 hr:Ne mogu inicijalizirati pisač
 hu:A nyomtató inicializálása nem sikerült
 id:Tidak dapat menginisialisasi printer
@@ -5483,7 +5495,7 @@ fr:Fichier actuel
 ga:Comhad reatha
 gl:Ficheiro actual
 he:קובץ נוכחי
-hi:वर्तमान दस्तावेज़
+hi:वर्तमान फ़ाइल
 hr:Trenutna datoteka
 hu:Jelenlegi fájl
 id:Berkas sekarang
@@ -5598,6 +5610,7 @@ fy-nl:Standert &Layout:
 ga:&Leagan amach réamhshocraithe:
 gl:Disposición por defecto:
 he:סידור ברירת מחדל:
+hi:मूलभूत लेआउट :(&L)
 hr:Pretpostavljeni &izgled:
 hu:Oldalmegjelenítési mód:
 id:Tampilan &Standar
@@ -5716,6 +5729,7 @@ fy-nl:Standert PDF-lêzer kin net oanpast wurde yn portable moadus
 ga:Ní féidir an léitheoir PDF réamhshocraithe a athrú sa mhodh soghluaiste
 gl:O lector de PDF por defecto non pode trocarse en modo portable
 he:PDF לא ניתן לשנות במצב נייד את קורא ה
+hi:डिफ़ॉल्ट पीडीएफ रीडर पोर्टेबल मोड में बदला नहीं जा सकता
 hr:Glavni preglednik PDF datoteka se ne može mijenjati u prenosivom načinu
 hu:Nem tehető alapértelmezett PDF-olvasóvá hordozható módban
 id:Pembaca PDF utama tidak dapat diubah dalam mode portabel
@@ -5774,6 +5788,7 @@ fr:Interdictions :
 ga:Ceadanna diúltaithe:
 gl:Permisos denegados:
 he:הרשאות חסרות:
+hi:अस्वीकृत अनुमतियाँ
 hr:Dozvole ograničenja:
 hu:Tiltott műveletek:
 id:Izin Ditolak:
@@ -5831,6 +5846,7 @@ fy-nl:DjVu-bestannen
 ga:Cáipéisí DjVu
 gl:Documentos DjVu
 he:DjVu הערות
+hi:DjVu दस्तावेजों
 hr:DjVu dokumenti
 hu:DjVu fájlok
 id:Dokumen DjVu
@@ -5886,6 +5902,7 @@ fy-nl:Dokuminteigenskippen
 ga:Airíonna na cáipéise
 gl:Propiedades do documento
 he:תכונות מסמך
+hi:दस्तावेज़ गुण
 hr:Svojstva dokumenta
 hu:A dokumentum tulajdonságai
 id:Properti Dokumen
@@ -6071,6 +6088,7 @@ fy-nl:EPUB-bestannen
 ga:Cáipéisí EPUB
 gl:Documentos EPUB
 he:EPUB מסמכי
+hi:EPUB ई - किताबें
 hr:EPUB dokumenti
 hu:EPUB fájlok
 id:Dokumen EPUB
@@ -6311,6 +6329,7 @@ fr:Erreur de chargement de %s
 ga:Tharla botún ag luchtú %s
 gl:Erro cargando %s
 he:שגיאת טעינה %s
+hi:त्रुटि लोड हो रही है %s
 hr:Greška kod pokretanja %s
 hu:Hiba %s dokumentum betöltésekor
 id:Kesalahan memuat %s
@@ -6606,6 +6625,7 @@ fa:تغییر نام پرونده با شکست مواجه شد!
 fr:Impossible de renommer le fichier!
 ga:Theip ar athainmniú an chomhaid!
 he:פעולת שינוי שם הקובץ נכשלה!
+hi:फ़ाइल का नाम बदलने मे असफ़ल​ !
 hr:Neuspjeh u preimenovanju datoteke!
 hu:A fájl átnevezése sikertelen
 id:Gagal mengganti nama berkas!
@@ -6719,6 +6739,7 @@ fa:تماشای بی درنگ
 fr:Affichage Web rapide
 ga:Gréasáin dearcadh go tapa
 he:הצגת רשת מהירה
+hi:तीव्र वेब दर्शन
 hr:Brzi Web prikaz
 hu:Gyors web-nézet
 id:Tampilan Web Cepat
@@ -6861,6 +6882,7 @@ fr:Fichier %s non trouvé
 ga:NÃor aimsÃodh an comhad %s
 gl:Ficheiro %s non atopado
 he:קובץ %s לא נמצא
+hi:फ़ाइल %s नहीं मिली
 hr:Datoteka %s nije pronađena
 hu:Fájl %s nem található
 id:File %s tak ditemukan
@@ -6913,6 +6935,7 @@ fy-nl:Bestânsgrutte
 ga:Méid an chomhaid:
 gl:Tamaño de arquivo:
 he:גודל הקובץ:
+hi:फ़ाइल का आकार:
 hr:Veličina datoteke:
 hu:Méret:
 id:Ukuran Berkas:
@@ -6970,6 +6993,7 @@ fy-nl:Bestân:
 ga:Comhad:
 gl:Ficheiro:
 he:קובץ:
+hi:फ़ाइल:
 hr:Datoteka:
 hu:Fájl:
 id:Berkas:
@@ -7947,6 +7971,7 @@ fy-nl:Tekst fûn op side %s
 ga:Aimsíodh téacs ag lch a %s
 gl:Atopado texto na páxina %s
 he:%s חפש מלל בעמוד
+hi:टेक्स्ट पृष्ठ %s पर पाया गया
 hr:Tekst je pronađen na %s. stranici
 hu:Találat a(z) %s. oldalon
 id:Teks ditemukan pada halaman %s
@@ -8241,6 +8266,7 @@ fr:Masquer les documents lus fréquemment
 ga:Folaigh cinn léite go minic
 gl:Agachar o lido decote
 he:הסתר נקרא תכופות
+hi:अक्सर पढ़े जाने वालों को छुपाएँ
 hr:Sakrij najčešće čitano
 hu:Leggyakrabban olvasottak elrejtése
 id:Sembunyikan Yang Sering Dibaca
@@ -8295,6 +8321,7 @@ fy-nl:Tip: Brûk de funksjetoets F3 om fierder te sykjen
 ga:Leid: Bain feidhm as an gcnaipe F3 chun nithe a aimsiú arís
 gl:Usar "F3" para amosar seguinte resultado
 he:F3 רמז: לחיפוש הבא, השתמש במקש
+hi:सुझाव: फिर से खोजने के लिए F3 कुंजी का प्रयोग करें
 hr:Pomoć: upotrijebite tipku F3 za ponovnu pretragu
 hu:Tipp: Nyomja meg az F3-at a következő találathoz
 id:Tips : Gunakan tombol F3 untuk mengulangi pencarian
@@ -8469,6 +8496,7 @@ fi:Ladataan tiedostoa %s...
 fr:Chargement du fichier %s...
 ga:Ag luchtú an comhad %s...
 he:פותח קובץ %s...
+hi:%s फाइल लोड हो रहा
 hr:Pokretanje datoteke %s...
 hu:Fájl beolvasása %s...
 id:Memuat berkas %s...
@@ -12110,6 +12138,7 @@ fi:Näytä &Kirjanmerkit
 fr:Voir les &Marque-pages
 ga:Lea&bharmharcanna a taispeáint
 he:הראה סימניות
+hi:बुकमार्क दिखाएँ (&B)
 hr:Prikaži &oznake
 hu:Könyvjelzők mutatása
 id:Tampilkan &Markah
@@ -12513,6 +12542,7 @@ fr:Désolé, cela n'aurait pas dû se produire !\n\n Cliquez sur "Annuler" si vo
 ga:Faraor, níor chóir go dtarlódh sin!\n\nBrúigh 'Cealaigh' le do thoil, más mian leat cuidiú linn údar an chliste seo a dheisiú.
 gl:Desculpe, isto non debería ocurrir\n\nPor favor, prema 'Cancelar', se quere axudarnos a reparar a causa deste erro.
 he:מצטער זה לא היה צריך לקרות!\n\nאנא הקלד בטל אם ברצונך לעזור לנו לתקן תקלה זו.
+hi:क्षमा करें, ऐसा नहीं होना चाहिए; अगर आप इस दुर्घटना को ठीक करने में मदद करना चाहते है : \n\n कृपया  'रद्द करें' दबाएँ |
 hr:Isprika, ovo se nije trebalo dogoditi!\n\nMolimo kliknite 'Otkaži' ako nam želite pomoći ispraviti uzrok ovog rušenja.
 hu:Sajnáljuk, váratlan hiba történt!\n\nKérjük nyomja meg a 'Mégse' gombot, ha segíteni szeretne nekünk a hiba kijavításában.
 id:Maaf, itu tidak boleh terjadi!\n\nHarap tekan 'Batalkan', jika Anda ingin membantu kami membetulkan penyebab crash ini.
@@ -12608,7 +12638,7 @@ bg:Относно (тема):
 br:Assunto:
 bs:Tema:
 ca-xv:Assumpte:
-ca:Assumpte:
+ca:Subjecte:
 cn:主题:
 cy:Pwnc:
 cz:Předmět:
@@ -13124,6 +13154,7 @@ fy-nl:Titel:
 ga:Teideal:
 gl:Título:
 he:כותרת:
+hi:शीर्षक:
 hr:Naslov:
 hu:Cím:
 id:Judul:
@@ -13310,7 +13341,7 @@ fy-nl:Besykje it &webstee
 ga:Tabhair cuairt ar an suíomh idirlíon
 gl:Visitar o &Website
 he:בקר באתר
-hi:वेबसाइट देखें(&V)
+hi:वेबसाइट देखें(&W)
 hr:&Posjeti internetsku stranicu
 hu:&Weboldal
 id:&Kunjungi Halaman Web
@@ -13492,7 +13523,7 @@ fy-nl:Jo brûke de meast resinte ferzje.
 ga:Tá an leagan is úire agat.
 gl:Ten vostede a última versión
 he:ברשותך המדורה האחרונה
-hi:आपके पास पहले से ही नया संसकरण है
+hi:आपके पास पहले से ही नवीनतम संसकरण है
 hr:Imate najnoviju inačicu.
 hu:Önnél a legfrissebb verzió van telepítve.
 id:Anda telah memiliki versi terbaru
@@ -13620,6 +13651,7 @@ fy-nl:Zoom
 ga:Formhéadú
 gl:Zoom
 he:זום
+hi:ज़ूम
 hr:Uvećanje
 hu:Beállít
 id:Sesuaikan
@@ -13663,7 +13695,7 @@ br:Aumentar zoom
 bs:Uvećaj
 by:Павялічыць
 ca-xv:Apropa't
-ca:Apropa't
+ca:Acosta't
 cn:放大
 cy:Chwyddo i Mewn
 cz:Zvětšit
@@ -13680,7 +13712,7 @@ fy-nl:Ynzoome
 ga:Gluais isteach
 gl:Achegar zoom
 he:זום פנימה
-hi:बडा करें
+hi:ब​ङा करें
 hr:Uvećaj
 hu:Nagyítás
 id:Perbesar
