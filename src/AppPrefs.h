@@ -121,8 +121,8 @@ class Favorites;
 
 namespace Prefs {
 
-void    Load(WCHAR *filepath, SerializableGlobalPrefs& globalPrefs, FileHistory& fileHistory, Favorites **favs);
-bool    Save(WCHAR *filepath, SerializableGlobalPrefs& globalPrefs, FileHistory& fileHistory, Favorites *favs);
+bool    Load(const WCHAR *filepath, SerializableGlobalPrefs& globalPrefs, FileHistory& fileHistory, Favorites *favs);
+bool    Save(const WCHAR *filepath, SerializableGlobalPrefs& globalPrefs, FileHistory& fileHistory, Favorites *favs);
 
 }
 

@@ -78,8 +78,6 @@ WindowInfo::WindowInfo(HWND hwnd) :
     hwndFavBox(NULL), hwndFavTree(NULL),
     TabToolTipText(NULL), title(NULL)
 {
-    ZeroMemory(&selectionRect, sizeof(selectionRect));
-
     touchState.panStarted = false;
     buffer = new DoubleBuffer(hwndCanvas, canvasRc);
     linkHandler = new LinkHandler(*this);

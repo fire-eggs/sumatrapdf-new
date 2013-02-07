@@ -527,7 +527,7 @@ static DisplayState * DeserializeDisplayState(BencDict *dict, bool globalPrefsOn
 
 // Write prefs from a file to gGlobalPrefs.
 static void DeserializePrefs(const char *prefsTxt, SerializableGlobalPrefs& globalPrefs,
-    FileHistory& fh, Favorites **favsOut)
+    FileHistory& fh, Favorites *favs)
 {
     BencObj *obj = BencObj::Decode(prefsTxt);
     if (!obj || obj->Type() != BT_DICT)
@@ -615,9 +615,6 @@ static void DeserializePrefs(const char *prefsTxt, SerializableGlobalPrefs& glob
         }
     }
 
-    Favorites *favs = new Favorites();
-    *favsOut = favs;
-
     BencArray *favsArr = prefs->GetArray(FAVS_STR);
     if (!favsArr)
         goto Exit;
@@ -646,42 +643,30 @@ Exit:
 namespace Prefs {
 
 /* Load preferences from the preferences file. */
-void Load(WCHAR *filepath, SerializableGlobalPrefs& globalPrefs,
-          FileHistory& fileHistory, Favorites **favs)
+bool Load(const WCHAR *filepath, SerializableGlobalPrefs& globalPrefs,
+          FileHistory& fileHistory, Favorites *favs)
 {
-    size_t prefsFileLen;
-    ScopedMem<char> prefsTxt(file::ReadAll(filepath, &prefsFileLen));
-    if (!str::IsEmpty(prefsTxt.Get())) {
-        DeserializePrefs(prefsTxt, globalPrefs, fileHistory, favs);
-        globalPrefs.lastPrefUpdate = file::GetModificationTime(filepath);
-    }
-
-    if (!*favs)
-        *favs = new Favorites();
+    CrashIf(!filepath);
+    if (!filepath) return false;
 
     gGlobalPrefs.toolbarForEachPanel = gGlobalPrefs.toolbarForEachPanelNew;
     gGlobalPrefs.sidebarForEachPanel = gGlobalPrefs.sidebarForEachPanelNew;
 
-    // TODO: add a check if a file exists, to filter out deleted files
-    // but only if a file is on a non-network drive (because
-    // accessing network drives can be slow and unnecessarily spin
-    // the drives).
-#if 0
-    for (int index = 0; fileHistory.Get(index); index++) {
-        DisplayState *state = fileHistory.Get(index);
-        if (!file::Exists(state->filePath)) {
-            fileHistory.Remove(state);
-            delete state;
-        }
-    }
-#endif
+    size_t prefsFileLen;
+    ScopedMem<char> prefsTxt(file::ReadAll(filepath, &prefsFileLen));
+    if (str::IsEmpty(prefsTxt.Get()))
+        return false;
+
+    DeserializePrefs(prefsTxt, globalPrefs, fileHistory, favs);
+    globalPrefs.lastPrefUpdate = file::GetModificationTime(filepath);
+    return true;
 }
 
-bool Save(WCHAR *filepath, SerializableGlobalPrefs& globalPrefs, FileHistory& fileHistory, Favorites* favs)
+bool Save(const WCHAR *filepath, SerializableGlobalPrefs& globalPrefs,
+          FileHistory& fileHistory, Favorites* favs)
 {
-    assert(filepath);
-    if (!filepath)
-        return false;
+    CrashIf(!filepath);
+    if (!filepath) return false;
 
     size_t dataLen;
     ScopedMem<char> data(SerializePrefs(globalPrefs, fileHistory, favs, &dataLen));
@@ -811,14 +796,11 @@ bool ReloadPrefs()
     bool toolbarVisible = gGlobalPrefs.toolbarVisible;
     bool useSysColors = gGlobalPrefs.useSysColors;
 
-    FileHistory fileHistory;
-    Favorites *favs = NULL;
-    Prefs::Load(path, gGlobalPrefs, fileHistory, &favs);
-
     gFileHistory.Clear();
-    gFileHistory.ExtendWith(fileHistory);
     delete gFavorites;
-    gFavorites = favs;
+    gFavorites = new Favorites();
+
+    Prefs::Load(path, gGlobalPrefs, gFileHistory, gFavorites);
 
     if (gWindows.Count() > 0 && gWindows.At(0)->IsAboutWindow()) {
         gWindows.At(0)->DeleteInfotip();
@@ -836,4 +818,3 @@ bool ReloadPrefs()
 
     return true;
 }
-
