@@ -3034,25 +3034,7 @@ void CloseDocumentInWindow(WindowInfo *win)
     bool wasChm = win->IsChm();
     if (wasChm)
         UnsubclassCanvas(win->hwndCanvas);
-    FileWatcherUnsubscribe(win->watcher);
-    win->watcher = NULL;
-    SetSidebarVisibility(win, false, gGlobalPrefs.favVisible);
-    ClearTocBox(win);
-    AbortFinding(win, true);
-    delete win->dm;
-    win->dm = NULL;
-    str::ReplacePtr(&win->loadedFilePath, NULL);
-    delete win->pdfsync;
-    win->pdfsync = NULL;
-    win->notifications->RemoveAllInGroup(NG_RESPONSE_TO_ACTION);
-    win->notifications->RemoveAllInGroup(NG_PAGE_INFO_HELPER);
 
-    DeletePropertiesWindow(win->hwndFrame);
-    UpdateToolbarPageText(win, 0);
-    UpdateToolbarFindText(win);
-    if (wasChm) {
-        // restore the non-Chm menu
-        RebuildMenuBarForWindow(win);
     PanelInfo *panel = win->panel;
 
     // We have to make sure that : if we can use menu->close to close a window and it's already the last win in a panel, then there is a doc loaded.
@@ -3060,7 +3042,7 @@ void CloseDocumentInWindow(WindowInfo *win)
 
         CrashIf(!win->IsDocLoaded());
 
-        delete win->watcher;
+        FileWatcherUnsubscribe(win->watcher);
         win->watcher = NULL;
 
         // We need to hide hwndCanvas first, otherwise we will see the scroll bar for a while after start page is shown.
