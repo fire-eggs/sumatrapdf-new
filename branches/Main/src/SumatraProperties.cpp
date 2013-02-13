@@ -185,15 +185,15 @@ static WCHAR *FormatPdfFileStructure(Doc doc)
     
     WStrVec props;
 
-    if (parts.Find(L"linearized") != -1)
+    if (parts.Contains(L"linearized"))
         props.Push(str::Dup(_TR("Fast Web View")));
-    if (parts.Find(L"tagged") != -1)
+    if (parts.Contains(L"tagged"))
         props.Push(str::Dup(_TR("Tagged PDF")));
-    if (parts.Find(L"PDFX") != -1)
+    if (parts.Contains(L"PDFX"))
         props.Push(str::Dup(L"PDF/X (ISO 15930)"));
-    if (parts.Find(L"PDFA1") != -1)
+    if (parts.Contains(L"PDFA1"))
         props.Push(str::Dup(L"PDF/A (ISO 19005)"));
-    if (parts.Find(L"PDFE1") != -1)
+    if (parts.Contains(L"PDFE1"))
         props.Push(str::Dup(L"PDF/E (ISO 24517)"));
 
     return props.Join(L", ");
@@ -388,11 +388,14 @@ static void GetProps(Doc doc, PropertiesLayout *layoutData, DisplayModel *dm, bo
     str = FormatPdfFileStructure(doc);
     layoutData->AddProperty(_TR("PDF Optimizations:"), str);
 
-    size_t fileSize = file::GetSize(doc.GetFilePath());
-    if (fileSize == INVALID_FILE_SIZE && doc.IsEngine())
-        free(doc.AsEngine()->GetFileData(&fileSize));
-    if (fileSize != INVALID_FILE_SIZE) {
-        str = FormatFileSize(fileSize);
+    int64 fileSize = file::GetSize(doc.GetFilePath());
+    if (-1 == fileSize && doc.IsEngine()) {
+        size_t fileSizeT;
+        free(doc.AsEngine()->GetFileData(&fileSizeT));
+        fileSize = fileSizeT;
+    }
+    if (-1 != fileSize) {
+        str = FormatFileSize((size_t)fileSize);
         layoutData->AddProperty(_TR("File Size:"), str);
     }
 
