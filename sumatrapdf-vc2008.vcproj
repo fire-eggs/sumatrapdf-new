@@ -229,6 +229,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\src\utils\FileWatcher.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\utils\FileWatcher.h"
+					>
+				</File>
+				<File
 					RelativePath=".\src\utils\GdiPlusUtil.cpp"
 					>
 				</File>
@@ -875,14 +883,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\src\FileWatch.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\FileWatch.h"
-					>
-				</File>
-				<File
 					RelativePath=".\src\ParseCommandLine.cpp"
 					>
 				</File>
@@ -1474,18 +1474,6 @@
 				</File>
 				<File
 					RelativePath=".\mupdf\xps\xps_zip.c"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="cbz"
-				>
-				<File
-					RelativePath=".\mupdf\cbz\mucbz.c"
-					>
-				</File>
-				<File
-					RelativePath=".\mupdf\cbz\mucbz.h"
 					>
 				</File>
 			</Filter>

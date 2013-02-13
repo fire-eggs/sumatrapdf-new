@@ -14,7 +14,7 @@ using namespace Gdiplus;
 #include "GdiPlusUtil.h"
 #include "HtmlPullParser.h"
 #include "MiniMui.h"
-#include "PdbReader.h"
+#include "PalmPdbReader.h"
 #include "TrivialHtmlParser.h"
 #include "ZipUtil.h"
 
@@ -646,7 +646,7 @@ WCHAR *EbookEngine::ExtractFontList()
 
         for (size_t k = 0; k < pageInstrs->Count(); k++) {
             DrawInstr *i = &pageInstrs->At(k);
-            if (InstrSetFont != i->type || seenFonts.Find(i->font) != -1)
+            if (InstrSetFont != i->type || seenFonts.Contains(i->font))
                 continue;
             seenFonts.Append(i->font);
 
@@ -1400,7 +1400,7 @@ static UINT ExtractHttpCharset(const char *html, size_t htmlLen)
         }
         break;
     }
-    
+
     return 0;
 }
 

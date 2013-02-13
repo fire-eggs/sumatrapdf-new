@@ -6,7 +6,7 @@
 
 #include "AppTools.h"
 #include "BencUtil.h"
-#include "CrashHandler.h"
+#include "DebugLog.h"
 #include "DisplayState.h"
 #include "Favorites.h"
 #include "FileHistory.h"
@@ -68,6 +68,7 @@
 #define SHOW_RECENT_FILES_STR       "ShowStartPage"
 #define OPEN_COUNT_STR              "OpenCount"
 #define IS_PINNED_STR               "Pinned"
+#define IS_MISSING_STR              "Missing"
 #define OPEN_COUNT_WEEK_STR         "OpenCountWeek"
 #define FWDSEARCH_OFFSET            "ForwardSearch_HighlightOffset"
 #define FWDSEARCH_COLOR             "ForwardSearch_HighlightColor"
@@ -197,16 +198,24 @@ static BencDict* SerializeGlobalPrefs(SerializableGlobalPrefs& globalPrefs)
 
 static BencDict *DisplayState_Serialize(DisplayState *ds, bool globalPrefsOnly)
 {
-    BencDict *prefs = new BencDict();
-    if (!prefs)
+    if (ds->isMissing && (globalPrefsOnly || ds->useGlobalValues) &&
+        !ds->decryptionKey && !ds->isPinned) {
+        // forget about missing documents without valuable state
         return NULL;
+    }
+
+    BencDict *prefs = new BencDict();
 
     prefs->Add(FILE_STR, ds->filePath);
     if (ds->decryptionKey)
         prefs->AddRaw(DECRYPTION_KEY_STR, ds->decryptionKey);
 
-    prefs->Add(OPEN_COUNT_STR, ds->openCount);
-    prefs->Add(IS_PINNED_STR, ds->isPinned);
+    if (ds->openCount > 0)
+        prefs->Add(OPEN_COUNT_STR, ds->openCount);
+    if (ds->isPinned)
+        prefs->Add(IS_PINNED_STR, ds->isPinned);
+    if (ds->isMissing)
+        prefs->Add(IS_MISSING_STR, ds->isMissing);
     if (globalPrefsOnly || ds->useGlobalValues) {
         prefs->Add(USE_GLOBAL_VALUES_STR, TRUE);
         return prefs;
@@ -230,17 +239,17 @@ static BencDict *DisplayState_Serialize(DisplayState *ds, bool globalPrefsOnly)
 
     // BUG: 2140
     if (!IsValidZoom(ds->zoomVirtual)) {
-        CrashLogFmt("Invalid ds->zoomVirtual: %.4f\n", ds->zoomVirtual);
-        const WCHAR *ext = str::FindCharLast(ds->filePath, L'.');
-        if (ext) {
+        dbglog::CrashLogF("Invalid ds->zoomVirtual: %.4f", ds->zoomVirtual);
+        const WCHAR *ext = path::GetExt(ds->filePath);
+        if (!str::IsEmpty(ext)) {
             ScopedMem<char> extA(str::conv::ToUtf8(ext));
-            CrashLogFmt("File type: %s\n", extA.Get());
+            dbglog::CrashLogF("File type: %s", extA.Get());
         }
-        CrashLogFmt("DisplayMode: %d\n", ds->displayMode);
-        CrashLogFmt("PageNo: %d\n", ds->pageNo);
+        dbglog::CrashLogF("DisplayMode: %d", ds->displayMode);
+        dbglog::CrashLogF("PageNo: %d", ds->pageNo);
+        CrashIf(true);
     }
 
-    CrashIf(!IsValidZoom(ds->zoomVirtual));
     ScopedMem<char> zoom(str::Format("%.4f", ds->zoomVirtual));
     prefs->AddRaw(ZOOM_VIRTUAL_STR, zoom);
 
@@ -279,15 +288,11 @@ static BencArray *SerializeFileHistory(FileHistory& fileHistory, bool globalPref
         if (state->openCount < minOpenCount && index > FILE_HISTORY_MAX_RECENT && !forceSave)
             continue;
         BencDict *obj = DisplayState_Serialize(state, globalPrefsOnly);
-        if (!obj)
-            goto Error;
-        arr->Add(obj);
+        if (obj)
+            arr->Add(obj);
     }
-    return arr;
 
-Error:
-    delete arr;
-    return NULL;
+    return arr;
 }
 
 static inline const WCHAR *NullToEmpty(const WCHAR *s)
@@ -455,6 +460,7 @@ static DisplayState * DeserializeDisplayState(BencDict *dict, bool globalPrefsOn
     RetrieveRaw(dict, DECRYPTION_KEY_STR, ds->decryptionKey);
     Retrieve(dict, OPEN_COUNT_STR, ds->openCount);
     Retrieve(dict, IS_PINNED_STR, ds->isPinned);
+    Retrieve(dict, IS_MISSING_STR, ds->isMissing);
     if (globalPrefsOnly) {
         ds->useGlobalValues = TRUE;
         return ds;

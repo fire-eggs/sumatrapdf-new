@@ -8,13 +8,13 @@
 
 class WindowInfo;
 
-class FileWatcher;
 class Synchronizer;
 class DoubleBuffer;
 class SelectionOnPage;
 class LinkHandler;
 class Notifications;
 class StressTest;
+struct WatchedFile;
 
 /* Describes actions which can be performed by mouse */
 enum MouseAction {
@@ -163,7 +163,7 @@ public:
     Vec<StaticLinkInfo> staticLinks;
 
     // file change watcher
-    FileWatcher *   watcher;
+    WatchedFile *   watcher;
 
     bool            fullScreen;
     PresentationMode presentation;
