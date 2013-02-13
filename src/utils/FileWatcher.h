@@ -4,18 +4,15 @@
 #ifndef FileWatcher_h
 #define FileWatcher_h
 
-/* Experimental: a different take on file watching API */
-
 class FileChangeObserver {
 public:
     virtual ~FileChangeObserver() { }
     virtual void OnFileChanged() = 0;
 };
 
-typedef int FileWatcherToken;
+struct WatchedFile;
 
-FileWatcherToken FileWatcherSubscribe(const WCHAR *path, FileChangeObserver *);
-void             FileWatcherUnsubscribe(FileWatcherToken);
+WatchedFile *FileWatcherSubscribe(const WCHAR *path, FileChangeObserver *observer);
+void         FileWatcherUnsubscribe(WatchedFile *wf);
 
 #endif
-

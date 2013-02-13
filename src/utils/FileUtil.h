@@ -19,6 +19,7 @@ WCHAR *      Normalize(const WCHAR *path);
 WCHAR *      ShortPath(const WCHAR *path);
 bool         IsSame(const WCHAR *path1, const WCHAR *path2);
 bool         HasVariableDriveLetter(const WCHAR *path);
+bool         IsOnFixedDrive(const WCHAR *path);
 bool         Match(const WCHAR *path, const WCHAR *filter);
 bool         IsAbsolute(const WCHAR *path);
 
@@ -32,7 +33,7 @@ bool         Exists(const WCHAR *filePath);
 char *       ReadAll(const WCHAR *filePath, size_t *fileSizeOut);
 bool         ReadAll(const WCHAR *filePath, char *buffer, size_t bufferLen);
 bool         WriteAll(const WCHAR *filePath, const void *data, size_t dataLen);
-size_t       GetSize(const WCHAR *filePath);
+int64        GetSize(const WCHAR *filePath);
 bool         Delete(const WCHAR *filePath);
 FILETIME     GetModificationTime(const WCHAR *filePath);
 bool         SetModificationTime(const WCHAR *filePath, FILETIME lastMod);

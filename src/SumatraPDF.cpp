@@ -19,7 +19,7 @@
 #include "FileModifications.h"
 #include "Favorites.h"
 #include "FileUtil.h"
-#include "FileWatch.h"
+#include "FileWatcher.h"
 using namespace Gdiplus;
 #include "GdiPlusUtil.h"
 #include "HttpUtil.h"
@@ -44,6 +44,7 @@ using namespace Gdiplus;
 #include "StressTesting.h"
 #include "TableOfContents.h"
 #include "Timer.h"
+#include "ThreadUtil.h"
 #include "Toolbar.h"
 #include "Touch.h"
 #include "Translations.h"
@@ -51,11 +52,6 @@ using namespace Gdiplus;
 #include "Version.h"
 #include "WindowInfo.h"
 #include "WinUtil.h"
-
-/* Define THREAD_BASED_FILEWATCH to use the thread-based implementation of file change detection. */
-#ifndef DISABLE_THREAD_BASED_FILEWATCH
-#define THREAD_BASED_FILEWATCH
-#endif
 
 /* if true, we're in debug mode where we show links as blue rectangle on
    the screen. Makes debugging code related to links easier. */
@@ -128,10 +124,6 @@ WCHAR *          gPluginURL = NULL; // owned by CommandLineInfo in WinMain
 
 #define AUTO_RELOAD_TIMER_ID        5
 #define AUTO_RELOAD_DELAY_IN_MS     100
-
-#ifndef THREAD_BASED_FILEWATCH
-#define FILEWATCH_DELAY_IN_MS       1000
-#endif
 
 HINSTANCE                    ghinst = NULL;
 
@@ -245,7 +237,7 @@ bool LaunchBrowser(const WCHAR *url)
     if (!str::Parse(url, L"%S:", &protocol))
         return false;
     str::ToLower(protocol);
-    if (gAllowedLinkProtocols.Find(protocol) == -1)
+    if (!gAllowedLinkProtocols.Contains(protocol))
         return false;
 
     return LaunchFile(url, NULL, L"open");
@@ -267,7 +259,7 @@ bool OpenFileExternally(const WCHAR *path)
     if (str::IsEmpty(perceivedType.Get()))
         return false;
     str::ToLower(perceivedType);
-    if (gAllowedFileTypes.Find(perceivedType) == -1 && gAllowedFileTypes.Find(L"*") == -1)
+    if (!gAllowedFileTypes.Contains(perceivedType) && !gAllowedFileTypes.Contains(L"*"))
         return false;
 
     // TODO: only do this for trusted files (cf. IsUntrustedFile)?
@@ -358,7 +350,7 @@ WindowInfo *FindWindowInfoByHwnd(HWND hwnd)
 
 bool WindowInfoStillValid(WindowInfo *win)
 {
-    return gWindows.Find(win) != -1;
+    return gWindows.Contains(win);
 }
 
 // Find the first window showing a given PDF file
@@ -1102,7 +1094,7 @@ Error:
         win->dm->SetPresentationMode(true);
 
     t.Stop();
-    dbglog::LogF("LoadDocIntoWindow() time: %.2f", t.GetTimeInMs());
+    lf("LoadDocIntoWindow() time: %.2f", t.GetTimeInMs());
 
     return true;
 }
@@ -1275,6 +1267,9 @@ WindowInfo *CreateAndShowWindowInfo()
 
 static void DeleteWindowInfo(WindowInfo *win)
 {
+    FileWatcherUnsubscribe(win->watcher);
+    win->watcher = NULL;
+
     DeletePropertiesWindow(win->hwndFrame);
     gWindows.Remove(win);
 
@@ -1292,13 +1287,11 @@ class FileChangeCallback : public UITask, public FileChangeObserver
     WindowInfo *win;
 public:
     FileChangeCallback(WindowInfo *win) : win(win) { }
-    virtual ~FileChangeCallback() {
-    }
 
     virtual void OnFileChanged() {
         // We cannot call win->Reload directly as it could cause race conditions
         // between the watching thread and the main thread (and only pass a copy of this
-        // callback to the UIThreadMarshaller, as the object will be deleted after use)
+        // callback to uitask::Post, as the object will be deleted after use)
         uitask::Post(new FileChangeCallback(win));
     }
 
@@ -1342,17 +1335,6 @@ static void RenameFileInHistory(const WCHAR *oldPath, const WCHAR *newPath)
         }
         gFavorites->RemoveAllForFile(oldPath);
     }
-}
-
-// Start loading a mobi file in the background
-static void LoadEbookAsync(const WCHAR *fileName, SumatraWindow& win)
-{
-    ThreadLoadEbook *loadThread = new ThreadLoadEbook(fileName, NULL, win);
-    // the thread will delete itself at the end of processing
-    loadThread->Start();
-    // loadThread will replace win with an EbookWindow on successful loading
-
-    // TODO: we should show a notification in the window user is looking at
 }
 
 // document path is either a file or a directory
@@ -1406,6 +1388,7 @@ static WindowInfo* LoadDocumentNew(LoadArgs& args)
 // file (and showing progress/load failures in topmost window) and placing
 // the loaded document in the window (either by replacing document in existing
 // window or creating a new window for the document)
+// TODO: loading a document should never be slow enough to require async loading
 static WindowInfo* LoadDocumentOld(LoadArgs& args)
 {
     if (gCrashOnOpen)
@@ -1461,6 +1444,7 @@ static WindowInfo* LoadDocumentOld(LoadArgs& args)
             win->loadedFilePath = str::Dup(fullPath);
         }
         LoadEbookAsync(fullPath, SumatraWindow::Make(win));
+        // TODO: we should show a notification in the window user is looking at
         return win;
     }
 
@@ -1503,12 +1487,8 @@ static WindowInfo* LoadDocumentOld(LoadArgs& args)
         return win;
     }
 
-    if (!win->watcher)
-        win->watcher = new FileWatcher(new FileChangeCallback(win));
-    win->watcher->Init(fullPath);
-#ifdef THREAD_BASED_FILEWATCH
-    win->watcher->StartWatchThread();
-#endif
+    FileWatcherUnsubscribe(win->watcher);
+    win->watcher = FileWatcherSubscribe(fullPath, new FileChangeCallback(win));
 
     if (gGlobalPrefs.rememberOpenedFiles) {
         CrashIf(!str::Eq(fullPath, win->loadedFilePath));
@@ -1846,14 +1826,15 @@ public:
     FileExistenceChecker() {
         DisplayState *state;
         for (size_t i = 0; i < 2 * FILE_HISTORY_MAX_RECENT && (state = gFileHistory.Get(i)); i++) {
-            paths.Append(str::Dup(state->filePath));
+            if (!state->isMissing)
+                paths.Append(str::Dup(state->filePath));
         }
         // add missing paths from the list of most frequently opened documents
         Vec<DisplayState *> frequencyList;
         gFileHistory.GetFrequencyOrder(frequencyList);
         for (size_t i = 0; i < 2 * FILE_HISTORY_MAX_FREQUENT && i < frequencyList.Count(); i++) {
             state = frequencyList.At(i);
-            if (-1 == paths.Find(state->filePath))
+            if (!paths.Contains(state->filePath))
                 paths.Append(str::Dup(state->filePath));
         }
     }
@@ -1864,16 +1845,7 @@ public:
         // be marked as inexistent in gFileHistory)
         for (size_t i = 0; i < paths.Count() && !WasCancelRequested(); i++) {
             WCHAR *path = paths.At(i);
-            bool check = false;
-            if (!PathIsNetworkPath(path)) {
-                UINT type;
-                WCHAR root[MAX_PATH];
-                if (GetVolumePathName(path, root, dimof(root)))
-                    type = GetDriveType(root);
-                else
-                    type = GetDriveType(path);
-                check = DRIVE_FIXED == type;
-            }
+            bool check = path::IsOnFixedDrive(path);
             if (!check || file::Exists(path)) {
                 paths.RemoveAt(i--);
                 delete path;
@@ -1885,19 +1857,10 @@ public:
 
     virtual void Execute() {
         for (size_t i = 0; i < paths.Count(); i++) {
-            const WCHAR *path = paths.At(i);
-            DisplayState *state = NULL;
-            // completely remove a file if we don't remember anything of
-            // value about it - else just move it all the way to the back
-            if (gGlobalPrefs.globalPrefsOnly)
-                state = gFileHistory.Find(path);
-            if (state && !state->isPinned && !state->decryptionKey)
-                gFileHistory.Remove(state);
-            else
-                gFileHistory.MarkFileInexistent(path, true);
+            gFileHistory.MarkFileInexistent(paths.At(i), true);
         }
         // update the Frequently Read page in case it's been displayed already
-        if (gWindows.Count() > 0 && gWindows.At(0)->IsAboutWindow())
+        if (paths.Count() > 0 && gWindows.Count() > 0 && gWindows.At(0)->IsAboutWindow())
             gWindows.At(0)->RedrawAll(true);
         // prepare for clean-up (Join() just to be safe)
         gFileExistenceChecker = NULL;
@@ -2529,7 +2492,7 @@ void CloseDocumentInWindow(WindowInfo *win)
     bool wasChm = win->IsChm();
     if (wasChm)
         UnsubclassCanvas(win->hwndCanvas);
-    delete win->watcher;
+    FileWatcherUnsubscribe(win->watcher);
     win->watcher = NULL;
     SetSidebarVisibility(win, false, gGlobalPrefs.favVisible);
     ClearTocBox(win);
@@ -2555,7 +2518,7 @@ void CloseDocumentInWindow(WindowInfo *win)
     UpdateFindbox(win);
     SetFocus(win->hwndFrame);
     t.Stop();
-    dbglog::LogF("CloseDocumentInWindow() time: %.2f", t.GetTimeInMs());
+    lf("CloseDocumentInWindow() time: %.2f", t.GetTimeInMs());
 
 #ifdef DEBUG
     // cf. https://code.google.com/p/sumatrapdf/issues/detail?id=2039
@@ -2634,7 +2597,7 @@ void CloseWindow(WindowInfo *win, bool quitIfLast, bool forceClose)
         assert(0 == gWindows.Count());
         PostQuitMessage(0);
     } else if (lastWindow && !quitIfLast) {
-        assert(gWindows.Find(win) != -1);
+        CrashIf(!gWindows.Contains(win));
         UpdateToolbarAndScrollbarState(*win);
     }
 }
@@ -3011,21 +2974,21 @@ void OnMenuOpen(SumatraWindow& win)
         return;
 
     struct {
-        const WCHAR *name;
+        const WCHAR *name; /* NULL if only to include in "All supported documents" */
         WCHAR *filter;
         bool available;
     } fileFormats[] = {
-        { _TR("PDF documents"),         L"*.pdf",        true },
-        { _TR("XPS documents"),         L"*.xps;*.oxps", true },
-        { _TR("DjVu documents"),        L"*.djvu",       true },
-        { _TR("Postscript documents"),  L"*.ps;*.eps",   PsEngine::IsAvailable() },
-        { _TR("Comic books"),           L"*.cbz;*.cbr",  true },
-        { _TR("CHM documents"),         L"*.chm",        true },
-        { _TR("Mobi documents"),        L"*.mobi",       true },
-        { _TR("EPUB ebooks"),           L"*.epub",       true },
+        { _TR("PDF documents"),         L"*.pdf",       true },
+        { _TR("XPS documents"),         L"*.xps;*.oxps",true },
+        { _TR("DjVu documents"),        L"*.djvu",      true },
+        { _TR("Postscript documents"),  L"*.ps;*.eps",  PsEngine::IsAvailable() },
+        { _TR("Comic books"),           L"*.cbz;*.cbr", true },
+        { _TR("CHM documents"),         L"*.chm",       true },
+        { _TR("Mobi documents"),        L"*.mobi",      true },
+        { _TR("EPUB ebooks"),           L"*.epub",      true },
         { _TR("FictionBook documents"), L"*.fb2;*.fb2z;*.zfb2", true },
-        { L"PalmDOC",                   L"*.pdb",        !gUseEbookUI },
-        { L"TCR ebooks",                L"*.tcr",        !gUseEbookUI },
+        { NULL, /* multi-page images */ L"*.tif;*.tiff",true },
+        { NULL, /* further ebooks */    L"*.pdb;*.tcr", !gUseEbookUI },
         { _TR("Text documents"),        L"*.txt;*.log;*.nfo;file_id.diz;read.me", !gUseEbookUI },
     };
     // Prepare the file filters (use \1 instead of \0 so that the
@@ -3044,7 +3007,7 @@ void OnMenuOpen(SumatraWindow& win)
     filters.Reset();
 
     for (int i = 0; i < dimof(fileFormats); i++) {
-        if (fileFormats[i].available) {
+        if (fileFormats[i].available && fileFormats[i].name) {
             const WCHAR *name = fileFormats[i].name;
             WCHAR *filter = fileFormats[i].filter;
             fileFilter.AppendAndFree(str::Format(L"%s\1%s\1", name, filter));
@@ -3115,7 +3078,7 @@ static void BrowseFolder(WindowInfo& win, bool forward)
     if (!CollectPathsFromDirectory(pattern, files))
         return;
 
-    if (-1 == files.Find(win.loadedFilePath))
+    if (!files.Contains(win.loadedFilePath))
         files.Append(str::Dup(win.loadedFilePath));
     files.SortNatural();
 
@@ -3573,8 +3536,11 @@ static bool ChmForwardKey(WPARAM key)
 
 bool FrameOnKeydown(WindowInfo *win, WPARAM key, LPARAM lparam, bool inTextfield)
 {
+    bool isCtrl = IsCtrlPressed();
+    bool isShift = IsShiftPressed();
+
     if ((VK_LEFT == key || VK_RIGHT == key) &&
-        IsShiftPressed() && IsCtrlPressed() &&
+        isShift && isCtrl &&
         win->loadedFilePath && !inTextfield) {
         // folder browsing should also work when an error page is displayed,
         // so special-case it before the win.IsDocLoaded() check
@@ -3585,7 +3551,36 @@ bool FrameOnKeydown(WindowInfo *win, WPARAM key, LPARAM lparam, bool inTextfield
     if (!win->IsDocLoaded())
         return false;
 
-    if (win->IsChm()) {
+    // some of the chm key bindings are different than the rest and we
+    // need to make sure we don't break them
+    bool isChm = win->IsChm();
+
+    bool isPageUp = (isCtrl && (VK_UP == key));
+    if (!isChm)
+        isPageUp |= (VK_PRIOR == key);
+
+    if (isPageUp) {
+        int currentPos = GetScrollPos(win->hwndCanvas, SB_VERT);
+        if (win->dm->ZoomVirtual() != ZOOM_FIT_CONTENT)
+            SendMessage(win->hwndCanvas, WM_VSCROLL, SB_PAGEUP, 0);
+        if (GetScrollPos(win->hwndCanvas, SB_VERT) == currentPos)
+            win->dm->GoToPrevPage(-1);
+        return true;
+    }
+
+    bool isPageDown = (isCtrl && (VK_DOWN == key));
+    if (!isChm)
+        isPageDown |= (VK_NEXT == key);
+    if (isPageDown) {
+        int currentPos = GetScrollPos(win->hwndCanvas, SB_VERT);
+        if (win->dm->ZoomVirtual() != ZOOM_FIT_CONTENT)
+            SendMessage(win->hwndCanvas, WM_VSCROLL, SB_PAGEDOWN, 0);
+        if (GetScrollPos(win->hwndCanvas, SB_VERT) == currentPos)
+            win->dm->GoToNextPage(0);
+        return true;
+    }
+
+    if (isChm) {
         if (ChmForwardKey(key)) {
             win->dm->AsChmEngine()->PassUIMsg(WM_KEYDOWN, key, lparam);
             return true;
@@ -3596,31 +3591,19 @@ bool FrameOnKeydown(WindowInfo *win, WPARAM key, LPARAM lparam, bool inTextfield
     if (PM_BLACK_SCREEN == win->presentation || PM_WHITE_SCREEN == win->presentation)
         return false;
 
-    if (VK_PRIOR == key) {
-        int currentPos = GetScrollPos(win->hwndCanvas, SB_VERT);
-        if (win->dm->ZoomVirtual() != ZOOM_FIT_CONTENT)
-            SendMessage(win->hwndCanvas, WM_VSCROLL, SB_PAGEUP, 0);
-        if (GetScrollPos(win->hwndCanvas, SB_VERT) == currentPos)
-            win->dm->GoToPrevPage(-1);
-    } else if (VK_NEXT == key) {
-        int currentPos = GetScrollPos(win->hwndCanvas, SB_VERT);
-        if (win->dm->ZoomVirtual() != ZOOM_FIT_CONTENT)
-            SendMessage(win->hwndCanvas, WM_VSCROLL, SB_PAGEDOWN, 0);
-        if (GetScrollPos(win->hwndCanvas, SB_VERT) == currentPos)
-            win->dm->GoToNextPage(0);
-    } else if (VK_UP == key) {
+    if (VK_UP == key) {
         if (win->dm->NeedVScroll())
-            SendMessage(win->hwndCanvas, WM_VSCROLL, IsShiftPressed() ? SB_HPAGEUP : SB_LINEUP, 0);
+            SendMessage(win->hwndCanvas, WM_VSCROLL, isShift ? SB_HPAGEUP : SB_LINEUP, 0);
         else
             win->dm->GoToPrevPage(-1);
     } else if (VK_DOWN == key) {
         if (win->dm->NeedVScroll())
-            SendMessage(win->hwndCanvas, WM_VSCROLL, IsShiftPressed() ? SB_HPAGEDOWN : SB_LINEDOWN, 0);
+            SendMessage(win->hwndCanvas, WM_VSCROLL, isShift ? SB_HPAGEDOWN : SB_LINEDOWN, 0);
         else
             win->dm->GoToNextPage(0);
-    } else if (VK_HOME == key && IsCtrlPressed()) {
+    } else if (VK_HOME == key && isCtrl) {
         win->dm->GoToFirstPage();
-    } else if (VK_END == key && IsCtrlPressed()) {
+    } else if (VK_END == key && isCtrl) {
         if (!win->dm->GoToLastPage())
             SendMessage(win->hwndCanvas, WM_VSCROLL, SB_BOTTOM, 0);
     } else if (inTextfield) {
@@ -3628,12 +3611,12 @@ bool FrameOnKeydown(WindowInfo *win, WPARAM key, LPARAM lparam, bool inTextfield
         return false;
     } else if (VK_LEFT == key) {
         if (win->dm->NeedHScroll())
-            SendMessage(win->hwndCanvas, WM_HSCROLL, IsShiftPressed() ? SB_PAGELEFT : SB_LINELEFT, 0);
+            SendMessage(win->hwndCanvas, WM_HSCROLL, isShift ? SB_PAGELEFT : SB_LINELEFT, 0);
         else
             win->dm->GoToPrevPage(0);
     } else if (VK_RIGHT == key) {
         if (win->dm->NeedHScroll())
-            SendMessage(win->hwndCanvas, WM_HSCROLL, IsShiftPressed() ? SB_PAGERIGHT : SB_LINERIGHT, 0);
+            SendMessage(win->hwndCanvas, WM_HSCROLL, isShift ? SB_PAGERIGHT : SB_LINERIGHT, 0);
         else
             win->dm->GoToNextPage(0);
     } else if (VK_HOME == key) {
@@ -5196,32 +5179,12 @@ InitMouseWheelInfo:
     return 0;
 }
 
-#ifndef THREAD_BASED_FILEWATCH
-static void RefreshUpdatedFiles() {
-    for (size_t i = 0; i < gWindows.Count(); i++) {
-        WindowInfo *win = gWindows.At(i);
-        if (win->watcher)
-            win->watcher->CheckForChanges();
-    }
-}
-#endif
-
 static int RunMessageLoop()
 {
     HACCEL accTable = LoadAccelerators(ghinst, MAKEINTRESOURCE(IDC_SUMATRAPDF));
     MSG msg = { 0 };
 
-#ifndef THREAD_BASED_FILEWATCH
-    const UINT_PTR timerID = SetTimer(NULL, -1, FILEWATCH_DELAY_IN_MS, NULL);
-#endif
-
     while (GetMessage(&msg, NULL, 0, 0)) {
-#ifndef THREAD_BASED_FILEWATCH
-        if (NULL == msg.hwnd && WM_TIMER == msg.message && timerID == msg.wParam) {
-            RefreshUpdatedFiles();
-            continue;
-        }
-#endif
         // dispatch the accelerator to the correct window
         WindowInfo *win = FindWindowInfoByHwnd(msg.hwnd);
         HWND accHwnd = win ? win->hwndFrame : msg.hwnd;
@@ -5231,10 +5194,6 @@ static int RunMessageLoop()
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
-
-#ifndef THREAD_BASED_FILEWATCH
-    KillTimer(NULL, timerID);
-#endif
 
     return msg.wParam;
 }

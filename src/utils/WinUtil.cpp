@@ -194,7 +194,7 @@ bool DeleteRegKey(HKEY keySub, const WCHAR *keyName, bool resetACLFirst)
 WCHAR *ReadIniString(const WCHAR *iniPath, const WCHAR *section, const WCHAR *key)
 {
     DWORD bufCch = 64*512; // so max memory use is 64k
-    WCHAR *value = (WCHAR*)malloc(bufCch*sizeof(WCHAR));
+    WCHAR *value = AllocArray<WCHAR>(bufCch);
     if (value)
         GetPrivateProfileString(section, key, NULL, value, bufCch-1, iniPath);
     return value;
@@ -357,7 +357,7 @@ bool CreateShortcut(const WCHAR *shortcutPath, const WCHAR *exePath,
 }
 
 /* adapted from http://blogs.msdn.com/oldnewthing/archive/2004/09/20/231739.aspx */
-IDataObject* GetDataObjectForFile(WCHAR* filePath, HWND hwnd)
+IDataObject* GetDataObjectForFile(const WCHAR *filePath, HWND hwnd)
 {
     ScopedComPtr<IShellFolder> pDesktopFolder;
     HRESULT hr = SHGetDesktopFolder(&pDesktopFolder);
@@ -381,7 +381,7 @@ IDataObject* GetDataObjectForFile(WCHAR* filePath, HWND hwnd)
 }
 
 // The result value contains major and minor version in the high resp. the low WORD
-DWORD GetFileVersion(WCHAR *path)
+DWORD GetFileVersion(const WCHAR *path)
 {
     DWORD fileVersion = 0;
     DWORD handle;
@@ -708,7 +708,7 @@ WCHAR *ToSafeString(const WCHAR *str)
     }
 }
 
-HFONT GetSimpleFont(HDC hdc, WCHAR *fontName, int fontSize)
+HFONT GetSimpleFont(HDC hdc, const WCHAR *fontName, int fontSize)
 {
     LOGFONT lf = { 0 };
 
@@ -835,7 +835,7 @@ namespace win {
 WCHAR *GetText(HWND hwnd)
 {
     size_t  cchTxtLen = GetTextLen(hwnd);
-    WCHAR * txt = (WCHAR*)calloc(cchTxtLen + 1, sizeof(WCHAR));
+    WCHAR * txt = AllocArray<WCHAR>(cchTxtLen + 1);
     if (NULL == txt)
         return NULL;
     SendMessage(hwnd, WM_GETTEXT, cchTxtLen + 1, (LPARAM)txt);
@@ -1000,22 +1000,17 @@ double GetProcessRunningTime()
 
 // This is just to satisfy /analyze. CloseHandle(NULL) works perfectly fine
 // but /analyze complains anyway
-BOOL SafeCloseHandle(HANDLE h)
+BOOL SafeCloseHandle(HANDLE *h)
 {
-    if (!h)
+    if (!*h)
         return TRUE;
-    return CloseHandle(h);
+    BOOL ok = CloseHandle(*h);
+    *h = NULL;
+    return ok;
 }
 
 // This is just to satisfy /analyze. DestroyWindow(NULL) works perfectly fine
 // but /analyze complains anyway
-BOOL SafeDestroyWindow(HWND hwnd)
-{
-    if (!hwnd)
-        return TRUE;
-    return DestroyWindow(hwnd);
-}
-
 BOOL SafeDestroyWindow(HWND *hwnd)
 {
     if (!hwnd || !*hwnd)
@@ -1047,7 +1042,7 @@ void RunNonElevated(const WCHAR *exePath)
     cmd.Set(str::Format(L"\"%s\" \"%s\"", explorerPath.Get(), exePath));
 Run:
     HANDLE h = LaunchProcess(cmd ? cmd : exePath);
-    SafeCloseHandle(h);
+    SafeCloseHandle(&h);
 }
 
 // Note: MS_ENH_RSA_AES_PROV_XP isn't defined in the SDK shipping with VS2008
