@@ -8,7 +8,7 @@
 #include "FileUtil.h"
 #include "HtmlPullParser.h"
 #include "MobiDoc.h"
-#include "PdbReader.h"
+#include "PalmPdbReader.h"
 #include "TrivialHtmlParser.h"
 #include "WinUtil.h"
 #include "ZipUtil.h"
@@ -29,7 +29,7 @@ static char *DecodeTextToUtf8(const char *s)
         size_t byteCount = (str::Len((WCHAR *)s) + 1) * sizeof(WCHAR);
         tmp.Set((char *)memdup(s, byteCount));
         for (size_t i = 0; i < byteCount; i += 2) {
-            swap(tmp[i], tmp[i+1]);
+            Swap(tmp[i], tmp[i+1]);
         }
         s = tmp;
     }
@@ -258,7 +258,7 @@ bool EpubDoc::Load()
         return false;
     // EPUB 2 ToC
     ScopedMem<WCHAR> tocId(node->GetAttribute("toc"));
-    if (tocId && !tocPath && idList.Find(tocId) != -1) {
+    if (tocId && !tocPath && idList.Contains(tocId)) {
         tocPath.Set(str::Join(contentPath, pathList.At(idList.Find(tocId))));
         str::UrlDecodeInPlace(tocPath);
         isNcxToc = true;
@@ -271,7 +271,7 @@ bool EpubDoc::Load()
         if (!node->NameIsNS("itemref", EPUB_OPF_NS))
             continue;
         ScopedMem<WCHAR> idref(node->GetAttribute("idref"));
-        if (!idref || idList.Find(idref) == -1)
+        if (!idref || !idList.Contains(idref))
             continue;
 
         ScopedMem<WCHAR> fullPath(str::Join(contentPath, pathList.At(idList.Find(idref))));
@@ -881,7 +881,7 @@ bool PalmDoc::Load()
 
     size_t textLen;
     const char *text = mobiDoc->GetBookHtmlData(textLen);
-    UINT codePage = GuessTextCodepage((char *)text, textLen, CP_ACP);
+    UINT codePage = GuessTextCodepage(text, textLen, CP_ACP);
     ScopedMem<char> textUtf8(str::ToMultiByte(text, codePage, CP_UTF8));
     textLen = str::Len(textUtf8);
 
@@ -1165,9 +1165,9 @@ HtmlDoc *HtmlDoc::CreateFromFile(const WCHAR *fileName)
 
 TxtDoc::TxtDoc(const WCHAR *fileName) : fileName(str::Dup(fileName)), isRFC(false) { }
 
-static char *TextFindLinkEnd(str::Str<char>& htmlData, char *curr, bool atStart, bool fromWww=false)
+static const char *TextFindLinkEnd(str::Str<char>& htmlData, const char *curr, bool atStart, bool fromWww=false)
 {
-    char *end = curr;
+    const char *end = curr;
     // look for the end of the URL (ends in a space preceded maybe by interpunctuation)
     for (; *end && !str::IsWs(*end); end++);
     if (',' == end[-1] || '.' == end[-1] || '?' == end[-1] || '!' == end[-1])
@@ -1177,7 +1177,7 @@ static char *TextFindLinkEnd(str::Str<char>& htmlData, char *curr, bool atStart,
         end--;
     // cut the link at the first double quote if it's also preceded by one
     if (!atStart && curr[-1] == '"' && str::FindChar(curr, '"') && str::FindChar(curr, '"') < end)
-        end = (char *)str::FindChar(curr, '"');
+        end = str::FindChar(curr, '"');
 
     if (fromWww && (end - curr <= 4 || !str::FindChar(curr + 5, '.') ||
                     str::FindChar(curr + 5, '.') >= end)) {
@@ -1208,10 +1208,10 @@ inline bool IsEmailDomainChar(char c)
     return isalnum((unsigned char)c) || '-' == c;
 }
 
-static char *TextFindEmailEnd(str::Str<char>& htmlData, char *curr, bool fromAt=false)
+static const char *TextFindEmailEnd(str::Str<char>& htmlData, const char *curr, bool fromAt=false)
 {
     ScopedMem<char> beforeAt;
-    char *end = curr;
+    const char *end = curr;
     if (fromAt) {
         if (htmlData.Count() == 0 || !IsEmailUsernameChar(htmlData.Last()))
             return NULL;
@@ -1248,12 +1248,12 @@ static char *TextFindEmailEnd(str::Str<char>& htmlData, char *curr, bool fromAt=
     return end;
 }
 
-static char *TextFindRfcEnd(str::Str<char>& htmlData, char *curr)
+static const char *TextFindRfcEnd(str::Str<char>& htmlData, const char *curr)
 {
     if (isalnum((unsigned char)*(curr - 1)))
         return NULL;
     int rfc;
-    char *end = (char *)str::Parse(curr, "RFC %d", &rfc);
+    const char *end = str::Parse(curr, "RFC %d", &rfc);
     // cf. http://en.wikipedia.org/wiki/Request_for_Comments#Obtaining_RFCs
     htmlData.AppendFmt("<a href='http://www.rfc-editor.org/rfc/rfc%d.txt'>", rfc);
     return end;
@@ -1269,10 +1269,10 @@ bool TxtDoc::Load()
     int rfc;
     isRFC = str::Parse(path::GetBaseName(fileName), L"rfc%d.txt%$", &rfc) != NULL;
 
-    char *curr = text;
+    const char *curr = text;
     if (str::StartsWith(text.Get(), UTF8_BOM))
         curr += 3;
-    char *linkEnd = NULL;
+    const char *linkEnd = NULL;
     bool rfcHeader = false;
     int sectionCount = 0;
 
@@ -1329,7 +1329,7 @@ bool TxtDoc::Load()
     if (linkEnd)
         htmlData.Append("</a>");
     htmlData.Append("</pre>");
-    
+
     return true;
 }
 
