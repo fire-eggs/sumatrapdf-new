@@ -22,8 +22,8 @@ pdf_obj *pdf_new_string(fz_context *ctx, const char *str, int len);
 pdf_obj *pdf_new_indirect(fz_context *ctx, int num, int gen, void *doc);
 pdf_obj *pdf_new_array(fz_context *ctx, int initialcap);
 pdf_obj *pdf_new_dict(fz_context *ctx, int initialcap);
-pdf_obj *pdf_new_rect(fz_context *ctx, fz_rect rect);
-pdf_obj *pdf_new_matrix(fz_context *ctx, fz_matrix mtx);
+pdf_obj *pdf_new_rect(fz_context *ctx, const fz_rect *rect);
+pdf_obj *pdf_new_matrix(fz_context *ctx, const fz_matrix *mtx);
 pdf_obj *pdf_copy_array(fz_context *ctx, pdf_obj *array);
 pdf_obj *pdf_copy_dict(fz_context *ctx, pdf_obj *dict);
 
@@ -67,6 +67,8 @@ int pdf_array_len(pdf_obj *array);
 pdf_obj *pdf_array_get(pdf_obj *array, int i);
 void pdf_array_put(pdf_obj *array, int i, pdf_obj *obj);
 void pdf_array_push(pdf_obj *array, pdf_obj *obj);
+/* SumatraPDF: convenience method similar to pdf_dict_puts_drop */
+void pdf_array_push_drop(pdf_obj *array, pdf_obj *obj);
 void pdf_array_insert(pdf_obj *array, pdf_obj *obj);
 int pdf_array_contains(pdf_obj *array, pdf_obj *obj);
 
@@ -100,8 +102,8 @@ char *pdf_from_ucs2(pdf_document *xref, unsigned short *str);
 /* SumatraPDF: allow to convert to UCS-2 without the need for an fz_context */
 void pdf_to_ucs2_buf(unsigned short *buffer, pdf_obj *src);
 
-fz_rect pdf_to_rect(fz_context *ctx, pdf_obj *array);
-fz_matrix pdf_to_matrix(fz_context *ctx, pdf_obj *array);
+fz_rect *pdf_to_rect(fz_context *ctx, pdf_obj *array, fz_rect *rect);
+fz_matrix *pdf_to_matrix(fz_context *ctx, pdf_obj *array, fz_matrix *mat);
 
 int pdf_count_objects(pdf_document *doc);
 pdf_obj *pdf_resolve_indirect(pdf_obj *ref);
@@ -146,7 +148,7 @@ void pdf_update_stream(pdf_document *xref, int num, fz_buffer *buf);
 	new pdf content. WARNING: this device is work in progress. It doesn't
 	currently support all rendering cases.
 */
-fz_device *pdf_new_pdf_device(pdf_document *doc, pdf_obj *contents, pdf_obj *resources, fz_matrix ctm);
+fz_device *pdf_new_pdf_device(pdf_document *doc, pdf_obj *contents, pdf_obj *resources, const fz_matrix *ctm);
 
 /*
 	pdf_write_document: Write out the document to a file with all changes finalised.
@@ -240,7 +242,7 @@ fz_link *pdf_load_links(pdf_document *doc, pdf_page *page);
 
 	Does not throw exceptions.
 */
-fz_rect pdf_bound_page(pdf_document *doc, pdf_page *page);
+fz_rect *pdf_bound_page(pdf_document *doc, pdf_page *page, fz_rect *);
 
 /*
 	pdf_free_page: Frees a page and its resources.
@@ -270,7 +272,7 @@ pdf_annot *pdf_next_annot(pdf_document *doc, pdf_annot *annot);
 
 	Does not throw exceptions.
 */
-fz_rect pdf_bound_annot(pdf_document *doc, pdf_annot *annot);
+fz_rect *pdf_bound_annot(pdf_document *doc, pdf_annot *annot, fz_rect *rect);
 
 /*
 	pdf_run_page: Interpret a loaded page and render it on a device.
@@ -282,9 +284,9 @@ fz_rect pdf_bound_annot(pdf_document *doc, pdf_annot *annot);
 	ctm: A transformation matrix applied to the objects on the page,
 	e.g. to scale or rotate the page contents as desired.
 */
-void pdf_run_page(pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, fz_cookie *cookie);
+void pdf_run_page(pdf_document *doc, pdf_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie);
 
-void pdf_run_page_with_usage(pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, char *event, fz_cookie *cookie);
+void pdf_run_page_with_usage(pdf_document *doc, pdf_page *page, fz_device *dev, const fz_matrix *ctm, char *event, fz_cookie *cookie);
 
 /*
 	pdf_run_page_contents: Interpret a loaded page and render it on a device.
@@ -297,7 +299,7 @@ void pdf_run_page_with_usage(pdf_document *doc, pdf_page *page, fz_device *dev, 
 	ctm: A transformation matrix applied to the objects on the page,
 	e.g. to scale or rotate the page contents as desired.
 */
-void pdf_run_page_contents(pdf_document *xref, pdf_page *page, fz_device *dev, fz_matrix ctm, fz_cookie *cookie);
+void pdf_run_page_contents(pdf_document *xref, pdf_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie);
 
 /*
 	pdf_run_annot: Interpret an annotation and render it on a device.
@@ -311,7 +313,7 @@ void pdf_run_page_contents(pdf_document *xref, pdf_page *page, fz_device *dev, f
 	ctm: A transformation matrix applied to the objects on the page,
 	e.g. to scale or rotate the page contents as desired.
 */
-void pdf_run_annot(pdf_document *xref, pdf_page *page, pdf_annot *annot, fz_device *dev, fz_matrix ctm, fz_cookie *cookie);
+void pdf_run_annot(pdf_document *xref, pdf_page *page, pdf_annot *annot, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie);
 
 /*
 	Metadata interface.
