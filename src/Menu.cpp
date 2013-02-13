@@ -238,7 +238,7 @@ static void AppendRecentFilesToMenu(HMENU m)
 
     for (int index = 0; index < FILE_HISTORY_MAX_RECENT; index++) {
         DisplayState *state = gFileHistory.Get(index);
-        if (!state)
+        if (!state || state->isMissing)
             break;
         assert(state->filePath);
         if (state->filePath)

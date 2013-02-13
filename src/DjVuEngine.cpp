@@ -20,10 +20,10 @@
 
 class RenderedDjVuPixmap : public RenderedBitmap {
 public:
-    RenderedDjVuPixmap(char *data, SizeI size, bool grayscale);
+    RenderedDjVuPixmap(const char *data, SizeI size, bool grayscale);
 };
 
-RenderedDjVuPixmap::RenderedDjVuPixmap(char *data, SizeI size, bool grayscale) :
+RenderedDjVuPixmap::RenderedDjVuPixmap(const char *data, SizeI size, bool grayscale) :
     RenderedBitmap(NULL, size)
 {
     int bpc = grayscale ? 1 : 3;
@@ -362,7 +362,7 @@ bool DjVuEngineImpl::LoadMediaboxes()
             mediaboxes[pages].dx = GetFileDPI() * info.width / dpi;
             mediaboxes[pages].dy = GetFileDPI() * info.height / dpi;
             if ((info.flags & 4))
-                swap(mediaboxes[pages].dx, mediaboxes[pages].dy);
+                Swap(mediaboxes[pages].dx, mediaboxes[pages].dy);
             pages++;
         }
         offset += 8 + partLen + (partLen & 1);
@@ -660,7 +660,7 @@ PointD DjVuEngineImpl::Transform(PointD pt, int pageNo, float zoom, int rotation
         // transform the page size to get a correct frame of reference
         page.dx *= zoom; page.dy *= zoom;
         if (rotation % 180 != 0)
-            swap(page.dx, page.dy);
+            Swap(page.dx, page.dy);
         // invert rotation and zoom
         rotation = -rotation;
         zoom = 1.0f / zoom;

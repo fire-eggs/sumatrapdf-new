@@ -116,7 +116,7 @@ WCHAR *ShortPath(const WCHAR *path)
     ScopedMem<WCHAR> normpath(Normalize(path));
     DWORD cch = GetShortPathName(normpath, NULL, 0);
     if (!cch)
-        return normpath;
+        return normpath.StealData();
     WCHAR *shortpath = AllocArray<WCHAR>(cch);
     GetShortPathName(normpath, shortpath, cch);
     return shortpath;
@@ -165,6 +165,20 @@ bool HasVariableDriveLetter(const WCHAR *path)
     return DRIVE_REMOVABLE == driveType ||
            DRIVE_CDROM == driveType ||
            DRIVE_NO_ROOT_DIR == driveType;
+}
+
+bool IsOnFixedDrive(const WCHAR *path)
+{
+    if (PathIsNetworkPath(path))
+        return false;
+
+    UINT type;
+    WCHAR root[MAX_PATH];
+    if (GetVolumePathName(path, root, dimof(root)))
+        type = GetDriveType(root);
+    else
+        type = GetDriveType(path);
+    return DRIVE_FIXED == type;
 }
 
 static bool MatchWildcardsRec(const WCHAR *filename, const WCHAR *filter)
@@ -243,34 +257,35 @@ bool Exists(const WCHAR *filePath)
     return true;
 }
 
-size_t GetSize(const WCHAR *filePath)
+// returns -1 on error (can't use INVALID_FILE_SIZE because it won't cast right)
+int64 GetSize(const WCHAR *filePath)
 {
     ScopedHandle h(CreateFile(filePath, GENERIC_READ, FILE_SHARE_READ, NULL,
                               OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL));
     if (h == INVALID_HANDLE_VALUE)
-        return INVALID_FILE_SIZE;
+        return -1;
 
     // Don't use GetFileAttributesEx to retrieve the file size, as
     // that function doesn't interact well with symlinks, etc.
-    LARGE_INTEGER lsize;
-    BOOL ok = GetFileSizeEx(h, &lsize);
+    LARGE_INTEGER size;
+    BOOL ok = GetFileSizeEx(h, &size);
     if (!ok)
-        return INVALID_FILE_SIZE;
-
-#ifdef _WIN64
-    return lsize.QuadPart;
-#else
-    if (lsize.HighPart > 0)
-        return INVALID_FILE_SIZE;
-    return lsize.LowPart;
-#endif
+        return -1;
+    return size.QuadPart;
 }
 
 char *ReadAll(const WCHAR *filePath, size_t *fileSizeOut)
 {
-    size_t size = GetSize(filePath);
-    if (INVALID_FILE_SIZE == size)
+    int64 size64 = GetSize(filePath);
+    if (size64 < 0)
         return NULL;
+    size_t size = (size_t)size64;
+#ifdef _WIN64
+    CrashIf(size != size64);
+#else
+    if (size != size64)
+        return NULL;
+#endif
 
     // overflow check
     if (size + sizeof(WCHAR) < sizeof(WCHAR))

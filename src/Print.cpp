@@ -251,14 +251,14 @@ static bool PrintToDevice(PrintData& pd, ProgressUpdateUI *progressUI=NULL, Abor
             // Turn the document by 90 deg if it isn't in portrait mode
             if (pSize.dx > pSize.dy) {
                 rotation += 90;
-                swap(pSize.dx, pSize.dy);
+                Swap(pSize.dx, pSize.dy);
             }
             // make sure not to print upside-down
             rotation = (rotation % 180) == 0 ? 0 : 270;
             // finally turn the page by (another) 90 deg in landscape mode
             if (!bPrintPortrait) {
                 rotation = (rotation + 90) % 360;
-                swap(pSize.dx, pSize.dy);
+                Swap(pSize.dx, pSize.dy);
             }
 
             // dpiFactor means no physical zoom
@@ -432,7 +432,7 @@ void AbortPrinting(WindowInfo *win)
     win->printCanceled = false;
 }
 
-static HGLOBAL GlobalMemDup(void *data, size_t len)
+static HGLOBAL GlobalMemDup(const void *data, size_t len)
 {
     HGLOBAL hGlobal = GlobalAlloc(GMEM_MOVEABLE, len);
     if (!hGlobal)

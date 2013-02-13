@@ -142,7 +142,7 @@ UTILS_OBJS = \
 	$(OU)\DbgHelpDyn.obj $(OU)\JsonParser.obj $(OU)\TgaReader.obj \
 	$(OU)\HtmlParserLookup.obj $(OU)\ByteOrderDecoder.obj $(OU)\CmdLineParser.obj \
 	$(OU)\UITask.obj $(OU)\StrFormat.obj $(OU)\Dict.obj $(OU)\BaseUtil.obj \
-	$(OU)\CssParser.obj $(OU)\FileWatcher.obj
+	$(OU)\CssParser.obj  $(OU)\FileWatcher.obj
 
 !if "$(CFG)"=="dbg"
 UTILS_OBJS = $(UTILS_OBJS) $(OU)\Experiments.obj
@@ -166,14 +166,14 @@ ENGINE_OBJS = \
 	$(OS)\EbookEngine.obj $(OS)\EbookDoc.obj
 
 EBOOK_OBJS = \
-	$(OS)\MobiDoc.obj $(OU)\PdbReader.obj $(OS)\HtmlFormatter.obj $(OS)\EbookFormatter.obj \
+	$(OS)\MobiDoc.obj $(OU)\PalmPdbReader.obj $(OS)\HtmlFormatter.obj $(OS)\EbookFormatter.obj \
 	$(OS)\EbookControls.obj $(OS)\EbookController.obj $(OS)\EbookWindow.obj
 
 SUMATRA_OBJS = \
 	$(OS)\AppPrefs.obj $(OS)\DisplayModel.obj $(OS)\CrashHandler.obj $(OS)\Doc.obj \
 	$(OS)\Favorites.obj $(OS)\TextSearch.obj $(OS)\SumatraAbout.obj $(OS)\SumatraAbout2.obj \
 	$(OS)\SumatraDialogs.obj $(OS)\SumatraProperties.obj \
-	$(OS)\SumatraPDF.obj $(OS)\translations.obj $(OS)\FileWatch.obj \
+	$(OS)\SumatraPDF.obj $(OS)\translations.obj \
 	$(OS)\PdfSync.obj $(OS)\RenderCache.obj $(OS)\TextSelection.obj \
 	$(OS)\WindowInfo.obj $(OS)\ParseCommandLine.obj $(OS)\StressTesting.obj \
 	$(OS)\UnitTests.obj $(OS)\AppTools.obj $(OS)\Tab.obj $(OS)\TableOfContents.obj \
@@ -208,7 +208,7 @@ BROWSER_PLUGIN_OBJS = \
 ENGINEDUMP_OBJS = \
 	$(OS)\EngineDump.obj $(ENGINE_OBJS) $(LIBS_OBJS) $(UTILS_OBJS) \
 	$(OS)\HtmlFormatter.obj $(OS)\EbookFormatter.obj $(OMUI)\MiniMui.obj \
-	$(OS)\MobiDoc.obj $(OS)\Doc.obj $(OU)\PdbReader.obj
+	$(OS)\MobiDoc.obj $(OS)\Doc.obj $(OU)\PalmPdbReader.obj
 
 MEMTRACE_OBJS = \
 	$(OM)\MemTraceDll.obj $(UTILS_OBJS)
@@ -350,3 +350,4 @@ $(OS)\Uninstaller.obj: $(OS)\Installer.obj
 
 ## Header-dependencies for src\* and src\*\*
 !INCLUDE makefile.deps
+
