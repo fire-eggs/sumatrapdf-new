@@ -4657,8 +4657,29 @@ static void ResizeSidebar(WindowInfo *win)
 
     EndDeferWindowPos(hdwp);
 
-    InvalidateRect(win->panel->WIN->hwndFrame, NULL, TRUE);
-    UpdateWindow(win->panel->WIN->hwndFrame);
+    // In Windows XP, we need to update hwndSidebar even if hwndFrame is updated.
+    OSVERSIONINFOEX os;
+    os.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+    GetVersionEx((OSVERSIONINFO*) &os);
+    
+    // In XP, even hwndFrame is updated, we still need to update hwndSidebar.
+    // Under Windows 7 or above, we don't need to update hwndSidebar if hwndFrame is updated.
+    if ( !(os.dwMajorVersion >= 6 && os.dwMinorVersion >= 1) || gGlobalPrefs.sidebarForEachPanel) {
+        InvalidateRect(win->sideBar()->hwndSidebar, NULL, TRUE);
+        UpdateWindow(win->sideBar()->hwndSidebar);
+    }
+
+    // If all the panels share the same sidebar, we need to update WIN.
+    if (!gGlobalPrefs.sidebarForEachPanel) {
+        InvalidateRect(win->panel->WIN->hwndFrame, NULL, TRUE);
+        UpdateWindow(win->panel->WIN->hwndFrame);
+    } else {
+        InvalidateRect(win->hwndCanvas, NULL, TRUE);
+        UpdateWindow(win->hwndCanvas);
+
+        InvalidateRect(win->sideBar()->hwndSidebarSplitter, NULL, TRUE);
+        UpdateWindow(win->sideBar()->hwndSidebarSplitter);
+    }
 }
 
 // TODO: the layout logic here is similar to what we do in SetSidebarVisibility()

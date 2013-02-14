@@ -662,8 +662,8 @@ bool Load(const WCHAR *filepath, SerializableGlobalPrefs& globalPrefs,
 
     DeserializePrefs(prefsTxt, globalPrefs, fileHistory, favs);
 
-	gGlobalPrefs.toolbarForEachPanel = gGlobalPrefs.toolbarForEachPanelNew;
-	gGlobalPrefs.sidebarForEachPanel = gGlobalPrefs.sidebarForEachPanelNew;
+    gGlobalPrefs.toolbarForEachPanel = gGlobalPrefs.toolbarForEachPanelNew;
+    gGlobalPrefs.sidebarForEachPanel = gGlobalPrefs.sidebarForEachPanelNew;
 
     globalPrefs.lastPrefUpdate = file::GetModificationTime(filepath);
     return true;
