@@ -41,7 +41,7 @@
 #define ENABLE_TAB_STR              "Enable Tab"
 #define TOOLBAR_FOR_EACH_PANEL_STR  "Toolbar For Each Panel"
 #define SIDEBAR_FOR_EACH_PANEL_STR  "Sidebar For Each Panel"
-#define TOOLBAR_FOR_EACH_PANEL_NEW_STR  "Toolbar For Each Panel"
+#define TOOLBAR_FOR_EACH_PANEL_NEW_STR  "Toolbar For Each Panel New"
 #define SIDEBAR_FOR_EACH_PANEL_NEW_STR  "Sidebar For Each Panel New"
 // for backwards compatibility the string si "ShowToolbar" and not
 // (more appropriate now) "ToolbarVisible"
@@ -655,15 +655,16 @@ bool Load(const WCHAR *filepath, SerializableGlobalPrefs& globalPrefs,
     CrashIf(!filepath);
     if (!filepath) return false;
 
-    gGlobalPrefs.toolbarForEachPanel = gGlobalPrefs.toolbarForEachPanelNew;
-    gGlobalPrefs.sidebarForEachPanel = gGlobalPrefs.sidebarForEachPanelNew;
-
     size_t prefsFileLen;
     ScopedMem<char> prefsTxt(file::ReadAll(filepath, &prefsFileLen));
     if (str::IsEmpty(prefsTxt.Get()))
         return false;
 
     DeserializePrefs(prefsTxt, globalPrefs, fileHistory, favs);
+
+	gGlobalPrefs.toolbarForEachPanel = gGlobalPrefs.toolbarForEachPanelNew;
+	gGlobalPrefs.sidebarForEachPanel = gGlobalPrefs.sidebarForEachPanelNew;
+
     globalPrefs.lastPrefUpdate = file::GetModificationTime(filepath);
     return true;
 }
