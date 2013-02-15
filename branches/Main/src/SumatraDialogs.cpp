@@ -1041,6 +1041,12 @@ static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LP
             {
                 HWND hButton = GetDlgItem(hDlg, LOWORD(wParam));
 
+                POINT pt;
+                GetCursorPos(&pt);
+                HDC hdc = GetDC(NULL);
+                color.rgbResult = GetPixel(hdc, pt.x, pt.y);
+                ReleaseDC(NULL, hdc);
+
                 ChooseColor(&color);
                 SetWindowLongPtr(hButton, GWLP_USERDATA, (LONG_PTR)(color.rgbResult + 1));
 
