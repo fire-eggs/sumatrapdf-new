@@ -2537,7 +2537,7 @@ static void RerenderEverything()
     }
 }
 
-void UpdateDocumentColors(COLORREF fore, COLORREF back)
+void UpdateDocumentColors(COLORREF fore, COLORREF back, bool force)
 {
     //COLORREF fore = WIN_COL_BLACK;
     //COLORREF back = WIN_COL_WHITE;
@@ -2546,8 +2546,10 @@ void UpdateDocumentColors(COLORREF fore, COLORREF back)
         back = GetSysColor(COLOR_WINDOW);
     }
     // update document color range
-    if (fore != gRenderCache.colorRange[0] ||
-        back != gRenderCache.colorRange[1]) {
+    if (force ||
+        fore != gRenderCache.colorRange[0] ||
+        back != gRenderCache.colorRange[1])
+    {
         gRenderCache.colorRange[0] = fore;
         gRenderCache.colorRange[1] = back;
         RerenderEverything();
@@ -2571,29 +2573,20 @@ void UpdateDocumentColors(COLORREF fore, COLORREF back)
 #endif
 }
 
-void  UpdateTocColor(COLORREF back)
+void UpdateColorAll(COLORREF docFore, COLORREF docBack, COLORREF tocBg, COLORREF favBg)
 {
-    for (size_t i = 0; i < gWIN.Count(); i++) {
-        TopWindowInfo *WIN = gWIN.At(i);
-        for (size_t j = 0; j < WIN->gPanel.Count(); j++) {
-            PanelInfo *panel = WIN->gPanel.At(j);
-            for (size_t k = 0; k < panel->gWin.Count(); k++) {
-                WindowInfo *win = panel->gWin.At(k);
-                TreeView_SetBkColor(win->sideBar()->hwndTocTree, back);
-            }
-        }
-    }
-}
+    UpdateDocumentColors(docFore, docBack, true);
 
-void  UpdateFavColor(COLORREF back)
-{
     for (size_t i = 0; i < gWIN.Count(); i++) {
         TopWindowInfo *WIN = gWIN.At(i);
         for (size_t j = 0; j < WIN->gPanel.Count(); j++) {
             PanelInfo *panel = WIN->gPanel.At(j);
             for (size_t k = 0; k < panel->gWin.Count(); k++) {
                 WindowInfo *win = panel->gWin.At(k);
-                TreeView_SetBkColor(win->sideBar()->hwndFavTree, back);
+                if (!win->dm)
+                    InvalidateRect(win->hwndCanvas, NULL, TRUE);
+                TreeView_SetBkColor(win->sideBar()->hwndTocTree, tocBg);
+                TreeView_SetBkColor(win->sideBar()->hwndFavTree, favBg);
             }
         }
     }

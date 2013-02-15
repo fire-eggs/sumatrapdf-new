@@ -941,121 +941,118 @@ static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LP
 {
     SerializableGlobalPrefs *prefs;
 
-    static COLORREF colorOld[6];
+    struct button {
+        int textID;
+        int buttonID;
+        int *color;
+        int colorOld;
+    };
+
+    static struct button colorDlg[6];
 
     switch (msg)
     {
-    case WM_INITDIALOG:
+        case WM_INITDIALOG:
         {
             prefs = (SerializableGlobalPrefs *)lParam;
             assert(prefs);
-            SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)prefs);
+            SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)prefs); // We want to use prefs in other messages, so we store it in user's data.
 
-            colorOld[0] = prefs->bgColor;
-            colorOld[1] = prefs->noDocBgColor;
-            colorOld[2] = prefs->docBgColor;
-            colorOld[3] = prefs->docTextColor;
-            colorOld[4] = prefs->tocBgColor;
-            colorOld[5] = prefs->favBgColor;
+            // colorDlgTemp is used to make initialization clear.
+            // We have to transfer the values to colorDlg term by term.
+            struct button colorDlgTemp[6] = {
+                {IDC_START_PAGE_BG, IDC_SET_START_PAGE_BG,  &prefs->bgColor,      prefs->bgColor},
+                {IDC_WINDOW_BG,     IDC_SET_WINDOW_BG,      &prefs->noDocBgColor, prefs->noDocBgColor},
+                {IDC_DOC_BG,        IDC_SET_DOC_BG,         &prefs->docBgColor,   prefs->docBgColor},
+                {IDC_DOC_TEXT,      IDC_SET_DOC_TEXT_COLOR, &prefs->docTextColor, prefs->docTextColor},
+                {IDC_TOC_BG,        IDC_SET_TOC_BG_COLOR,   &prefs->tocBgColor,   prefs->tocBgColor},
+                {IDC_FAV_BG,        IDC_SET_FAV_BG_COLOR,   &prefs->favBgColor,   prefs->favBgColor},
+            };
 
-            SetColorDlgButtonColor(hDlg, IDC_START_PAGE_BG, IDC_SET_START_PAGE_BG, prefs->bgColor);
-            SetColorDlgButtonColor(hDlg, IDC_WINDOW_BG, IDC_SET_WINDOW_BG, prefs->noDocBgColor);
-            SetColorDlgButtonColor(hDlg, IDC_DOC_BG, IDC_SET_DOC_BG, prefs->docBgColor);
-            SetColorDlgButtonColor(hDlg, IDC_DOC_TEXT, IDC_SET_DOC_TEXT_COLOR, prefs->docTextColor);
-            SetColorDlgButtonColor(hDlg, IDC_TOC_BG, IDC_SET_TOC_BG_COLOR, prefs->tocBgColor);
-            SetColorDlgButtonColor(hDlg, IDC_FAV_BG, IDC_SET_FAV_BG_COLOR, prefs->favBgColor);
+            for (int i = 0; i < 6; i++) {
+                colorDlg[i] = colorDlgTemp[i];
+                SetColorDlgButtonColor(hDlg, colorDlg[i].textID, colorDlg[i].buttonID, *colorDlg[i].color);
+            }
 
             return FALSE;
         }
-    case WM_COMMAND:
-        prefs = (SerializableGlobalPrefs *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
-        assert(prefs);
 
-        COLORREF customColor[16];
-        COLORREF selcolor = prefs->bgColor;
-        CHOOSECOLOR color;
-        color.lStructSize  = sizeof(CHOOSECOLOR);
-        color.hwndOwner    = hDlg;
-        color.lpCustColors = customColor;
-        color.rgbResult = selcolor;
-        color.Flags = CC_RGBINIT | CC_FULLOPEN;
+        case WM_COMMAND:
+            prefs = (SerializableGlobalPrefs *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+            assert(prefs);
 
-        switch (LOWORD(wParam))
-        {
-        case IDOK:
-        case IDC_APPLY:
+            switch (LOWORD(wParam))
             {
-                COLORREF color;
-                color = (COLORREF)GetWindowLongPtr(GetDlgItem(hDlg, IDC_SET_START_PAGE_BG), GWLP_USERDATA);
-                prefs->bgColor = (int) color ? color - 1 : gGlobalPrefs.bgColor;
-                color = (COLORREF)GetWindowLongPtr(GetDlgItem(hDlg, IDC_SET_WINDOW_BG), GWLP_USERDATA);
-                prefs->noDocBgColor = (int) color ? color - 1 : gGlobalPrefs.noDocBgColor;
-                color = (COLORREF)GetWindowLongPtr(GetDlgItem(hDlg, IDC_SET_DOC_BG), GWLP_USERDATA);
-                prefs->docBgColor = (int) color ? color - 1 : gGlobalPrefs.docBgColor;
-                color = (COLORREF)GetWindowLongPtr(GetDlgItem(hDlg, IDC_SET_DOC_TEXT_COLOR), GWLP_USERDATA);
-                prefs->docTextColor = (int) color ? color - 1 : gGlobalPrefs.docTextColor;
-                color = (COLORREF)GetWindowLongPtr(GetDlgItem(hDlg, IDC_SET_TOC_BG_COLOR), GWLP_USERDATA);
-                prefs->tocBgColor = (int) color ? color - 1 : gGlobalPrefs.tocBgColor;
-                color = (COLORREF)GetWindowLongPtr(GetDlgItem(hDlg, IDC_SET_FAV_BG_COLOR), GWLP_USERDATA);
-                prefs->favBgColor = (int) color ? color - 1 : gGlobalPrefs.favBgColor;
+                case IDOK:
+                    for (int i = 0; i < 6; i++) {
+                        HBITMAP hMemBmp = (HBITMAP)GetWindowLongPtr(GetDlgItem(hDlg, colorDlg[i].textID), GWLP_USERDATA);
+                        DeleteObject(hMemBmp);  
+                    }
 
-                UpdateDocumentColors(prefs->docTextColor, prefs->docBgColor);
+                    return TRUE;
 
-                UpdateTocColor(prefs->tocBgColor);
-                UpdateFavColor(prefs->favBgColor);
+                case IDC_APPLY:
+                    // Get the new colors from user's data. If no new color, use the original color.
+                    // Then update the colors in preferences.
+                    for (int i = 0; i < 6; i++) {
+                        COLORREF  color = (COLORREF)GetWindowLongPtr(GetDlgItem(hDlg, colorDlg[i].buttonID), GWLP_USERDATA);
+                        *colorDlg[i].color = (int) color ? color - 1 : *colorDlg[i].color;
+                    }
 
-                HBITMAP hMemBmp = (HBITMAP)GetWindowLongPtr(GetDlgItem(hDlg, IDC_START_PAGE_BG), GWLP_USERDATA);
-                DeleteObject(hMemBmp);
-                hMemBmp = (HBITMAP)GetWindowLongPtr(GetDlgItem(hDlg, IDC_WINDOW_BG), GWLP_USERDATA);
-                DeleteObject(hMemBmp);
-                hMemBmp = (HBITMAP)GetWindowLongPtr(GetDlgItem(hDlg, IDC_DOC_BG), GWLP_USERDATA);
-                DeleteObject(hMemBmp);
-                hMemBmp = (HBITMAP)GetWindowLongPtr(GetDlgItem(hDlg, IDC_DOC_TEXT), GWLP_USERDATA);
-                DeleteObject(hMemBmp);
-                hMemBmp = (HBITMAP)GetWindowLongPtr(GetDlgItem(hDlg, IDC_TOC_BG), GWLP_USERDATA);
-                DeleteObject(hMemBmp);
-                hMemBmp = (HBITMAP)GetWindowLongPtr(GetDlgItem(hDlg, IDC_FAV_BG), GWLP_USERDATA);
-                DeleteObject(hMemBmp);
+                    // Update the appearance.
+                    UpdateColorAll(prefs->docTextColor, prefs->docBgColor, prefs->tocBgColor, prefs->favBgColor);
 
-                return TRUE;
+                    return TRUE;
+
+                case IDCANCEL:
+                    for (int i = 0; i < 6; i++) {
+                        *colorDlg[i].color = colorDlg[i].colorOld;
+                        HBITMAP hMemBmp = (HBITMAP)GetWindowLongPtr(GetDlgItem(hDlg, colorDlg[i].textID), GWLP_USERDATA);
+                        DeleteObject(hMemBmp);   
+                    }
+
+                    UpdateColorAll(prefs->docTextColor, prefs->docBgColor, prefs->tocBgColor, prefs->favBgColor);
+
+                    return TRUE;
+
+                case IDC_SET_START_PAGE_BG:
+                case IDC_SET_WINDOW_BG:
+                case IDC_SET_DOC_BG:
+                case IDC_SET_DOC_TEXT_COLOR:
+                case IDC_SET_TOC_BG_COLOR:
+                case IDC_SET_FAV_BG_COLOR:
+                {
+                    HWND hButton = GetDlgItem(hDlg, LOWORD(wParam));
+
+                    CHOOSECOLOR color;
+                    color.lStructSize  = sizeof(CHOOSECOLOR);
+                    color.hwndOwner    = hDlg;
+                    color.Flags = CC_RGBINIT | CC_FULLOPEN;
+
+                    COLORREF customColor[16];
+                    color.lpCustColors = customColor;
+
+                    // Get the button's color and use it as the default choice.
+                    POINT pt;
+                    GetCursorPos(&pt);
+                    HDC hdc = GetDC(NULL);
+                    color.rgbResult = GetPixel(hdc, pt.x, pt.y);
+                    ReleaseDC(NULL, hdc);
+
+                    // Choose a color and store it to user's data, so it can be used in other messages.
+                    ChooseColor(&color);
+                    SetWindowLongPtr(hButton, GWLP_USERDATA, (LONG_PTR)(color.rgbResult + 1));
+
+                    // Update button's color.
+                    SetColorDlgButtonColor(hDlg, NULL, LOWORD(wParam), color.rgbResult);
+
+                    // Update the appearance.
+                    SendMessage(hDlg, WM_COMMAND, IDC_APPLY, 0);
+
+                    return TRUE;
+                }
             }
-        case IDCANCEL:
-            {
-                prefs->bgColor = colorOld[0];
-                prefs->noDocBgColor = colorOld[1];
-                prefs->docBgColor = colorOld[2];
-                prefs->docTextColor = colorOld[3];
-                prefs->tocBgColor = colorOld[4];
-                prefs->favBgColor = colorOld[5];
-
-                UpdateDocumentColors(prefs->docTextColor, prefs->docBgColor);
-
-                return TRUE;
-            }
-        case IDC_SET_START_PAGE_BG:
-        case IDC_SET_WINDOW_BG:
-        case IDC_SET_DOC_BG:
-        case IDC_SET_DOC_TEXT_COLOR:
-        case IDC_SET_TOC_BG_COLOR:
-        case IDC_SET_FAV_BG_COLOR:
-            {
-                HWND hButton = GetDlgItem(hDlg, LOWORD(wParam));
-
-                POINT pt;
-                GetCursorPos(&pt);
-                HDC hdc = GetDC(NULL);
-                color.rgbResult = GetPixel(hdc, pt.x, pt.y);
-                ReleaseDC(NULL, hdc);
-
-                ChooseColor(&color);
-                SetWindowLongPtr(hButton, GWLP_USERDATA, (LONG_PTR)(color.rgbResult + 1));
-
-                SetColorDlgButtonColor(hDlg, NULL, LOWORD(wParam), color.rgbResult);
-
-                return TRUE;
-            }
-        }
-        break;
+            break;
     }
     return FALSE;
 }
