@@ -87,6 +87,7 @@ class EbookWindow;
 class Favorites;
 
 // all defined in SumatraPDF.cpp
+extern OSVERSIONINFOEX          gOS;
 extern HINSTANCE                ghinst;
 extern bool                     gDebugShowLinks;
 extern bool                     gUseGdiRenderer;
