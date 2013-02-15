@@ -158,7 +158,15 @@ static bool InstanceInit(HINSTANCE hInstance, int nCmdShow)
     gBrushSidebarSplitterEdgeBg = CreateSolidBrush(SIDEBAR_SPLITTER_EDGE_BG_COLOR);
 
     gBrushSepLineBg = CreateSolidBrush(SEPARATOR_BG_COLOR);
-    gBrushStaticBg = gBrushPanelSplitterBg;
+    
+    COLORREF statcBg;
+
+    if (gOS.dwMajorVersion >= 6 && gOS.dwMinorVersion >= 1)
+        statcBg = RGB(0xF0, 0xF0, 0xF0);
+    else
+        statcBg = RGB(0xEC, 0xE9, 0xD8);
+
+    gBrushStaticBg = CreateSolidBrush(statcBg);
 
     NONCLIENTMETRICS ncm = { 0 };
     ncm.cbSize = sizeof(ncm);
