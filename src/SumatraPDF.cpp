@@ -139,6 +139,8 @@ WCHAR *          gPluginURL = NULL; // owned by CommandLineInfo in WinMain
 #define AUTO_RELOAD_TIMER_ID        5
 #define AUTO_RELOAD_DELAY_IN_MS     100
 
+OSVERSIONINFOEX              gOS;
+
 HINSTANCE                    ghinst = NULL;
 
 HCURSOR                      gCursorArrow;
@@ -4657,14 +4659,9 @@ static void ResizeSidebar(WindowInfo *win)
 
     EndDeferWindowPos(hdwp);
 
-    // In Windows XP, we need to update hwndSidebar even if hwndFrame is updated.
-    OSVERSIONINFOEX os;
-    os.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-    GetVersionEx((OSVERSIONINFO*) &os);
-    
     // In XP, even hwndFrame is updated, we still need to update hwndSidebar.
     // Under Windows 7 or above, we don't need to update hwndSidebar if hwndFrame is updated.
-    if ( !(os.dwMajorVersion >= 6 && os.dwMinorVersion >= 1) || gGlobalPrefs.sidebarForEachPanel) {
+    if ( !(gOS.dwMajorVersion >= 6 && gOS.dwMinorVersion >= 1) || gGlobalPrefs.sidebarForEachPanel) {
         InvalidateRect(win->sideBar()->hwndSidebar, NULL, TRUE);
         UpdateWindow(win->sideBar()->hwndSidebar);
     }

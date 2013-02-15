@@ -114,6 +114,9 @@ static bool RegisterWinClass(HINSTANCE hinst)
 
 static bool InstanceInit(HINSTANCE hInstance, int nCmdShow)
 {
+    gOS.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+    GetVersionEx((OSVERSIONINFO*) &gOS);
+
     ghinst = hInstance;
 
     gCursorArrow = LoadCursor(NULL, IDC_ARROW);
