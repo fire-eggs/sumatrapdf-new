@@ -2537,7 +2537,7 @@ static void RerenderEverything()
     }
 }
 
-void UpdateDocumentColors(COLORREF fore, COLORREF back, bool force)
+void UpdateDocumentColors(COLORREF fore, COLORREF back)
 {
     //COLORREF fore = WIN_COL_BLACK;
     //COLORREF back = WIN_COL_WHITE;
@@ -2546,7 +2546,7 @@ void UpdateDocumentColors(COLORREF fore, COLORREF back, bool force)
         back = GetSysColor(COLOR_WINDOW);
     }
     // update document color range
-    if (force ||
+    if (
         fore != gRenderCache.colorRange[0] ||
         back != gRenderCache.colorRange[1])
     {
@@ -2575,7 +2575,7 @@ void UpdateDocumentColors(COLORREF fore, COLORREF back, bool force)
 
 void UpdateColorAll(COLORREF docFore, COLORREF docBack, COLORREF tocBg, COLORREF favBg)
 {
-    UpdateDocumentColors(docFore, docBack, true);
+    UpdateDocumentColors(docFore, docBack);
 
     for (size_t i = 0; i < gWIN.Count(); i++) {
         TopWindowInfo *WIN = gWIN.At(i);
@@ -3881,32 +3881,6 @@ static void OnMenuViewShowHideToolbar()
 {
     gGlobalPrefs.toolbarVisible = !gGlobalPrefs.toolbarVisible;
     ShowOrHideToolbarGlobally();
-}
-
-void OnMenuSettings(HWND hwnd)
-{
-    if (!HasPermission(Perm_SavePreferences)) return;
-
-    bool useSysColors = gGlobalPrefs.useSysColors;
-
-    if (IDOK != Dialog_Settings(hwnd, &gGlobalPrefs))
-        return;
-
-    if (!gGlobalPrefs.rememberOpenedFiles) {
-        gFileHistory.Clear();
-        CleanUpThumbnailCache(gFileHistory);
-    }
-    if (useSysColors != gGlobalPrefs.useSysColors)
-        UpdateDocumentColors();
-
-    SavePrefs();
-}
-
-static void OnMenuSettings(WindowInfo& win)
-{
-    OnMenuSettings(win.hwndFrame);
-    if (gWindows.Count() > 0 && gWindows.At(0)->IsAboutWindow())
-        gWindows.At(0)->RedrawAll(true);
 }
 
 void OnMenuPreference(HWND hwnd)
@@ -6372,10 +6346,6 @@ static LRESULT FrameOnCommand(WindowInfo *win, HWND hwnd, UINT msg, WPARAM wPara
 
         case IDM_CHECK_UPDATE:
             AutoUpdateCheckAsync(win->hwndFrame, false);
-            break;
-
-        case IDM_SETTINGS:
-            OnMenuSettings(*win);
             break;
 
         case IDM_PREFERENCE:

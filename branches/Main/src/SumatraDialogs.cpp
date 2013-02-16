@@ -882,12 +882,6 @@ static INT_PTR CALLBACK Dialog_View_Proc(HWND hDlg, UINT msg, WPARAM wParam, LPA
     return FALSE;
 }
 
-INT_PTR Dialog_Settings(HWND hwnd, SerializableGlobalPrefs *prefs)
-{
-    return CreateDialogBox(IDD_DIALOG_SETTINGS, hwnd,
-        Dialog_Settings_Proc, (LPARAM)prefs);
-}
-
 static HBITMAP LoadExternalBitmap(HINSTANCE hInst, WCHAR * filename, INT resourceId)
 {
     ScopedMem<WCHAR> path(AppGenDataFilename(filename));
@@ -900,13 +894,23 @@ static HBITMAP LoadExternalBitmap(HINSTANCE hInst, WCHAR * filename, INT resourc
     return LoadBitmap(hInst, MAKEINTRESOURCE(resourceId));
 }
 
-void SetColorDlgButtonColor(HWND hDlg, int nIDTextDlgItem, int nIDDlgItem, COLORREF color)
-{
-    HWND hText = NULL;
-    if (nIDTextDlgItem != NULL)
-        hText = GetDlgItem(hDlg, nIDTextDlgItem);
+struct buttonInColorDlg {
+    int textID;
+    int buttonID;
+    int *color;
+    int colorOld;
+    HWND hButton;
+    HBITMAP hMemBmp;
+};
 
-    HWND hButton = GetDlgItem(hDlg, nIDDlgItem);
+void SetColorDlgButtonColor(HWND hDlg, COLORREF color, struct buttonInColorDlg *button)
+{
+    if (button->hMemBmp) {
+        DeleteObject(button->hMemBmp);
+        button->hMemBmp = NULL;
+    }
+
+    HWND hButton = button->hButton;
 
     HDC hdc = GetDC(hButton);
     HDC memDC = CreateCompatibleDC(hdc);
@@ -914,6 +918,7 @@ void SetColorDlgButtonColor(HWND hDlg, int nIDTextDlgItem, int nIDDlgItem, COLOR
     int dx = ClientRect(hButton).dx;
     int dy = ClientRect(hButton).dx;
     HBITMAP hMemBmp = CreateCompatibleBitmap(hdc, dx, dy);
+    button->hMemBmp = hMemBmp;
     HBITMAP hOldBmp = (HBITMAP)SelectObject(memDC, hMemBmp);
 
     Rectangle(memDC, 0, 0, dx, dy);
@@ -924,91 +929,160 @@ void SetColorDlgButtonColor(HWND hDlg, int nIDTextDlgItem, int nIDDlgItem, COLOR
     rc.right  = dx;
     rc.bottom = dy;
 
-
     HBRUSH brush = CreateSolidBrush(color);
     FillRect(memDC, &rc, brush);
     SelectObject(memDC, hOldBmp);
-    SendMessage(GetDlgItem(hDlg, nIDDlgItem), BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hMemBmp);
+    SendMessage(hButton, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hMemBmp);
     DeleteObject(brush);
     // DeleteObject(hMemBmp); // If we delete hMemBmp immediately after sending BM_SETIMAGE message, then the images are not shown in XP.
     DeleteObject(memDC);
+}
 
-    if (hText != NULL)
-        SetWindowLongPtr(hText, GWLP_USERDATA, (LONG_PTR)hMemBmp);
+static UINT_PTR CALLBACK CCHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    switch (msg)
+    {
+        case WM_INITDIALOG:
+        {
+            LONG lStyle = GetWindowLong(hDlg, GWL_STYLE);
+            lStyle &= ~(WS_BORDER | WS_CAPTION | WS_POPUP | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZE | WS_MAXIMIZE);
+            SetWindowLong(hDlg, GWL_STYLE, lStyle);
+
+            LPCHOOSECOLOR color = (LPCHOOSECOLOR) lParam;
+            SetWindowLongPtr(hDlg, GWL_USERDATA, (LONG_PTR)color);
+
+            struct buttonInColorDlg *button = (struct buttonInColorDlg *)color->lCustData;
+            HWND hButton = button->hButton;
+            
+            RECT rc;
+            GetWindowRect(hButton, &rc);
+
+            SetWindowPos(hDlg, NULL, rc.right, rc.bottom, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+
+            break;
+        }
+
+        case WM_PAINT:
+        {
+            HDC hdc = GetDC(hDlg);
+
+            RECT rc;
+            GetClientRect(hDlg, &rc);
+
+            int dx = rc.right - rc.left;
+            int dy = rc.bottom - rc.top;
+
+            HRGN hrgn = CreateRectRgn(0, 0, dx, dy);
+            SelectClipRgn(hdc, hrgn);
+            HRGN rgnInterior = CreateRectRgn(2, 2, dx - 2, dy - 2);
+            ExtSelectClipRgn(hdc, rgnInterior, RGN_DIFF);
+
+            FillRgn(hdc, hrgn, gBrushSepLineBg);
+
+            SelectClipRgn(hdc, NULL);
+            DeleteObject(hrgn);
+            DeleteObject(rgnInterior);
+
+            break;
+        }
+
+        case WM_CTLCOLORSTATIC:
+        {
+            HWND hwndCurrent = GetDlgItem(hDlg, COLOR_CURRENT);
+
+            if ((HWND)lParam == hwndCurrent) {
+
+                HDC hdc = (HDC)wParam;
+                COLORREF result = GetPixel(hdc, 1, 1);
+
+                LPCHOOSECOLOR color = (LPCHOOSECOLOR)GetWindowLongPtr(hDlg, GWL_USERDATA);
+                struct buttonInColorDlg *button = (struct buttonInColorDlg *)color->lCustData;
+                *button->color = result;
+
+                // Update button's color.
+                SetColorDlgButtonColor(GetParent(button->hButton), result, button);
+
+                // Update the appearance.
+                SendMessage(GetParent(button->hButton), WM_COMMAND, IDC_APPLY, 0);
+            }
+
+            break;
+        }
+
+        case WM_COMMAND:
+            if (LOWORD(wParam) == IDCANCEL) {
+
+                LPCHOOSECOLOR color = (LPCHOOSECOLOR)GetWindowLongPtr(hDlg, GWL_USERDATA);
+                struct buttonInColorDlg *button = (struct buttonInColorDlg *)color->lCustData;
+                *button->color = button->colorOld;
+
+                SetColorDlgButtonColor(GetParent(button->hButton), *button->color, button);
+                SendMessage(GetParent(button->hButton), WM_COMMAND, IDC_APPLY, 0);
+
+                break;
+            }
+
+        case WM_ACTIVATE:
+             if (LOWORD(wParam) == WA_INACTIVE)
+                EndDialog(hDlg, 0);
+             break;
+    }
+    return FALSE;
 }
 
 static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    LONG_PTR *data;
     SerializableGlobalPrefs *prefs;
-
-    struct button {
-        int textID;
-        int buttonID;
-        int *color;
-        int colorOld;
-    };
-
-    static struct button colorDlg[6];
+    struct buttonInColorDlg *buttons;
 
     switch (msg)
     {
         case WM_INITDIALOG:
         {
-            prefs = (SerializableGlobalPrefs *)lParam;
-            assert(prefs);
-            SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)prefs); // We want to use prefs in other messages, so we store it in user's data.
+            SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam); // We want to use prefs in other messages, so we store it in user's data.
 
-            // colorDlgTemp is used to make initialization clear.
-            // We have to transfer the values to colorDlg term by term.
-            struct button colorDlgTemp[6] = {
-                {IDC_START_PAGE_BG, IDC_SET_START_PAGE_BG,  &prefs->bgColor,      prefs->bgColor},
-                {IDC_WINDOW_BG,     IDC_SET_WINDOW_BG,      &prefs->noDocBgColor, prefs->noDocBgColor},
-                {IDC_DOC_BG,        IDC_SET_DOC_BG,         &prefs->docBgColor,   prefs->docBgColor},
-                {IDC_DOC_TEXT,      IDC_SET_DOC_TEXT_COLOR, &prefs->docTextColor, prefs->docTextColor},
-                {IDC_TOC_BG,        IDC_SET_TOC_BG_COLOR,   &prefs->tocBgColor,   prefs->tocBgColor},
-                {IDC_FAV_BG,        IDC_SET_FAV_BG_COLOR,   &prefs->favBgColor,   prefs->favBgColor},
-            };
+            data = (LONG_PTR *)lParam;
+            assert(data);
+            prefs = (SerializableGlobalPrefs *)data[0];
+            assert(prefs);
+            buttons = (struct buttonInColorDlg *)data[1];
+            assert(buttons);
 
             for (int i = 0; i < 6; i++) {
-                colorDlg[i] = colorDlgTemp[i];
-                SetColorDlgButtonColor(hDlg, colorDlg[i].textID, colorDlg[i].buttonID, *colorDlg[i].color);
+                buttons[i].hButton = GetDlgItem(hDlg, buttons[i].buttonID);
+                SetColorDlgButtonColor(hDlg, *buttons[i].color, &buttons[i]);
             }
 
             return FALSE;
         }
 
         case WM_COMMAND:
-            prefs = (SerializableGlobalPrefs *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+            data = (LONG_PTR *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+            assert(data);
+            prefs = (SerializableGlobalPrefs *)data[0];
             assert(prefs);
+            buttons = (buttonInColorDlg *)data[1];
+            assert(buttons);
 
             switch (LOWORD(wParam))
             {
                 case IDOK:
-                    for (int i = 0; i < 6; i++) {
-                        HBITMAP hMemBmp = (HBITMAP)GetWindowLongPtr(GetDlgItem(hDlg, colorDlg[i].textID), GWLP_USERDATA);
-                        DeleteObject(hMemBmp);  
-                    }
+                    for (int i = 0; i < 6; i++)
+                        DeleteObject(buttons[i].hMemBmp);  
 
                     return TRUE;
 
                 case IDC_APPLY:
-                    // Get the new colors from user's data. If no new color, use the original color.
-                    // Then update the colors in preferences.
-                    for (int i = 0; i < 6; i++) {
-                        COLORREF  color = (COLORREF)GetWindowLongPtr(GetDlgItem(hDlg, colorDlg[i].buttonID), GWLP_USERDATA);
-                        *colorDlg[i].color = (int) color ? color - 1 : *colorDlg[i].color;
-                    }
-
-                    // Update the appearance.
                     UpdateColorAll(prefs->docTextColor, prefs->docBgColor, prefs->tocBgColor, prefs->favBgColor);
 
                     return TRUE;
 
                 case IDCANCEL:
                     for (int i = 0; i < 6; i++) {
-                        *colorDlg[i].color = colorDlg[i].colorOld;
-                        HBITMAP hMemBmp = (HBITMAP)GetWindowLongPtr(GetDlgItem(hDlg, colorDlg[i].textID), GWLP_USERDATA);
-                        DeleteObject(hMemBmp);   
+                        *buttons[i].color = buttons[i].colorOld;
+                        DeleteObject(buttons[i].hMemBmp);
+                        // We don't have to update buttons' color.
                     }
 
                     UpdateColorAll(prefs->docTextColor, prefs->docBgColor, prefs->tocBgColor, prefs->favBgColor);
@@ -1022,32 +1096,29 @@ static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LP
                 case IDC_SET_TOC_BG_COLOR:
                 case IDC_SET_FAV_BG_COLOR:
                 {
-                    HWND hButton = GetDlgItem(hDlg, LOWORD(wParam));
+                    int buttonID = LOWORD(wParam);
+                    int index = buttonID - IDC_SET_START_PAGE_BG;
+                    struct buttonInColorDlg button = buttons[index];
 
                     CHOOSECOLOR color;
                     color.lStructSize  = sizeof(CHOOSECOLOR);
-                    color.hwndOwner    = hDlg;
-                    color.Flags = CC_RGBINIT | CC_FULLOPEN;
+                    color.hwndOwner    = NULL;
+                    color.hInstance = (HWND)ghinst;
+                    color.Flags = CC_RGBINIT | CC_FULLOPEN | CC_ENABLEHOOK | CC_ENABLETEMPLATE;
+                    color.lCustData = (LPARAM) &button;
+
+                    // Get the button's color and use it as the default choice.
+                    color.rgbResult = *buttons[index].color;
 
                     COLORREF customColor[16];
                     color.lpCustColors = customColor;
 
-                    // Get the button's color and use it as the default choice.
-                    POINT pt;
-                    GetCursorPos(&pt);
-                    HDC hdc = GetDC(NULL);
-                    color.rgbResult = GetPixel(hdc, pt.x, pt.y);
-                    ReleaseDC(NULL, hdc);
+                    color.lpfnHook = (LPCCHOOKPROC)CCHookProc;
+
+                    color.lpTemplateName = MAKEINTRESOURCE(DLG_COLOR);
 
                     // Choose a color and store it to user's data, so it can be used in other messages.
                     ChooseColor(&color);
-                    SetWindowLongPtr(hButton, GWLP_USERDATA, (LONG_PTR)(color.rgbResult + 1));
-
-                    // Update button's color.
-                    SetColorDlgButtonColor(hDlg, NULL, LOWORD(wParam), color.rgbResult);
-
-                    // Update the appearance.
-                    SendMessage(hDlg, WM_COMMAND, IDC_APPLY, 0);
 
                     return TRUE;
                 }
@@ -1057,19 +1128,18 @@ static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LP
     return FALSE;
 }
 
-INT_PTR Dialog_Color(HWND hwnd, SerializableGlobalPrefs *prefs)
-{
-    return CreateDialogBox(IDD_DIALOG_COLOR, hwnd, Dialog_Color_Proc, (LPARAM)prefs);
-}
-
 static INT_PTR CALLBACK Dialog_Preference_Proc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    // We could put these into WM_INITDIALOG
+    LONG_PTR *data;
     SerializableGlobalPrefs *prefs;
 
     switch (msg)
     {
     case WM_INITDIALOG:
-        prefs = (SerializableGlobalPrefs *)lParam;
+        data = (LONG_PTR *)lParam;
+        assert(data);
+        prefs = (SerializableGlobalPrefs *)data[0];
         assert(prefs);
         SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)prefs);
 
@@ -1083,7 +1153,7 @@ static INT_PTR CALLBACK Dialog_Preference_Proc(HWND hDlg, UINT msg, WPARAM wPara
         ShowWindow(hwndChildDlg, SW_HIDE);
         UpdateWindow(hwndChildDlg);
 
-        hwndChildDlg = CreateDialogParam(NULL, MAKEINTRESOURCE(IDD_DIALOG_COLOR), hDlg, Dialog_Color_Proc, (LPARAM)prefs);
+        hwndChildDlg = CreateDialogParam(NULL, MAKEINTRESOURCE(IDD_DIALOG_COLOR), hDlg, Dialog_Color_Proc, lParam);
         ShowWindow(hwndChildDlg, SW_HIDE);
         UpdateWindow(hwndChildDlg);
 
@@ -1171,8 +1241,18 @@ static INT_PTR CALLBACK Dialog_Preference_Proc(HWND hDlg, UINT msg, WPARAM wPara
 
 INT_PTR Dialog_Preference(HWND hwnd, SerializableGlobalPrefs *prefs)
 {
-    return CreateDialogBox(IDD_DIALOG_PREFERENCE, hwnd,
-        Dialog_Preference_Proc, (LPARAM)prefs);
+    struct buttonInColorDlg buttons[6] = {
+        {IDC_START_PAGE_BG, IDC_SET_START_PAGE_BG,  &prefs->bgColor,      prefs->bgColor},
+        {IDC_WINDOW_BG,     IDC_SET_WINDOW_BG,      &prefs->noDocBgColor, prefs->noDocBgColor},
+        {IDC_DOC_BG,        IDC_SET_DOC_BG,         &prefs->docBgColor,   prefs->docBgColor},
+        {IDC_DOC_TEXT,      IDC_SET_DOC_TEXT_COLOR, &prefs->docTextColor, prefs->docTextColor},
+        {IDC_TOC_BG,        IDC_SET_TOC_BG_COLOR,   &prefs->tocBgColor,   prefs->tocBgColor},
+        {IDC_FAV_BG,        IDC_SET_FAV_BG_COLOR,   &prefs->favBgColor,   prefs->favBgColor},
+    };
+
+    LONG_PTR data[2] = { (LONG_PTR)prefs, (LONG_PTR)buttons };
+
+    return CreateDialogBox(IDD_DIALOG_PREFERENCE, hwnd, Dialog_Preference_Proc, (LPARAM)data);
 }
 
 #ifndef ID_APPLY_NOW

@@ -124,7 +124,7 @@ void  AdvanceFocus(WindowInfo* win);
 bool  WindowInfoStillValid(WindowInfo *win);
 void  ChangeLanguage(const char *langName);
 void  ShowOrHideToolbarGlobally();
-void  UpdateDocumentColors(COLORREF fore=RGB(0x00, 0x00, 0x00), COLORREF back=RGB(0xFF, 0xFF, 0xFF), bool force=false);
+void  UpdateDocumentColors(COLORREF fore=RGB(0x00, 0x00, 0x00), COLORREF back=RGB(0xFF, 0xFF, 0xFF));
 void  UpdateColorAll(COLORREF docFore, COLORREF docBack, COLORREF tocBg, COLORREF favBg);
 void  UpdateCurrentFileDisplayStateForWin(SumatraWindow& win);
 bool  FrameOnKeydown(WindowInfo* win, WPARAM key, LPARAM lparam, bool inTextfield=false);
@@ -132,7 +132,6 @@ void  SwitchToDisplayMode(WindowInfo *win, DisplayMode displayMode, bool keepCon
 void  ReloadDocument(WindowInfo *win, bool autorefresh=false);
 bool  CanSendAsEmailAttachment(WindowInfo *win=NULL);
 bool  DoCachePageRendering(WindowInfo *win, int pageNo);
-void  OnMenuSettings(HWND hwnd);
 void  OnMenuExit(TopWindowInfo *WIN, HWND hwnd);
 void  AutoUpdateCheckAsync(HWND hwnd, bool autoCheck);
 void  OnMenuChangeLanguage(HWND hwnd);

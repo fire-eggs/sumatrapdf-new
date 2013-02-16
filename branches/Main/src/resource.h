@@ -153,23 +153,23 @@
 #define IDC_SECTION_SIDEBAR             1056
 #define IDC_SIDEBAR_FOR_EACH_PANEL      1049
 #define IDC_SECTION_COLOR               1069
+
 #define IDC_START_PAGE_BG               1072
 #define IDC_WINDOW_BG                   1073
 #define IDC_DOC_BG                      1074
 #define IDC_DOC_TEXT                    1075
+#define IDC_TOC_BG                      1076
+#define IDC_FAV_BG                      1077
 
-#define IDC_TOC_BG                      1081
-#define IDC_FAV_BG                      1082
+#define IDC_SET_START_PAGE_BG           1078
+#define IDC_SET_WINDOW_BG               1079
+#define IDC_SET_DOC_BG                  1080
+#define IDC_SET_DOC_TEXT_COLOR          1081
+#define IDC_SET_TOC_BG_COLOR            1082
+#define IDC_SET_FAV_BG_COLOR            1083
 
-#define IDC_SET_START_PAGE_BG           1076
-#define IDC_SET_WINDOW_BG               1077
-#define IDC_SET_DOC_BG                  1078
-#define IDC_SET_DOC_TEXT_COLOR          1079
+#define IDC_APPLY                       1084
 
-#define IDC_SET_TOC_BG_COLOR            1083
-#define IDC_SET_FAV_BG_COLOR            1084
-
-#define IDC_APPLY                       1080
 #define IDC_SECTION_PRINT_RANGE         1050
 #define IDC_PRINT_RANGE_ALL             1051
 #define IDC_PRINT_RANGE_EVEN            1052
@@ -225,6 +225,48 @@
 #define IDD_SAMPLE_MOBI                 3050
 #define IDC_SUMATRAPDF                  4000
 #define IDC_STATIC                      -1
+
+// ==========================================================
+// Copy from ColorDlg.h
+
+#define DLG_COLOR            10
+
+// color dialog
+#define COLOR_SATSCROLL      701
+#define COLOR_LUMSCROLL         702
+#define COLOR_HUE            703
+#define COLOR_SAT            704
+#define COLOR_LUM            705
+#define COLOR_RED            706
+#define COLOR_GREEN          707
+#define COLOR_BLUE           708
+#define COLOR_CURRENT        709
+#define COLOR_RAINBOW        710
+#define COLOR_SAVE           711
+#define COLOR_ADD            712
+#define COLOR_SOLID          713
+#define COLOR_TUNE           714
+#define COLOR_SCHEMES        715
+#define COLOR_ELEMENT        716
+#define COLOR_SAMPLES        717
+#define COLOR_PALETTE        718
+#define COLOR_MIX            719
+#define COLOR_BOX1           720
+#define COLOR_CUSTOM1        721
+
+#define COLOR_HUEACCEL       723
+#define COLOR_SATACCEL       724
+#define COLOR_LUMACCEL       725
+#define COLOR_REDACCEL       726
+#define COLOR_GREENACCEL     727
+#define COLOR_BLUEACCEL      728
+
+#define COLOR_SOLID_LEFT     730
+#define COLOR_SOLID_RIGHT    731
+
+#define NUM_BASIC_COLORS     48
+#define NUM_CUSTOM_COLORS    16
+// ==========================================================
 
 // Next default values for new objects
 // 
