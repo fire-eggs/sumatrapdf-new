@@ -94,9 +94,16 @@ void SidebarOnSize(SidebarInfo *sideBar, int dx, int dy)
         sidebarTopDy = rSidebar.dy / 2;
     }
 
-    SetWindowPos(sideBar->hwndSidebarTop, NULL, 0, 0, rSidebar.dx, sidebarTopDy, SWP_NOZORDER);
-    SetWindowPos(sideBar->hwndFavSplitter, NULL, 0, sidebarTopDy, rSidebar.dx, SPLITTER_DY, SWP_NOZORDER);
-    SetWindowPos(sideBar->hwndSidebarBottom, NULL, 0, sidebarTopDy + SPLITTER_DY, dx, rSidebar.dy - sidebarTopDy - SPLITTER_DY, SWP_NOZORDER);
+    HDWP hdwp = BeginDeferWindowPos(3);
+
+    DeferWindowPos(hdwp, sideBar->hwndSidebarTop, NULL, 0, 0, rSidebar.dx, sidebarTopDy, SWP_NOZORDER);
+    DeferWindowPos(hdwp, sideBar->hwndFavSplitter, NULL, 0, sidebarTopDy, rSidebar.dx, SPLITTER_DY, SWP_NOZORDER);
+    DeferWindowPos(hdwp, sideBar->hwndSidebarBottom, NULL, 0, sidebarTopDy + SPLITTER_DY, dx, rSidebar.dy - sidebarTopDy - SPLITTER_DY, SWP_NOZORDER);
+
+    EndDeferWindowPos(hdwp);
+
+    InvalidateRect(sideBar->hwndSidebar, NULL, TRUE);
+    UpdateWindow(sideBar->hwndSidebar);
 }
 
 void SidebarOnPaint(HWND hwnd)
