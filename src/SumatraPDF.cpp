@@ -6503,8 +6503,6 @@ static LRESULT CALLBACK WndProcFrame(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
     WindowInfo *    win;
     ULONG           ulScrollLines;                   // for mouse wheel logic
     
-    static bool     drawUnderline = false;
-
     win = FindWindowInfoByHwnd(hwnd);
 
     switch (msg)
@@ -6622,30 +6620,9 @@ static LRESULT CALLBACK WndProcFrame(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
             WCHAR *text = (WCHAR *)lpDis->itemData;
 
             DrawTextEx(lpDis->hDC, text, str::Len(text),
-                       &rc, drawUnderline ? NULL : DT_HIDEPREFIX, NULL);
+                       &rc, lpDis->itemState & ODS_NOACCEL ? DT_HIDEPREFIX : NULL, NULL);
 
             return TRUE;
-        }
-
-        case WM_SYSKEYDOWN:
-        {
-            if (wParam == VK_MENU)
-                drawUnderline = true;
-            return DefWindowProc(hwnd, msg, wParam, lParam);
-        }
-
-        case WM_KEYUP:
-        {
-            if (wParam == VK_MENU && drawUnderline == true)
-                drawUnderline = false;
-            return DefWindowProc(hwnd, msg, wParam, lParam);
-        }
-
-        case WM_EXITMENULOOP:
-        {
-            if (wParam == 0)
-                drawUnderline = false;
-            return DefWindowProc(hwnd, msg, wParam, lParam);
         }
 
         case WM_CREATE:
