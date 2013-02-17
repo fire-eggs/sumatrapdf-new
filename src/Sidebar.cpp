@@ -50,6 +50,10 @@ void SidebarTopOnSize(SidebarInfo *sideBar, int dx, int dy)
     DeferWindowPos(hdwp, sideBar->hwndTocBox, NULL, 0 , size.dy, dx, dy - size.dy, NULL);
 
     EndDeferWindowPos(hdwp);
+
+    // If we use WS_EX_COMPOSITED for sidebar, we don't need this code.
+    InvalidateRect(sideBar->hwndTocBox, NULL, TRUE);
+    UpdateWindow(sideBar->hwndTocBox);
 }
 
 void SidebarBottomOnSize(SidebarInfo *sideBar, int dx, int dy)
@@ -83,6 +87,10 @@ void SidebarBottomOnSize(SidebarInfo *sideBar, int dx, int dy)
     DeferWindowPos(hdwp, sideBar->hwndFavBox, NULL, 0 , size.dy, dx, dy - size.dy, NULL);
 
     EndDeferWindowPos(hdwp);
+
+    // If we use WS_EX_COMPOSITED for sidebar, we don't need this code.
+    InvalidateRect(sideBar->hwndFavBox, NULL, TRUE);
+    UpdateWindow(sideBar->hwndFavBox);
 }
 
 void SidebarOnSize(SidebarInfo *sideBar, int dx, int dy)
@@ -235,8 +243,12 @@ LRESULT CALLBACK WndProcSidebarCB(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 
 void CreateSidebarBox(WinInfo& winInfo)
 {
+    DWORD extStyle = NULL;
+    if (gOS.dwMajorVersion >= 6 && gOS.dwMinorVersion >= 1)
+        extStyle = WS_CLIPCHILDREN;
+
     HWND hwndSidebar = CreateWindowEx(
-        WS_CLIPCHILDREN,
+        extStyle,
         SIDEBAR_CLASS_NAME, NULL,
         WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
         0, 0, gGlobalPrefs.sidebarDx, 0,
@@ -246,7 +258,7 @@ void CreateSidebarBox(WinInfo& winInfo)
         return;
 
     HWND hwndSidebarTop = CreateWindowEx(
-        WS_CLIPCHILDREN,
+        extStyle,
         SIDEBAR_TOP_CLASS_NAME, NULL,
         WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
         0, 0, 0, 0,
@@ -269,7 +281,7 @@ void CreateSidebarBox(WinInfo& winInfo)
     SetWindowLongPtr(hwndClose, GWLP_WNDPROC, (LONG_PTR)WndProcCloseButton);
 
     HWND hwndSidebarBottom = CreateWindowEx(
-        WS_CLIPCHILDREN,
+        extStyle,
         SIDEBAR_BOTTOM_CLASS_NAME, NULL,
         WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
         0, 0, 0, 0,
