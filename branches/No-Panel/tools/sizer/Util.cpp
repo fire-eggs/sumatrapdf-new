@@ -1,4 +1,6 @@
 #include "BaseUtil.h"
+#include "Dict.h"
+
 #include "Dia2Subset.h"
 #include "Util.h"
 
@@ -88,4 +90,40 @@ IDiaDataSource *LoadDia()
     }
     log("  couldn't find (or properly initialize) any DIA dll, copying msdia*.dll to app dir might help.\n");
     return NULL;
+}
+
+const char* BStrToString(str::Str<char>& strInOut, BSTR str, char *defString, bool stripWhitespace)
+{
+    strInOut.Reset();
+    if (!str) {
+        strInOut.Append(defString);
+        return strInOut.Get();
+    }
+
+    OLECHAR c;
+    int len = SysStringLen(str);
+    for (int i=0; i<len; i++)
+    {
+        c = str[i];
+        if (stripWhitespace && isspace(c))
+            continue;
+        if (c < 32 || c >= 128)
+            c = '?';
+        strInOut.Append((char)c);
+    }
+    return strInOut.Get();
+}
+
+int StringInterner::Intern(const char *s)
+{
+    const char *internedString;
+
+    nTotalStrings++;
+    int idx = (int)intToStr.Count();
+    bool inserted = strToInt.Insert(s, idx, &idx, &internedString);
+    if (!inserted)
+        return idx;
+
+    intToStr.Append(internedString);
+    return idx;
 }

@@ -1,5 +1,5 @@
 import os.path, re, simplejson
-from util import *
+from util import load_config, s3UploadDataPublic, uniquify
 from extract_strings import load_strings_file, untranslated_count_for_lang
 from extract_strings import extract_strings_from_c_files, get_missing_for_language
 from extract_strings import dump_missing_per_language, write_out_strings_files
@@ -13,8 +13,7 @@ if not config.HasAwsCreds():
     print("aws creds not present in config.py")
 else:
     try:
-        import boto.s3
-        from boto.s3.key import Key
+        import boto
         g_can_upload = True
     except:
         print("You need boto library (http://code.google.com/p/boto/)")
