@@ -1241,6 +1241,22 @@ static INT_PTR CALLBACK Dialog_Preference_Proc(HWND hDlg, UINT msg, WPARAM wPara
 
 INT_PTR Dialog_Preference(HWND hwnd, SerializableGlobalPrefs *prefs)
 {
+    STATIC_ASSERT(
+            IDC_START_PAGE_BG + 1 == IDC_WINDOW_BG &&
+            IDC_START_PAGE_BG + 2 == IDC_DOC_BG &&
+            IDC_START_PAGE_BG + 3 == IDC_DOC_TEXT &&
+            IDC_START_PAGE_BG + 4 == IDC_TOC_BG &&
+            IDC_START_PAGE_BG + 5 == IDC_FAV_BG,
+        consecutive_Text_ids);
+
+    STATIC_ASSERT(
+            IDC_SET_START_PAGE_BG + 1 == IDC_SET_WINDOW_BG &&
+            IDC_SET_START_PAGE_BG + 2 == IDC_SET_DOC_BG &&
+            IDC_SET_START_PAGE_BG + 3 == IDC_SET_DOC_TEXT_COLOR &&
+            IDC_SET_START_PAGE_BG + 4 == IDC_SET_TOC_BG_COLOR &&
+            IDC_SET_START_PAGE_BG + 5 == IDC_SET_FAV_BG_COLOR,
+        consecutive_Button_ids);
+
     struct buttonInColorDlg buttons[6] = {
         {IDC_START_PAGE_BG, IDC_SET_START_PAGE_BG,  &prefs->bgColor,      prefs->bgColor},
         {IDC_WINDOW_BG,     IDC_SET_WINDOW_BG,      &prefs->noDocBgColor, prefs->noDocBgColor},
