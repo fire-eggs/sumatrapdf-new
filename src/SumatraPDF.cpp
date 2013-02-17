@@ -6507,6 +6507,34 @@ static LRESULT CALLBACK WndProcFrame(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 
     switch (msg)
     {
+        case WM_NCPAINT:
+        case WM_ACTIVATEAPP:
+        case WM_NCACTIVATE:
+        {
+            CallWindowProc(DefWindowProc, hwnd, msg, wParam, lParam);
+
+            HDC hdc = GetWindowDC(hwnd); // Not GetDC().
+
+            HMENU hMenu = GetMenu(hwnd); // Not GetSystemMenu().
+            RECT rcItem;
+            GetMenuItemRect(hwnd, hMenu, GetMenuItemCount(hMenu) - 1, &rcItem);
+
+            RECT rcFrame;
+            GetWindowRect(hwnd, &rcFrame);
+
+            RECT rcMenu;
+
+            rcMenu.left = rcItem.right - rcFrame.left;
+            rcMenu.top = GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CXFRAME);
+            rcMenu.right = rcFrame.right - rcFrame.left - GetSystemMetrics(SM_CXFRAME);
+            rcMenu.bottom = rcMenu.top + GetSystemMetrics(SM_CYMENU);
+
+            HBRUSH hBrush = CreateSolidBrush(RGB(0xDE, 0xDE, 0xDE));
+
+            FillRect(hdc, &rcMenu, hBrush);
+            DeleteObject(hBrush);
+        }
+
         case WM_MEASUREITEM:
         {
             LPMEASUREITEMSTRUCT lpMis = (LPMEASUREITEMSTRUCT)lParam;
@@ -6539,7 +6567,7 @@ static LRESULT CALLBACK WndProcFrame(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 
             // 30 = COLOR_MENUBAR;
             // Using COLOR_MENU (which is 4) has problem in XP (color not matched).
-            COLORREF back = GetSysColor(30);
+            COLORREF back = RGB(0xDE, 0xDE, 0xDE);
 
             COLORREF boundary;
             COLORREF boundaryBottom;
