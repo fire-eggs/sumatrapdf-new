@@ -573,17 +573,37 @@ static void RebuildFileMenu(WindowInfo *win, HMENU menu)
 
 HMENU BuildMenu(WindowInfo *win)
 {
+    MENUITEMINFO mii;
+    mii.cbSize = sizeof(MENUITEMINFO);
+    mii.fMask = MIIM_FTYPE | MIIM_DATA;
+    mii.fType = MFT_OWNERDRAW;
+
     HMENU mainMenu = CreateMenu();
     int filter = win->IsChm() ? MF_NOT_FOR_CHM : 0;
     HMENU m = CreateMenu();
     RebuildFileMenu(win, m);
     AppendMenu(mainMenu, MF_POPUP | MF_STRING, (UINT_PTR)m, _TR("&File"));
+
+    mii.dwItemData = (ULONG_PTR)_TR("&File");
+    SetMenuItemInfo(mainMenu, (UINT_PTR)m, FALSE, &mii);
+
     m = BuildMenuFromMenuDef(menuDefView, dimof(menuDefView), CreateMenu(), filter);
     AppendMenu(mainMenu, MF_POPUP | MF_STRING, (UINT_PTR)m, _TR("&View"));
+
+    mii.dwItemData = (ULONG_PTR)_TR("&View");
+    SetMenuItemInfo(mainMenu, (UINT_PTR)m, FALSE, &mii);
+
     m = BuildMenuFromMenuDef(menuDefGoTo, dimof(menuDefGoTo), CreateMenu(), filter);
     AppendMenu(mainMenu, MF_POPUP | MF_STRING, (UINT_PTR)m, _TR("&Go To"));
+
+    mii.dwItemData = (ULONG_PTR)_TR("&Go To");
+    SetMenuItemInfo(mainMenu, (UINT_PTR)m, FALSE, &mii);
+
     m = BuildMenuFromMenuDef(menuDefZoom, dimof(menuDefZoom), CreateMenu(), filter);
     AppendMenu(mainMenu, MF_POPUP | MF_STRING, (UINT_PTR)m, _TR("&Zoom"));
+
+    mii.dwItemData = (ULONG_PTR)_TR("&Zoom");
+    SetMenuItemInfo(mainMenu, (UINT_PTR)m, FALSE, &mii);
 
     if (HasPermission(Perm_SavePreferences)) {
         // I think it makes sense to disable favorites in restricted mode
@@ -591,14 +611,28 @@ HMENU BuildMenu(WindowInfo *win)
         m = BuildMenuFromMenuDef(menuDefFavorites, dimof(menuDefFavorites), CreateMenu());
         RebuildFavMenu(win, m);
         AppendMenu(mainMenu, MF_POPUP | MF_STRING, (UINT_PTR)m, _TR("F&avorites"));
+
+        mii.dwItemData = (ULONG_PTR)_TR("F&avorites");
+        SetMenuItemInfo(mainMenu, (UINT_PTR)m, FALSE, &mii);
     }
     m = BuildMenuFromMenuDef(menuDefSettings, dimof(menuDefSettings), CreateMenu(), filter);
     AppendMenu(mainMenu, MF_POPUP | MF_STRING, (UINT_PTR)m, _TR("&Settings"));
+
+    mii.dwItemData = (ULONG_PTR)_TR("&Settings");
+    SetMenuItemInfo(mainMenu, (UINT_PTR)m, FALSE, &mii);
+
     m = BuildMenuFromMenuDef(menuDefHelp, dimof(menuDefHelp), CreateMenu(), filter);
     AppendMenu(mainMenu, MF_POPUP | MF_STRING, (UINT_PTR)m, _TR("&Help"));
+
+    mii.dwItemData = (ULONG_PTR)_TR("&Help");
+    SetMenuItemInfo(mainMenu, (UINT_PTR)m, FALSE, &mii);
+
 #ifdef SHOW_DEBUG_MENU_ITEMS
     m = BuildMenuFromMenuDef(menuDefDebug, dimof(menuDefDebug), CreateMenu(), filter);
     AppendMenu(mainMenu, MF_POPUP | MF_STRING, (UINT_PTR)m, L"Debug");
+
+    mii.dwItemData = (ULONG_PTR)_TR("Debug");
+    SetMenuItemInfo(mainMenu, (UINT_PTR)m, FALSE, &mii);
 #endif
 
     return mainMenu;

@@ -5082,6 +5082,9 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible, boo
 
     ShowWindow(win->sideBar()->hwndSidebar, SW_SHOW);
     ShowWindow(win->sideBar()->hwndSidebarSplitter, SW_SHOW);
+
+    InvalidateRect(win->sideBar()->hwndSidebar, NULL, TRUE);
+    UpdateWindow(win->sideBar()->hwndSidebar);
 }
 
 void SplitPanel(ContainerInfo *container, WCHAR const *direction)
@@ -6499,11 +6502,152 @@ static LRESULT CALLBACK WndProcFrame(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 {
     WindowInfo *    win;
     ULONG           ulScrollLines;                   // for mouse wheel logic
+    
+    static bool     drawUnderline = false;
 
     win = FindWindowInfoByHwnd(hwnd);
 
     switch (msg)
     {
+        case WM_MEASUREITEM:
+        {
+            LPMEASUREITEMSTRUCT lpMis = (LPMEASUREITEMSTRUCT)lParam;
+
+            WCHAR *text = (WCHAR *)lpMis->itemData;
+            WCHAR *textTmp = str::Format(L"%s", text);
+            str::RemoveChars(textTmp, L"&");
+
+            HDC hdc = GetDC(hwnd);
+
+            HFONT fontOld = (HFONT)SelectObject(hdc, gDefaultGuiFont);
+            SIZE size;
+            GetTextExtentPoint32(hdc, textTmp, str::Len(textTmp), &size);
+            SelectObject(hdc, fontOld);
+
+            lpMis->itemWidth = size.cx;
+            lpMis->itemHeight = size.cy;
+
+            free(textTmp);
+
+            return TRUE;
+            // break;
+        }
+
+        case WM_DRAWITEM:
+        {
+            LPDRAWITEMSTRUCT lpDis = (LPDRAWITEMSTRUCT)lParam;
+
+            COLORREF fore = GetSysColor(COLOR_MENUTEXT);
+
+            // 30 = COLOR_MENUBAR;
+            // Using COLOR_MENU (which is 4) has problem in XP (color not matched).
+            COLORREF back = GetSysColor(30);
+
+            COLORREF boundary;
+            COLORREF boundaryBottom;
+
+            // This only affects the rectangles containing the texts.
+            bool needDrawBoundary = false;
+
+            if ((lpDis->itemState & ODS_HOTLIGHT) ||
+                (lpDis->itemState & ODS_SELECTED))
+            {
+                if (lpDis->itemState & ODS_HOTLIGHT) {
+                    back = RGB(0xD5, 0xE7, 0xF8); //GetSysColor(COLOR_HIGHLIGHT);
+                    boundary = RGB(0x7A, 0xB1, 0xE8);
+                    boundaryBottom = RGB(0x74, 0xAA, 0xE2);
+                }
+                else {
+                    back = RGB(0xB8, 0xD8, 0xF9); //GetSysColor(COLOR_HIGHLIGHT);
+                    boundary = RGB(0x62, 0xA3, 0xE5);
+                    boundaryBottom = RGB(0x5D, 0x9E, 0xE0);
+                }
+
+                needDrawBoundary = true;
+
+                // If conditions are false, we don't have to change the color.
+                //SetTextColor(lpDis->hDC, fore);
+                //SetBkColor(lpDis->hDC, back);
+            }
+
+            // We should put the code below here rather than inside the if statement above,
+            // in order to draw non-highlighted items correctly.
+            // This is for the case that one uses "Alt" key to active the menu bar.
+            SetTextColor(lpDis->hDC, fore);
+            SetBkColor(lpDis->hDC, back);
+
+            HDC hdc = lpDis->hDC;
+
+            HBRUSH hBrush = CreateSolidBrush(back);
+            FillRect(hdc, &lpDis->rcItem, hBrush);
+            DeleteObject(hBrush);
+
+            if (needDrawBoundary) {
+
+                int x1 = lpDis->rcItem.left;
+                int y1 = lpDis->rcItem.top;
+                int x2 = lpDis->rcItem.right;
+                int y2 = lpDis->rcItem.bottom;
+
+                HRGN hrgn = CreateRectRgn(x1, y1, x2, y2);
+                SelectClipRgn(hdc, hrgn);
+                HRGN rgnInterior = CreateRectRgn(x1 + 1, y1 + 1, x2 - 1, y2);
+                ExtSelectClipRgn(hdc, rgnInterior, RGN_DIFF);
+
+                hBrush = CreateSolidBrush(boundary);
+                FillRgn(hdc, hrgn, hBrush);
+                DeleteObject(hBrush);
+
+                SelectClipRgn(hdc, NULL);
+                DeleteObject(hrgn);
+                DeleteObject(rgnInterior);
+
+                RECT rc;
+                rc.left = x1;
+                rc.top = y2 - 1;
+                rc.right = x2;
+                rc.bottom = y2;
+
+                hBrush = CreateSolidBrush(boundaryBottom);
+                FillRect(hdc, &rc, hBrush);
+                DeleteObject(hBrush);
+            }
+
+            RECT rc;
+            rc.left = lpDis->rcItem.left + 7;
+            rc.top  = lpDis->rcItem.top + 2; 
+            if ( !(gOS.dwMajorVersion >= 6 && gOS.dwMinorVersion >= 1) )
+                rc.top = rc.top + 2;
+
+            WCHAR *text = (WCHAR *)lpDis->itemData;
+
+            DrawTextEx(lpDis->hDC, text, str::Len(text),
+                       &rc, drawUnderline ? NULL : DT_HIDEPREFIX, NULL);
+
+            return TRUE;
+        }
+
+        case WM_SYSKEYDOWN:
+        {
+            if (wParam == VK_MENU)
+                drawUnderline = true;
+            return DefWindowProc(hwnd, msg, wParam, lParam);
+        }
+
+        case WM_KEYUP:
+        {
+            if (wParam == VK_MENU && drawUnderline == true)
+                drawUnderline = false;
+            return DefWindowProc(hwnd, msg, wParam, lParam);
+        }
+
+        case WM_EXITMENULOOP:
+        {
+            if (wParam == 0)
+                drawUnderline = false;
+            return DefWindowProc(hwnd, msg, wParam, lParam);
+        }
+
         case WM_CREATE:
             // do nothing
             goto InitMouseWheelInfo;
