@@ -7,7 +7,7 @@
 #include "Version.h"
 #include <CommCtrl.h>
 
-#define TAB_CONTROL_DY      25
+#define TAB_CONTROL_DY      27
 
 class PanelInfo;
 class WindowInfo;

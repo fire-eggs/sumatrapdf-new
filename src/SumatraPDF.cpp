@@ -3824,6 +3824,13 @@ static LRESULT DrawMenuBarBackground(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
     HBRUSH hBrush = CreateSolidBrush(RGB(0xDE, 0xDE, 0xDE));
 
     FillRect(hdc, &rcMenu, hBrush);
+
+    rcMenu.left = GetSystemMetrics(SM_CXFRAME);
+    rcMenu.top = rcMenu.bottom - 1;
+    rcMenu.bottom = rcMenu.top + 1;
+    rcMenu.right = rcFrame.right - rcFrame.left - GetSystemMetrics(SM_CXFRAME);
+    FillRect(hdc, &rcMenu, gBrushSepLineBg);
+
     DeleteObject(hBrush);
 
     return result;
@@ -5761,29 +5768,17 @@ static LRESULT CustomDrawReBar(HWND hwnd, LPARAM lParam)
             int dx = rc.right - rc.left;
             int dy = rc.bottom - rc.top;
 
-            rc.left = 0;
-            rc.right = dx;
-            rc.top = 0;
-            rc.bottom = 1;
-            FillRect(hdc, &rc, gBrushSepLineBg);
-
-            rc.left = 0;
-            rc.right = dx;
-            rc.top = 1;
-            rc.bottom = dy;
-            FillRect(hdc, &rc, CreateSolidBrush(RGB(0xEF, 0xEF, 0xEF)));
-
             TRIVERTEX        vert[2];
             GRADIENT_RECT    gRect;
 
             vert[0].x      = 0;
-            vert[0].y      = 2;
-            vert[0].Red    = 0xEE00;
-            vert[0].Green  = 0xEE00;
-            vert[0].Blue   = 0xEE00;
+            vert[0].y      = 0;
+            vert[0].Red    = 0xEF00;
+            vert[0].Green  = 0xEF00;
+            vert[0].Blue   = 0xEF00;
             vert[0].Alpha  = 0x0000;
 
-            vert[1].x      = 2;
+            vert[1].x      = dx;
             vert[1].y      = dy; 
             vert[1].Red    = 0xD900;
             vert[1].Green  = 0xD900;

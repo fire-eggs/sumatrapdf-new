@@ -198,7 +198,19 @@ void DrawCloseButton(DRAWITEMSTRUCT *dis)
     ScopedMem<WCHAR> s(win::GetText(dis->hwndItem));
     bool onHover = str::Eq(s, BUTTON_HOVER_TEXT);
 
-    Graphics g(dis->hDC);
+    HWND hwndItem = dis->hwndItem;
+    RECT rcItem;
+    GetClientRect(hwndItem, &rcItem);
+
+    int dx = rcItem.right - rcItem.left;
+    int dy = rcItem.bottom - rcItem.top;
+
+    HDC hdc = dis->hDC;
+    HDC memDC = CreateCompatibleDC(hdc);
+    HBITMAP hMemBmp = CreateCompatibleBitmap(hdc, dx, dy);
+    HBITMAP hOldBmp = (HBITMAP)SelectObject(memDC, hMemBmp);
+
+    Graphics g(memDC);
     g.SetCompositingQuality(CompositingQualityHighQuality);
     g.SetSmoothingMode(SmoothingModeAntiAlias);
     g.SetPageUnit(UnitPixel);
@@ -225,6 +237,12 @@ void DrawCloseButton(DRAWITEMSTRUCT *dis)
         g.DrawLine(&p, Point(4,      5), Point(r.dx-6, r.dy-5));
         g.DrawLine(&p, Point(r.dx-6, 5), Point(4,      r.dy-5));
     }
+
+    BitBlt(hdc, 0, 0, dx, dy, memDC, 0, 0, SRCCOPY);
+
+    SelectObject(memDC, hOldBmp);
+    DeleteObject(hMemBmp);
+    DeleteDC(memDC);
 }
 
 void GetBaseTransform(Matrix& m, RectF pageRect, float zoom, int rotation)
