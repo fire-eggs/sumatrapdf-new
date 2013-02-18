@@ -243,12 +243,8 @@ LRESULT CALLBACK WndProcSidebarCB(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 
 void CreateSidebarBox(WinInfo& winInfo)
 {
-    DWORD extStyle = NULL;
-    if (gOS.dwMajorVersion >= 6 && gOS.dwMinorVersion >= 1)
-        extStyle = WS_CLIPCHILDREN;
-
     HWND hwndSidebar = CreateWindowEx(
-        extStyle,
+        WS_CLIPCHILDREN,
         SIDEBAR_CLASS_NAME, NULL,
         WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
         0, 0, gGlobalPrefs.sidebarDx, 0,
@@ -258,7 +254,7 @@ void CreateSidebarBox(WinInfo& winInfo)
         return;
 
     HWND hwndSidebarTop = CreateWindowEx(
-        extStyle,
+        WS_CLIPCHILDREN,
         SIDEBAR_TOP_CLASS_NAME, NULL,
         WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
         0, 0, 0, 0,
@@ -281,7 +277,7 @@ void CreateSidebarBox(WinInfo& winInfo)
     SetWindowLongPtr(hwndClose, GWLP_WNDPROC, (LONG_PTR)WndProcCloseButton);
 
     HWND hwndSidebarBottom = CreateWindowEx(
-        extStyle,
+        WS_CLIPCHILDREN,
         SIDEBAR_BOTTOM_CLASS_NAME, NULL,
         WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
         0, 0, 0, 0,
