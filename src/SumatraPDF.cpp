@@ -3942,6 +3942,8 @@ static void FrameOnDrawItem(HWND hwnd, LPARAM lParam)
     rc.top  = lpDis->rcItem.top + 2; 
     if ( !(gOS.dwMajorVersion >= 6 && gOS.dwMinorVersion >= 1) )
         rc.top = rc.top + 2;
+    rc.right = lpDis->rcItem.right;
+    rc.bottom = lpDis->rcItem.bottom;
 
     WCHAR *text = (WCHAR *)lpDis->itemData;
 
