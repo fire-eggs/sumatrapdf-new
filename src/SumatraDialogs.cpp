@@ -938,10 +938,142 @@ void SetColorDlgButtonColor(HWND hDlg, COLORREF color, struct buttonInColorDlg *
     DeleteObject(memDC);
 }
 
+static WNDPROC DefWndProcButtons_CustomColors = NULL;
+static LRESULT CALLBACK WndProcButtons_CustomColors(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    switch (message)
+    {
+        case WM_ENABLE:
+
+            if (wParam == FALSE) {
+
+                EnableWindow(hwnd, TRUE);
+
+                WCHAR buf[MAX_PATH] = {'\0'};
+                GetWindowText(hwnd, buf, MAX_PATH);
+
+                if (str::Eq(buf, L"&Define Custom Colors >>"))
+                    SetWindowText(hwnd, L"<< &Hide Custom Colors");
+                else
+                    SetWindowText(hwnd, L"&Define Custom Colors >>");
+            }
+
+            break;
+
+        default: 
+            return CallWindowProc(DefWndProcButtons_CustomColors, hwnd, message, wParam, lParam);
+    }
+    return FALSE;
+}
+
 static UINT_PTR CALLBACK CCHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg)
     {
+        // After the full version is shown, no more WM_SIZE message in the default procedure.
+        // So we need to adjust the size in WM_WINDOWPOSCHANGING.
+        case WM_WINDOWPOSCHANGING:
+        {
+            // Initialized only once at the first call.
+            static int dxPartial = 0; // Default dx of partial version. Determined at 1st call.
+            static int dxFull = 0; // Default dx of full version. Determined at 1st call.
+            static int dyParital = 0;
+            static int dyFull = 0;
+
+            WINDOWPOS *winPos = (WINDOWPOS*)lParam;
+
+            // To know "partial" or "full" version.
+            WCHAR buf[MAX_PATH] = {'\0'};
+            GetDlgItemText(hDlg, COLOR_MIX, buf, MAX_PATH);
+
+            // Get (and assign to winPos if OK) dx and dy.
+            if (str::Eq(buf, L"&Define Custom Colors >>")) {
+                if (dxPartial == 0 && winPos->cx > 0)
+                    dxPartial = winPos->cx;
+                winPos->cx = dxPartial; // winPos->cx is determined;
+                winPos->cy = dyParital;
+            } else if (str::Eq(buf, L"<< &Hide Custom Colors")) {
+                if (dxFull == 0 && winPos->cx > 0)
+                    dxFull = winPos->cx;
+                winPos->cx = dxFull; // winPos->cx is determined.
+                winPos->cy = dyFull;
+            }
+
+            // To adjust dy.
+            LPCHOOSECOLOR color = (LPCHOOSECOLOR)GetWindowLongPtr(hDlg, GWL_USERDATA);
+
+            if (color) {
+
+                struct buttonInColorDlg *button = (struct buttonInColorDlg *)color->lCustData;
+                HWND hButtonPressed = button->hButton;
+                RECT rcButtonPressed;
+                GetWindowRect(hButtonPressed, &rcButtonPressed);
+
+                // Determine the position.
+                winPos->x = rcButtonPressed.right;
+                winPos->y = rcButtonPressed.bottom;
+
+                if (!dyParital || !dyFull) {
+
+                    HWND hButtonCustomColors = GetDlgItem(hDlg, COLOR_MIX);
+                    RECT rcButtonCustomColors;
+                    GetWindowRect(hButtonCustomColors, &rcButtonCustomColors);
+                    GetWindowRect(hButtonCustomColors, &rcButtonCustomColors);
+
+                    HWND hButtonOK = GetDlgItem(hDlg, IDOK);
+                    RECT rcButtonOK;
+                    GetWindowRect(hButtonOK, &rcButtonOK);
+                    GetWindowRect(hButtonOK, &rcButtonOK);
+
+                    if (str::Eq(buf, L"&Define Custom Colors >>")) {
+                        dyParital = winPos->cy = rcButtonCustomColors.bottom + 8 - rcButtonPressed.bottom;
+                    } else if (str::Eq(buf, L"<< &Hide Custom Colors")) {
+                        dyFull = winPos->cy = rcButtonOK.bottom + 8 - rcButtonPressed.bottom;
+                    }
+                }
+
+            }
+
+            // cx, cy are determined.
+            // x, y are fixed to be at the right-bottom corner of the color button.
+            // In extreme cases, we need to adjust x.
+            int adjust = winPos->x + winPos->cx - GetSystemMetrics(SM_CXSCREEN);
+            if (adjust > 0) {
+                winPos->x -= adjust;
+            }
+
+            // Take care of the remaining lines.
+            HDC hdc = GetDC(hDlg);
+
+            RECT rcV;
+            rcV.left = dxPartial - 2;
+            rcV.right = dxPartial;
+            rcV.top = 0;
+            rcV.bottom = dyParital;
+
+            RECT rcH;
+            rcH.left = 0;
+            rcH.right = dxPartial;
+            rcH.top = dyParital - 2;
+            rcH.bottom = dyParital;
+
+            if (str::Eq(buf, L"<< &Hide Custom Colors")) {
+                FillRect(hdc, &rcV, gBrushStaticBg);
+                FillRect(hdc, &rcH, gBrushStaticBg);
+            } else {
+                FillRect(hdc, &rcV, gBrushSepLineBg); 
+                FillRect(hdc, &rcH, gBrushSepLineBg);
+            }
+
+            ReleaseDC(hDlg, hdc);
+
+            // Need to make sure all adjustment are done.
+            winPos->flags &= ~SWP_NOMOVE;
+            winPos->flags &= ~SWP_NOSIZE;
+
+            break;
+        }
+
         case WM_INITDIALOG:
         {
             LONG lStyle = GetWindowLong(hDlg, GWL_STYLE);
@@ -952,14 +1084,26 @@ static UINT_PTR CALLBACK CCHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM l
             SetWindowLongPtr(hDlg, GWL_USERDATA, (LONG_PTR)color);
 
             struct buttonInColorDlg *button = (struct buttonInColorDlg *)color->lCustData;
-            HWND hButton = button->hButton;
-            
-            RECT rc;
-            GetWindowRect(hButton, &rc);
+            HWND hButtonPressed = button->hButton;
+            RECT rcButtonPressed;
+            GetWindowRect(hButtonPressed, &rcButtonPressed);
 
-            SetWindowPos(hDlg, NULL, rc.right, rc.bottom, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+            // We don't have to determine the size manually.
+            // Adjust of position is done in WM_WINDOWPOSCHANGING.
+            SetWindowPos(hDlg, NULL, rcButtonPressed.right, rcButtonPressed.bottom, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
 
-            break;
+            // SubClass "Define Custom Colors" button.
+            HWND hButton_CustomColors = GetDlgItem(hDlg, COLOR_MIX);
+            if (NULL == DefWndProcButtons_CustomColors)
+                DefWndProcButtons_CustomColors = (WNDPROC)GetWindowLongPtr(hButton_CustomColors, GWLP_WNDPROC);
+            SetWindowLongPtr(hButton_CustomColors, GWLP_WNDPROC, (LONG_PTR)WndProcButtons_CustomColors);
+
+            // The default dialog box procedure processes the WM_INITDIALOG message
+            // before passing it to the hook procedure.
+
+            // The dialog box procedure should return TRUE to direct the system to
+            // set the keyboard focus to the control specified by wParam. 
+            return TRUE;
         }
 
         case WM_PAINT:
@@ -983,14 +1127,14 @@ static UINT_PTR CALLBACK CCHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM l
             DeleteObject(hrgn);
             DeleteObject(rgnInterior);
 
-            break;
+            break; // Need default procedure. (But why our work is not changed by default procedure?)
         }
 
         case WM_CTLCOLORSTATIC:
         {
-            HWND hwndCurrent = GetDlgItem(hDlg, COLOR_CURRENT);
+            HWND hItem_CurrentColor = GetDlgItem(hDlg, COLOR_CURRENT);
 
-            if ((HWND)lParam == hwndCurrent) {
+            if ((HWND)lParam == hItem_CurrentColor) {
 
                 HDC hdc = (HDC)wParam;
                 COLORREF result = GetPixel(hdc, 1, 1);
@@ -1004,12 +1148,29 @@ static UINT_PTR CALLBACK CCHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM l
 
                 // Update the appearance.
                 SendMessage(GetParent(button->hButton), WM_COMMAND, IDC_APPLY, 0);
+
+                // If the hook procedure processes the WM_CTLCOLORDLG message,
+                // it must return a valid brush handle to painting the background of the dialog box.
+                // We leave the work to the default procedure.
+                break; // Need default procedure.
             }
 
             break;
         }
 
+        case WM_LBUTTONDOWN:
+        {
+            WCHAR buf[MAX_PATH] = {'\0'};
+            GetDlgItemText(hDlg, COLOR_MIX, buf, MAX_PATH);
+
+            if (str::Eq(buf, L"&Define Custom Colors >>"))
+                PostMessage(hDlg, WM_COMMAND, IDOK, 0);
+
+            break; // Continue default procedure.
+        }
+
         case WM_COMMAND:
+
             if (LOWORD(wParam) == IDCANCEL) {
 
                 LPCHOOSECOLOR color = (LPCHOOSECOLOR)GetWindowLongPtr(hDlg, GWL_USERDATA);
@@ -1018,16 +1179,25 @@ static UINT_PTR CALLBACK CCHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM l
 
                 SetColorDlgButtonColor(GetParent(button->hButton), *button->color, button);
                 SendMessage(GetParent(button->hButton), WM_COMMAND, IDC_APPLY, 0);
-
-                break;
             }
 
+            break; // Need default procedure to close the window.
+
         case WM_ACTIVATE:
-             if (LOWORD(wParam) == WA_INACTIVE)
-                EndDialog(hDlg, 0);
-             break;
+
+            if (LOWORD(wParam) == WA_INACTIVE)
+                // Do not call the EndDialog function from the hook procedure.
+                // Instead, the hook procedure can call the PostMessage function to
+                // post a WM_COMMAND message with the IDABORT value to the dialog box procedure.
+                PostMessage(hDlg, WM_COMMAND, IDABORT, 0);
+
+                // Using EndDialog, if we click again over a color button, it will close
+                // the color dialog but not show a new color dialog.
+                // EndDialog(hDlg, 0);
+
+            break; // Need default procedure. (Not sure, but do it!)
     }
-    return FALSE;
+    return FALSE; // Continue with default procedure.
 }
 
 static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -1104,7 +1274,7 @@ static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LP
                     color.lStructSize  = sizeof(CHOOSECOLOR);
                     color.hwndOwner    = NULL;
                     color.hInstance = (HWND)ghinst;
-                    color.Flags = CC_RGBINIT | CC_FULLOPEN | CC_ENABLEHOOK | CC_ENABLETEMPLATE;
+                    color.Flags = CC_RGBINIT | CC_ENABLEHOOK | CC_ENABLETEMPLATE;
                     color.lCustData = (LPARAM) &button;
 
                     // Get the button's color and use it as the default choice.
@@ -1119,6 +1289,10 @@ static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LP
 
                     // Choose a color and store it to user's data, so it can be used in other messages.
                     ChooseColor(&color);
+
+                    *button.color = color.rgbResult;
+                    SetColorDlgButtonColor(hDlg, color.rgbResult, &button);
+                    SendMessage(hDlg, WM_COMMAND, IDC_APPLY, 0);
 
                     return TRUE;
                 }
