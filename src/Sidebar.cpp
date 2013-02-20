@@ -24,7 +24,7 @@ void SidebarTopOnSize(SidebarInfo *sideBar, int dx, int dy)
     HWND hwndTitle = GetDlgItem(sideBar->hwndSidebarTop, IDC_SIDEBAR_TITLE_1);
     HWND hwndClose = GetDlgItem(sideBar->hwndSidebarTop, IDC_SIDEBAR_CLOSE_1);
 
-    ScopedMem<TCHAR> title(win::GetText(hwndTitle));
+    ScopedMem<WCHAR> title(win::GetText(hwndTitle));
     SizeI size = TextSizeInHwnd(hwndTitle, title);
 
     TopWindowInfo *WIN = FindTopWindowInfoByHwnd(sideBar->hwndSidebarTop);
@@ -61,7 +61,7 @@ void SidebarBottomOnSize(SidebarInfo *sideBar, int dx, int dy)
     HWND hwndTitle = GetDlgItem(sideBar->hwndSidebarBottom, IDC_SIDEBAR_TITLE_2);
     HWND hwndClose = GetDlgItem(sideBar->hwndSidebarBottom, IDC_SIDEBAR_CLOSE_2);
 
-    ScopedMem<TCHAR> title(win::GetText(hwndTitle));
+    ScopedMem<WCHAR> title(win::GetText(hwndTitle));
     SizeI size = TextSizeInHwnd(hwndTitle, title);
 
     TopWindowInfo *WIN = FindTopWindowInfoByHwnd(sideBar->hwndSidebarBottom);

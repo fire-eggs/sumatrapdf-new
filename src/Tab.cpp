@@ -623,10 +623,10 @@ void SetTabTitle(WindowInfo *win)
     tie.mask = TCIF_TEXT | TCIF_IMAGE;
     tie.iImage = -1;
 
-    ScopedMem<TCHAR> title;
+    ScopedMem<WCHAR> title;
 
     if (win->IsDocLoaded()) {
-        const TCHAR *baseName = path::GetBaseName(win->dm->FilePath());
+        const WCHAR *baseName = path::GetBaseName(win->dm->FilePath());
         title.Set(str::Format(L"%s", baseName));
     } else
         title.Set(str::Format(L"%s", L"Start Page")); // When one closes the only one document in a panel, we have to set the title of its tab item to "Start Page". 
