@@ -16,6 +16,7 @@ using namespace Gdiplus;
 #include "WinUtil.h"
 
 #ifdef DISPLAY_TOC_PAGE_NUMBERS
+#define CUSTOM_DRAW_TOC        1
 #define WM_APP_REPAINT_TOC     (WM_APP + 1)
 #endif
 
@@ -65,7 +66,7 @@ static void CustomizeTocInfoTip(LPNMTVGETINFOTIP nmit)
     str::BufSet(nmit->pszText, nmit->cchTextMax, infotip.Get());
 }
 
-#ifdef DISPLAY_TOC_PAGE_NUMBERS
+#ifdef CUSTOM_DRAW_TOC
 static void RelayoutTocItem(LPNMTVCUSTOMDRAW ntvcd)
 {
     // code inspired by http://www.codeguru.com/cpp/controls/treeview/multiview/article.php/c3985/
@@ -83,7 +84,9 @@ static void RelayoutTocItem(LPNMTVCUSTOMDRAW ntvcd)
     // Clear the label
     RECT rcFullWidth = rcItem;
     rcFullWidth.right = ncd->rc.right;
-    FillRect(ncd->hdc, &rcFullWidth, GetSysColorBrush(COLOR_WINDOW));
+    HBRUSH hBrushTocBg = CreateSolidBrush(gGlobalPrefs.tocBgColor);
+    FillRect(ncd->hdc, &rcFullWidth, hBrushTocBg);
+    DeleteObject(hBrushTocBg);
 
     // Get the label's text
     WCHAR szText[MAX_PATH];
@@ -94,6 +97,18 @@ static void RelayoutTocItem(LPNMTVCUSTOMDRAW ntvcd)
     item.cchTextMax = MAX_PATH;
     TreeView_GetItem(hTV, &item);
 
+    // Set the color of texts.
+    // We always use black as the text's color.
+    SetTextColor(ncd->hdc, RGB(0x00, 0x00, 0x00));
+
+    // Set the background color for DrawText(...).
+    // For a selected items, we use a different color than that of other items.
+    // Notice that we don't have to reset ntvcd->clrTextBk for non-selected items.
+    if (ncd->uItemState & CDIS_SELECTED)
+        ntvcd->clrTextBk = RGB(0x8E, 0x9A, 0xEE);
+    SetBkColor(ncd->hdc, ntvcd->clrTextBk);
+
+#ifdef DISPLAY_TOC_PAGE_NUMBERS
     // Draw the page number right-aligned (if there is one)
     WindowInfo *win = FindWindowInfoByHwnd(hTV);
     DocTocItem *tocItem = (DocTocItem *)item.lParam;
@@ -110,17 +125,13 @@ static void RelayoutTocItem(LPNMTVCUSTOMDRAW ntvcd)
         GetTextExtentPoint32(ncd->hdc, label, str::Len(label), &txtSize);
         rcPageNo.left = rcPageNo.right - txtSize.cx;
 
-        SetTextColor(ncd->hdc, GetSysColor(COLOR_WINDOWTEXT));
-        SetBkColor(ncd->hdc, GetSysColor(COLOR_WINDOW));
         DrawText(ncd->hdc, label, -1, &rcPageNo, DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX);
 
         // Reduce the size of the label and cut off the page number
         rcItem.right = max(rcItem.right - txtSize.cx, 0);
         szText[str::Len(szText) - str::Len(label)] = '\0';
     }
-
-    SetTextColor(ncd->hdc, ntvcd->clrText);
-    SetBkColor(ncd->hdc, ntvcd->clrTextBk);
+#endif
 
     // Draw the focus rectangle (including proper background color)
     HBRUSH brushBg = CreateSolidBrush(ntvcd->clrTextBk);
@@ -398,7 +409,7 @@ static LRESULT OnTocTreeNotify(WindowInfo *win, LPNMTREEVIEW pnmtv)
             break;
 
         case NM_CUSTOMDRAW:
-#ifdef DISPLAY_TOC_PAGE_NUMBERS
+#ifdef CUSTOM_DRAW_TOC
             switch (((LPNMCUSTOMDRAW)pnmtv)->dwDrawStage) {
                 case CDDS_PREPAINT:
                     return CDRF_NOTIFYITEMDRAW;
