@@ -4662,19 +4662,19 @@ static void ResizePanel(ContainerInfo *container)
 
     int parentD;
     int D1;
+    int splitterD;
     if (container->isSplitVertical) {
         parentD = rParent.dx;
         D1 = r1.dx;
+        splitterD = SPLITTER_DX;
     } else {
         parentD = rParent.dy;
         D1 = r1.dy;
+        splitterD = SPLITTER_DY;
     }
 
-     //make sure to keep this in sync with the calculations in SetSidebarVisibility
-     //note: without the min/max(..., rToc.dx), the sidebar will be
-     //      stuck at its width if it accidentally got too wide or too narrow
-    if (newSizeC1 < min(1 * parentD / 4, D1) ||
-        newSizeC1 > max(3 * parentD / 4, D1)) {
+    if (newSizeC1 < min(1 * (parentD - splitterD) / 4, D1) ||
+        newSizeC1 > max(3 * (parentD - splitterD) / 4, D1)) {
             SetCursor(gCursorNo);
             return;
     }
@@ -4725,8 +4725,6 @@ static void ResizeSidebar(WindowInfo *win)
     GetCursorPosInHwnd(hwndParent, pcur);
     int sidebarDx = pcur.x - (SPLITTER_DX - 1) / 2; // without splitter
 
-
-
     ClientRect rSidebar(win->sideBar()->hwndSidebar);
     ClientRect rParent(hwndParent);
 
@@ -4734,7 +4732,7 @@ static void ResizeSidebar(WindowInfo *win)
     // note: without the min/max(..., rToc.dx), the sidebar will be
     //       stuck at its width if it accidentally got too wide or too narrow
     if (sidebarDx < min(SIDEBAR_MIN_WIDTH, rSidebar.dx) ||
-        sidebarDx > max(rParent.dx / 2, rSidebar.dx)) {
+        sidebarDx > max((rParent.dx - SPLITTER_DX) / 2, rSidebar.dx)) {
         SetCursor(gCursorNo);
         return;
     }
@@ -4767,12 +4765,8 @@ static void ResizeSidebar(WindowInfo *win)
 
     // Using this reduces flicker.
     DeferWindowPos(hdwp, win->sideBar()->hwndSidebar, NULL, 0, sidebar_y, sidebarDx, sidebarDy, SWP_NOZORDER);
-    DeferWindowPos(hdwp, win->sideBar()->hwndSidebarSplitter, NULL,  sidebarDx, sidebar_y, SPLITTER_DX, sidebarDy, SWP_NOZORDER);
+    DeferWindowPos(hdwp, win->sideBar()->hwndSidebarSplitter, NULL, sidebarDx, sidebar_y, SPLITTER_DX, sidebarDy, SWP_NOZORDER);
     DeferWindowPos(hdwp, hwnd, NULL, sidebarDx + SPLITTER_DX, y, rParent.dx - sidebarDx - SPLITTER_DX, Dy, SWP_NOZORDER);
-
-    //MoveWindow(win->sideBar()->hwndSidebar, 0, sidebar_y, sidebarDx, sidebarDy, TRUE);
-    //MoveWindow(win->sideBar()->hwndSidebarSplitter, sidebarDx, sidebar_y, SPLITTER_DX, sidebarDy, TRUE);
-    //MoveWindow(hwnd, sidebarDx + SPLITTER_DX, y, rParent.dx - sidebarDx - SPLITTER_DX, Dy, TRUE);
 
     EndDeferWindowPos(hdwp);
 
@@ -4812,7 +4806,7 @@ static void ResizeFav(WindowInfo *win)
 
     // make sure to keep this in sync with the calculations in SetSidebarVisibility
     if (topDy < min(TOC_MIN_DY, rTop.dy) ||
-        topDy > max(rSidebar.dy - TOC_MIN_DY, rTop.dy)) {
+        topDy > max(rSidebar.dy - TOC_MIN_DY - SPLITTER_DY, rTop.dy)) {
         SetCursor(gCursorNo);
         return;
     }
@@ -5243,17 +5237,19 @@ void SplitPanel(ContainerInfo *container, WCHAR const *direction)
 
     int dx = ClientRect(container->hwndContainer).dx;
     int dy = ClientRect(container->hwndContainer).dy;
+    int dx_1 = (dx - SPLITTER_DX) / 2;
+    int dy_1 = (dy - SPLITTER_DY) / 2;
 
     if (str::Eq(direction, L"Vertically")) {
         container->isSplitVertical = true;
-        SetWindowPos(container->container1->hwndContainer, NULL, 0, 0, dx / 2, dy, SWP_NOZORDER);
-        SetWindowPos(container->hwndSplitter, NULL, dx / 2, 0, SPLITTER_DX, dy, SWP_NOZORDER);
-        SetWindowPos(container->container2->hwndContainer, NULL, dx / 2 + SPLITTER_DX, 0, dx / 2 - SPLITTER_DX, dy, SWP_NOZORDER);
+        SetWindowPos(container->container1->hwndContainer, NULL, 0, 0, dx_1, dy, SWP_NOZORDER);
+        SetWindowPos(container->hwndSplitter, NULL, dx_1, 0, SPLITTER_DX, dy, SWP_NOZORDER);
+        SetWindowPos(container->container2->hwndContainer, NULL, dx_1 + SPLITTER_DX, 0, dx - dx_1 - SPLITTER_DX, dy, SWP_NOZORDER);
     } else if (str::Eq(direction, L"Horizontally")) {
         container->isSplitVertical = false;
-        SetWindowPos(container->container1->hwndContainer, NULL, 0, 0, dx, dy / 2, SWP_NOZORDER);
-        SetWindowPos(container->hwndSplitter, NULL, 0, dy / 2, dx, SPLITTER_DY, SWP_NOZORDER);
-        SetWindowPos(container->container2->hwndContainer, NULL, 0, dy / 2 + SPLITTER_DY, dx, dy / 2 - SPLITTER_DX, SWP_NOZORDER);
+        SetWindowPos(container->container1->hwndContainer, NULL, 0, 0, dx, dy_1, SWP_NOZORDER);
+        SetWindowPos(container->hwndSplitter, NULL, 0, dy_1, dx, SPLITTER_DY, SWP_NOZORDER);
+        SetWindowPos(container->container2->hwndContainer, NULL, 0, dy_1 + SPLITTER_DY, dx, dy - dy_1 - SPLITTER_DY, SWP_NOZORDER);
     }
 }
 
@@ -5694,6 +5690,9 @@ static void ContainerOnSize(ContainerInfo* container, int dx, int dy)
 
         int dx_1 = ClientRect(container->container1->hwndContainer).dx;
         int dy_1 = ClientRect(container->container1->hwndContainer).dy;
+
+        dx_1 = limitValue(dx_1, (dx - SPLITTER_DX) / 4, 3 * (dx - SPLITTER_DX) / 4);
+        dy_1 = limitValue(dy_1, (dy - SPLITTER_DY) / 4, 3 * (dy - SPLITTER_DY) / 4);
 
         HDWP hdwp = BeginDeferWindowPos(3);
 
