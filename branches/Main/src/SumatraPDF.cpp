@@ -976,10 +976,10 @@ static void CreateThumbnailForFile(WindowInfo& win, DisplayState& ds)
 
 static void RebuildMenuBarForWindow(WindowInfo *win)
 {
-    HMENU oldMenu = win->menu;
-    win->menu = BuildMenu(win);
+    HMENU oldMenu = win->menu();
+    win->panel->WIN->menu = BuildMenu(win);
     if (!win->presentation && !win->fullScreen)
-        SetMenu(win->hwndFrame, win->menu);
+        SetMenu(win->hwndFrame, win->menu());
     DestroyMenu(oldMenu);
 }
 
@@ -1423,9 +1423,9 @@ static WindowInfo* CreateWindowInfo()
     // hide scrollbars to avoid showing/hiding on empty window
     ShowScrollBar(win->hwndCanvas, SB_BOTH, FALSE);
 
-    assert(!win->menu);
-    win->menu = BuildMenu(win);
-    SetMenu(win->hwndFrame, win->menu);
+    assert(!WIN->menu);
+    WIN->menu = BuildMenu(win);
+    SetMenu(WIN->hwndFrame, WIN->menu);
 
     // At this point, it will
     // call FrameOnSize, but now toolBar and sideBar are still NULL.
@@ -4232,7 +4232,7 @@ static void ExitFullscreen(WindowInfo& win)
 
     if (gGlobalPrefs.toolbarVisible)
         ShowWindow(win.toolBar()->hwndReBar, SW_SHOW);
-    SetMenu(win.hwndFrame, win.menu);
+    SetMenu(win.hwndFrame, win.menu());
 
     SetWindowLong(win.hwndFrame, GWL_STYLE, win.prevStyle);
     UINT flags = SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOSIZE | SWP_NOMOVE;
