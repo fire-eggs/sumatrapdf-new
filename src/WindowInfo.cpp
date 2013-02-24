@@ -16,7 +16,7 @@
 #include "WinUtil.h"
 
 TopWindowInfo::TopWindowInfo(HWND hwnd) :
-    hwndFrame(hwnd), panel(NULL), toolBar(NULL), sideBar(NULL)
+    hwndFrame(hwnd), panel(NULL), menu(NULL), toolBar(NULL), sideBar(NULL)
 {
     dpi = win::GetHwndDpi(hwndFrame, &uiDPIFactor);
 }
@@ -57,7 +57,7 @@ PanelInfo::~PanelInfo()
 
 WindowInfo::WindowInfo(HWND hwnd) :
     panel(NULL),
-    dm(NULL), menu(NULL), hwndFrame(NULL),
+    dm(NULL), hwndFrame(NULL),
     linkOnLastButtonDown(NULL), url(NULL), selectionOnPage(NULL),
     tocLoaded(false), tocVisible(false), tocRoot(NULL), tocKeepSelection(false),
     fullScreen(false), presentation(PM_DISABLED), tocBeforeFullScreen(false),

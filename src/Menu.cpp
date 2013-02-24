@@ -25,7 +25,7 @@ void MenuUpdateDisplayMode(WindowInfo* win)
     DisplayMode displayMode = enabled ? win->dm->GetDisplayMode() : gGlobalPrefs.defaultDisplayMode;
 
     for (int id = IDM_VIEW_LAYOUT_FIRST; id <= IDM_VIEW_LAYOUT_LAST; id++)
-        win::menu::SetEnabled(win->menu, id, enabled);
+        win::menu::SetEnabled(win->menu(), id, enabled);
 
     UINT id = 0;
     if (IsSingle(displayMode))
@@ -37,8 +37,8 @@ void MenuUpdateDisplayMode(WindowInfo* win)
     else
         assert(!win->dm && DM_AUTOMATIC == displayMode);
 
-    CheckMenuRadioItem(win->menu, IDM_VIEW_LAYOUT_FIRST, IDM_VIEW_LAYOUT_LAST, id, MF_BYCOMMAND);
-    win::menu::SetChecked(win->menu, IDM_VIEW_CONTINUOUS, IsContinuous(displayMode));
+    CheckMenuRadioItem(win->menu(), IDM_VIEW_LAYOUT_FIRST, IDM_VIEW_LAYOUT_LAST, id, MF_BYCOMMAND);
+    win::menu::SetChecked(win->menu(), IDM_VIEW_CONTINUOUS, IsContinuous(displayMode));
 }
 
 static MenuDef menuDefFile[] = {
@@ -311,7 +311,7 @@ void MenuUpdateZoom(WindowInfo* win)
     if (win->IsDocLoaded())
         zoomVirtual = win->dm->ZoomVirtual();
     UINT menuId = MenuIdFromVirtualZoom(zoomVirtual);
-    ZoomMenuItemCheck(win->menu, menuId, win->IsDocLoaded());
+    ZoomMenuItemCheck(win->menu(), menuId, win->IsDocLoaded());
 }
 
 void MenuUpdatePrintItem(WindowInfo* win, HMENU menu, bool disableOnly=false) {
@@ -365,57 +365,57 @@ void MenuUpdateStateForWindow(WindowInfo* win) {
     };
 
     assert(IsFileCloseMenuEnabled(win) == (!win->IsAboutWindow() || win->panel->gWin.Count() > 1));
-    win::menu::SetEnabled(win->menu, IDM_CLOSE, IsFileCloseMenuEnabled(win));
+    win::menu::SetEnabled(win->menu(), IDM_CLOSE, IsFileCloseMenuEnabled(win));
 
-    MenuUpdatePrintItem(win, win->menu);
+    MenuUpdatePrintItem(win, win->menu());
 
     bool enabled = win->IsDocLoaded() && win->dm->HasTocTree();
-    win::menu::SetEnabled(win->menu, IDM_VIEW_BOOKMARKS, enabled);
+    win::menu::SetEnabled(win->menu(), IDM_VIEW_BOOKMARKS, enabled);
 
     bool documentSpecific = win->IsDocLoaded();
     bool checked = documentSpecific ? win->tocVisible : gGlobalPrefs.tocVisible;
-    win::menu::SetChecked(win->menu, IDM_VIEW_BOOKMARKS, checked);
+    win::menu::SetChecked(win->menu(), IDM_VIEW_BOOKMARKS, checked);
 
-    win::menu::SetChecked(win->menu, IDM_FAV_TOGGLE, gGlobalPrefs.favVisible);
-    win::menu::SetChecked(win->menu, IDM_VIEW_SHOW_HIDE_TOOLBAR, gGlobalPrefs.toolbarVisible);
+    win::menu::SetChecked(win->menu(), IDM_FAV_TOGGLE, gGlobalPrefs.favVisible);
+    win::menu::SetChecked(win->menu(), IDM_VIEW_SHOW_HIDE_TOOLBAR, gGlobalPrefs.toolbarVisible);
     MenuUpdateDisplayMode(win);
     MenuUpdateZoom(win);
 
     if (win->IsDocLoaded()) {
-        win::menu::SetEnabled(win->menu, IDM_GOTO_NAV_BACK, win->dm->CanNavigate(-1));
-        win::menu::SetEnabled(win->menu, IDM_GOTO_NAV_FORWARD, win->dm->CanNavigate(1));
+        win::menu::SetEnabled(win->menu(), IDM_GOTO_NAV_BACK, win->dm->CanNavigate(-1));
+        win::menu::SetEnabled(win->menu(), IDM_GOTO_NAV_FORWARD, win->dm->CanNavigate(1));
     }
 
     for (int i = 0; i < dimof(menusToDisableIfNoDocument); i++) {
         UINT id = menusToDisableIfNoDocument[i];
-        win::menu::SetEnabled(win->menu, id, win->IsDocLoaded());
+        win::menu::SetEnabled(win->menu(), id, win->IsDocLoaded());
     }
 
     if (win->dm && Engine_ImageDir == win->dm->engineType) {
         for (int i = 0; i < dimof(menusToDisableIfDirectory); i++) {
             UINT id = menusToDisableIfDirectory[i];
-            win::menu::SetEnabled(win->menu, id, false);
+            win::menu::SetEnabled(win->menu(), id, false);
         }
     }
 
     if (!win->IsDocLoaded() && !win->IsAboutWindow() && str::EndsWithI(win->loadedFilePath, L".pdf")) {
         for (int i = 0; i < dimof(menusToEnableIfBrokenPDF); i++) {
             UINT id = menusToEnableIfBrokenPDF[i];
-            win::menu::SetEnabled(win->menu, id, true);
+            win::menu::SetEnabled(win->menu(), id, true);
         }
     }
 
     if (win->dm && win->dm->engine)
-        win::menu::SetEnabled(win->menu, IDM_FIND_FIRST, !win->dm->engine->IsImageCollection());
+        win::menu::SetEnabled(win->menu(), IDM_FIND_FIRST, !win->dm->engine->IsImageCollection());
 
     // TODO: is this check too expensive?
     if (win->IsDocLoaded() && !file::Exists(win->dm->FilePath()))
-        win::menu::SetEnabled(win->menu, IDM_RENAME_FILE, false);
+        win::menu::SetEnabled(win->menu(), IDM_RENAME_FILE, false);
 
 #ifdef SHOW_DEBUG_MENU_ITEMS
-    win::menu::SetChecked(win->menu, IDM_DEBUG_SHOW_LINKS, gDebugShowLinks);
-    win::menu::SetChecked(win->menu, IDM_DEBUG_GDI_RENDERER, gUseGdiRenderer);
-    win::menu::SetChecked(win->menu, IDM_DEBUG_EBOOK_UI, !gUseEbookUI);
+    win::menu::SetChecked(win->menu(), IDM_DEBUG_SHOW_LINKS, gDebugShowLinks);
+    win::menu::SetChecked(win->menu(), IDM_DEBUG_GDI_RENDERER, gUseGdiRenderer);
+    win::menu::SetChecked(win->menu(), IDM_DEBUG_EBOOK_UI, !gUseEbookUI);
 #endif
 }
 

@@ -67,6 +67,7 @@ public:
     ~TopWindowInfo();
 
     HWND            hwndFrame;
+    HMENU           menu;
 
     Vec<ContainerInfo *> gContainer;
     ContainerInfo * container;
@@ -143,6 +144,8 @@ public:
     bool IsChm() const { return dm && dm->engineType == Engine_Chm; }
     bool IsNotPdf() const { return dm && dm->engineType != Engine_PDF; }
 
+    HMENU menu() const { return panel->WIN->menu; }
+
     PanelInfo *     panel; // Need?
 
     WCHAR *         loadedFilePath;
@@ -180,7 +183,6 @@ public:
     HWND            hwndInfotip;
 
     bool            infotipVisible;
-    HMENU           menu;
 
     DoubleBuffer *  buffer;
 
