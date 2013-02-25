@@ -4739,7 +4739,7 @@ static void ResizeSidebar(WindowInfo *win)
 
     SetCursor(gCursorSizeWE);
 
-    int toolbarDy = 0;
+    int toolbarDy = -1;
     int tabControlDy = 0;
 
     if (gGlobalPrefs.toolbarVisible && (gGlobalPrefs.toolbarForEachPanel == gGlobalPrefs.sidebarForEachPanel) && !win->fullScreen && !win->presentation)
@@ -5148,7 +5148,7 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible, boo
     }
 
     // Determine the geometry of the toolbar and the tab control.
-    int toolbarDy = 0;
+    int toolbarDy = -1;
     int tabControlDy = 0;
 
     if (gGlobalPrefs.toolbarVisible && (gGlobalPrefs.toolbarForEachPanel == gGlobalPrefs.sidebarForEachPanel) && !win->fullScreen && !win->presentation)
@@ -5712,7 +5712,7 @@ static void ContainerOnSize(ContainerInfo* container, int dx, int dy)
 
 static void PanelOnSize(PanelInfo* panel, int dx, int dy)
 {
-    int rebBarDy = 0;
+    int rebBarDy = -1;
     if (gGlobalPrefs.toolbarForEachPanel && gGlobalPrefs.toolbarVisible && !(panel->win->presentation || panel->win->fullScreen)) {
         SetWindowPos(panel->win->toolBar()->hwndReBar, NULL, 0, 0, dx, 0, SWP_NOZORDER);
         rebBarDy = WindowRect(panel->toolBar->hwndReBar).dy;
@@ -5972,7 +5972,7 @@ static void PanelOnPaint(PanelInfo& panel)
 {
     int rebBarDy = WindowRect(panel.win->toolBar()->hwndReBar).dy;
     if (!gGlobalPrefs.toolbarVisible || !gGlobalPrefs.toolbarForEachPanel)
-        rebBarDy = 0;
+        rebBarDy = -1;
 
     int dx = ClientRect(panel.hwndPanel).dx;
     int dy = ClientRect(panel.hwndPanel).dy;
