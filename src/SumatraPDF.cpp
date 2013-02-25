@@ -4913,11 +4913,11 @@ static void PanelSplitterOnPaint(HWND hwnd)
         rc.bottom = 1;
         FillRect(hdc, &rc, gBrushPanelSplitterEdgeBg);
 
-        //rc.left = 0;
-        //rc.right = dx;
-        //rc.top = dy - 1;
-        //rc.bottom = dy;
-        //FillRect(hdc, &rc, gBrushPanelSplitterEdgeBg);
+        rc.left = 0;
+        rc.right = dx;
+        rc.top = dy - 1;
+        rc.bottom = dy;
+        FillRect(hdc, &rc, gBrushPanelSplitterEdgeBg);
     } else {
         rc.left = 0;
         rc.right = 1;
@@ -4931,11 +4931,11 @@ static void PanelSplitterOnPaint(HWND hwnd)
         rc.bottom = dy;
         FillRect(hdc, &rc, gBrushPanelSplitterEdgeBg);
 
-        rc.left = 0;
-        rc.right = dx;
-        rc.top = 0;
-        rc.bottom = 1;
-        FillRect(hdc, &rc, gBrushSepLineBg);
+        //rc.left = 0;
+        //rc.right = dx;
+        //rc.top = 0;
+        //rc.bottom = 1;
+        //FillRect(hdc, &rc, gBrushSepLineBg);
     }
 
     EndPaint(hwnd, &ps);
