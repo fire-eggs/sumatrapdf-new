@@ -39,6 +39,7 @@
 #define WINDOW_DY_STR               "Window DY"
 #define ENABLE_SPLIT_WINDOW_STR     "Enable Split Window"
 #define ENABLE_TAB_STR              "Enable Tab"
+#define TAB_VISIBLE_STR             "Show Tab"
 #define TOOLBAR_FOR_EACH_PANEL_STR  "Toolbar For Each Panel"
 #define SIDEBAR_FOR_EACH_PANEL_STR  "Sidebar For Each Panel"
 #define TOOLBAR_FOR_EACH_PANEL_NEW_STR  "Toolbar For Each Panel New"
@@ -106,6 +107,7 @@ SerializableGlobalPrefs gGlobalPrefs = {
     DEFAULT_LANGUAGE, // const char *currentLanguage
     false, // bool enableSplitWindow
     false, // bool enableTab
+    false, // bool tabVisible
     false, // bool toolbarForEachPanel
     false, // bool sidebarForEachPanel
     false, // bool toolbarForEachPanelNew
@@ -168,6 +170,7 @@ static BencDict* SerializeGlobalPrefs(SerializableGlobalPrefs& globalPrefs)
 
     prefs->Add(ENABLE_SPLIT_WINDOW_STR, globalPrefs.enableSplitWindow);
     prefs->Add(ENABLE_TAB_STR, globalPrefs.enableTab);
+    prefs->Add(TAB_VISIBLE_STR, globalPrefs.tabVisible);
 
     prefs->Add(TOOLBAR_FOR_EACH_PANEL_STR, globalPrefs.toolbarForEachPanel);
     prefs->Add(SIDEBAR_FOR_EACH_PANEL_STR, globalPrefs.sidebarForEachPanel);
@@ -545,6 +548,7 @@ static void DeserializePrefs(const char *prefsTxt, SerializableGlobalPrefs& glob
 
     Retrieve(global, ENABLE_SPLIT_WINDOW_STR, globalPrefs.enableSplitWindow);
     Retrieve(global, ENABLE_TAB_STR, globalPrefs.enableTab);
+    Retrieve(global, TAB_VISIBLE_STR, globalPrefs.tabVisible);
 
     Retrieve(global, TOOLBAR_FOR_EACH_PANEL_STR, globalPrefs.toolbarForEachPanel);
     Retrieve(global, SIDEBAR_FOR_EACH_PANEL_STR, globalPrefs.sidebarForEachPanel);
@@ -661,6 +665,9 @@ bool Load(const WCHAR *filepath, SerializableGlobalPrefs& globalPrefs,
         return false;
 
     DeserializePrefs(prefsTxt, globalPrefs, fileHistory, favs);
+
+    if (!gGlobalPrefs.enableTab)
+        gGlobalPrefs.tabVisible = false;
 
     gGlobalPrefs.toolbarForEachPanel = gGlobalPrefs.toolbarForEachPanelNew;
     gGlobalPrefs.sidebarForEachPanel = gGlobalPrefs.sidebarForEachPanelNew;

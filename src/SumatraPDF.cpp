@@ -4033,6 +4033,12 @@ static void OnMenuViewShowHideToolbar()
     ShowOrHideToolbarGlobally();
 }
 
+static void OnMenuViewShowHideTab()
+{
+    gGlobalPrefs.tabVisible = !gGlobalPrefs.tabVisible;
+    ShowOrHideTabGlobally();
+}
+
 void OnMenuPreference(HWND hwnd)
 {
     if (!HasPermission(Perm_SavePreferences)) return;
@@ -4745,7 +4751,7 @@ static void ResizeSidebar(WindowInfo *win)
     if (gGlobalPrefs.toolbarVisible && (gGlobalPrefs.toolbarForEachPanel == gGlobalPrefs.sidebarForEachPanel) && !win->fullScreen && !win->presentation)
         toolbarDy = WindowRect(win->toolBar()->hwndReBar).dy;
 
-    if (gGlobalPrefs.sidebarForEachPanel)
+    if (gGlobalPrefs.sidebarForEachPanel && gGlobalPrefs.tabVisible)
         tabControlDy = TAB_CONTROL_DY;
 
     int sidebar_y = toolbarDy + tabControlDy;
@@ -5154,7 +5160,7 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible, boo
     if (gGlobalPrefs.toolbarVisible && (gGlobalPrefs.toolbarForEachPanel == gGlobalPrefs.sidebarForEachPanel) && !win->fullScreen && !win->presentation)
         toolbarDy = WindowRect(win->toolBar()->hwndReBar).dy;
 
-    if (gGlobalPrefs.sidebarForEachPanel)
+    if (gGlobalPrefs.sidebarForEachPanel && gGlobalPrefs.tabVisible)
         tabControlDy = TAB_CONTROL_DY;
 
     HWND hwndParentForToolbar = win->panel->WIN->hwndFrame;
@@ -5718,7 +5724,10 @@ static void PanelOnSize(PanelInfo* panel, int dx, int dy)
         rebBarDy = WindowRect(panel->toolBar->hwndReBar).dy;
     }
 
-    SetWindowPos(panel->hwndTab, NULL, 0, rebBarDy, dx, TAB_CONTROL_DY, SWP_NOZORDER);
+    int tabDy = 0;
+    if (gGlobalPrefs.tabVisible)
+        tabDy = TAB_CONTROL_DY;
+    SetWindowPos(panel->hwndTab, NULL, 0, rebBarDy, dx, tabDy, SWP_NOZORDER);
 
     if (gGlobalPrefs.sidebarForEachPanel) {
 
@@ -5730,9 +5739,9 @@ static void PanelOnSize(PanelInfo* panel, int dx, int dy)
     }
 
     if (gGlobalPrefs.toolbarForEachPanel)
-        SetWindowPos(panel->win->hwndCanvas, NULL, 0, rebBarDy + TAB_CONTROL_DY + 1, dx, dy - rebBarDy - TAB_CONTROL_DY - 1, SWP_NOZORDER);
+        SetWindowPos(panel->win->hwndCanvas, NULL, 0, rebBarDy + tabDy + 1, dx, dy - rebBarDy - tabDy - 1, SWP_NOZORDER);
     else
-        SetWindowPos(panel->win->hwndCanvas, NULL, 0, rebBarDy + TAB_CONTROL_DY + 1, dx, dy - rebBarDy - TAB_CONTROL_DY - 1, SWP_NOZORDER);
+        SetWindowPos(panel->win->hwndCanvas, NULL, 0, rebBarDy + tabDy + 1, dx, dy - rebBarDy - tabDy - 1, SWP_NOZORDER);
 }
 
 static void ContainerOnPaint(ContainerInfo& container)
@@ -6388,6 +6397,10 @@ static LRESULT FrameOnCommand(WindowInfo *win, HWND hwnd, UINT msg, WPARAM wPara
 
         case IDM_VIEW_SHOW_HIDE_TOOLBAR:
             OnMenuViewShowHideToolbar();
+            break;
+
+        case IDM_VIEW_SHOW_HIDE_TAB:
+            OnMenuViewShowHideTab();
             break;
 
         case IDM_CHANGE_LANGUAGE:

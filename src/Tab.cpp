@@ -596,6 +596,25 @@ void AddTab(WindowInfo *win)
     //win->hwndTabStatic = hwndTabStatic;
 }
 
+void ShowOrHideTabGlobally()
+{
+    for (size_t i = 0; i < gWIN.Count(); i++) {
+        TopWindowInfo *WIN = gWIN.At(i);
+        for (size_t j = 0; j < WIN->gPanel.Count(); j++) {
+
+            PanelInfo *panel = WIN->gPanel.At(j);
+
+            if (gGlobalPrefs.enableTab)
+                ShowWindow(panel->hwndTab, SW_SHOW);
+            else
+                ShowWindow(panel->hwndTab, SW_HIDE);
+
+            ClientRect rect(panel->hwndPanel);
+            SendMessage(panel->hwndPanel, WM_SIZE, 0, MAKELONG(rect.dx, rect.dy));
+        }
+    }
+}
+
 //void SetTabCloseButtonPos(WindowInfo *win)
 //{
 //    PanelInfo *panel = win->panel;

@@ -13,6 +13,7 @@ class PanelInfo;
 class WindowInfo;
 
 void AddTab(WindowInfo *win);
+void ShowOrHideTabGlobally();
 void SetTabCloseButtonPos(WindowInfo *win);
 void SetTabTitle(WindowInfo *win);
 void SetTabToolTipText(WindowInfo *win);
