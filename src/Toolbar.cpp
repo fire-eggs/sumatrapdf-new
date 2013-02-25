@@ -171,18 +171,29 @@ void ToolbarUpdateStateForWindow(WindowInfo *win, bool showHide)
 
 void ShowOrHideToolbarGlobally()
 {
-    for (size_t i = 0; i < gWindows.Count(); i++) {
-        WindowInfo *win = gWindows.At(i);
-        if (gGlobalPrefs.toolbarVisible) {
-            ShowWindow(win->toolBar()->hwndReBar, SW_SHOW);
-        } else {
-            // Move the focus out of the toolbar
-            if (win->toolBar()->hwndFindBox == GetFocus() || win->toolBar()->hwndPageBox == GetFocus())
-                SetFocus(win->hwndFrame);
-            ShowWindow(win->toolBar()->hwndReBar, SW_HIDE);
+    for (size_t i = 0; i < gWIN.Count(); i++) {
+        TopWindowInfo *WIN = gWIN.At(i);
+        for (size_t j = 0; j < WIN->gPanel.Count(); j++) {
+
+            PanelInfo *panel = WIN->gPanel.At(j);
+
+            if (gGlobalPrefs.toolbarVisible)
+                ShowWindow(panel->win->toolBar()->hwndReBar, SW_SHOW);
+            else {
+                if (panel->win->toolBar()->hwndFindBox == GetFocus() || panel->win->toolBar()->hwndPageBox == GetFocus())
+                    SetFocus(panel->WIN->hwndFrame);
+                ShowWindow(panel->win->toolBar()->hwndReBar, SW_HIDE);
+            }
+
+            if (!gGlobalPrefs.toolbarForEachPanel) {
+                ClientRect rect(panel->WIN->hwndFrame);
+                SendMessage(panel->WIN->hwndFrame, WM_SIZE, 0, MAKELONG(rect.dx, rect.dy));
+                break;
+            }
+
+            ClientRect rect(panel->hwndPanel);
+            SendMessage(panel->hwndPanel, WM_SIZE, 0, MAKELONG(rect.dx, rect.dy));
         }
-        ClientRect rect(win->hwndFrame);
-        SendMessage(win->hwndFrame, WM_SIZE, 0, MAKELONG(rect.dx, rect.dy));
     }
 }
 
