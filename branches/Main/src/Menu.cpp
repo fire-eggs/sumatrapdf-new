@@ -80,6 +80,7 @@ static MenuDef menuDefView[] = {
     { SEP_ITEM,                             0,                          MF_REQ_FULLSCREEN },
     { _TRN("Book&marks\tF12"),              IDM_VIEW_BOOKMARKS,         0 },
     { _TRN("Show &Toolbar"),                IDM_VIEW_SHOW_HIDE_TOOLBAR, 0 },
+    { _TRN("S&how Tab"),                    IDM_VIEW_SHOW_HIDE_TAB, 0 },
     { SEP_ITEM,                             0,                          MF_REQ_ALLOW_COPY },
     { _TRN("Select &All\tCtrl+A"),          IDM_SELECT_ALL,             MF_REQ_ALLOW_COPY },
     { _TRN("&Copy Selection\tCtrl+C"),      IDM_COPY_SELECTION,         MF_REQ_ALLOW_COPY },
@@ -378,6 +379,7 @@ void MenuUpdateStateForWindow(WindowInfo* win) {
 
     win::menu::SetChecked(win->menu(), IDM_FAV_TOGGLE, gGlobalPrefs.favVisible);
     win::menu::SetChecked(win->menu(), IDM_VIEW_SHOW_HIDE_TOOLBAR, gGlobalPrefs.toolbarVisible);
+    win::menu::SetChecked(win->menu(), IDM_VIEW_SHOW_HIDE_TAB, gGlobalPrefs.tabVisible);
     MenuUpdateDisplayMode(win);
     MenuUpdateZoom(win);
 
