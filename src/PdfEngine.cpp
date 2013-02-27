@@ -399,7 +399,7 @@ static bool LinkifyCheckMultiline(const WCHAR *pageText, const WCHAR *pos, RectI
     // (and that doesn't start with http itself)
     return
         '\n' == *pos && pos > pageText && *(pos + 1) &&
-        !iswalnum(pos[-1]) && !iswspace(pos[1]) &&
+        !iswalnum(pos[-1]) && !str::IsWs(pos[1]) &&
         coords[pos - pageText + 1].BR().y > coords[pos - pageText - 1].y &&
         coords[pos - pageText + 1].y <= coords[pos - pageText - 1].BR().y &&
         coords[pos - pageText + 1].x < coords[pos - pageText - 1].BR().x &&
@@ -411,7 +411,7 @@ static const WCHAR *LinkifyFindEnd(const WCHAR *start, bool atStart)
     const WCHAR *end;
 
     // look for the end of the URL (ends in a space preceded maybe by interpunctuation)
-    for (end = start; *end && !iswspace(*end); end++);
+    for (end = start; *end && !str::IsWs(*end); end++);
     if (',' == end[-1] || '.' == end[-1] || '?' == end[-1] || '!' == end[-1])
         end--;
     // also ignore a closing parenthesis, if the URL doesn't contain any opening one
@@ -2264,7 +2264,7 @@ pdf_annot **PdfEngineImpl::ProcessPageAnnotations(pdf_page *page)
     Vec<pdf_annot *> annots;
 
     for (pdf_annot *annot = page->annots; annot; annot = annot->next) {
-        if (FZ_WIDGET_TYPE_FILE == annot->type) {
+        if (FZ_ANNOT_FILEATTACHMENT == annot->annot_type) {
             pdf_obj *file = pdf_dict_gets(annot->obj, "FS");
             pdf_obj *embedded = pdf_dict_getsa(pdf_dict_gets(file, "EF"), "DOS", "F");
             fz_rect rect;
@@ -2287,7 +2287,7 @@ pdf_annot **PdfEngineImpl::ProcessPageAnnotations(pdf_page *page)
                 annots.Append(annot);
             }
         }
-        else if (!str::IsEmpty(pdf_to_str_buf(pdf_dict_gets(annot->obj, "Contents"))) && annot->type != FZ_WIDGET_TYPE_FREETEXT) {
+        else if (!str::IsEmpty(pdf_to_str_buf(pdf_dict_gets(annot->obj, "Contents"))) && annot->annot_type != FZ_ANNOT_FREETEXT) {
             annots.Append(annot);
         }
     }
