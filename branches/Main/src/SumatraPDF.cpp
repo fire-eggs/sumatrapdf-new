@@ -6795,6 +6795,11 @@ InitMouseWheelInfo:
             }
             break;
 
+        case WM_ENDSESSION:
+            // TODO: check for unfinished print jobs in WM_QUERYENDSESSION?
+            SavePrefs();
+            break;
+
         case WM_DDE_INITIATE:
             if (gPluginMode)
                 break;
