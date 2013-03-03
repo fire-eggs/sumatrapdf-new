@@ -782,10 +782,6 @@ bool ShouldSaveThumbnail(DisplayState& ds)
     if (!HasPermission(Perm_SavePreferences))
         return false;
 
-    // don't accumulate thumbnails during a stress test
-    if (IsStressTesting())
-        return false;
-
     // don't create thumbnails for files that won't need them anytime soon
     Vec<DisplayState *> list;
     gFileHistory.GetFrequencyOrder(list);
@@ -1267,6 +1263,8 @@ WindowInfo *CreateAndShowWindowInfo()
 
 static void DeleteWindowInfo(WindowInfo *win)
 {
+    Timer t(true);
+
     FileWatcherUnsubscribe(win->watcher);
     win->watcher = NULL;
 
@@ -1280,6 +1278,9 @@ static void DeleteWindowInfo(WindowInfo *win)
     AbortPrinting(win);
 
     delete win;
+
+    t.Stop();
+    lf("DeleteWindowInfo() time: %.2f", t.GetTimeInMs());
 }
 
 class FileChangeCallback : public UITask, public FileChangeObserver
@@ -1489,6 +1490,11 @@ static WindowInfo* LoadDocumentOld(LoadArgs& args)
 
     FileWatcherUnsubscribe(win->watcher);
     win->watcher = FileWatcherSubscribe(fullPath, new FileChangeCallback(win));
+
+    if (IsStressTesting()) {
+        // don't modify file history during stress testing
+        return win;
+    }
 
     if (gGlobalPrefs.rememberOpenedFiles) {
         CrashIf(!str::Eq(fullPath, win->loadedFilePath));

@@ -2,11 +2,10 @@
 
 # Downloads latest translations from apptranslator.org.
 # If changed, saves them as strings/translations.txt and
-# re-generates src/Translations_txt.cpp
+# re-generates src/Translations_txt.cpp etc.
 
-from extract_strings import extract_strings_from_c_files, dump_missing_per_language, load_lang_index
-from update_translations import get_untranslated_as_list, remove_incomplete_translations, gen_c_code
-import os.path, urllib2
+import os.path, urllib2, util
+from update_translations import gen_c_code, extract_strings_from_c_files
 
 g_my_dir = os.path.dirname(__file__)
 g_strings_dir = os.path.join(g_my_dir, "..", "strings")
@@ -72,26 +71,69 @@ def parseTranslations(s):
         strings[curr_str] = curr_translations
     return strings
 
-g_src_dir = os.path.join(os.path.split(__file__)[0], "..", "src")
+g_src_dir = os.path.join(os.path.dirname(__file__), "..", "src")
 
-# Generate Translations_txt.cpp based on translations in s that we downloaded
-# from the server
-def generateCode(s):
+def get_lang_list(strings_dict):
+    langs = []
+    for translations in strings_dict.values():
+        for t in translations:
+            lang = t[0]
+            if lang not in langs:
+                langs.append(lang)
+    return langs
+
+def get_missing_for_language(strings, strings_dict, lang):
+    untranslated = []
+    for s in strings:
+        if not s in strings_dict:
+            untranslated.append(s)
+            continue
+        translations = strings_dict[s]
+        found = filter(lambda tr: tr[0] == lang, translations)
+        if not found and s not in untranslated:
+            untranslated.append(s)
+    return untranslated
+
+def langs_sort_func(x, y):
+    return cmp(len(y[1]), len(x[1])) or cmp(x[0], y[0])
+
+# strings_dict maps a string to a list of [lang, translations...] list
+def dump_missing_per_language(strings, strings_dict, dump_strings=False):
+    untranslated_dict = {}
+    for lang in get_lang_list(strings_dict):
+        untranslated_dict[lang] = get_missing_for_language(strings, strings_dict, lang)
+    items = untranslated_dict.items()
+    items.sort(langs_sort_func)
+
+    print("\nMissing translations:")
+    strs = []
+    for (lang, untranslated) in items:
+        strs.append("%5s: %3d" % (lang, len(untranslated)))
+    per_line = 5
+    while len(strs) > 0:
+        line_strs = strs[:per_line]
+        strs = strs[per_line:]
+        print("  ".join(line_strs))
+    return untranslated_dict
+
+def get_untranslated_as_list(untranslated_dict):
+    return util.uniquify(sum(untranslated_dict.values(), []))
+
+# Generate the various Translations_txt.cpp files based on translations
+# in s that we downloaded from the server
+def generate_code(s):
     strings_dict = parseTranslations(s)
-    strings = extract_strings_from_c_files()
+    strings = extract_strings_from_c_files(True)
+    strings_list = [tmp[0] for tmp in strings]
     for s in strings_dict.keys():
-        if s not in strings:
+        if s not in strings_list:
             del strings_dict[s]
-    untranslated_dict = dump_missing_per_language(strings, strings_dict)
+    untranslated_dict = dump_missing_per_language(strings_list, strings_dict)
     untranslated = get_untranslated_as_list(untranslated_dict)
     for s in untranslated:
         if s not in strings_dict:
             strings_dict[s] = []
-
-    langs_idx = load_lang_index()
-    c_file_name = os.path.join(g_src_dir, "Translations_txt.cpp")
-    remove_incomplete_translations(langs_idx, strings, strings_dict)
-    gen_c_code(langs_idx, strings_dict, c_file_name)
+    gen_c_code(strings_dict, strings)
 
 # returns True if translation files have been re-generated and
 # need to be commited
@@ -119,13 +161,13 @@ def downloadAndUpdateTranslationsIfChanged():
         return False
     print("Translation data size: %d" % len(s))
     #print(s)
-    generateCode(s)
+    generate_code(s)
     saveLastDownload(s)
     return True
 
 def regenerateLangs():
     s = open(lastDownloadFilePath(), "rb").read()
-    generateCode(s)
+    generate_code(s)
 
 if __name__ == "__main__":
     #regenerateLangs()
