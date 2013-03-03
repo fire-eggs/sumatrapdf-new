@@ -1000,7 +1000,7 @@ static UINT_PTR CALLBACK CCHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM l
             }
 
             // To adjust dy.
-            LPCHOOSECOLOR color = (LPCHOOSECOLOR)GetWindowLongPtr(hDlg, GWL_USERDATA);
+            LPCHOOSECOLOR color = (LPCHOOSECOLOR)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 
             if (color) {
 
@@ -1081,7 +1081,7 @@ static UINT_PTR CALLBACK CCHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM l
             SetWindowLong(hDlg, GWL_STYLE, lStyle);
 
             LPCHOOSECOLOR color = (LPCHOOSECOLOR) lParam;
-            SetWindowLongPtr(hDlg, GWL_USERDATA, (LONG_PTR)color);
+            SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)color);
 
             struct buttonInColorDlg *button = (struct buttonInColorDlg *)color->lCustData;
             HWND hButtonPressed = button->hButton;
@@ -1139,7 +1139,7 @@ static UINT_PTR CALLBACK CCHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM l
                 HDC hdc = (HDC)wParam;
                 COLORREF result = GetPixel(hdc, 1, 1);
 
-                LPCHOOSECOLOR color = (LPCHOOSECOLOR)GetWindowLongPtr(hDlg, GWL_USERDATA);
+                LPCHOOSECOLOR color = (LPCHOOSECOLOR)GetWindowLongPtr(hDlg, GWLP_USERDATA);
                 struct buttonInColorDlg *button = (struct buttonInColorDlg *)color->lCustData;
                 *button->color = result;
 
@@ -1173,7 +1173,7 @@ static UINT_PTR CALLBACK CCHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM l
 
             if (LOWORD(wParam) == IDCANCEL) {
 
-                LPCHOOSECOLOR color = (LPCHOOSECOLOR)GetWindowLongPtr(hDlg, GWL_USERDATA);
+                LPCHOOSECOLOR color = (LPCHOOSECOLOR)GetWindowLongPtr(hDlg, GWLP_USERDATA);
                 struct buttonInColorDlg *button = (struct buttonInColorDlg *)color->lCustData;
                 *button->color = button->colorOld;
 
