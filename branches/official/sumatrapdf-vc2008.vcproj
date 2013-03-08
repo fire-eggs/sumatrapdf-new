@@ -823,15 +823,15 @@
 					>
 				</File>
 				<File
-					RelativePath=".\src\Translations.cpp"
+					RelativePath=".\src\Trans_sumatra_txt.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\src\Translations.h"
+					RelativePath=".\src\Translations2.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\src\Translations_txt.cpp"
+					RelativePath=".\src\Translations2.h"
 					>
 				</File>
 				<File
@@ -1314,6 +1314,10 @@
 				</File>
 				<File
 					RelativePath=".\mupdf\pdf\pdf_encoding.c"
+					>
+				</File>
+				<File
+					RelativePath=".\mupdf\pdf\pdf_field.c"
 					>
 				</File>
 				<File

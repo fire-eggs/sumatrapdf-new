@@ -3,14 +3,14 @@ Builds a (pre)release build of SumatraPDF, including the installer,
 and optionally uploads it to s3.
 """
 
-import os, os.path, shutil, sys, time, re
+import os, shutil, sys, time, re
 import s3
 from util import test_for_flag, run_cmd_throw
 from util import verify_started_in_right_directory, parse_svninfo_out, log
 from util import extract_sumatra_version, zip_file
 from util import load_config, build_installer_data, verify_path_exists
 
-import apptransul, apptransdl
+import trans_upload, trans_download
 
 g_new_translation_system = True
 
@@ -128,8 +128,8 @@ def main():
   # don't update translations for release versions to prevent Trunk changes
   # from messing up the compilation of a point release on a branch
   if g_new_translation_system and build_prerelease and not skip_transl_update:
-    apptransul.uploadStringsIfChanged()
-    changed = apptransdl.downloadAndUpdateTranslationsIfChanged()
+    trans_upload.uploadStringsIfChanged()
+    changed = trans_download.downloadAndUpdateTranslationsIfChanged()
     # Note: this is not a perfect check since re-running the script will
     # proceed
     if changed:
@@ -150,6 +150,9 @@ def main():
 
   if upload:
     log("Will upload to s3 at %s" % s3_dir)
+    conf = load_config()
+    s3.set_secrets(conf.aws_access, conf.aws_secret)
+    s3.set_bucket("kjkpub")
 
   s3_prefix = "%s/%s" % (s3_dir, filename_base)
   s3_exe           = s3_prefix + ".exe"

@@ -1049,6 +1049,69 @@ size_t FromCodePageBuf(WCHAR *buf, size_t cchBufSize, const char *s, UINT cp)
     return MultiByteToWideChar(cp, 0, s, -1, buf, cchBufSize);
 }
 
+} // namespace str::conv
+
+} // namespace str
+
+// seqstrings is for size-efficient implementation of:
+// string -> int and int->string.
+// it's even more efficient than using char *[] array
+// it comes at the cost of speed, so it's not good for places
+// that are critial for performance. On the other hand, it's
+// not that bad: linear scanning of memory is fast due to the magic
+// of L1 cache
+namespace seqstrings {
+
+// Returns NULL if s is the same as toFind
+// If they are not equal, returns end of s + 1
+static inline const char *StrEqWeird(const char *s, const char *toFind)
+{
+    char c;
+    for (;;) {
+        c = *s++;
+        if (0 == c) {
+            if (0 == *toFind)
+                return NULL;
+            return s;
+        }
+        if (c != *toFind++) {
+            while (*s) {
+                s++;
+            }
+            return s + 1;
+        }
+        // were equal, check another char
+    }
 }
 
+// conceptually strings is an array of strings where strings are laid
+// out sequentially in memory
+// Returns index of toFind string in sttings array of size max
+// Returns -1 if string doesn't exist
+int GetStrIdx(const char *strings, const char *toFind, int max)
+{
+    const char *s = strings;
+    for (int idx = 0; idx < max; idx++) {
+        s = StrEqWeird(s, toFind);
+        if (NULL == s)
+            return idx;
+    }
+    return -1;
 }
+
+// Given an index in the "array" of sequentially laid out strings,
+// returns a strings at that index.
+const char *GetByIdx(const char *strings, int idx)
+{
+    const char *s = strings;
+    while (idx > 0) {
+        while (*s) {
+            s++;
+        }
+        s++;
+        --idx;
+    }
+    return s;
+}
+
+} // namespace seqstrings
