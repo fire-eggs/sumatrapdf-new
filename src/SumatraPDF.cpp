@@ -47,7 +47,7 @@ using namespace Gdiplus;
 #include "ThreadUtil.h"
 #include "Toolbar.h"
 #include "Touch.h"
-#include "Translations.h"
+#include "Translations2.h"
 #include "UITask.h"
 #include "Version.h"
 #include "WindowInfo.h"
@@ -180,17 +180,17 @@ bool HasPermission(int permission)
     return (permission & gPolicyRestrictions) == permission;
 }
 
-bool CurrLangNameSet(const char *langName)
+static void SetCurrentLang(const char *langCode)
 {
-    const char *langCode = trans::ValidateLanguageCode(langName);
-    if (!langCode)
-        return false;
+    if (langCode) {
+        gGlobalPrefs.currLangCode = langCode;
+        trans::SetCurrentLangByCode(langCode);
+    }
+}
 
-    gGlobalPrefs.currentLanguage = langCode;
-
-    bool ok = trans::SetCurrentLanguage(langCode);
-    assert(ok);
-    return ok;
+static void SetCurrentLangByCode(const char *langCode)
+{
+    SetCurrentLang(langCode);
 }
 
 #ifndef SUMATRA_UPDATE_INFO_URL
@@ -557,8 +557,7 @@ void UpdateCurrentFileDisplayStateForWin(SumatraWindow& win)
 
 bool IsUIRightToLeft()
 {
-    int langIx = trans::GetLanguageIndex(gGlobalPrefs.currentLanguage);
-    return trans::IsLanguageRtL(langIx);
+    return trans::IsCurrLangRtl();
 }
 
 // updates the layout for a window to either left-to-right or right-to-left
@@ -1742,12 +1741,71 @@ static DWORD ShowAutoUpdateDialog(HWND hParent, HttpReq *ctx, bool silent)
     INT_PTR res = Dialog_NewVersionAvailable(hParent, UPDATE_CHECK_VER, verTxt, &skipThisVersion);
     if (skipThisVersion)
         str::ReplacePtr(&gGlobalPrefs.versionToSkip, verTxt);
-    if (IDYES == res)
+    if (IDYES == res) {
+#ifdef SUPPORTS_AUTO_UPDATE
+        if (str::EndsWith(SVN_UPDATE_LINK, L".exe")) {
+            ScopedMem<WCHAR> updater(GetExePath());
+            updater.Set(str::Join(updater, L"-updater.exe"));
+            bool ok = HttpGetToFile(SVN_UPDATE_LINK, updater);
+            if (ok) {
+                ok = LaunchFile(updater, L"-autoupdate replace");
+                if (ok) {
+                    OnMenuExit();
+                    return 0;
+                }
+            }
+        }
+#endif
         LaunchBrowser(SVN_UPDATE_LINK);
+    }
     SavePrefs();
 
     return 0;
 }
+
+#ifdef SUPPORTS_AUTO_UPDATE
+#include "CmdLineParser.h"
+
+static bool AutoUpdateMain()
+{
+    WStrVec argList;
+    ParseCmdLine(GetCommandLine(), argList);
+    if (argList.Count() != 3 || !str::Eq(argList.At(1), L"-autoupdate")) {
+        // the argument was misinterpreted, let SumatraPDF start as usual
+        return false;
+    }
+    ScopedMem<WCHAR> thisExe(GetExePath());
+    ScopedMem<WCHAR> otherExe;
+    bool beforeUpdate = str::Eq(argList.At(2), L"replace");
+    if (beforeUpdate) {
+        CrashIf(!str::EndsWith(thisExe, L".exe-updater.exe"));
+        otherExe.Set(str::DupN(thisExe, str::Len(thisExe) - 12));
+    }
+    else {
+        CrashIf(!str::Eq(argList.At(2), L"cleanup"));
+        otherExe.Set(str::Join(thisExe, L"-updater.exe"));
+    }
+    for (int tries = 10; tries > 0; tries--) {
+        if (file::Delete(otherExe))
+            break;
+        Sleep(200);
+    }
+    if (!beforeUpdate) {
+        // continue startup
+        // TODO: restore previous session?
+        return false;
+    }
+    bool ok = CopyFile(thisExe, otherExe, FALSE);
+    // TODO: somehow indicate success or failure
+    for (int tries = 10; tries > 0; tries--) {
+        ok = LaunchFile(otherExe, L"-autoupdate cleanup");
+        if (ok)
+            break;
+        Sleep(200);
+    }
+    return true;
+}
+#endif
 
 static void ProcessAutoUpdateCheckResult(HWND hwnd, HttpReq *req, bool autoCheck)
 {
@@ -3218,31 +3276,23 @@ static void FrameOnSize(WindowInfo* win, int dx, int dy)
     }
 }
 
-void ChangeLanguage(const char *langName)
+void SetCurrentLanguageAndRefreshUi(const char *langCode)
 {
-    CurrLangNameSet(langName);
+    if (!langCode || (str::Eq(langCode, trans::GetCurrentLangCode())))
+        return;
+    SetCurrentLang(langCode);
     UpdateRtlLayoutForAllWindows();
     RebuildMenuBarForAllWindows();
     UpdateUITextForLanguage();
+    if (gWindows.Count() > 0 && gWindows.At(0)->IsAboutWindow())
+        gWindows.At(0)->RedrawAll(true);
+    SavePrefs();
 }
 
 void OnMenuChangeLanguage(HWND hwnd)
 {
-    int langId = trans::GetLanguageIndex(gGlobalPrefs.currentLanguage);
-    int newLangId = Dialog_ChangeLanguge(hwnd, langId);
-
-    if (newLangId != -1 && langId != newLangId) {
-        const char *langName = trans::GetLanguageCode(newLangId);
-        assert(langName);
-        if (!langName)
-            return;
-
-        ChangeLanguage(langName);
-
-        if (gWindows.Count() > 0 && gWindows.At(0)->IsAboutWindow())
-            gWindows.At(0)->RedrawAll(true);
-        SavePrefs();
-    }
+    const char *newLangCode = Dialog_ChangeLanguge(hwnd, trans::GetCurrentLangCode());
+    SetCurrentLanguageAndRefreshUi(newLangCode);
 }
 
 static void OnMenuViewShowHideToolbar()
@@ -3791,10 +3841,10 @@ static void FrameOnChar(WindowInfo& win, WPARAM key)
             if (win.showSelection && win.selectionOnPage) {
                 for (size_t i = 0; i < win.selectionOnPage->Count(); i++) {
                     SelectionOnPage& sel = win.selectionOnPage->At(i);
-                    annots.Append(PageAnnotation(Annot_Highlight, sel.pageNo, sel.rect, RGB(0xE2, 0xC4, 0xE2)));
-                    // annots.Append(PageAnnotation(Annot_Underline, sel.pageNo, sel.rect, RGB(0x00, 0x00, 0x00)));
-                    // annots.Append(PageAnnotation(Annot_StrikeOut, sel.pageNo, sel.rect, RGB(0x80, 0x80, 0x80)));
-                    annots.Append(PageAnnotation(Annot_Squiggly, sel.pageNo, sel.rect, RGB(0xFF, 0x00, 0x00)));
+                    annots.Append(PageAnnotation(Annot_Highlight, sel.pageNo, sel.rect, PageAnnotation::Color(0xE2, 0xC4, 0xE2, 0xCC)));
+                    // annots.Append(PageAnnotation(Annot_Underline, sel.pageNo, sel.rect, PageAnnotation::Color(0x00, 0x00, 0x00)));
+                    // annots.Append(PageAnnotation(Annot_StrikeOut, sel.pageNo, sel.rect, PageAnnotation::Color(0x80, 0x80, 0x80)));
+                    annots.Append(PageAnnotation(Annot_Squiggly, sel.pageNo, sel.rect, PageAnnotation::Color(0xFF, 0x00, 0x00)));
                 }
             }
             if (annots.Count() > 0) {
