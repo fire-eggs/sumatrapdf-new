@@ -268,9 +268,14 @@ static void GetCommandLineInfo(CommandLineInfo& i)
     i.ParseCommandLine(GetCommandLine());
 }
 
+#include "Settings.h"
+
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     int retCode = 1;    // by default it's error
+
+    int n = sizeof(AdvancedSettings);
+    printf("n = %d", n);
 
 #ifdef DEBUG
     // Memory leak detection (only enable _CRTDBG_LEAK_CHECK_DF for
@@ -301,6 +306,13 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
         return RegressMain();
     }
 #endif
+#ifdef SUPPORTS_AUTO_UPDATE
+    if (str::StartsWith(lpCmdLine, "-autoupdate")) {
+        bool quit = AutoUpdateMain();
+        if (quit)
+            return 0;
+    }
+#endif
 
     RunUnitTests();
 
@@ -325,10 +337,10 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     ScopedMem<WCHAR> prefsFilename(GetPrefsFileName());
     if (!file::Exists(prefsFilename)) {
         // guess the ui language on first start
-        CurrLangNameSet(trans::GuessLanguage());
+        SetCurrentLang(trans::DetectUserLang());
     } else {
         Prefs::Load(prefsFilename, gGlobalPrefs, gFileHistory, gFavorites);
-        CurrLangNameSet(gGlobalPrefs.currentLanguage);
+        SetCurrentLangByCode(gGlobalPrefs.currLangCode);
     }
     prefsFilename.Set(NULL);
 
@@ -365,7 +377,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
         str::ReplacePtr(&gGlobalPrefs.inverseSearchCmdLine, i.inverseSearchCmdLine);
         gGlobalPrefs.enableTeXEnhancements = true;
     }
-    CurrLangNameSet(i.lang);
+    SetCurrentLangByCode(i.lang);
 
     if (!RegisterWinClass(hInstance))
         goto Exit;
@@ -477,7 +489,6 @@ Exit:
 
     mui::Destroy();
     uitask::Destroy();
-
     trans::Destroy();
 
     // it's still possible to crash after this (destructors of static classes,
