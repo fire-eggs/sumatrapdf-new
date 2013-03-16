@@ -3,7 +3,7 @@
 
 #include "BaseUtil.h"
 
-size_t roundToPowerOf2(size_t size)
+size_t RoundToPowerOf2(size_t size)
 {
     size_t n = 1;
     while (n < size) {
@@ -26,7 +26,7 @@ size_t roundToPowerOf2(size_t size)
  */
 static uint32_t hash_function_seed = 5381;
 
-uint32_t murmur_hash2(const void *key, size_t len)
+uint32_t MurmurHash2(const void *key, size_t len)
 {
     /* 'm' and 'r' are mixing constants generated offline.
      They're not really 'magic', they just happen to work well.  */
@@ -34,7 +34,7 @@ uint32_t murmur_hash2(const void *key, size_t len)
     const int r = 24;
 
     /* Initialize the hash to a 'random' value */
-    uint32_t h = hash_function_seed ^ len;
+    uint32_t h = hash_function_seed ^ (uint32_t)len;
 
     /* Mix 4 bytes at a time into the hash */
     const uint8_t *data = (const uint8_t *)key;
