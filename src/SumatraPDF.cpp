@@ -189,11 +189,6 @@ static void SetCurrentLang(const char *langCode)
     }
 }
 
-static void SetCurrentLangByCode(const char *langCode)
-{
-    SetCurrentLang(langCode);
-}
-
 #ifndef SUMATRA_UPDATE_INFO_URL
 #ifdef SVN_PRE_RELEASE_VER
 #define SUMATRA_UPDATE_INFO_URL L"http://kjkpub.s3.amazonaws.com/sumatrapdf/sumpdf-prerelease-latest.txt"
@@ -937,7 +932,7 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
 
     str::ReplacePtr(&win->loadedFilePath, args.fileName);
     DocType engineType;
-    BaseEngine *engine = EngineManager::CreateEngine(!gUseEbookUI, args.fileName, pwdUI, &engineType);
+    BaseEngine *engine = EngineManager::CreateEngine(args.fileName, pwdUI, &engineType, gUseEbookUI);
 
     if (engine && Engine_Chm == engineType) {
         // make sure that MSHTML can't be used as a potential exploit
@@ -953,7 +948,7 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
         else if (!static_cast<ChmEngine *>(engine)->SetParentHwnd(win->hwndCanvas)) {
             delete engine;
             DebugAlternateChmEngine(true);
-            engine = EngineManager::CreateEngine(true, args.fileName, pwdUI, &engineType);
+            engine = EngineManager::CreateEngine(args.fileName, pwdUI, &engineType);
             DebugAlternateChmEngine(false);
             CrashIf(engineType != (engine ? Engine_Chm2 : Engine_None));
         }
@@ -4466,6 +4461,7 @@ static void OnTimer(WindowInfo& win, HWND hwnd, WPARAM timerId)
 // these can be global, as the mouse wheel can't affect more than one window at once
 static int  gDeltaPerLine = 0;         // for mouse wheel logic
 static bool gWheelMsgRedirect = false; // set when WM_MOUSEWHEEL has been passed on (to prevent recursion)
+static bool gSuppressAltKey = false;   // set after scrolling horizontally (to prevent the menu from getting the focus)
 
 static LRESULT CanvasOnMouseWheel(WindowInfo& win, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -4515,6 +4511,8 @@ static LRESULT CanvasOnMouseWheel(WindowInfo& win, UINT message, WPARAM wParam, 
         return 0;
 
     bool horizontal = (LOWORD(wParam) & MK_ALT) || IsAltPressed();
+    if (horizontal)
+        gSuppressAltKey = true;
 
     if (gDeltaPerLine < 0) {
         // scroll by (fraction of a) page
@@ -5290,6 +5288,16 @@ static LRESULT CALLBACK WndProcFrame(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
             if (win)
                 FrameOnKeydown(win, wParam, lParam);
             break;
+
+        case WM_SYSKEYUP:
+            // pressing and releasing the Alt key focuses the menu even if
+            // the wheel has been used for scrolling horizontally, so we
+            // have to suppress that effect explicitly in this situation
+            if (VK_MENU == wParam && gSuppressAltKey) {
+                gSuppressAltKey = false;
+                return 0;
+            }
+            return DefWindowProc(hwnd, msg, wParam, lParam);
 
         case WM_CONTEXTMENU:
             // opening the context menu with a keyboard doesn't call the canvas'
