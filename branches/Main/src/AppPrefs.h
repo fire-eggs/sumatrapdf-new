@@ -22,6 +22,7 @@ struct SerializableGlobalPrefs {
         free(versionToSkip);
         free(inverseSearchCmdLine);
         free(lastUpdateTime);
+        free(prevSerialization);
     }
 
     bool globalPrefsOnly;
@@ -91,7 +92,7 @@ struct SerializableGlobalPrefs {
 
     bool tocVisible;
     // if sidebar (favorites and/or bookmarks) is visible, this is
-    // the widht of the left sidebar panel containing them
+    // the width of the left sidebar panel containing them
     int  sidebarDx;
     // if both favorites and bookmarks parts of sidebar are
     // visible, this is the height of bookmarks (table of contents) part
@@ -113,19 +114,11 @@ struct SerializableGlobalPrefs {
     FILETIME lastPrefUpdate; /* modification time of the preferences file when it was last read */
 
     bool cbxR2L; /* display CBX double pages from right to left */
+
+    char *prevSerialization; /* serialization of what was loaded (needed to prevent discarding unknown options) */
 };
 
 extern SerializableGlobalPrefs gGlobalPrefs;
-
-class FileHistory;
-class Favorites;
-
-namespace Prefs {
-
-bool    Load(const WCHAR *filepath, SerializableGlobalPrefs& globalPrefs, FileHistory& fileHistory, Favorites *favs);
-bool    Save(const WCHAR *filepath, SerializableGlobalPrefs& globalPrefs, FileHistory& fileHistory, Favorites *favs);
-
-}
 
 namespace DisplayModeConv {
 
@@ -134,8 +127,12 @@ bool            EnumFromName(const WCHAR *txt, DisplayMode *resOut);
 
 }
 
-WCHAR *GetPrefsFileName();
+bool LoadPrefs();
 bool SavePrefs();
 bool ReloadPrefs();
+
+class AdvancedSettings;
+bool LoadAdvancedPrefs(AdvancedSettings *advancedPrefs);
+bool SaveAdvancedPrefs(AdvancedSettings *advancedPrefs);
 
 #endif
