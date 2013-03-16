@@ -36,16 +36,11 @@ class BencArray;
 class BencDict;
 
 class BencString : public BencObj {
-    friend BencArray;
-    friend BencDict;
-
     char *value;
 
-protected:
+public:
     BencString(const WCHAR *value);
     BencString(const char *rawValue, size_t len);
-
-public:
     virtual ~BencString() { free(value); }
 
     WCHAR *Value() const;
@@ -92,6 +87,7 @@ public:
     void Add(int64_t val) {
         Add(new BencInt(val));
     }
+    BencObj *Remove(size_t index);
 
     BencString *GetString(size_t index) const {
         if (index < Length() && value.At(index)->Type() == BT_STRING)
@@ -117,11 +113,12 @@ public:
 class BencDict : public BencObj {
     Vec<char *> keys;
     Vec<BencObj *> values;
+    size_t lastIdx;
 
     BencObj *GetObj(const char *key) const;
 
 public:
-    BencDict() : BencObj(BT_DICT) { }
+    BencDict() : BencObj(BT_DICT), lastIdx(0) { }
     virtual ~BencDict() {
         FreeVecMembers(keys);
         DeleteVecMembers(values);
@@ -142,6 +139,7 @@ public:
     void Add(const char *key, int64_t val) {
         Add(key, new BencInt(val));
     }
+    BencObj *Remove(const char *key);
 
     BencString *GetString(const char *key) const {
         BencObj *obj = GetObj(key);
