@@ -432,18 +432,18 @@ bool DjVuEngineImpl::Load(const WCHAR *fileName)
 }
 
 // TODO: use AdjustLightness instead to compensate for the alpha?
-static Gdiplus::Color Unblend(COLORREF c, BYTE alpha)
+static Gdiplus::Color Unblend(PageAnnotation::Color c, BYTE alpha)
 {
-    BYTE R = GetRValue(c), G = GetGValue(c), B = GetBValue(c);
-    R = (BYTE)floorf(max(R - (255 - alpha), 0) * 255.0f / alpha + 0.5f);
-    G = (BYTE)floorf(max(G - (255 - alpha), 0) * 255.0f / alpha + 0.5f);
-    B = (BYTE)floorf(max(B - (255 - alpha), 0) * 255.0f / alpha + 0.5f);
+    alpha = (BYTE)(alpha * c.a / 255.f);
+    BYTE R = (BYTE)floorf(max(c.r - (255 - alpha), 0) * 255.0f / alpha + 0.5f);
+    BYTE G = (BYTE)floorf(max(c.g - (255 - alpha), 0) * 255.0f / alpha + 0.5f);
+    BYTE B = (BYTE)floorf(max(c.b - (255 - alpha), 0) * 255.0f / alpha + 0.5f);
     return Gdiplus::Color(alpha, R, G, B);
 }
 
-static Gdiplus::Color FromColorRef(COLORREF c)
+static inline Gdiplus::Color FromColor(PageAnnotation::Color c)
 {
-    return Gdiplus::Color(GetRValue(c), GetGValue(c), GetBValue(c));
+    return Gdiplus::Color(c.a, c.r, c.g, c.b);
 }
 
 void DjVuEngineImpl::AddUserAnnots(RenderedBitmap *bmp, int pageNo, float zoom, int rotation, RectI screen)
@@ -468,7 +468,7 @@ void DjVuEngineImpl::AddUserAnnots(RenderedBitmap *bmp, int pageNo, float zoom, 
             case Annot_Highlight:
                 arect = Transform(annot.rect, pageNo, zoom, rotation);
                 arect.Offset(-screen.x, -screen.y);
-                g.FillRectangle(&SolidBrush(Unblend(annot.color, 95)), arect.ToGdipRectF());
+                g.FillRectangle(&SolidBrush(Unblend(annot.color, 119)), arect.ToGdipRectF());
                 break;
             case Annot_Underline:
             case Annot_StrikeOut:
@@ -477,12 +477,12 @@ void DjVuEngineImpl::AddUserAnnots(RenderedBitmap *bmp, int pageNo, float zoom, 
                     arect.y -= annot.rect.dy / 2;
                 arect = Transform(arect, pageNo, zoom, rotation);
                 arect.Offset(-screen.x, -screen.y);
-                g.DrawLine(&Pen(FromColorRef(annot.color), zoom), (float)arect.x,
+                g.DrawLine(&Pen(FromColor(annot.color), zoom), (float)arect.x,
                            (float)arect.y, (float)arect.BR().x, (float)arect.BR().y);
                 break;
             case Annot_Squiggly:
                 {
-                    Pen p(FromColorRef(annot.color), 0.5f * zoom);
+                    Pen p(FromColor(annot.color), 0.5f * zoom);
                     REAL dash[2] = { 2, 2 };
                     p.SetDashPattern(dash, dimof(dash));
                     p.SetDashOffset(1);
@@ -699,6 +699,16 @@ bool DjVuEngineImpl::SaveFileAs(const WCHAR *copyFileName)
     return CopyFile(fileName, copyFileName, FALSE);
 }
 
+static void AppendNewline(str::Str<WCHAR>& extracted, Vec<RectI>& coords, const WCHAR *lineSep)
+{
+    if (extracted.Count() > 0 && ' ' == extracted.Last()) {
+        extracted.Pop();
+        coords.Pop();
+    }
+    extracted.Append(lineSep);
+    coords.AppendBlanks(str::Len(lineSep));
+}
+
 bool DjVuEngineImpl::ExtractPageText(miniexp_t item, const WCHAR *lineSep, str::Str<WCHAR>& extracted, Vec<RectI>& coords)
 {
     miniexp_t type = miniexp_car(item);
@@ -718,6 +728,10 @@ bool DjVuEngineImpl::ExtractPageText(miniexp_t item, const WCHAR *lineSep, str::
 
     miniexp_t str = miniexp_car(item);
     if (miniexp_stringp(str) && !miniexp_cdr(item)) {
+        if (type != miniexp_symbol("char") && type != miniexp_symbol("word") ||
+            coords.Count() > 0 && rect.y < coords.Last().y - coords.Last().dy * 0.8) {
+            AppendNewline(extracted, coords, lineSep);
+        }
         const char *content = miniexp_to_str(str);
         WCHAR *value = str::conv::FromUtf8(content);
         if (value) {
@@ -730,11 +744,6 @@ bool DjVuEngineImpl::ExtractPageText(miniexp_t item, const WCHAR *lineSep, str::
         if (miniexp_symbol("word") == type) {
             extracted.Append(' ');
             coords.Append(RectI(rect.x + rect.dx, rect.y, 2, rect.dy));
-        }
-        else if (miniexp_symbol("char") != type) {
-            extracted.Append(lineSep);
-            for (size_t i = 0; i < str::Len(lineSep); i++)
-                coords.Append(RectI());
         }
         item = miniexp_cdr(item);
     }
@@ -762,6 +771,8 @@ WCHAR *DjVuEngineImpl::ExtractPageText(int pageNo, WCHAR *lineSep, RectI **coord
     ddjvu_miniexp_release(doc, pagetext);
     if (!success)
         return NULL;
+    if (extracted.Count() > 0 && !str::EndsWith(extracted.Get(), lineSep))
+        AppendNewline(extracted, coords, lineSep);
 
     assert(str::Len(extracted.Get()) == coords.Count());
     if (coords_out) {
@@ -776,7 +787,7 @@ WCHAR *DjVuEngineImpl::ExtractPageText(int pageNo, WCHAR *lineSep, RectI **coord
         // TODO: the coordinates aren't completely correct yet
         RectI page = PageMediabox(pageNo).Round();
         for (size_t i = 0; i < coords.Count(); i++) {
-            if (!coords.At(i).IsEmpty()) {
+            if (coords.At(i) != RectI()) {
                 if (dpiFactor != 1.0) {
                     RectT<float> pageF = coords.At(i).Convert<float>();
                     pageF.x *= dpiFactor; pageF.dx *= dpiFactor;

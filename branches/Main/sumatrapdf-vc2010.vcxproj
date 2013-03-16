@@ -319,6 +319,7 @@
     <ClCompile Include="src\AppPrefs.cpp" />
     <ClCompile Include="src\AppTools.cpp" />
     <ClCompile Include="src\browserplugin\npPdfViewer.cpp" />
+    <ClCompile Include="src\browserplugin\Translations_txt.cpp" />
     <ClCompile Include="src\ChmDoc.cpp" />
     <ClCompile Include="src\ChmEngine.cpp" />
     <ClCompile Include="src\CrashHandler.cpp" />
@@ -372,6 +373,7 @@
     <ClCompile Include="src\RenderCache.cpp" />
     <ClCompile Include="src\Search.cpp" />
     <ClCompile Include="src\Selection.cpp" />
+    <ClCompile Include="src\Settings.cpp" />
     <ClCompile Include="src\Sidebar.cpp" />
     <ClCompile Include="src\StressTesting.cpp" />
     <ClCompile Include="src\SumatraAbout.cpp" />
@@ -386,6 +388,8 @@
     <ClCompile Include="src\TextSearch.cpp" />
     <ClCompile Include="src\TextSelection.cpp" />
     <ClCompile Include="src\Toolbar.cpp" />
+    <ClCompile Include="src\Translations2.cpp" />
+    <ClCompile Include="src\Trans_sumatra_txt.cpp" />
     <ClCompile Include="src\utils\BaseUtil.cpp" />
     <ClCompile Include="src\utils\BitReader.cpp" />
     <ClCompile Include="src\utils\ByteOrderDecoder.cpp" />
@@ -411,8 +415,6 @@
     <ClCompile Include="src\utils\StrUtil_ut.cpp" />
     <ClCompile Include="src\utils\ThreadUtil.cpp" />
     <ClCompile Include="src\utils\Touch.cpp" />
-    <ClCompile Include="src\Translations.cpp" />
-    <ClCompile Include="src\Translations_txt.cpp" />
     <ClCompile Include="mupdf\fitz\base_error.c" />
     <ClCompile Include="mupdf\fitz\base_hash.c" />
     <ClCompile Include="mupdf\fitz\base_memory.c" />
@@ -564,6 +566,7 @@
     <ClInclude Include="src\Resource.h" />
     <ClInclude Include="src\Search.h" />
     <ClInclude Include="src\Selection.h" />
+    <ClInclude Include="src\Settings.h" />
     <ClInclude Include="src\Sidebar.h" />
     <ClInclude Include="src\StressTesting.h" />
     <ClInclude Include="src\SumatraAbout.h" />
@@ -577,6 +580,7 @@
     <ClInclude Include="src\TextSearch.h" />
     <ClInclude Include="src\TextSelection.h" />
     <ClInclude Include="src\Toolbar.h" />
+    <ClInclude Include="src\Translations2.h" />
     <ClInclude Include="src\utils\Allocator.h" />
     <ClInclude Include="src\utils\BitManip.h" />
     <ClInclude Include="src\utils\BitReader.h" />
@@ -597,7 +601,6 @@
     <ClInclude Include="src\utils\StrFormat.h" />
     <ClInclude Include="src\utils\ThreadUtil.h" />
     <ClInclude Include="src\utils\Touch.h" />
-    <ClInclude Include="src\Translations.h" />
     <ClInclude Include="src\utils\BaseUtil.h" />
     <ClInclude Include="src\utils\BencUtil.h" />
     <ClInclude Include="src\utils\CmdLineParser.h" />
@@ -710,6 +713,7 @@
     <Manifest Include="src\SumatraPDF.exe.manifest" />
   </ItemGroup>
   <ItemGroup>
+    <ResourceCompile Include="src\browserplugin\npPdfViewer.rc" />
     <ResourceCompile Include="src\ifilter\PdfFilter.rc" />
     <ResourceCompile Include="src\installer\Installer.manifest.rc" />
     <ResourceCompile Include="src\installer\Installer.rc" />

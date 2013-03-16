@@ -13,7 +13,7 @@
 #include "FileTransactions.h"
 #include "FileUtil.h"
 #include "SumatraPDF.h"
-#include "Translations.h"
+#include "Translations2.h"
 #include "WindowInfo.h"
 
 #define PREFS_FILE_NAME         L"sumatrapdfprefs.dat"
@@ -104,7 +104,7 @@
 
 SerializableGlobalPrefs gGlobalPrefs = {
     false, // bool globalPrefsOnly
-    DEFAULT_LANGUAGE, // const char *currentLanguage
+    DEFAULT_LANGUAGE, // const char *currLangCode
     false, // bool enableSplitWindow
     false, // bool enableTab
     false, // bool tabVisible
@@ -222,7 +222,7 @@ static BencDict* SerializeGlobalPrefs(SerializableGlobalPrefs& globalPrefs)
         prefs->Add(VERSION_TO_SKIP_STR, globalPrefs.versionToSkip);
     if (globalPrefs.lastUpdateTime)
         prefs->AddRaw(LAST_UPDATE_STR, globalPrefs.lastUpdateTime);
-    prefs->AddRaw(UI_LANGUAGE_STR, globalPrefs.currentLanguage);
+    prefs->AddRaw(UI_LANGUAGE_STR, globalPrefs.currLangCode);
 
     if (!globalPrefs.openCountWeek)
         globalPrefs.openCountWeek = GetWeekCount();
@@ -593,10 +593,13 @@ static void DeserializePrefs(const char *prefsTxt, SerializableGlobalPrefs& glob
     Retrieve(global, VERSION_TO_SKIP_STR, globalPrefs.versionToSkip);
     RetrieveRaw(global, LAST_UPDATE_STR, globalPrefs.lastUpdateTime);
 
-    const char *lang = GetRawString(global, UI_LANGUAGE_STR);
-    const char *langCode = trans::ValidateLanguageCode(lang);
+    // ensure language code is valid
+    const char *langCode = GetRawString(global, UI_LANGUAGE_STR);
+    langCode = trans::ValidateLangCode(langCode);
     if (langCode)
-        globalPrefs.currentLanguage = langCode;
+        globalPrefs.currLangCode = langCode;
+    else
+        globalPrefs.currLangCode = DEFAULT_LANGUAGE;
 
     Retrieve(global, FWDSEARCH_OFFSET, globalPrefs.fwdSearch.offset);
     Retrieve(global, FWDSEARCH_COLOR, globalPrefs.fwdSearch.color);
@@ -806,7 +809,7 @@ bool ReloadPrefs()
         return true;
     }
 
-    const char *currLang = gGlobalPrefs.currentLanguage;
+    const char *currLangCode = gGlobalPrefs.currLangCode;
     bool toolbarVisible = gGlobalPrefs.toolbarVisible;
     bool useSysColors = gGlobalPrefs.useSysColors;
 
@@ -821,8 +824,9 @@ bool ReloadPrefs()
         gWindows.At(0)->RedrawAll(true);
     }
 
-    if (!str::Eq(currLang, gGlobalPrefs.currentLanguage))
-        ChangeLanguage(gGlobalPrefs.currentLanguage);
+    if (!str::Eq(currLangCode, gGlobalPrefs.currLangCode)) {
+        SetCurrentLanguageAndRefreshUi(gGlobalPrefs.currLangCode);
+    }
 
     if (gGlobalPrefs.toolbarVisible != toolbarVisible)
         ShowOrHideToolbarGlobally();
