@@ -3,6 +3,8 @@
 
 // note: include BaseUtil.h instead of including directly
 
+namespace geomutil {
+
 template <typename T>
 class PointT
 {
@@ -28,9 +30,6 @@ public:
         return !this->operator==(other);
     }
 };
-
-typedef PointT<int> PointI;
-typedef PointT<double> PointD;
 
 template <typename T>
 class SizeT
@@ -61,9 +60,6 @@ public :
         return !this->operator==(other);
     }
 };
-
-typedef SizeT<int> SizeI;
-typedef SizeT<double> SizeD;
 
 template <typename T>
 class RectT
@@ -199,8 +195,16 @@ public:
     }
 };
 
-typedef RectT<int> RectI;
-typedef RectT<double> RectD;
+} // namespace geomutil
+
+typedef geomutil::SizeT<int> SizeI;
+typedef geomutil::SizeT<double> SizeD;
+
+typedef geomutil::PointT<int> PointI;
+typedef geomutil::PointT<double> PointD;
+
+typedef geomutil::RectT<int> RectI;
+typedef geomutil::RectT<double> RectD;
 
 #ifdef _WIN32
 
