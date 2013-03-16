@@ -191,12 +191,12 @@ bool DeleteRegKey(HKEY keySub, const WCHAR *keyName, bool resetACLFirst)
     return ERROR_SUCCESS == res || ERROR_FILE_NOT_FOUND == res;
 }
 
-WCHAR *ReadIniString(const WCHAR *iniPath, const WCHAR *section, const WCHAR *key)
+WCHAR *ReadIniString(const WCHAR *iniPath, const WCHAR *section, const WCHAR *key, const WCHAR *defValue)
 {
     DWORD bufCch = 64*512; // so max memory use is 64k
     WCHAR *value = AllocArray<WCHAR>(bufCch);
     if (value)
-        GetPrivateProfileString(section, key, NULL, value, bufCch-1, iniPath);
+        GetPrivateProfileString(section, key, defValue, value, bufCch-1, iniPath);
     return value;
 }
 
@@ -1053,8 +1053,9 @@ BOOL SafeDestroyWindow(HWND *hwnd)
 
 // based on http://mdb-blog.blogspot.com/2013/01/nsis-lunch-program-as-user-from-uac.html
 // uses $WINDIR\explorer.exe to launch cmd
-// Another primising approach is documented at:
-// http://brandonlive.com/2008/04/27/getting-the-shell-to-run-an-application-for-you-part-2-how/
+// Other primising approaches:
+// - http://brandonlive.com/2008/04/27/getting-the-shell-to-run-an-application-for-you-part-2-how/
+// - http://www.codeproject.com/Articles/23090/Creating-a-process-with-Medium-Integration-Level-f
 // Approaches tried but didn't work:
 // - http://stackoverflow.com/questions/3298611/run-my-program-asuser
 // - using CreateProcessAsUser() with hand-crafted token
@@ -1100,7 +1101,8 @@ void CalcMD5DigestWin(const void *data, size_t byteCount, unsigned char digest[1
     CrashAlwaysIf(!ok);
     ok = CryptCreateHash(hProv, CALG_MD5, 0, 0, &hHash);
     CrashAlwaysIf(!ok);
-    ok = CryptHashData(hHash, (const BYTE*)data, byteCount, 0);
+    CrashAlwaysIf(byteCount > UINT_MAX);
+    ok = CryptHashData(hHash, (const BYTE*)data, (DWORD)byteCount, 0);
     CrashAlwaysIf(!ok);
 
     DWORD hashLen;
@@ -1132,7 +1134,8 @@ void CalcSha1DigestWin(void *data, size_t byteCount, unsigned char digest[32])
     CrashAlwaysIf(!ok);
     ok = CryptCreateHash(hProv, CALG_SHA1, 0, 0, &hHash);
     CrashAlwaysIf(!ok);
-    ok = CryptHashData(hHash, (const BYTE*)data, byteCount, 0);
+    CrashAlwaysIf(byteCount > UINT_MAX);
+    ok = CryptHashData(hHash, (const BYTE*)data, (DWORD)byteCount, 0);
     CrashAlwaysIf(!ok);
 
     DWORD hashLen;
