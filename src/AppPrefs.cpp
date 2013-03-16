@@ -3,6 +3,8 @@
 
 #include "BaseUtil.h"
 #include "AppPrefs.h"
+#define INCLUDE_APPPREFS2_METADATA
+#include "AppPrefs2.h"
 
 #include "AppTools.h"
 #include "BencUtil.h"
@@ -15,86 +17,248 @@
 #include "SumatraPDF.h"
 #include "Translations2.h"
 #include "WindowInfo.h"
+#include "WinUtil.h"
 
 #define PREFS_FILE_NAME         L"sumatrapdfprefs.dat"
+#define ADV_PREFS_FILE_NAME     L"sumatrapdfconfig.ini"
 
 #define MAX_REMEMBERED_FILES 1000
+
+enum PrefType {
+    Pref_Bool, Pref_Int, Pref_Str, Pref_WStr,
+    // custom types which could be implemented through callbacks if need be
+    Pref_DisplayMode, Pref_Float, Pref_IntVec, Pref_UILang,
+};
+
+struct PrefInfo {
+    const char *name;
+    PrefType type;
+    size_t offset;
+    uint32_t bitfield;
+};
+
+static BencDict *SerializeStruct(PrefInfo *info, size_t count, const void *structBase, BencDict *prefs=NULL, uint32_t bitmask=-1)
+{
+    if (!prefs)
+        prefs = new BencDict();
+    const char *base = (const char *)structBase;
+    for (size_t i = 0; i < count; i++) {
+        PrefInfo& meta = info[i];
+        if ((meta.bitfield & bitmask) != meta.bitfield)
+            continue;
+        switch (meta.type) {
+        case Pref_Bool:
+            prefs->Add(meta.name, (int64_t)*(bool *)(base + meta.offset));
+            break;
+        case Pref_Int:
+            prefs->Add(meta.name, (int64_t)*(int *)(base + meta.offset));
+            break;
+        case Pref_Str:
+        case Pref_UILang:
+            if (*(const char **)(base + meta.offset))
+                prefs->AddRaw(meta.name, *(const char **)(base + meta.offset));
+            else
+                delete prefs->Remove(meta.name);
+            break;
+        case Pref_WStr:
+            if (*(const WCHAR **)(base + meta.offset))
+                prefs->Add(meta.name, *(const WCHAR **)(base + meta.offset));
+            else
+                delete prefs->Remove(meta.name);
+            break;
+        case Pref_DisplayMode:
+            prefs->Add(meta.name, DisplayModeConv::NameFromEnum(*(DisplayMode *)(base + meta.offset)));
+            break;
+        case Pref_Float:
+            prefs->AddRaw(meta.name, ScopedMem<char>(str::Format("%.4f", *(float *)(base + meta.offset))));
+            break;
+        case Pref_IntVec:
+            Vec<int> *intVec = *(Vec<int> **)(base + meta.offset);
+            if (intVec) {
+                BencArray *array = new BencArray();
+                for (size_t idx = 0; idx < intVec->Count(); idx++) {
+                    array->Add(intVec->At(idx));
+                }
+                prefs->Add(meta.name, array);
+            }
+            else
+                delete prefs->Remove(meta.name);
+            break;
+        }
+    }
+    return prefs;
+}
+
+static void DeserializeStruct(PrefInfo *info, size_t count, void *structBase, BencDict *prefs)
+{
+    char *base = (char *)structBase;
+    BencInt *intObj;
+    BencString *strObj;
+    BencArray *arrObj;
+
+    for (size_t i = 0; i < count; i++) {
+        PrefInfo& meta = info[i];
+        switch (meta.type) {
+        case Pref_Bool:
+            if ((intObj = prefs->GetInt(meta.name)))
+                *(bool *)(base + meta.offset) = intObj->Value() != 0;
+            break;
+        case Pref_Int:
+            if ((intObj = prefs->GetInt(meta.name)))
+                *(int *)(base + meta.offset) = (int)intObj->Value();
+            break;
+        case Pref_Str:
+            if ((strObj = prefs->GetString(meta.name)))
+                str::ReplacePtr((char **)(base + meta.offset), strObj->RawValue());
+            break;
+        case Pref_WStr:
+            if ((strObj = prefs->GetString(meta.name))) {
+                ScopedMem<WCHAR> str(strObj->Value());
+                if (str)
+                    str::ReplacePtr((WCHAR **)(base + meta.offset), str);
+            }
+            break;
+        case Pref_DisplayMode:
+            if ((strObj = prefs->GetString(meta.name))) {
+                ScopedMem<WCHAR> mode(strObj->Value());
+                if (mode)
+                    DisplayModeConv::EnumFromName(mode, (DisplayMode *)(base + meta.offset));
+            }
+            break;
+        case Pref_Float:
+            if ((strObj = prefs->GetString(meta.name))) {
+                // note: this might round the value for files produced with versions
+                //       prior to 1.6 and on a system where the decimal mark isn't a '.'
+                //       (the difference should be hardly notable, though)
+                *(float *)(base + meta.offset) = (float)atof(strObj->RawValue());
+            }
+            break;
+        case Pref_IntVec:
+            if ((arrObj = prefs->GetArray(meta.name))) {
+                size_t len = arrObj->Length();
+                Vec<int> *intVec = new Vec<int>(len);
+                if (intVec) {
+                    for (size_t idx = 0; idx < len; idx++) {
+                        if ((intObj = arrObj->GetInt(idx)))
+                            intVec->Append((int)intObj->Value());
+                    }
+                    delete *(Vec<int> **)(base + meta.offset);
+                    *(Vec<int> **)(base + meta.offset) = intVec;
+                }
+            }
+            break;
+        case Pref_UILang:
+            if ((strObj = prefs->GetString(meta.name))) {
+                // ensure language code is valid
+                const char *langCode = trans::ValidateLangCode(strObj->RawValue());
+                if (langCode)
+                    *(const char **)(base + meta.offset) = langCode;
+            }
+            break;
+        }
+    }
+}
+
+// this list is in alphabetical order as Benc expects it
+PrefInfo gGlobalPrefInfo[] = {
+#define sgpOffset(x) offsetof(SerializableGlobalPrefs, x)
+    { "BgColor", Pref_Int, sgpOffset(bgColor) },
+    { "CBX_Right2Left", Pref_Bool, sgpOffset(cbxR2L) },
+    { "Display Mode", Pref_DisplayMode, sgpOffset(defaultDisplayMode) },
+    { "EnableAutoUpdate", Pref_Bool, sgpOffset(enableAutoUpdate) },
+    { "EscToExit", Pref_Bool, sgpOffset(escToExit) },
+    { "ExposeInverseSearch", Pref_Bool, sgpOffset(enableTeXEnhancements) },
+    { "FavVisible", Pref_Bool, sgpOffset(favVisible) },
+    { "ForwardSearch_HighlightColor", Pref_Int, sgpOffset(fwdSearch.color) },
+    { "ForwardSearch_HighlightOffset", Pref_Int, sgpOffset(fwdSearch.offset) },
+    { "ForwardSearch_HighlightPermanent", Pref_Bool, sgpOffset(fwdSearch.permanent) },
+    { "ForwardSearch_HighlightWidth", Pref_Int, sgpOffset(fwdSearch.width) },
+    { "GlobalPrefsOnly", Pref_Bool, sgpOffset(globalPrefsOnly) },
+    { "InverseSearchCommandLine", Pref_WStr, sgpOffset(inverseSearchCmdLine) },
+    { "LastUpdate", Pref_Str, sgpOffset(lastUpdateTime) },
+    { "OpenCountWeek", Pref_Int, sgpOffset(openCountWeek) },
+    { "PdfAssociateDontAskAgain", Pref_Bool, sgpOffset(pdfAssociateDontAskAgain) },
+    { "PdfAssociateShouldAssociate", Pref_Bool, sgpOffset(pdfAssociateShouldAssociate) },
+    { "RememberOpenedFiles", Pref_Bool, sgpOffset(rememberOpenedFiles) },
+    { "ShowStartPage", Pref_Bool, sgpOffset(showStartPage) },
+// for backwards compatibility the string is "ShowToc" and not
+// (more appropriate now) "TocVisible"
+    { "ShowToc", Pref_Bool, sgpOffset(tocVisible) },
+// for backwards compatibility the string is "ShowToolbar" and not
+// (more appropriate now) "ToolbarVisible"
+    { "ShowToolbar", Pref_Bool, sgpOffset(toolbarVisible) },
+// for backwards compatibility, the serialized name is "Toc DX" and not
+// (more apropriate now) "Sidebar DX".
+    { "Toc DX", Pref_Int, sgpOffset(sidebarDx) },
+    { "Toc Dy", Pref_Int, sgpOffset(tocDy) },
+    { "UILanguage", Pref_UILang, sgpOffset(currLangCode) },
+    { "UseSysColors", Pref_Bool, sgpOffset(useSysColors) },
+    { "VersionToSkip", Pref_WStr, sgpOffset(versionToSkip) },
+    { "Window DX", Pref_Int, sgpOffset(windowPos.dx) },
+    { "Window DY", Pref_Int, sgpOffset(windowPos.dy) },
+    { "Window State", Pref_Int, sgpOffset(windowState) },
+    { "Window X", Pref_Int, sgpOffset(windowPos.x) },
+    { "Window Y", Pref_Int, sgpOffset(windowPos.y) },
+    { "ZoomVirtual", Pref_Float, sgpOffset(defaultZoom) },
+    { "Enable Split Window", Pref_Bool, sgpOffset(enableSplitWindow) },
+    { "Enable Tab", Pref_Bool, sgpOffset(enableTab) },
+    { "ShowTab", Pref_Bool, sgpOffset(tabVisible) },
+    { "Toolbar For Each Panel", Pref_Bool, sgpOffset(toolbarForEachPanel) },
+    { "Sidebar For Each Panel", Pref_Bool, sgpOffset(sidebarForEachPanel) },
+    { "Toolbar For Each Panel New", Pref_Bool, sgpOffset(toolbarForEachPanelNew) },
+    { "Sidebar For Each Panel New", Pref_Bool, sgpOffset(sidebarForEachPanelNew) },
+    { "NoDocBgColor", Pref_Int, sgpOffset(noDocBgColor) },
+    { "DocBgColor", Pref_Int, sgpOffset(docBgColor) },
+    { "DocTextColor", Pref_Int, sgpOffset(docTextColor) },
+    { "TocBgColor", Pref_Int, sgpOffset(tocBgColor) },
+    { "FavBgColor", Pref_Int, sgpOffset(favBgColor) },
+#undef sgpOffset
+};
+
+enum DsIncludeRestrictions {
+    Ds_Always = 0,
+    Ds_NotGlobal = (1 << 0),
+    Ds_OnlyGlobal = (1 << 1),
+    Ds_IsRecent = (1 << 2),
+    Ds_IsPinned = (1 << 3),
+    Ds_IsMissing = (1 << 4),
+    Ds_HasTocState = (1 << 5),
+};
+
+// this list is in alphabetical order as Benc expects it
+PrefInfo gFilePrefInfo[] = {
+#define dsOffset(x) offsetof(DisplayState, x)
+    { "Decryption Key", Pref_Str, dsOffset(decryptionKey), Ds_Always },
+    { "Display Mode", Pref_DisplayMode, dsOffset(displayMode), Ds_NotGlobal },
+    { "File", Pref_WStr, dsOffset(filePath), Ds_Always },
+    { "Missing", Pref_Bool, dsOffset(isMissing), Ds_IsMissing },
+    { "OpenCount", Pref_Int, dsOffset(openCount), Ds_IsRecent },
+    { "Page", Pref_Int, dsOffset(pageNo), Ds_NotGlobal },
+    { "Pinned", Pref_Bool, dsOffset(isPinned), Ds_IsPinned },
+    { "ReparseIdx", Pref_Int, dsOffset(reparseIdx), Ds_NotGlobal },
+    { "Rotation", Pref_Int, dsOffset(rotation), Ds_NotGlobal },
+    { "Scroll X2", Pref_Int, dsOffset(scrollPos.x), Ds_NotGlobal },
+    { "Scroll Y2", Pref_Int, dsOffset(scrollPos.y), Ds_NotGlobal },
+// for backwards compatibility the string is "ShowToc" and not
+// (more appropriate now) "TocVisible"
+    { "ShowToc", Pref_Bool, dsOffset(tocVisible), Ds_NotGlobal },
+// for backwards compatibility, the serialized name is "Toc DX" and not
+// (more apropriate now) "Sidebar DX".
+    { "Toc DX", Pref_Int, dsOffset(sidebarDx), Ds_NotGlobal },
+    { "TocToggles", Pref_IntVec, dsOffset(tocState), Ds_NotGlobal | Ds_HasTocState },
+    { "UseGlobalValues", Pref_Bool, dsOffset(useGlobalValues), Ds_OnlyGlobal },
+    { "Window DX", Pref_Int, dsOffset(windowPos.dx), Ds_NotGlobal },
+    { "Window DY", Pref_Int, dsOffset(windowPos.dy), Ds_NotGlobal },
+    { "Window State", Pref_Int, dsOffset(windowState), Ds_NotGlobal },
+    { "Window X", Pref_Int, dsOffset(windowPos.x), Ds_NotGlobal },
+    { "Window Y", Pref_Int, dsOffset(windowPos.y), Ds_NotGlobal },
+    { "ZoomVirtual", Pref_Float, dsOffset(zoomVirtual), Ds_NotGlobal },
+#undef dsOffset
+};
 
 #define GLOBAL_PREFS_STR            "gp"
 #define FILE_HISTORY_STR            "File History"
 #define FAVS_STR                    "Favorites"
-
-#define FILE_STR                    "File"
-#define DISPLAY_MODE_STR            "Display Mode"
-#define PAGE_NO_STR                 "Page"
-#define REPARSE_IDX_STR             "ReparseIdx"
-#define ZOOM_VIRTUAL_STR            "ZoomVirtual"
-#define ROTATION_STR                "Rotation"
-#define SCROLL_X_STR                "Scroll X2"
-#define SCROLL_Y_STR                "Scroll Y2"
-#define WINDOW_STATE_STR            "Window State"
-#define WINDOW_X_STR                "Window X"
-#define WINDOW_Y_STR                "Window Y"
-#define WINDOW_DX_STR               "Window DX"
-#define WINDOW_DY_STR               "Window DY"
-#define ENABLE_SPLIT_WINDOW_STR     "Enable Split Window"
-#define ENABLE_TAB_STR              "Enable Tab"
-#define TAB_VISIBLE_STR             "Show Tab"
-#define TOOLBAR_FOR_EACH_PANEL_STR  "Toolbar For Each Panel"
-#define SIDEBAR_FOR_EACH_PANEL_STR  "Sidebar For Each Panel"
-#define TOOLBAR_FOR_EACH_PANEL_NEW_STR  "Toolbar For Each Panel New"
-#define SIDEBAR_FOR_EACH_PANEL_NEW_STR  "Sidebar For Each Panel New"
-// for backwards compatibility the string si "ShowToolbar" and not
-// (more appropriate now) "ToolbarVisible"
-#define TOOLBAR_VISIBLE_STR         "ShowToolbar"
-#define PDF_ASSOCIATE_DONT_ASK_STR  "PdfAssociateDontAskAgain"
-#define PDF_ASSOCIATE_ASSOCIATE_STR "PdfAssociateShouldAssociate"
-#define UI_LANGUAGE_STR             "UILanguage"
-#define FAV_VISIBLE_STR             "FavVisible"
-// for backwards compatibility the string is "ShowToc" and not
-// (more appropriate now) "TocVisible"
-#define TOC_VISIBLE_STR             "ShowToc"
-// for backwards compatibility, the serialized name is "Toc DX" and not
-// (more apropriate now) "Sidebar DX".
-#define SIDEBAR_DX_STR              "Toc DX"
-#define TOC_DY_STR                  "Toc Dy"
-#define TOC_STATE_STR               "TocToggles"
-#define BG_COLOR_STR                "BgColor"
-#define NO_DOC_BG_COLOR_STR         "NoDocBgColor"
-#define DOC_TEXT_COLOR_STR          "DocTextColor"
-#define DOC_BG_COLOR_STR            "DocBgColor"
-#define TOC_BG_COLOR_STR            "TocBgColor"
-#define FAV_BG_COLOR_STR            "FavBgColor"
-#define ESC_TO_EXIT_STR             "EscToExit"
-#define USE_SYS_COLORS_STR          "UseSysColors"
-#define INVERSE_SEARCH_COMMANDLINE  "InverseSearchCommandLine"
-#define ENABLE_TEX_ENHANCEMENTS_STR "ExposeInverseSearch"
-#define VERSION_TO_SKIP_STR         "VersionToSkip"
-#define LAST_UPDATE_STR             "LastUpdate"
-#define ENABLE_AUTO_UPDATE_STR      "EnableAutoUpdate"
-#define REMEMBER_OPENED_FILES_STR   "RememberOpenedFiles"
-#define PRINT_COMMANDLINE           "PrintCommandLine"
-#define GLOBAL_PREFS_ONLY_STR       "GlobalPrefsOnly"
-#define USE_GLOBAL_VALUES_STR       "UseGlobalValues"
-#define DECRYPTION_KEY_STR          "Decryption Key"
-#define SHOW_RECENT_FILES_STR       "ShowStartPage"
-#define OPEN_COUNT_STR              "OpenCount"
-#define IS_PINNED_STR               "Pinned"
-#define IS_MISSING_STR              "Missing"
-#define OPEN_COUNT_WEEK_STR         "OpenCountWeek"
-#define FWDSEARCH_OFFSET            "ForwardSearch_HighlightOffset"
-#define FWDSEARCH_COLOR             "ForwardSearch_HighlightColor"
-#define FWDSEARCH_WIDTH             "ForwardSearch_HighlightWidth"
-#define FWDSEARCH_PERMANENT         "ForwardSearch_HighlightPermanent"
-#define CBX_RIGHT2LEFT              "CBX_Right2Left"
-
-#define DM_AUTOMATIC_STR            "automatic"
-#define DM_SINGLE_PAGE_STR          "single page"
-#define DM_FACING_STR               "facing"
-#define DM_BOOK_VIEW_STR            "book view"
-#define DM_CONTINUOUS_STR           "continuous"
-#define DM_CONTINUOUS_FACING_STR    "continuous facing"
-#define DM_CONTINUOUS_BOOK_VIEW_STR "continuous book view"
 
 /* default UI settings */
 #define DEFAULT_DISPLAY_MODE    DM_AUTOMATIC
@@ -147,6 +311,7 @@ SerializableGlobalPrefs gGlobalPrefs = {
     0, // int openCountWeek
     { 0, 0 }, // FILETIME lastPrefUpdate
     false, // bool cbxR2L
+    NULL, // char *prevSerialization
 };
 
 // number of weeks past since 2011-01-01
@@ -164,78 +329,13 @@ static int GetWeekCount()
 // Save gGlobalPrefs.
 static BencDict* SerializeGlobalPrefs(SerializableGlobalPrefs& globalPrefs)
 {
-    BencDict *prefs = new BencDict();
-    if (!prefs)
-        return NULL;
-
-    prefs->Add(ENABLE_SPLIT_WINDOW_STR, globalPrefs.enableSplitWindow);
-    prefs->Add(ENABLE_TAB_STR, globalPrefs.enableTab);
-    prefs->Add(TAB_VISIBLE_STR, globalPrefs.tabVisible);
-
-    prefs->Add(TOOLBAR_FOR_EACH_PANEL_STR, globalPrefs.toolbarForEachPanel);
-    prefs->Add(SIDEBAR_FOR_EACH_PANEL_STR, globalPrefs.sidebarForEachPanel);
-
-    prefs->Add(TOOLBAR_FOR_EACH_PANEL_NEW_STR, globalPrefs.toolbarForEachPanelNew);
-    prefs->Add(SIDEBAR_FOR_EACH_PANEL_NEW_STR, globalPrefs.sidebarForEachPanelNew);
-
-    prefs->Add(TOOLBAR_VISIBLE_STR, globalPrefs.toolbarVisible);
-    prefs->Add(TOC_VISIBLE_STR, globalPrefs.tocVisible);
-    prefs->Add(FAV_VISIBLE_STR, globalPrefs.favVisible);
-
-    prefs->Add(SIDEBAR_DX_STR, globalPrefs.sidebarDx);
-    prefs->Add(TOC_DY_STR, globalPrefs.tocDy);
-    prefs->Add(PDF_ASSOCIATE_DONT_ASK_STR, globalPrefs.pdfAssociateDontAskAgain);
-    prefs->Add(PDF_ASSOCIATE_ASSOCIATE_STR, globalPrefs.pdfAssociateShouldAssociate);
-
-    prefs->Add(BG_COLOR_STR, globalPrefs.bgColor);
-    prefs->Add(ESC_TO_EXIT_STR, globalPrefs.escToExit);
-    prefs->Add(USE_SYS_COLORS_STR, globalPrefs.useSysColors);
-    prefs->Add(NO_DOC_BG_COLOR_STR, globalPrefs.noDocBgColor);
-    prefs->Add(DOC_TEXT_COLOR_STR, gGlobalPrefs.docTextColor);
-    prefs->Add(DOC_BG_COLOR_STR, gGlobalPrefs.docBgColor);
-
-    prefs->Add(TOC_BG_COLOR_STR, gGlobalPrefs.tocBgColor);
-    prefs->Add(FAV_BG_COLOR_STR, gGlobalPrefs.favBgColor);
-
-    prefs->Add(ENABLE_AUTO_UPDATE_STR, globalPrefs.enableAutoUpdate);
-    prefs->Add(REMEMBER_OPENED_FILES_STR, globalPrefs.rememberOpenedFiles);
-    prefs->Add(GLOBAL_PREFS_ONLY_STR, globalPrefs.globalPrefsOnly);
-    prefs->Add(SHOW_RECENT_FILES_STR, globalPrefs.showStartPage);
-
-    const WCHAR *mode = DisplayModeConv::NameFromEnum(globalPrefs.defaultDisplayMode);
-    prefs->Add(DISPLAY_MODE_STR, mode);
-
     CrashIf(!IsValidZoom(globalPrefs.defaultZoom));
-
-    ScopedMem<char> zoom(str::Format("%.4f", globalPrefs.defaultZoom));
-    prefs->AddRaw(ZOOM_VIRTUAL_STR, zoom);
-    prefs->Add(WINDOW_STATE_STR, globalPrefs.windowState);
-    prefs->Add(WINDOW_X_STR, globalPrefs.windowPos.x);
-    prefs->Add(WINDOW_Y_STR, globalPrefs.windowPos.y);
-    prefs->Add(WINDOW_DX_STR, globalPrefs.windowPos.dx);
-    prefs->Add(WINDOW_DY_STR, globalPrefs.windowPos.dy);
-
-    if (globalPrefs.inverseSearchCmdLine)
-        prefs->Add(INVERSE_SEARCH_COMMANDLINE, globalPrefs.inverseSearchCmdLine);
-    prefs->Add(ENABLE_TEX_ENHANCEMENTS_STR, globalPrefs.enableTeXEnhancements);
-    if (globalPrefs.versionToSkip)
-        prefs->Add(VERSION_TO_SKIP_STR, globalPrefs.versionToSkip);
-    if (globalPrefs.lastUpdateTime)
-        prefs->AddRaw(LAST_UPDATE_STR, globalPrefs.lastUpdateTime);
-    prefs->AddRaw(UI_LANGUAGE_STR, globalPrefs.currLangCode);
-
     if (!globalPrefs.openCountWeek)
         globalPrefs.openCountWeek = GetWeekCount();
-    prefs->Add(OPEN_COUNT_WEEK_STR, globalPrefs.openCountWeek);
-
-    prefs->Add(FWDSEARCH_OFFSET, globalPrefs.fwdSearch.offset);
-    prefs->Add(FWDSEARCH_COLOR, globalPrefs.fwdSearch.color);
-    prefs->Add(FWDSEARCH_WIDTH, globalPrefs.fwdSearch.width);
-    prefs->Add(FWDSEARCH_PERMANENT, globalPrefs.fwdSearch.permanent);
-
-    prefs->Add(CBX_RIGHT2LEFT, globalPrefs.cbxR2L);
-
-    return prefs;
+    BencDict *prevDict = NULL;
+    if (globalPrefs.prevSerialization)
+        prevDict = BencDict::Decode(globalPrefs.prevSerialization, NULL);
+    return SerializeStruct(gGlobalPrefInfo, dimof(gGlobalPrefInfo), &globalPrefs, prevDict);
 }
 
 static BencDict *DisplayState_Serialize(DisplayState *ds, bool globalPrefsOnly)
@@ -245,39 +345,6 @@ static BencDict *DisplayState_Serialize(DisplayState *ds, bool globalPrefsOnly)
         // forget about missing documents without valuable state
         return NULL;
     }
-
-    BencDict *prefs = new BencDict();
-
-    prefs->Add(FILE_STR, ds->filePath);
-    if (ds->decryptionKey)
-        prefs->AddRaw(DECRYPTION_KEY_STR, ds->decryptionKey);
-
-    if (ds->openCount > 0)
-        prefs->Add(OPEN_COUNT_STR, ds->openCount);
-    if (ds->isPinned)
-        prefs->Add(IS_PINNED_STR, ds->isPinned);
-    if (ds->isMissing)
-        prefs->Add(IS_MISSING_STR, ds->isMissing);
-    if (globalPrefsOnly || ds->useGlobalValues) {
-        prefs->Add(USE_GLOBAL_VALUES_STR, TRUE);
-        return prefs;
-    }
-
-    const WCHAR *mode = DisplayModeConv::NameFromEnum(ds->displayMode);
-    prefs->Add(DISPLAY_MODE_STR, mode);
-    prefs->Add(PAGE_NO_STR, ds->pageNo);
-    prefs->Add(REPARSE_IDX_STR, ds->reparseIdx);
-    prefs->Add(ROTATION_STR, ds->rotation);
-    prefs->Add(SCROLL_X_STR, ds->scrollPos.x);
-    prefs->Add(SCROLL_Y_STR, ds->scrollPos.y);
-    prefs->Add(WINDOW_STATE_STR, ds->windowState);
-    prefs->Add(WINDOW_X_STR, ds->windowPos.x);
-    prefs->Add(WINDOW_Y_STR, ds->windowPos.y);
-    prefs->Add(WINDOW_DX_STR, ds->windowPos.dx);
-    prefs->Add(WINDOW_DY_STR, ds->windowPos.dy);
-
-    prefs->Add(TOC_VISIBLE_STR, ds->tocVisible);
-    prefs->Add(SIDEBAR_DX_STR, ds->sidebarDx);
 
     // BUG: 2140
     if (!IsValidZoom(ds->zoomVirtual)) {
@@ -292,20 +359,13 @@ static BencDict *DisplayState_Serialize(DisplayState *ds, bool globalPrefsOnly)
         CrashIf(true);
     }
 
-    ScopedMem<char> zoom(str::Format("%.4f", ds->zoomVirtual));
-    prefs->AddRaw(ZOOM_VIRTUAL_STR, zoom);
-
-    if (ds->tocState && ds->tocState->Count() > 0) {
-        BencArray *tocState = new BencArray();
-        if (tocState) {
-            for (size_t i = 0; i < ds->tocState->Count(); i++) {
-                tocState->Add(ds->tocState->At(i));
-            }
-            prefs->Add(TOC_STATE_STR, tocState);
-        }
-    }
-
-    return prefs;
+    // don't include common values in order to keep the preference file size down
+    uint32_t bitmask = (globalPrefsOnly || ds->useGlobalValues ? Ds_OnlyGlobal : Ds_NotGlobal) |
+                       (ds->openCount > 0 ? Ds_IsRecent : 0) |
+                       (ds->isPinned ? Ds_IsPinned : 0) |
+                       (ds->isMissing ? Ds_IsMissing : 0) |
+                       (ds->tocState && ds->tocState->Count() > 0 ? Ds_HasTocState : 0);
+    return SerializeStruct(gFilePrefInfo, dimof(gFilePrefInfo), ds, NULL, bitmask);
 }
 
 static BencArray *SerializeFileHistory(FileHistory& fileHistory, bool globalPrefsOnly)
@@ -361,6 +421,7 @@ static BencArray *SerializeFavData(FileFavs *fav)
 // for simplicity, favorites are serialized as an array. Element 2*i is
 // a name of the file, for favorite i, element 2*i+1 is an array of
 // page number integer/name string pairs
+// TODO: rework this serialization so that FavName::pageLabel can also be persisted
 static BencArray *SerializeFavorites(Favorites *favs)
 {
     BencArray *res = new BencArray();
@@ -404,132 +465,21 @@ Error:
     return data;
 }
 
-static void Retrieve(BencDict *dict, const char *key, int& value)
-{
-    BencInt *intObj = dict->GetInt(key);
-    if (intObj)
-        value = (int)intObj->Value();
-}
-
-static void Retrieve(BencDict *dict, const char *key, bool& value)
-{
-    BencInt *intObj = dict->GetInt(key);
-    if (intObj)
-        value = intObj->Value() != 0;
-}
-
-static const char *GetRawString(BencDict *dict, const char *key)
-{
-    BencString *string = dict->GetString(key);
-    if (string)
-        return string->RawValue();
-    return NULL;
-}
-
-static void RetrieveRaw(BencDict *dict, const char *key, char *& value)
-{
-    const char *string = GetRawString(dict, key);
-    if (string) {
-        char *str = str::Dup(string);
-        if (str) {
-            free(value);
-            value = str;
-        }
-    }
-}
-
-static void Retrieve(BencDict *dict, const char *key, WCHAR *& value)
-{
-    BencString *string = dict->GetString(key);
-    if (string) {
-        WCHAR *str = string->Value();
-        if (str) {
-            free(value);
-            value = str;
-        }
-    }
-}
-
-static void Retrieve(BencDict *dict, const char *key, float& value)
-{
-    const char *string = GetRawString(dict, key);
-    if (string) {
-        // note: this might round the value for files produced with versions
-        //       prior to 1.6 and on a system where the decimal mark isn't a '.'
-        //       (the difference should be hardly notable, though)
-        value = (float)atof(string);
-    }
-}
-
-static void Retrieve(BencDict *dict, const char *key, DisplayMode& value)
-{
-    BencString *string = dict->GetString(key);
-    if (string) {
-        ScopedMem<WCHAR> mode(string->Value());
-        if (mode)
-            DisplayModeConv::EnumFromName(mode, &value);
-    }
-}
-
-static void DeserializeToc(BencDict *dict, DisplayState *ds)
-{
-    BencArray *tocState = dict->GetArray(TOC_STATE_STR);
-    if (!tocState)
-        return;
-    size_t len = tocState->Length();
-    ds->tocState = new Vec<int>(len);
-    if (!ds->tocState)
-        return;
-
-    for (size_t i = 0; i < len; i++) {
-        BencInt *intObj = tocState->GetInt(i);
-        if (intObj)
-            ds->tocState->Append((int)intObj->Value());
-    }
-}
-
 static DisplayState * DeserializeDisplayState(BencDict *dict, bool globalPrefsOnly)
 {
     DisplayState *ds = new DisplayState();
     if (!ds)
         return NULL;
 
-    Retrieve(dict, FILE_STR, ds->filePath);
+    DeserializeStruct(gFilePrefInfo, dimof(gFilePrefInfo), ds, dict);
     if (!ds->filePath) {
         delete ds;
         return NULL;
     }
 
-    RetrieveRaw(dict, DECRYPTION_KEY_STR, ds->decryptionKey);
-    Retrieve(dict, OPEN_COUNT_STR, ds->openCount);
-    Retrieve(dict, IS_PINNED_STR, ds->isPinned);
-    Retrieve(dict, IS_MISSING_STR, ds->isMissing);
-    if (globalPrefsOnly) {
-        ds->useGlobalValues = TRUE;
-        return ds;
-    }
-
-    Retrieve(dict, DISPLAY_MODE_STR, ds->displayMode);
-    Retrieve(dict, PAGE_NO_STR, ds->pageNo);
-    Retrieve(dict, REPARSE_IDX_STR, ds->reparseIdx);
-    Retrieve(dict, ROTATION_STR, ds->rotation);
-    Retrieve(dict, SCROLL_X_STR, ds->scrollPos.x);
-    Retrieve(dict, SCROLL_Y_STR, ds->scrollPos.y);
-    Retrieve(dict, WINDOW_STATE_STR, ds->windowState);
-    Retrieve(dict, WINDOW_X_STR, ds->windowPos.x);
-    Retrieve(dict, WINDOW_Y_STR, ds->windowPos.y);
-    Retrieve(dict, WINDOW_DX_STR, ds->windowPos.dx);
-    Retrieve(dict, WINDOW_DY_STR, ds->windowPos.dy);
-    Retrieve(dict, TOC_VISIBLE_STR, ds->tocVisible);
-    Retrieve(dict, SIDEBAR_DX_STR, ds->sidebarDx);
-    Retrieve(dict, ZOOM_VIRTUAL_STR, ds->zoomVirtual);
-    Retrieve(dict, USE_GLOBAL_VALUES_STR, ds->useGlobalValues);
-
     // work-around https://code.google.com/p/sumatrapdf/issues/detail?id=2140
     if (!IsValidZoom(ds->zoomVirtual))
         ds->zoomVirtual = 100.f;
-
-    DeserializeToc(dict, ds);
 
     return ds;
 }
@@ -546,69 +496,11 @@ static void DeserializePrefs(const char *prefsTxt, SerializableGlobalPrefs& glob
     if (!global)
         goto Exit;
 
-    Retrieve(global, ENABLE_SPLIT_WINDOW_STR, globalPrefs.enableSplitWindow);
-    Retrieve(global, ENABLE_TAB_STR, globalPrefs.enableTab);
-    Retrieve(global, TAB_VISIBLE_STR, globalPrefs.tabVisible);
+    DeserializeStruct(gGlobalPrefInfo, dimof(gGlobalPrefInfo), &globalPrefs, global);
 
-    Retrieve(global, TOOLBAR_FOR_EACH_PANEL_STR, globalPrefs.toolbarForEachPanel);
-    Retrieve(global, SIDEBAR_FOR_EACH_PANEL_STR, globalPrefs.sidebarForEachPanel);
+    free(globalPrefs.prevSerialization);
+    globalPrefs.prevSerialization = global->Encode();
 
-    Retrieve(global, TOOLBAR_FOR_EACH_PANEL_NEW_STR, globalPrefs.toolbarForEachPanelNew);
-    Retrieve(global, SIDEBAR_FOR_EACH_PANEL_NEW_STR, globalPrefs.sidebarForEachPanelNew);
-
-    Retrieve(global, TOOLBAR_VISIBLE_STR, globalPrefs.toolbarVisible);
-    Retrieve(global, TOC_VISIBLE_STR, globalPrefs.tocVisible);
-    Retrieve(global, FAV_VISIBLE_STR, globalPrefs.favVisible);
-
-    Retrieve(global, SIDEBAR_DX_STR, globalPrefs.sidebarDx);
-    Retrieve(global, TOC_DY_STR, globalPrefs.tocDy);
-    Retrieve(global, PDF_ASSOCIATE_DONT_ASK_STR, globalPrefs.pdfAssociateDontAskAgain);
-    Retrieve(global, PDF_ASSOCIATE_ASSOCIATE_STR, globalPrefs.pdfAssociateShouldAssociate);
-    Retrieve(global, ESC_TO_EXIT_STR, globalPrefs.escToExit);
-    Retrieve(global, USE_SYS_COLORS_STR, globalPrefs.useSysColors);
-    Retrieve(global, NO_DOC_BG_COLOR_STR, globalPrefs.noDocBgColor);
-    Retrieve(global, DOC_TEXT_COLOR_STR, globalPrefs.docTextColor);
-    Retrieve(global, DOC_BG_COLOR_STR, globalPrefs.docBgColor);
-
-    Retrieve(global, TOC_BG_COLOR_STR, globalPrefs.tocBgColor);
-    Retrieve(global, FAV_BG_COLOR_STR, globalPrefs.favBgColor);
-
-    Retrieve(global, BG_COLOR_STR, globalPrefs.bgColor);
-    Retrieve(global, ENABLE_AUTO_UPDATE_STR, globalPrefs.enableAutoUpdate);
-    Retrieve(global, REMEMBER_OPENED_FILES_STR, globalPrefs.rememberOpenedFiles);
-    Retrieve(global, GLOBAL_PREFS_ONLY_STR, globalPrefs.globalPrefsOnly);
-    Retrieve(global, SHOW_RECENT_FILES_STR, globalPrefs.showStartPage);
-
-    Retrieve(global, DISPLAY_MODE_STR, globalPrefs.defaultDisplayMode);
-    Retrieve(global, ZOOM_VIRTUAL_STR, globalPrefs.defaultZoom);
-    Retrieve(global, WINDOW_STATE_STR, globalPrefs.windowState);
-
-    Retrieve(global, WINDOW_X_STR, globalPrefs.windowPos.x);
-    Retrieve(global, WINDOW_Y_STR, globalPrefs.windowPos.y);
-    Retrieve(global, WINDOW_DX_STR, globalPrefs.windowPos.dx);
-    Retrieve(global, WINDOW_DY_STR, globalPrefs.windowPos.dy);
-
-    Retrieve(global, INVERSE_SEARCH_COMMANDLINE, globalPrefs.inverseSearchCmdLine);
-    Retrieve(global, ENABLE_TEX_ENHANCEMENTS_STR, globalPrefs.enableTeXEnhancements);
-    Retrieve(global, VERSION_TO_SKIP_STR, globalPrefs.versionToSkip);
-    RetrieveRaw(global, LAST_UPDATE_STR, globalPrefs.lastUpdateTime);
-
-    // ensure language code is valid
-    const char *langCode = GetRawString(global, UI_LANGUAGE_STR);
-    langCode = trans::ValidateLangCode(langCode);
-    if (langCode)
-        globalPrefs.currLangCode = langCode;
-    else
-        globalPrefs.currLangCode = DEFAULT_LANGUAGE;
-
-    Retrieve(global, FWDSEARCH_OFFSET, globalPrefs.fwdSearch.offset);
-    Retrieve(global, FWDSEARCH_COLOR, globalPrefs.fwdSearch.color);
-    Retrieve(global, FWDSEARCH_WIDTH, globalPrefs.fwdSearch.width);
-    Retrieve(global, FWDSEARCH_PERMANENT, globalPrefs.fwdSearch.permanent);
-
-    Retrieve(global, CBX_RIGHT2LEFT, globalPrefs.cbxR2L);
-
-    Retrieve(global, OPEN_COUNT_WEEK_STR, globalPrefs.openCountWeek);
     int weekDiff = GetWeekCount() - globalPrefs.openCountWeek;
     globalPrefs.openCountWeek = GetWeekCount();
 
@@ -651,6 +543,153 @@ static void DeserializePrefs(const char *prefsTxt, SerializableGlobalPrefs& glob
 
 Exit:
     delete obj;
+}
+
+static void DeserializeAdvancedSettings(const WCHAR *filepath, SettingInfo *info, size_t count, void *structBase)
+{
+    char *base = (char *)structBase;
+    const WCHAR *section = NULL;
+    INT intValue, intValueDef;
+    ScopedMem<WCHAR> strValue;
+
+    for (size_t i = 0; i < count; i++) {
+        SettingInfo& meta = info[i];
+        CrashIf(meta.type != SType_Section && !section);
+        switch (meta.type) {
+        case SType_Section:
+            section = meta.name;
+            break;
+        case SType_Bool:
+            intValueDef = *(bool *)(base + meta.offset) ? 1 : 0;
+            intValue = GetPrivateProfileInt(section, meta.name, intValueDef, filepath);
+            *(bool *)(base + meta.offset) = intValue != 0;
+            break;
+        case SType_Color:
+            strValue.Set(ReadIniString(filepath, section, meta.name));
+            if (str::Parse(strValue, L"#%6x", &intValue))
+                *(COLORREF *)(base + meta.offset) = (COLORREF)intValue;
+            break;
+        case SType_Int:
+            intValueDef = *(int *)(base + meta.offset);
+            intValue = GetPrivateProfileInt(section, meta.name, intValueDef, filepath);
+            *(int *)(base + meta.offset) = intValue;
+            break;
+        case SType_String:
+            strValue.Set(ReadIniString(filepath, section, meta.name, L"\n"));
+            if (!str::Eq(strValue, L"\n"))
+                ((ScopedMem<WCHAR> *)(base + meta.offset))->Set(strValue.StealData());
+            break;
+        case SType_BoolVec:
+        case SType_ColorVec:
+        case SType_IntVec:
+        case SType_StringVec:
+            ScopedMem<WCHAR> sections(ReadIniString(filepath, section, NULL));
+            for (const WCHAR *name = sections; *name; name += str::Len(name) + 1) {
+                UINT idx;
+                if (str::Eq(str::Parse(name, L"%u.", &idx), meta.name)) {
+                    if (SType_BoolVec == meta.type) {
+                        bool value = GetPrivateProfileInt(section, name, 0, filepath) != 0;
+                        ((Vec<bool> *)(base + meta.offset))->InsertAt(idx, value);
+                    }
+                    else if (SType_ColorVec == meta.type) {
+                        strValue.Set(ReadIniString(filepath, section, name));
+                        if (str::Parse(strValue, L"#%6x", &intValue)) {
+                            COLORREF value = (COLORREF)intValue;
+                            ((Vec<COLORREF> *)(base + meta.offset))->InsertAt(idx, value);
+                        }
+                    }
+                    else if (SType_IntVec == meta.type) {
+                        intValue = GetPrivateProfileInt(section, name, 0, filepath);
+                        ((Vec<int> *)(base + meta.offset))->InsertAt(idx, intValue);
+                    }
+                    else {
+                        strValue.Set(ReadIniString(filepath, section, name));
+                        WStrVec *strVec = (WStrVec *)(base + meta.offset);
+                        // TODO: shouldn't InsertAt free the previous string?
+                        if (idx < strVec->Count())
+                            free(strVec->At(idx));
+                        strVec->InsertAt(idx, strValue.StealData());
+                    }
+                }
+            }
+            break;
+        }
+    }
+}
+
+static void SerializeAdvancedSettings(const WCHAR *filepath, SettingInfo *info, size_t count, void *structBase)
+{
+    char *base = (char *)structBase;
+    const WCHAR *section = NULL;
+    bool skipSection = false;
+    ScopedMem<WCHAR> strValue;
+
+    for (size_t i = 0; i < count; i++) {
+        SettingInfo& meta = info[i];
+        CrashIf(meta.type != SType_Section && !section);
+        if (meta.type != SType_Section && skipSection)
+            continue;
+        switch (meta.type) {
+        case SType_Section:
+            section = meta.name;
+            skipSection = !meta.offset;
+            break;
+        case SType_Bool:
+            strValue.Set(str::Format(L"%d", *(bool *)(base + meta.offset) ? 1 : 0));
+            WritePrivateProfileString(section, meta.name, strValue, filepath);
+            break;
+        case SType_Color:
+            strValue.Set(str::Format(L"#%06X", (int)*(COLORREF *)(base + meta.offset)));
+            WritePrivateProfileString(section, meta.name, strValue, filepath);
+            break;
+        case SType_Int:
+            strValue.Set(str::Format(L"%d", *(int *)(base + meta.offset)));
+            WritePrivateProfileString(section, meta.name, strValue, filepath);
+            break;
+        case SType_String:
+            WritePrivateProfileString(section, meta.name, ((ScopedMem<WCHAR> *)(base + meta.offset))->Get(), filepath);
+            break;
+        case SType_BoolVec:
+            {
+                Vec<bool> *vec = (Vec<bool> *)(base + meta.offset);
+                for (size_t n = 1; n < vec->Count(); n++) {
+                    ScopedMem<WCHAR> key(str::Format(L"%u.%s", n, meta.name));
+                    strValue.Set(str::Format(L"%d", vec->At(n) ? 1 : 0));
+                    WritePrivateProfileString(section, key, strValue, filepath);
+                }
+            }
+            break;
+        case SType_ColorVec:
+            {
+                Vec<COLORREF> *vec = (Vec<COLORREF> *)(base + meta.offset);
+                for (size_t n = 1; n < vec->Count(); n++) {
+                    ScopedMem<WCHAR> key(str::Format(L"%u.%s", n, meta.name));
+                    strValue.Set(str::Format(L"#%06X", (int)vec->At(n)));
+                    WritePrivateProfileString(section, key, strValue, filepath);
+                }
+            }
+            break;
+        case SType_IntVec:
+            {
+                Vec<int> *vec = (Vec<int> *)(base + meta.offset);
+                for (size_t n = 1; n < vec->Count(); n++) {
+                    ScopedMem<WCHAR> key(str::Format(L"%u.%s", n, meta.name));
+                    strValue.Set(str::Format(L"%d", vec->At(n)));
+                    WritePrivateProfileString(section, key, strValue, filepath);
+                }
+            }
+            break;
+        case SType_StringVec:
+            {
+                WStrVec *vec = (WStrVec *)(base + meta.offset);
+                for (size_t n = 1; n < vec->Count(); n++) {
+                    ScopedMem<WCHAR> key(str::Format(L"%u.%s", n, meta.name));
+                    WritePrivateProfileString(section, key, vec->At(n), filepath);
+                }
+            }
+            break;
+        }
+    }
 }
 
 namespace Prefs {
@@ -699,6 +738,14 @@ bool Save(const WCHAR *filepath, SerializableGlobalPrefs& globalPrefs,
 }
 
 }
+
+#define DM_AUTOMATIC_STR            "automatic"
+#define DM_SINGLE_PAGE_STR          "single page"
+#define DM_FACING_STR               "facing"
+#define DM_BOOK_VIEW_STR            "book view"
+#define DM_CONTINUOUS_STR           "continuous"
+#define DM_CONTINUOUS_FACING_STR    "continuous facing"
+#define DM_CONTINUOUS_BOOK_VIEW_STR "continuous book view"
 
 #define IS_STR_ENUM(enumName) \
     if (str::EqIS(txt, TEXT(enumName##_STR))) { \
@@ -758,9 +805,23 @@ bool EnumFromName(const WCHAR *txt, DisplayMode *mode)
 }
 
 /* Caller needs to free() the result. */
-WCHAR *GetPrefsFileName()
+static inline WCHAR *GetPrefsFileName()
 {
     return AppGenDataFilename(PREFS_FILE_NAME);
+}
+
+bool LoadPrefs()
+{
+    delete gFavorites;
+    gFavorites = new Favorites();
+
+    ScopedMem<WCHAR> path(GetPrefsFileName());
+    if (!file::Exists(path)) {
+        // guess the ui language on first start
+        gGlobalPrefs.currLangCode = trans::DetectUserLang();
+        return true;
+    }
+    return Prefs::Load(path, gGlobalPrefs, gFileHistory, gFavorites);
 }
 
 // called whenever global preferences change or a file is
@@ -817,7 +878,9 @@ bool ReloadPrefs()
     delete gFavorites;
     gFavorites = new Favorites();
 
-    Prefs::Load(path, gGlobalPrefs, gFileHistory, gFavorites);
+    bool ok = Prefs::Load(path, gGlobalPrefs, gFileHistory, gFavorites);
+    if (!ok)
+        return false;
 
     if (gWindows.Count() > 0 && gWindows.At(0)->IsAboutWindow()) {
         gWindows.At(0)->DeleteInfotip();
@@ -834,5 +897,42 @@ bool ReloadPrefs()
         UpdateDocumentColors();
     UpdateFavoritesTreeForAllWindows();
 
+    return true;
+}
+
+static WCHAR *GetAdvancedPrefsPath(bool createMissing=false)
+{
+    ScopedMem<WCHAR> path(AppGenDataFilename(ADV_PREFS_FILE_NAME));
+    if (file::Exists(path))
+        return path.StealData();
+    if (!IsRunningInPortableMode()) {
+        path.Set(GetExePath());
+        path.Set(path::GetDir(path));
+        path.Set(path::Join(path, ADV_PREFS_FILE_NAME));
+        if (file::Exists(path))
+            return path.StealData();
+    }
+    if (createMissing) {
+        // TODO: create from template with link to documentation?
+        return AppGenDataFilename(ADV_PREFS_FILE_NAME);
+    }
+    return NULL;
+}
+
+bool LoadAdvancedPrefs(AdvancedSettings *advancedPrefs)
+{
+    ScopedMem<WCHAR> path(GetAdvancedPrefsPath());
+    if (!path)
+        return false;
+    DeserializeAdvancedSettings(path, gAdvancedSettingsInfo, dimof(gAdvancedSettingsInfo), advancedPrefs);
+    return true;
+}
+
+bool SaveAdvancedPrefs(AdvancedSettings *advancedPrefs)
+{
+    ScopedMem<WCHAR> path(GetAdvancedPrefsPath(true));
+    if (!path)
+        return false;
+    SerializeAdvancedSettings(path, gAdvancedSettingsInfo, dimof(gAdvancedSettingsInfo), advancedPrefs);
     return true;
 }
