@@ -108,11 +108,6 @@
 #define ft_ftell    ftell
 #define ft_sprintf  sprintf
 
-/* cf. http://lists.gnu.org/archive/html/freetype/2006-09/msg00036.html */
-#ifdef _WIN32
-#undef ft_fopen
-#define ft_fopen    ft_fopen_win32
-#endif
 
   /**********************************************************************/
   /*                                                                    */

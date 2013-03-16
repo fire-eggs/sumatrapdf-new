@@ -297,7 +297,7 @@ Doc Doc::CreateFromFile(const WCHAR *filePath)
 
 namespace EngineManager {
 
-bool IsSupportedFile(const WCHAR *filePath, bool sniff, bool disableEbookEngines)
+bool IsSupportedFile(bool enableEbookEngines, const WCHAR *filePath, bool sniff)
 {
     return PdfEngine::IsSupportedFile(filePath, sniff)  ||
            XpsEngine::IsSupportedFile(filePath, sniff)  ||
@@ -307,7 +307,7 @@ bool IsSupportedFile(const WCHAR *filePath, bool sniff, bool disableEbookEngines
            CbxEngine::IsSupportedFile(filePath, sniff)  ||
            PsEngine::IsSupportedFile(filePath, sniff)   ||
            ChmEngine::IsSupportedFile(filePath, sniff)  ||
-           !disableEbookEngines && (
+           enableEbookEngines && (
                EpubEngine::IsSupportedFile(filePath, sniff) ||
                Fb2Engine::IsSupportedFile(filePath, sniff)  ||
                MobiEngine::IsSupportedFile(filePath, sniff) ||
@@ -319,7 +319,7 @@ bool IsSupportedFile(const WCHAR *filePath, bool sniff, bool disableEbookEngines
            );
 }
 
-BaseEngine *CreateEngine(const WCHAR *filePath, PasswordUI *pwdUI, DocType *typeOut, bool disableEbookEngines)
+BaseEngine *CreateEngine(bool enableEbookEngines, const WCHAR *filePath, PasswordUI *pwdUI, DocType *typeOut)
 {
     CrashIf(!filePath);
 
@@ -351,7 +351,7 @@ RetrySniffing:
     } else if (ChmEngine::IsSupportedFile(filePath, sniff) && engineType != Engine_Chm) {
         engine = ChmEngine::CreateFromFile(filePath);
         engineType = Engine_Chm;
-    } else if (disableEbookEngines) {
+    } else if (!enableEbookEngines) {
         // don't try to create any of the below ebook engines
     } else if (EpubEngine::IsSupportedFile(filePath, sniff) && engineType != Engine_Epub) {
         engine = EpubEngine::CreateFromFile(filePath);
@@ -384,7 +384,7 @@ RetrySniffing:
         sniff = true;
         goto RetrySniffing;
     }
-    CrashIf(engine && !IsSupportedFile(filePath, sniff, disableEbookEngines));
+    CrashIf(engine && !IsSupportedFile(enableEbookEngines, filePath, sniff));
 
     if (typeOut)
         *typeOut = engine ? engineType : Engine_None;

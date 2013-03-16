@@ -100,12 +100,12 @@ const WCHAR *ZipFile::GetFileName(size_t fileindex)
     return filenames.At(fileindex);
 }
 
-char *ZipFile::GetFileDataByName(const WCHAR *filename, size_t *len)
+char *ZipFile::GetFileData(const WCHAR *filename, size_t *len)
 {
-    return GetFileDataByIdx(GetFileIndex(filename), len);
+    return GetFileData(GetFileIndex(filename), len);
 }
 
-char *ZipFile::GetFileDataByIdx(size_t fileindex, size_t *len)
+char *ZipFile::GetFileData(size_t fileindex, size_t *len)
 {
     if (!uf)
         return NULL;
@@ -197,7 +197,7 @@ char *ZipFile::GetComment(size_t *len)
 bool ZipFile::UnzipFile(const WCHAR *filename, const WCHAR *dir, const WCHAR *unzippedName)
 {
     size_t len;
-    char *data = GetFileDataByName(filename, &len);
+    char *data = GetFileData(filename, &len);
     if (!data)
         return false;
 

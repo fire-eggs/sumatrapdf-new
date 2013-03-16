@@ -6,7 +6,6 @@
 
 #include "BaseEngine.h"
 #include "CssParser.h"
-#include "FileTransactions.h"
 #include "FileUtil.h"
 
 /*
@@ -15,25 +14,26 @@ storing file modifications for file formats which don't allow to save
 such modifications portably within the file structure (i.e. currently
 any format but PDF). The format uses CSS syntax for brevity:
 
-@meta { version: 2.3; filesize: 98765; timestamp: 2013-03-09T12:34:56Z }
-highlight { page: 1; rect: 10 10 100 100; color: #FF0000; opacity: 0.8 }
-annotType { page: no; rect: x y w h; color: #rrggbb; opacity: 1.0 }
-...
-@update { version: 2.3; filesize: 98765; timestamp: 2013-03-10T05:43:21Z }
+@meta { version: 2.3; filesize: 98765 }
+highlight { page: 1; rect: 10 10 100 100; color: #FFFF0000 }
+annotType { page: no; rect: x y w h; color: #aarrggbb }
 ...
 
 (Currently, the only supported modifications are adding annotations.)
 */
 
 #define SMX_FILE_EXT        L".smx"
-#define SMX_CURR_VERSION    "2.3a2"
+#define SMX_CURR_VERSION    "2.3a1"
 
 static inline bool IsSelector(const CssSelector *sel, const char *s) {
     return str::Len(s) == sel->sLen && str::StartsWithI(sel->s, s);
 }
 
-static Vec<PageAnnotation> *ParseFileModifications(const char *data, size_t len)
+Vec<PageAnnotation> *LoadFileModifications(const WCHAR *filepath)
 {
+    ScopedMem<WCHAR> modificationsPath(str::Join(filepath, SMX_FILE_EXT));
+    size_t len;
+    ScopedMem<char> data(file::ReadAll(modificationsPath, &len));
     if (!data)
         return NULL;
 
@@ -44,11 +44,8 @@ static Vec<PageAnnotation> *ParseFileModifications(const char *data, size_t len)
     if (!sel || !IsSelector(sel, "@meta") || parser.NextSelector())
         return NULL;
     const CssProperty *prop = parser.NextProperty();
-    if (!prop || Css_Version != prop->type) {
-        // don't check the version value - rather extend the format
-        // in a way to ensure backwards compatibility
+    if (!prop || Css_Version != prop->type || !str::Parse(prop->s, prop->sLen, SMX_CURR_VERSION "%$"))
         return NULL;
-    }
 
     Vec<PageAnnotation> *list = new Vec<PageAnnotation>();
     while (parser.NextRule()) {
@@ -66,7 +63,6 @@ static Vec<PageAnnotation> *ParseFileModifications(const char *data, size_t len)
         int pageNo = 0;
         RectT<float> rect;
         PageAnnotation::Color color;
-        float opacity = 1.0f;
         while ((prop = parser.NextProperty())) {
             switch (prop->type) {
             case Css_Page:
@@ -79,32 +75,20 @@ static Vec<PageAnnotation> *ParseFileModifications(const char *data, size_t len)
                     rect = RectT<float>();
                 break;
             case Css_Color:
-                int r, g, b;
-                if (str::Parse(prop->s, prop->sLen, "#%2x%2x%2x%$", &r, &g, &b))
+                int r, g, b, a;
+                if (str::Parse(prop->s, prop->sLen, "#%2x%2x%2x%2x%$", &a, &r, &g, &b))
+                    color = PageAnnotation::Color(r, g, b, a);
+                else if (str::Parse(prop->s, prop->sLen, "#%2x%2x%2x%$", &r, &g, &b))
                     color = PageAnnotation::Color(r, g, b);
-                break;
-            case Css_Opacity:
-                if (!str::Parse(prop->s, prop->sLen, "%f%$", &opacity))
-                    opacity = 1.0f;
                 break;
             }
         }
-        if (pageNo <= 0 || rect.IsEmpty() || 0 == color.a)
+        if (pageNo <= 0 || rect.IsEmpty())
             continue;
-        if (opacity != 1.0f)
-            color.a = (uint8_t)(color.a * opacity);
         list->Append(PageAnnotation(type, pageNo, rect.Convert<double>(), color));
     }
 
     return list;
-}
-
-Vec<PageAnnotation> *LoadFileModifications(const WCHAR *filepath)
-{
-    ScopedMem<WCHAR> modificationsPath(str::Join(filepath, SMX_FILE_EXT));
-    size_t len;
-    ScopedMem<char> data(file::ReadAll(modificationsPath, &len));
-    return ParseFileModifications(data, len);
 }
 
 bool SaveFileModifictions(const WCHAR *filepath, Vec<PageAnnotation> *list)
@@ -112,38 +96,15 @@ bool SaveFileModifictions(const WCHAR *filepath, Vec<PageAnnotation> *list)
     if (!list)
         return false;
 
-    ScopedMem<WCHAR> modificationsPath(str::Join(filepath, SMX_FILE_EXT));
     str::Str<char> data;
-    size_t offset = 0;
-
-    size_t len;
-    ScopedMem<char> prevData(file::ReadAll(modificationsPath, &len));
-    Vec<PageAnnotation> *prevList = ParseFileModifications(prevData, len);
-    if (prevList) {
-        // in the case of an update, append changed annotations to the existing ones
-        // (don't rewrite the existing ones in case they're by a newer version which
-        // added annotation types and properties this version doesn't know anything about)
-        for (; offset < prevList->Count() && prevList->At(offset) == list->At(offset); offset++);
-        CrashIf(offset != prevList->Count());
-        data.AppendAndFree(prevData.StealData());
-        data.Append("\r\n");
-        delete prevList;
-    }
-    else {
-        data.AppendFmt("/* SumatraPDF: modifications to \"%S\" */\r\n", path::GetBaseName(filepath));
-    }
-
-    data.AppendFmt("@%s { version: %s", prevList ? "update" : "meta", SMX_CURR_VERSION);
+    data.AppendFmt("/* SumatraPDF: modifications to \"%S\" */\r\n", path::GetBaseName(filepath));
+    data.AppendFmt("@meta { version: %s", SMX_CURR_VERSION);
     int64 size = file::GetSize(filepath);
     if (0 <= size && size <= UINT_MAX)
         data.AppendFmt("; filesize: %u", (UINT)size);
-    SYSTEMTIME time;
-    GetSystemTime(&time);
-    data.AppendFmt("; timestamp: %04d-%02d-%02dT%02d:%02d:%02dZ",
-        time.wYear, time.wMonth, time.wDay, time.wHour, time.wMinute, time.wSecond);
     data.Append(" }\r\n\r\n");
 
-    for (size_t i = offset; i < list->Count(); i++) {
+    for (size_t i = 0; i < list->Count(); i++) {
         PageAnnotation& annot = list->At(i);
         switch (annot.type) {
         case Annot_Highlight: data.Append("highlight"); break;
@@ -152,12 +113,12 @@ bool SaveFileModifictions(const WCHAR *filepath, Vec<PageAnnotation> *list)
         case Annot_Squiggly:  data.Append("squiggly "); break;
         default: continue;
         }
-        data.AppendFmt(" { page: %d; rect: %.2f %.2f %.2f %.2f; color: #%02X%02X%02X; opacity: %.2f }\r\n",
+        data.AppendFmt(" { page: %d; rect: %.2f %.2f %.2f %.2f; color: #%02X%02X%02X%02X }\r\n",
                        annot.pageNo, annot.rect.x, annot.rect.y,
-                       annot.rect.dx, annot.rect.dy, annot.color.r,
-                       annot.color.g, annot.color.b, annot.color.a / 255.f);
+                       annot.rect.dx, annot.rect.dy, annot.color.a,
+                       annot.color.r, annot.color.g, annot.color.b);
     }
 
-    FileTransaction trans;
-    return trans.WriteAll(modificationsPath, data.LendData(), data.Size()) && trans.Commit();
+    ScopedMem<WCHAR> modificationsPath(str::Join(filepath, SMX_FILE_EXT));
+    return file::WriteAll(modificationsPath, data.LendData(), data.Size());
 }

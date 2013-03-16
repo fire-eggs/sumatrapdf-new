@@ -75,7 +75,7 @@ static bool InstallCopyFiles()
         ScopedMem<WCHAR> filepathT(str::conv::FromUtf8(gPayloadData[i].filepath));
 
         size_t size;
-        ScopedMem<char> data(archive.GetFileDataByName(filepathT, &size));
+        ScopedMem<char> data(archive.GetFileData(filepathT, &size));
         if (!data) {
             NotifyFailed(_TR("Some files to be installed are damaged or missing"));
             return false;
@@ -434,6 +434,8 @@ static void OnButtonOptions()
     InvalidateRect(gHwndFrame, &rc.ToRECT(), FALSE);
 
     SetFocus(gHwndButtonOptions);
+
+    CreateButtonRunSumatra(gHwndFrame);
 }
 
 static int CALLBACK BrowseCallbackProc(HWND hwnd, UINT msg, LPARAM lParam, LPARAM lpData)

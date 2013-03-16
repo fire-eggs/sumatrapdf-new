@@ -53,15 +53,14 @@ protected:
     }
 
     T* MakeSpaceAt(size_t idx, size_t count) {
-        size_t newLen = max(len, idx) + count;
-        EnsureCap(newLen);
+        EnsureCap(len + count);
         T* res = &(els[idx]);
         if (len > idx) {
             T* src = els + idx;
             T* dst = els + idx + count;
             memmove(dst, src, (len - idx) * sizeof(T));
         }
-        len = newLen;
+        len += count;
         return res;
     }
 
@@ -447,10 +446,8 @@ class WStrList {
     size_t count;
     Allocator *allocator;
 
-    // variation of MurmurHash2 which deals with strings that are
+    // variation of murmur_hash2 which deals with strings that are
     // mostly ASCII and should be treated case independently
-    // TODO: I'm guessing would be much faster when done as MurmuserHash2I()
-    // with lower-casing done in-line, without the need to allocate memory for the copy
     static uint32_t GetQuickHashI(const WCHAR *str) {
         size_t len = str::Len(str);
         ScopedMem<char> data(AllocArray<char>(len));
@@ -458,7 +455,7 @@ class WStrList {
         for (char *dst = data; (c = *str++); dst++) {
             *dst = (c & 0xFF80) ? 0x80 : 'A' <= c && c <= 'Z' ? c + 'a' - 'A' : c;
         }
-        return MurmurHash2(data, len);
+        return murmur_hash2(data, len);
     }
 
 public:
