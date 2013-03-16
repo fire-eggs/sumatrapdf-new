@@ -12,9 +12,6 @@
 !if "$(CFG)"==""
 CFG=dbg
 !endif
-!if "$(PLATFORM)"==""
-PLATFORM=X86
-!endif
 
 # O is directory where object and binary files go
 !if "$(O)"==""
@@ -88,7 +85,7 @@ CFLAGSB = $(CFLAGSB) /EHs-c-
 # docs say /Ox better, my tests say /O2 better
 CFLAGSOPT = $(CFLAGSB) /O2 /D "NDEBUG"
 
-LDFLAGS = $(LDFLAGS) /nologo /DEBUG /RELEASE /opt:ref /opt:icf /MACHINE:$(PLATFORM)
+LDFLAGS = $(LDFLAGS) /nologo /DEBUG /RELEASE /opt:ref /opt:icf
 
 !if "$(CFG)"!="dbg"
 # /GL  : enable link-time code generation

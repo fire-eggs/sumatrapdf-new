@@ -66,7 +66,7 @@ bool CssPullParser::NextRule()
 {
     if (inProps)
         while (NextProperty());
-    CrashIf(inProps && currPos < end);
+    CrashIf(inProps);
     if (inlineStyle || currPos == end)
         return false;
 

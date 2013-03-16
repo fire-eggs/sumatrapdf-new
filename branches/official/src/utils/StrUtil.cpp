@@ -146,13 +146,17 @@ bool EndsWithI(const WCHAR *txt, const WCHAR *end)
 void ReplacePtr(char **s, const char *snew)
 {
     free(*s);
-    *s = str::Dup(snew);
+    *s = NULL;
+    if (snew)
+        *s = str::Dup(snew);
 }
 
 void ReplacePtr(WCHAR **s, const WCHAR *snew)
 {
     free(*s);
-    *s = str::Dup(snew);
+    *s = NULL;
+    if (snew)
+        *s = str::Dup(snew);
 }
 
 /* Concatenate 2 strings. Any string can be NULL.
@@ -1024,11 +1028,23 @@ WCHAR *ToPlainUrl(const WCHAR *url)
 
 namespace conv {
 
-size_t ToCodePageBuf(char *buf, int cbBufSize, const WCHAR *s, UINT cp)
+// not exactly a conversion, if it's ANSI, we just copy it verbatim
+size_t ToCodePageBuf(char *buf, size_t cbBufSize, const char *s, UINT cp)
+{
+    BufSet(buf, cbBufSize, s);
+    return Len(buf);
+}
+size_t FromCodePageBuf(char *buf, size_t cchBufSize, const char *s, UINT cp)
+{
+    BufSet(buf, cchBufSize, s);
+    return Len(buf);
+}
+
+size_t ToCodePageBuf(char *buf, size_t cbBufSize, const WCHAR *s, UINT cp)
 {
     return WideCharToMultiByte(cp, 0, s, -1, buf, cbBufSize, NULL, NULL);
 }
-size_t FromCodePageBuf(WCHAR *buf, int cchBufSize, const char *s, UINT cp)
+size_t FromCodePageBuf(WCHAR *buf, size_t cchBufSize, const char *s, UINT cp)
 {
     return MultiByteToWideChar(cp, 0, s, -1, buf, cchBufSize);
 }
@@ -1068,69 +1084,24 @@ static inline const char *StrEqWeird(const char *s, const char *toFind)
     }
 }
 
-// Returns NULL if s is the same as toFind
-// If they are not equal, returns end of s + 1
-static inline const char *StrEqWeird(const char *s, const WCHAR *toFind)
-{
-    WCHAR wc;
-    char c, c2;
-    for (;;) {
-        c = *s++;
-        if (0 == c) {
-            if (0 == *toFind)
-                return NULL;
-            return s;
-        }
-        wc = *toFind++;
-        if (wc > 255)
-            return NULL;
-        c2 = (char)wc;
-        if (c != c2) {
-            while (*s) {
-                s++;
-            }
-            return s + 1;
-        }
-        // were equal, check another char
-    }
-}
-
-// conceptually strings is an array of 0-terminated strings where,  laid
-// out sequentially in memory, terminated with a 0-length string
-// Returns index of toFind string in strings 
+// conceptually strings is an array of strings where strings are laid
+// out sequentially in memory
+// Returns index of toFind string in sttings array of size max
 // Returns -1 if string doesn't exist
-int StrToIdx(const char *strings, const char *toFind)
+int GetStrIdx(const char *strings, const char *toFind, int max)
 {
     const char *s = strings;
-    int idx = 0;
-    while (*s) {
+    for (int idx = 0; idx < max; idx++) {
         s = StrEqWeird(s, toFind);
         if (NULL == s)
             return idx;
-        ++idx;
-    }
-    return -1;
-}
-
-// optimization: allows finding WCHAR strings in char * strings array
-// without the need to convert first
-// returns -1 if toFind doesn't exist in strings, or its index if exists
-int StrToIdx(const char *strings, const WCHAR *toFind)
-{
-    const char *s = strings;
-    int idx = 0;
-    while (*s) {
-        s = StrEqWeird(s, toFind);
-        if (NULL == s)
-            return idx;
-        ++idx;
     }
     return -1;
 }
 
 // Given an index in the "array" of sequentially laid out strings,
 // returns a strings at that index.
-const char *IdxToStr(const char *strings, int idx)
+const char *GetByIdx(const char *strings, int idx)
 {
     const char *s = strings;
     while (idx > 0) {

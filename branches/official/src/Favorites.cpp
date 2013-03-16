@@ -19,18 +19,11 @@ using namespace Gdiplus;
 #include "WindowInfo.h"
 #include "WinUtil.h"
 
-int FileFavs::FindByPage(int pageNo, const WCHAR *pageLabel) const
+int FileFavs::FindByPage(int pageNo) const
 {
-    if (pageLabel) {
-        for (size_t i = 0; i < favNames.Count(); i++) {
-            if (str::Eq(favNames.At(i)->pageLabel, pageLabel))
-                return (int)i;
-        }
-    }
-    for (size_t i = 0; i < favNames.Count(); i++) {
+    for (size_t i = 0; i < favNames.Count(); i++)
         if (favNames.At(i)->pageNo == pageNo)
             return (int)i;
-    }
     return -1;
 }
 
@@ -82,16 +75,14 @@ bool FileFavs::Remove(int pageNo)
     return true;
 }
 
-void FileFavs::AddOrReplace(int pageNo, const WCHAR *name, const WCHAR *pageLabel)
+void FileFavs::AddOrReplace(int pageNo, const WCHAR *name)
 {
-    int idx = FindByPage(pageNo, pageLabel);
+    int idx = FindByPage(pageNo);
     if (idx != -1) {
-        FavName *fav = favNames.At(idx);
-        fav->ChangeName(name);
-        CrashIf(fav->pageLabel && !str::Eq(fav->pageLabel, pageLabel));
+        favNames.At(idx)->SetName(name);
         return;
     }
-    FavName *fn = new FavName(pageNo, name, pageLabel);
+    FavName *fn = new FavName(pageNo, name);
     favNames.Append(fn);
     favNames.Sort(SortByPageNo);
 }
@@ -174,10 +165,10 @@ bool Favorites::IsPageInFavorites(const WCHAR *filePath, int pageNo)
     return fav->Exists(pageNo);
 }
 
-void Favorites::AddOrReplace(const WCHAR *filePath, int pageNo, const WCHAR *name, const WCHAR *pageLabel)
+void Favorites::AddOrReplace(const WCHAR *filePath, int pageNo, const WCHAR *name)
 {
     FileFavs *fav = GetFavByFilePath(filePath, true);
-    fav->AddOrReplace(pageNo, name, pageLabel);
+    fav->AddOrReplace(pageNo, name);
 }
 
 void Favorites::Remove(const WCHAR *filePath, int pageNo)
@@ -219,8 +210,8 @@ static bool HasFavorites()
 // caller has to free() the result
 static WCHAR *FavReadableName(FavName *fn)
 {
-    ScopedMem<WCHAR> plainLabel(str::Format(L"%d", fn->pageNo));
-    const WCHAR *label = fn->pageLabel ? fn->pageLabel : plainLabel;
+    // TODO: save non-default page labels (cf. BaseEngine::GetPageLabel)
+    ScopedMem<WCHAR> label(str::Format(L"%d", fn->pageNo));
     if (fn->name) {
         ScopedMem<WCHAR> pageNo(str::Format(_TR("(page %s)"), label));
         return str::Join(fn->name, L" ", pageNo);
@@ -597,11 +588,8 @@ void AddFavorite(WindowInfo *win)
     if (!shouldAdd)
         return;
 
-    ScopedMem<WCHAR> plainLabel(str::Format(L"%d", pageNo));
-    bool needsLabel = !str::Eq(plainLabel, pageLabel);
-
     RememberFavTreeExpansionStateForAllWindows();
-    gFavorites->AddOrReplace(win->loadedFilePath, pageNo, name, needsLabel ? pageLabel.Get() : NULL);
+    gFavorites->AddOrReplace(win->loadedFilePath, pageNo, name);
     // expand newly added favorites by default
     FileFavs *fav = gFavorites->GetFavByFilePath(win->loadedFilePath);
     CrashIf(!fav || win->expandedFavorites.Contains(fav));

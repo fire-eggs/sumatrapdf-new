@@ -99,7 +99,6 @@ def fix_from_ver(ver, all_vers, all_vers_s3):
 	if len(to_delete) > 10: # safety check
 		print(to_delete)
 		print("won't delete because too many version: %d" % len(to_delete))
-		return
 
 	map(delete_ver, to_delete)
 
@@ -133,7 +132,7 @@ def fix():
 		if ver != prev_ver + 1:
 			missing_ver = prev_ver + 1
 			print("missing ver %d" % missing_ver)
-			fix_from_ver(missing_ver, all_vers, all_vers_s3)
+			fix_from_ver(missing_ver, all_vers)
 			return
 		prev_ver = ver
 	print("All are ok!")

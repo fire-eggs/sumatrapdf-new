@@ -192,15 +192,12 @@ static void BuildStringsIndexForLang(int langIdx)
     const char *s = GetTranslationsForLang(langIdx);
 #endif
     for (int i = 0; i < gStringsCount; i++) {
-        if (0 == *s)
+        size_t len = str::Len(s);
+        if (0 == len)
             gCurrLangStrings[i] = NULL;
         else
             gCurrLangStrings[i] = s;
-        // advance to the next string
-        while (*s) {
-            ++s;
-        }
-        ++s;
+        s = s + len + 1;
     }
 }
 
@@ -217,7 +214,7 @@ void SetCurrentLangByCode(const char *langCode)
     if (str::Eq(langCode, gCurrLangCode))
         return;
 
-    int idx = seqstrings::StrToIdx(gLangCodes, langCode);
+    int idx = seqstrings::GetStrIdx(gLangCodes, langCode, gLangsCount);
     CrashIf(-1 == idx);
     gCurrLangIdx = idx;
     gCurrLangCode = langCode;
@@ -226,7 +223,7 @@ void SetCurrentLangByCode(const char *langCode)
 
 const char *ValidateLangCode(const char *langCode)
 {
-    int idx = seqstrings::StrToIdx(gLangCodes, langCode);
+    int idx = seqstrings::GetStrIdx(gLangCodes, langCode, gLangsCount);
     if (-1 == idx)
         return NULL;
     return GetLangCodeByIdx(idx);
@@ -234,12 +231,12 @@ const char *ValidateLangCode(const char *langCode)
 
 const char *GetLangCodeByIdx(int idx)
 {
-    return seqstrings::IdxToStr(gLangCodes, idx);
+    return seqstrings::GetByIdx(gLangCodes, idx);
 }
 
 const char *GetLangNameByIdx(int idx)
 {
-    return seqstrings::IdxToStr(gLangNames, idx);
+    return seqstrings::GetByIdx(gLangNames, idx);
 }
 
 bool IsCurrLangRtl()
@@ -301,11 +298,6 @@ const WCHAR *GetTranslation(const char *s)
 
 void Destroy()
 {
-    if (!gCurrLangCode) {
-        // no need for clean-up if translations were never initialized
-        return;
-    }
-
     FreeTransCache();
     FreeMissingTranslations();
 }
