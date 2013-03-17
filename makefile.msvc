@@ -203,7 +203,7 @@ SUMATRA_OBJS = \
 
 INSTALLER_OBJS = \
 	$(OS)\Installer.obj $(INSTALLER_RES) $(OS)\CrashHandler.obj \
-	$(UTILS_LIB) $(LZMA_OBJS) \
+	$(UTILS_LIB) $(ZIP_OBJS) $(ZLIB_OBJS) $(LZMA_OBJS) \
 	$(OS)\Translations2.obj $(OS)\Trans_installer_txt.obj
 
 UNINSTALLER_OBJS = \
@@ -291,7 +291,7 @@ $(LIBMUPDF_DLL): $(MUPDF_LIB) $(LIBMUPDF_RES) $(LIBMUPDF_DEF)
 	$(LD) /DLL $(LDFLAGS) $(MUPDF_LIB) $(LIBMUPDF_RES) $(LIBS) /DEF:$(LIBMUPDF_DEF) /IMPLIB:$(LIBMUPDF_LIB) /PDB:$*.pdb /OUT:$@
 
 $(INSTALLER_RES): $(SRCDIR)\installer\Installer.rc $(SRCDIR)\installer\Resource.h $(SRCDIR)\Version.h
-	rc /r /fo$@ $(RC_FLAGS) /D "INSTALL_PAYLOAD_ZIP=..\..\$(O)\InstallerData2.zip" $(SRCDIR)\installer\Installer.rc
+	rc /r /fo$@ $(RC_FLAGS) /D "INSTALL_PAYLOAD_ZIP=..\..\$(O)\InstallerData.dat" $(SRCDIR)\installer\Installer.rc
 
 $(UNINSTALLER_RES): $(SRCDIR)\installer\Installer.rc $(SRCDIR)\installer\Resource.h $(SRCDIR)\Version.h
 	rc /r /fo$@ $(RC_FLAGS) /D "BUILD_UNINSTALLER" $(SRCDIR)\installer\Installer.rc
