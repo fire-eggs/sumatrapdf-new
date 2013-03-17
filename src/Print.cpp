@@ -176,7 +176,7 @@ static bool PrintToDevice(PrintData& pd, ProgressUpdateUI *progressUI=NULL, Abor
 
             StartPage(hdc);
 
-            SizeT<float> bSize = bounds.Size().Convert<float>();
+            geomutil::SizeT<float> bSize = bounds.Size().Convert<float>();
             float zoom = min((float)printable.dx / bSize.dx,
                              (float)printable.dy / bSize.dy);
             // use the correct zoom values, if the page fits otherwise
@@ -248,7 +248,7 @@ static bool PrintToDevice(PrintData& pd, ProgressUpdateUI *progressUI=NULL, Abor
 
             StartPage(hdc);
 
-            SizeT<float> pSize = engine.PageMediabox(pageNo).Size().Convert<float>();
+            geomutil::SizeT<float> pSize = engine.PageMediabox(pageNo).Size().Convert<float>();
             int rotation = 0;
             // Turn the document by 90 deg if it isn't in portrait mode
             if (pSize.dx > pSize.dy) {
@@ -278,7 +278,7 @@ static bool PrintToDevice(PrintData& pd, ProgressUpdateUI *progressUI=NULL, Abor
                 // make sure to fit all content into the printable area when scaling
                 // and the whole document page on the physical paper
                 RectD rect = engine.PageContentBox(pageNo, Target_Print);
-                RectT<float> cbox = engine.Transform(rect, pageNo, 1.0, rotation).Convert<float>();
+                geomutil::RectT<float> cbox = engine.Transform(rect, pageNo, 1.0, rotation).Convert<float>();
                 zoom = min((float)printable.dx / cbox.dx,
                        min((float)printable.dy / cbox.dy,
                        min((float)paperSize.dx / pSize.dx,
@@ -291,9 +291,9 @@ static bool PrintToDevice(PrintData& pd, ProgressUpdateUI *progressUI=NULL, Abor
                 offset.x += (int)(paperSize.dx - pSize.dx * zoom) / 2;
                 offset.y += (int)(paperSize.dy - pSize.dy * zoom) / 2;
                 // make sure that no content lies in the non-printable paper margins
-                RectT<float> onPaper(printable.x + offset.x + cbox.x * zoom,
-                                     printable.y + offset.y + cbox.y * zoom,
-                                     cbox.dx * zoom, cbox.dy * zoom);
+                geomutil::RectT<float> onPaper(printable.x + offset.x + cbox.x * zoom,
+                                               printable.y + offset.y + cbox.y * zoom,
+                                               cbox.dx * zoom, cbox.dy * zoom);
                 if (onPaper.x < printable.x)
                     offset.x += (int)(printable.x - onPaper.x);
                 else if (onPaper.BR().x > printable.BR().x)
@@ -585,10 +585,22 @@ void OnMenuPrint(WindowInfo *win, bool waitForCompletion)
     if (devMode)
         GlobalUnlock(pd.hDevMode);
 
-    if (!waitForCompletion)
+    // if a file is missing and the engine can't thus be cloned,
+    // we print using the original engine on the main thread
+    // so that the document can't be closed and the original engine
+    // unexpectedly deleted
+    // TODO: instead prevent closing the document so that printing
+    // can still happen on a separate thread and be interruptible
+    bool failedEngineClone = dm->engine && !data->engine;
+    if (failedEngineClone)
+        data->engine = dm->engine;
+
+    if (!waitForCompletion && !failedEngineClone)
         PrintToDeviceOnThread(win, data);
     else {
         PrintToDevice(*data);
+        if (failedEngineClone)
+            data->engine = NULL;
         delete data;
     }
 
