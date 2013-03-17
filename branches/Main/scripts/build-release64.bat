@@ -55,4 +55,4 @@ REM IF ERRORLEVEL 1 EXIT /B 1
 REM add our nasm.exe, mpress.exe and StripReloc.exe to the path
 SET PATH=%CD%\bin;%PATH%
 
-python -u -B scripts\build-release.py %var1% %var2% %var3% %var4% %var5% %var6% %var7% %var8% %var9%
+python -u -B scripts\build.py %var1% %var2% %var3% %var4% %var5% %var6% %var7% %var8% %var9%
