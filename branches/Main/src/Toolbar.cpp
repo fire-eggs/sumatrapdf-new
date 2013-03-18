@@ -188,11 +188,12 @@ void ShowOrHideToolbarGlobally()
             if (!gGlobalPrefs.toolbarForEachPanel) {
                 ClientRect rect(panel->WIN->hwndFrame);
                 SendMessage(panel->WIN->hwndFrame, WM_SIZE, 0, MAKELONG(rect.dx, rect.dy));
-                break;
             }
 
-            ClientRect rect(panel->hwndPanel);
-            SendMessage(panel->hwndPanel, WM_SIZE, 0, MAKELONG(rect.dx, rect.dy));
+            if (gGlobalPrefs.toolbarForEachPanel || panel->container->isAtTop) {
+                ClientRect rect(panel->hwndPanel);
+                SendMessage(panel->hwndPanel, WM_SIZE, 0, MAKELONG(rect.dx, rect.dy));
+            }
         }
     }
 }

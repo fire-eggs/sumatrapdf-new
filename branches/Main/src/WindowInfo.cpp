@@ -32,7 +32,7 @@ ContainerInfo::ContainerInfo(HWND hwnd) :
     hwndContainer(hwnd),
     parentContainer(NULL), container1(NULL), container2(NULL),
     panel(NULL),
-    hwndSplitter(NULL), isSplitVertical(true)
+    hwndSplitter(NULL), isSplitVertical(true), isAtTop(false)
 {
 
 }

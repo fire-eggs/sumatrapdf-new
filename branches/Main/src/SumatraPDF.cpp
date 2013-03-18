@@ -1394,6 +1394,7 @@ static WindowInfo* CreateWindowInfo()
     ////container->parentContainer = NULL;
     ////container->container1 = NULL;
     ////container->container2 = NULL;
+    container->isAtTop = true;
 
     PanelInfo *panel = new PanelInfo(hwndPanel);
     WIN->gPanel.Append(panel);
@@ -4799,6 +4800,9 @@ static void ResizeSidebar(WindowInfo *win)
     int toolbarDy = -1;
     int tabControlDy = 0;
 
+    if (!gGlobalPrefs.toolbarForEachPanel && gGlobalPrefs.toolbarVisible && win->panel->container->isAtTop)
+        toolbarDy = 0;
+
     if (gGlobalPrefs.toolbarVisible && (gGlobalPrefs.toolbarForEachPanel == gGlobalPrefs.sidebarForEachPanel) && !win->fullScreen && !win->presentation)
         toolbarDy = WindowRect(win->toolBar()->hwndReBar).dy;
 
@@ -4946,6 +4950,7 @@ static LRESULT CALLBACK WndProcFavSplitter(HWND hwnd, UINT message, WPARAM wPara
     }
     return DefWindowProc(hwnd, message, wParam, lParam);
 }
+
 static void PanelSplitterOnPaint(HWND hwnd)
 {
     ContainerInfo *container = FindContainerInfoByHwnd(hwnd);
@@ -4988,11 +4993,13 @@ static void PanelSplitterOnPaint(HWND hwnd)
         rc.bottom = dy;
         FillRect(hdc, &rc, gBrushPanelSplitterEdgeBg);
 
-        //rc.left = 0;
-        //rc.right = dx;
-        //rc.top = 0;
-        //rc.bottom = 1;
-        //FillRect(hdc, &rc, gBrushSepLineBg);
+        if (!gGlobalPrefs.toolbarForEachPanel && gGlobalPrefs.toolbarVisible && container->isAtTop) {
+            rc.left = 0;
+            rc.right = dx;
+            rc.top = 0;
+            rc.bottom = 1;
+            FillRect(hdc, &rc, gBrushSepLineBg);
+        }
     }
 
     EndPaint(hwnd, &ps);
@@ -5208,6 +5215,9 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible, boo
     int toolbarDy = -1;
     int tabControlDy = 0;
 
+    if (!gGlobalPrefs.toolbarForEachPanel && gGlobalPrefs.toolbarVisible && win->panel->container->isAtTop)
+        toolbarDy = 0;
+
     if (gGlobalPrefs.toolbarVisible && (gGlobalPrefs.toolbarForEachPanel == gGlobalPrefs.sidebarForEachPanel) && !win->fullScreen && !win->presentation)
         toolbarDy = WindowRect(win->toolBar()->hwndReBar).dy;
 
@@ -5299,11 +5309,17 @@ void SplitPanel(ContainerInfo *container, WCHAR const *direction)
 
     if (str::Eq(direction, L"Vertically")) {
         container->isSplitVertical = true;
+        if (container->isAtTop) {
+            container->container1->isAtTop = true;
+            container->container2->isAtTop = true;
+        }
         SetWindowPos(container->container1->hwndContainer, NULL, 0, 0, dx_1, dy, SWP_NOZORDER);
         SetWindowPos(container->hwndSplitter, NULL, dx_1, 0, SPLITTER_DX, dy, SWP_NOZORDER);
         SetWindowPos(container->container2->hwndContainer, NULL, dx_1 + SPLITTER_DX, 0, dx - dx_1 - SPLITTER_DX, dy, SWP_NOZORDER);
     } else if (str::Eq(direction, L"Horizontally")) {
         container->isSplitVertical = false;
+        if (container->isAtTop)
+            container->container1->isAtTop = true;
         SetWindowPos(container->container1->hwndContainer, NULL, 0, 0, dx, dy_1, SWP_NOZORDER);
         SetWindowPos(container->hwndSplitter, NULL, 0, dy_1, dx, SPLITTER_DY, SWP_NOZORDER);
         SetWindowPos(container->container2->hwndContainer, NULL, 0, dy_1 + SPLITTER_DY, dx, dy - dy_1 - SPLITTER_DY, SWP_NOZORDER);
@@ -5773,6 +5789,10 @@ static void ContainerOnSize(ContainerInfo* container, int dx, int dy)
 static void PanelOnSize(PanelInfo* panel, int dx, int dy)
 {
     int rebBarDy = -1;
+
+    if (!gGlobalPrefs.toolbarForEachPanel && gGlobalPrefs.toolbarVisible && panel->container->isAtTop)
+        rebBarDy = 0;
+
     if (gGlobalPrefs.toolbarForEachPanel && gGlobalPrefs.toolbarVisible && !(panel->win->presentation || panel->win->fullScreen)) {
         SetWindowPos(panel->win->toolBar()->hwndReBar, NULL, 0, 0, dx, 0, SWP_NOZORDER);
         rebBarDy = WindowRect(panel->toolBar->hwndReBar).dy;
@@ -6033,9 +6053,21 @@ static LRESULT PanelOnCommand(PanelInfo *panel, HWND hwnd, UINT msg, WPARAM wPar
 
 static void PanelOnPaint(PanelInfo& panel)
 {
-    int rebBarDy = WindowRect(panel.win->toolBar()->hwndReBar).dy;
-    if (!gGlobalPrefs.toolbarVisible || !gGlobalPrefs.toolbarForEachPanel)
-        rebBarDy = -1;
+    //int rebBarDy = WindowRect(panel.win->toolBar()->hwndReBar).dy;
+    //if (!gGlobalPrefs.toolbarVisible || !gGlobalPrefs.toolbarForEachPanel)
+    //    rebBarDy = -1;
+
+    int rebBarDy = -1;
+
+    if (!gGlobalPrefs.toolbarForEachPanel && gGlobalPrefs.toolbarVisible && panel.container->isAtTop)
+        rebBarDy = 0;
+
+    if (gGlobalPrefs.toolbarForEachPanel && gGlobalPrefs.toolbarVisible && !(panel.win->presentation || panel.win->fullScreen))
+        rebBarDy = WindowRect(panel.toolBar->hwndReBar).dy;
+
+    int tabDy = 0;
+    if (gGlobalPrefs.tabVisible)
+        tabDy = TAB_CONTROL_DY;
 
     int dx = ClientRect(panel.hwndPanel).dx;
     int dy = ClientRect(panel.hwndPanel).dy;
@@ -6047,8 +6079,8 @@ static void PanelOnPaint(PanelInfo& panel)
 
     rc.left = 0;
     rc.right = dx;
-    rc.top = rebBarDy + TAB_CONTROL_DY;
-    rc.bottom = rebBarDy + TAB_CONTROL_DY + 1;
+    rc.top = rebBarDy + tabDy;
+    rc.bottom = rebBarDy + tabDy + 1;
     FillRect(hdc, &rc, gBrushSepLineBg);
 
     EndPaint(panel.hwndPanel, &ps);

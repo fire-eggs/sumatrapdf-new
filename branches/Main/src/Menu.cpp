@@ -381,6 +381,7 @@ void MenuUpdateStateForWindow(WindowInfo* win) {
 
     win::menu::SetChecked(win->menu(), IDM_FAV_TOGGLE, gGlobalPrefs.favVisible);
     win::menu::SetChecked(win->menu(), IDM_VIEW_SHOW_HIDE_TOOLBAR, gGlobalPrefs.toolbarVisible);
+    win::menu::SetEnabled(win->menu(), IDM_VIEW_SHOW_HIDE_TAB, gGlobalPrefs.enableTab);
     win::menu::SetChecked(win->menu(), IDM_VIEW_SHOW_HIDE_TAB, gGlobalPrefs.tabVisible);
     MenuUpdateDisplayMode(win);
     MenuUpdateZoom(win);
