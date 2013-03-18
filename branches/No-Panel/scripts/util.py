@@ -1,6 +1,4 @@
-import os, re, subprocess, sys, hashlib, string, time, types
-# zipfile doesn't support ZIP_BZIP2 compression in Python 2.*
-import zipfile2 as zipfile
+import os, re, subprocess, sys, hashlib, string, time, types, zipfile
 
 def log(s):
   print(s)
@@ -53,6 +51,10 @@ def file_sha1(fp):
   m = hashlib.sha1()
   m.update(data)
   return m.hexdigest()
+
+def delete_file(path):
+  if os.path.exists(path):
+    os.remove(path)
 
 def create_dir(d):
   if not os.path.exists(d): os.makedirs(d)

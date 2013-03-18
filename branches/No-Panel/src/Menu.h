@@ -40,7 +40,7 @@ void  UpdateMenu(WindowInfo *win, HMENU m);
 void  UpdateMenu(EbookWindow *win, HMENU m);
 
 /* Define if you want to display an additional debug menu */
-#ifdef DEBUG
+#if defined(DEBUG)
 #define SHOW_DEBUG_MENU_ITEMS
 #endif
 
