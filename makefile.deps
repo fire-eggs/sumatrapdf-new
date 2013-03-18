@@ -438,7 +438,7 @@ $(OS)\Tab.obj: $B\src\ChmEngine.h $B\src\DisplayModel.h $B\src\DisplayState.h
 $(OS)\Tab.obj: $B\src\Doc.h $B\src\FileHistory.h $B\src\Menu.h
 $(OS)\Tab.obj: $B\src\resource.h $B\src\Sidebar.h $B\src\SumatraPDF.h
 $(OS)\Tab.obj: $B\src\SumatraWindow.h $B\src\Tab.h $B\src\TableOfContents.h
-$(OS)\Tab.obj: $B\src\Translations2.h $B\src\utils\Allocator.h $B\src\utils\BaseUtil.h
+$(OS)\Tab.obj: $B\src\Translations.h $B\src\utils\Allocator.h $B\src\utils\BaseUtil.h
 $(OS)\Tab.obj: $B\src\utils\FileUtil.h $B\src\utils\GdiPlusUtil.h $B\src\utils\GeomUtil.h
 $(OS)\Tab.obj: $B\src\utils\Scoped.h $B\src\utils\StrUtil.h $B\src\utils\Vec.h
 $(OS)\Tab.obj: $B\src\utils\WinUtil.h $B\src\Version.h $B\src\WindowInfo.h

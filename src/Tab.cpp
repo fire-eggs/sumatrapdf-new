@@ -13,7 +13,7 @@ using namespace Gdiplus;
 #include "Sidebar.h"
 #include "SumatraPDF.h"
 #include "TableOfContents.h" // Not good.
-#include "Translations2.h"
+#include "Translations.h"
 #include "WindowInfo.h"
 #include "WinUtil.h"
 
