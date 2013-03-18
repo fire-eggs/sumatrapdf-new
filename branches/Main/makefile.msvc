@@ -82,11 +82,11 @@ CFLAGS = $(CFLAGS) /D "DEBUG" /D "_DEBUG"
 SUMATRA_CFLAGS = $(CFLAGS) $(EXTCFLAGS) \
 	/I$(SRCDIR) /I$(SRCDIR)/utils /I$(SRCDIR)/mui /I$(MUPDF_DIR)\fitz /I$(MUPDF_DIR)\pdf \
 	/I$(MUPDF_DIR)\xps /I$(EXTDIR)/synctex /I$(ZLIB_DIR) \
-	/I$(ZLIB_DIR)/minizip /I$(EXTDIR)/libdjvu /I$(EXTDIR)/CHMLib/src
+	/I$(ZLIB_DIR)/minizip /I$(EXTDIR)/libdjvu /I$(EXTDIR)/CHMLib/src \
+	/I$(EXTDIR)/lzma/C
 
 INSTALLER_CFLAGS = $(CFLAGS) $(EXTCFLAGS) \
-	/I$(SRCDIR)/utils /I$(SRCDIR)/installer /I$(SRCDIR) /I$(ZLIB_DIR) /I$(ZLIB_DIR)/minizip \
-	/I$(EXTDIR)/lzma/C
+	/I$(SRCDIR)/utils /I$(SRCDIR)/installer /I$(SRCDIR) /I$(ZLIB_DIR) /I$(EXTDIR)/lzma/C
 
 UNINSTALLER_CFLAGS = $(CFLAGS) $(EXTCFLAGS) \
 	/I$(SRCDIR)/utils /I$(SRCDIR)/installer /I$(SRCDIR) /D "BUILD_UNINSTALLER"
@@ -200,20 +200,23 @@ MAIN_UI_OBJS = \
 	$(OS)\Selection.obj $(OS)\FileModifications.obj $(OS)\Sidebar.obj \
 	$(OS)\EbookControls.obj $(OS)\EbookController.obj $(OS)\EbookWindow.obj \
 	$(OS)\Tester.obj $(OS)\Regress.obj \
-	$(OS)\Translations2.obj $(OS)\Trans_sumatra_txt.obj
+	$(OS)\Translations.obj $(OS)\Trans_sumatra_txt.obj
 
 SUMATRA_OBJS = \
-	$(OS)\SumatraPDF.obj $(SUMATRA_RES) $(MAIN_UI_LIB) \
+	$(OS)\SumatraPDF.obj \
+	$(OU)\LzmaSimpleArchive.obj $(LZMA_OBJS) \
+	$(SUMATRA_RES) $(MAIN_UI_LIB) \
 	$(ENGINES_LIB) $(UTILS_LIB) $(MUI_LIB) $(SYNCTEX_OBJS)
 
 INSTALLER_OBJS = \
 	$(OS)\Installer.obj $(INSTALLER_RES) $(OS)\CrashHandler.obj \
-	$(UTILS_LIB) $(ZIP_OBJS) $(ZLIB_OBJS) $(LZMA_OBJS) \
-	$(OS)\Translations2.obj $(OS)\Trans_installer_txt.obj
+	$(UTILS_LIB) $(ZIP_OBJS) $(ZLIB_OBJS) \
+	$(OU)\LzmaSimpleArchive.obj $(LZMA_OBJS) \
+	$(OS)\Translations.obj $(OS)\Trans_installer_txt.obj
 
 UNINSTALLER_OBJS = \
 	$(OS)\Uninstaller.obj $(UNINSTALLER_RES) $(UTILS_LIB) \
-	$(OS)\Translations2.obj $(OS)\Trans_installer_txt.obj
+	$(OS)\Translations.obj $(OS)\Trans_installer_txt.obj
 
 PDFFILTER_OBJS = \
 	$(ODLL)\PdfFilterDll.obj $(ODLL)\CPdfFilter.obj $(PDFFILTER_RES) \

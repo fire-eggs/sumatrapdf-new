@@ -156,7 +156,7 @@
     <ClCompile Include="..\src\Toolbar.cpp">
       <Filter>sumatra</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\Translations2.cpp">
+    <ClCompile Include="..\src\Translations.cpp">
       <Filter>sumatra</Filter>
     </ClCompile>
     <ClCompile Include="..\src\Trans_sumatra_txt.cpp">
@@ -334,6 +334,9 @@
       <Filter>utils</Filter>
     </ClCompile>
     <ClCompile Include="..\src\utils\JsonParser_ut.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\utils\LzmaSimpleArchive.cpp">
       <Filter>utils</Filter>
     </ClCompile>
     <ClCompile Include="..\src\utils\NoFreeAllocator.cpp">
@@ -917,7 +920,7 @@
     <ClInclude Include="..\src\Toolbar.h">
       <Filter>sumatra</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\Translations2.h">
+    <ClInclude Include="..\src\Translations.h">
       <Filter>sumatra</Filter>
     </ClInclude>
     <ClInclude Include="..\src\Version.h">
@@ -1086,6 +1089,9 @@
       <Filter>utils</Filter>
     </ClInclude>
     <ClInclude Include="..\src\utils\JsonParser.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\utils\LzmaSimpleArchive.h">
       <Filter>utils</Filter>
     </ClInclude>
     <ClInclude Include="..\src\utils\NoFreeAllocator.h">
