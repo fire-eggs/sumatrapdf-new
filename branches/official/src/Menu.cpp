@@ -15,7 +15,7 @@
 #include "SumatraAbout.h"
 #include "SumatraDialogs.h"
 #include "SumatraPDF.h"
-#include "Translations2.h"
+#include "Translations.h"
 #include "WindowInfo.h"
 #include "WinUtil.h"
 
@@ -152,8 +152,8 @@ static MenuDef menuDefDebug[] = {
     { "Toggle ebook UI",                    IDM_DEBUG_EBOOK_UI,         MF_NO_TRANSLATE },
     { "Mui debug paint",                    IDM_DEBUG_MUI,              MF_NO_TRANSLATE },
     { "Annotation from Selection",          IDM_DEBUG_ANNOTATION,       MF_NO_TRANSLATE },
-//    { SEP_ITEM,                             0,                          0 },
-//    { "Crash me",                           IDM_DEBUG_CRASH_ME,         MF_NO_TRANSLATE },
+    { SEP_ITEM,                             0,                          0 },
+    { "Crash me",                           IDM_DEBUG_CRASH_ME,         MF_NO_TRANSLATE },
 };
 
 static MenuDef menuDefDebugEbooks[] = {
