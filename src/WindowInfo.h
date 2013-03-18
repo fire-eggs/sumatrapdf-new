@@ -102,6 +102,7 @@ public:
     HWND            hwndSplitter;
 
     bool            isSplitVertical;
+    bool            isAtTop;
 };
 
 /* Describes the panel information.
