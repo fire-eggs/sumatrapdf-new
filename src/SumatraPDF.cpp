@@ -47,7 +47,7 @@ using namespace Gdiplus;
 #include "ThreadUtil.h"
 #include "Toolbar.h"
 #include "Touch.h"
-#include "Translations2.h"
+#include "Translations.h"
 #include "UITask.h"
 #include "Version.h"
 #include "WindowInfo.h"
@@ -1556,7 +1556,7 @@ static WindowInfo* LoadDocumentOld(LoadArgs& args)
 
     HwndPasswordUI pwdUI(win->hwndFrame);
     args.fileName = fullPath;
-    bool loaded = LoadDocIntoWindow(args, &pwdUI, NULL, isNewWindow, 
+    bool loaded = LoadDocIntoWindow(args, &pwdUI, NULL, isNewWindow,
         true /* allowFailure */, true /* placeWindow */);
 
     if (gPluginMode) {
@@ -2376,7 +2376,7 @@ static void OnMouseLeftButtonUp(WindowInfo& win, int x, int y, WPARAM key)
                 win.RedrawAll(true);
             } else if (!str::StartsWithI(url, L"http:") &&
                        !str::StartsWithI(url, L"https:") &&
-                       !str::StartsWithI(url, L"mailto:")) 
+                       !str::StartsWithI(url, L"mailto:"))
             {
                 LoadArgs args(url, &win);
                 LoadDocument(args);
@@ -3049,9 +3049,9 @@ static void OnMenuSaveBookmark(WindowInfo& win)
     if (!GetSaveFileName(&ofn))
         return;
 
-    ScopedMem<WCHAR> filename(str::Dup(dstFileName));
+    ScopedMem<WCHAR> fileName(str::Dup(dstFileName));
     if (!str::EndsWithI(dstFileName, L".lnk"))
-        filename.Set(str::Join(dstFileName, L".lnk"));
+        fileName.Set(str::Join(dstFileName, L".lnk"));
 
     ScrollState ss = win.dm->GetScrollState();
     const WCHAR *viewMode = DisplayModeConv::NameFromEnum(win.dm->GetDisplayMode());
@@ -3070,7 +3070,7 @@ static void OnMenuSaveBookmark(WindowInfo& win)
     ScopedMem<WCHAR> desc(str::Format(_TR("Bookmark shortcut to page %s of %s"),
                           label, path::GetBaseName(win.dm->FilePath())));
 
-    CreateShortcut(filename, exePath, args, desc, 1);
+    CreateShortcut(fileName, exePath, args, desc, 1);
 }
 
 #if 0

@@ -1,9 +1,41 @@
 """
 Builds a (pre)release build of SumatraPDF, including the installer,
 and optionally uploads it to s3.
+
+Terms:
+ static build  - SumatraPDF.exe single executable with mupdf code statically
+                 linked in
+ library build - SumatraPDF.exe executable that uses libmupdf.dll
+
+Building release version:
+  * extract version from Version.h
+  * build with nmake, sending version as argument
+  * build an installer
+  * upload to s3 kjkpub bucket. Uploaded files:
+      sumatrapdf/rel/SumatraPDF-<ver>.exe
+         uncompressed portable executable, for archival
+      sumatrapdf/rel/SumatraPDF-<ver>.pdb.zip
+         pdb symbols for libmupdf.dll, and Sumatra's static and library builds
+      sumatrapdf/rel/SumatraPDF-<ver>-install.exe
+         installer for library build
+  * file sumatrapdf/sumpdf-latest.txt must be manually updated
+
+Building pre-release version:
+  * get svn version
+  * build with nmake, sending svn version as argument
+  * build an installer
+  * upload to s3 kjkpub bucket. Uploaded files:
+      sumatrapdf/prerel/SumatraPDF-prerelease-<svnrev>.exe
+        static, portable executable
+      sumatrapdf/prerel/SumatraPDF-prerelease-<svnrev>.pdb.zip
+         pdb symbols for libmupdf.dll and Sumatra's static and library builds
+      sumatrapdf/prerel/SumatraPDF-prerelease-<svnrev>-install.exe
+         installer for library build
+      sumatrapdf/sumatralatest.js
+      sumatrapdf/sumpdf-prerelease-latest.txt
 """
 
-import os, shutil, sys, time, re, struct, s3
+import os, shutil, sys, time, re, struct, types, s3, util
 from util import test_for_flag, run_cmd_throw
 from util import verify_started_in_right_directory, parse_svninfo_out, log
 from util import extract_sumatra_version, zip_file
@@ -12,41 +44,8 @@ import trans_upload, trans_download
 from binascii import crc32
 
 def usage():
-  print("build-release.py [-upload][-uploadtmp][-test][-test-installer][-prerelease][-platform=X64]")
+  print("build.py [-upload][-uploadtmp][-test][-test-installer][-prerelease][-platform=X64]")
   sys.exit(1)
-
-# Terms:
-#  static build  - SumatraPDF.exe single executable with mupdf code statically
-#                  linked in
-#  library build - SumatraPDF.exe executable that uses libmupdf.dll
-
-# Building release version:
-#   * extract version from Version.h
-#   * build with nmake, sending version as argument
-#   * build an installer
-#   * upload to s3 kjkpub bucket. Uploaded files:
-#       sumatrapdf/rel/SumatraPDF-<ver>.exe
-#          uncompressed portable executable, for archival
-#       sumatrapdf/rel/SumatraPDF-<ver>.pdb.zip
-#          pdb symbols for libmupdf.dll, and Sumatra's static and library builds
-#       sumatrapdf/rel/SumatraPDF-<ver>-install.exe
-#          installer for library build
-#
-#   * file sumatrapdf/sumpdf-latest.txt must be manually updated
-
-# Building pre-release version:
-#   * get svn version
-#   * build with nmake, sending svn version as argument
-#   * build an installer
-#   * upload to s3 kjkpub bucket. Uploaded files:
-#       sumatrapdf/prerel/SumatraPDF-prerelease-<svnrev>.exe
-#          static, portable executable
-#       sumatrapdf/prerel/SumatraPDF-prerelease-<svnrev>.pdb.zip
-#          pdb symbols for libmupdf.dll and Sumatra's static and library builds
-#       sumatrapdf/prerel/SumatraPDF-prerelease-<svnrev>-install.exe
-#          installer for library build
-#       sumatrapdf/sumatralatest.js
-#       sumatrapdf/sumpdf-prerelease-latest.txt
 
 def lzma_compress(src, dst):
   d = os.path.dirname(__file__)
@@ -61,46 +60,97 @@ def copy_to_dst_dir(src_path, dst_dir):
 def is_more_recent(src_path, dst_path):
   return os.path.getmtime(src_path) > os.path.getmtime(dst_path)
 
+def get_real_name(f):
+  if type(f) in [types.ListType, types.TupleType]:
+    assert len(f) == 2
+    return f[0]
+  return f
+
+def get_in_archive_name(f):
+  if type(f) in [types.ListType, types.TupleType]:
+    assert len(f) == 2
+    return f[1]
+  return f
+
+g_lzma_archive_magic_id = 0x4c7a5341
+
+def get_file_crc32(path):
+  with open(path, "rb") as fo:
+    d = fo.read()
+  checksum = crc32(d, 0)
+  return checksum & 0xFFFFFFFF
+
+"""
+Create a simple lzma archive in format:
+
+u32   magic_id 0x4c7a5341 ("LzSA' for "Lzma Simple Archive")
+u32   number of files
+for each file:
+  u32        file size uncompressed
+  u32        file size compressed
+  u32        crc32 checksum of compressed data
+  FILETIME   last modification time in Windows's FILETIME format
+  char[...]  file name, 0-terminated
+u32   crc32 checksum of the header (i.e. data so far)
+for each file:
+  compressed file data
+
+Integers are little-endian.
+
+You can over-write the file name in the archive by using list instead of
+a string in files: ["foo.txt", "bar.txt"] will add file "foo.txt" under name
+"bar.txt"
+"""
+def create_lzma_archive(dir, archiveName, files):
+  for f in files:
+    f = get_real_name(f)
+    src = os.path.join(dir, f)
+    dst = src + ".lzma"
+    if not os.path.exists(dst) or is_more_recent(src, dst):
+      lzma_compress(src, dst)
+
+  d = struct.pack("<II", g_lzma_archive_magic_id, len(files))
+  for f in files:
+    real_name = get_real_name(f)
+    path = os.path.join(dir, real_name)
+    d += struct.pack("<I", os.path.getsize(path))
+    d += struct.pack("<I", os.path.getsize(path + ".lzma"))
+    d += struct.pack("<I", get_file_crc32(path + ".lzma"))
+    d += struct.pack("<Q", int((os.path.getmtime(path) + 11644473600L) * 10000000))
+    f = get_in_archive_name(f)
+    d += f + "\0"
+  checksum = crc32(d, 0) & 0xFFFFFFFF
+  d += struct.pack("<I", checksum)
+
+  archive_path = os.path.join(dir, archiveName)
+  with open(archive_path, "wb") as fo:
+    fo.write(d)
+    for f in files:
+      f = get_real_name(f)
+      path = os.path.join(dir, f) + ".lzma"
+      with open(path, "rb") as fi:
+        d = fi.read()
+        fo.write(d)
+  print("Created archive: %s" % archive_path)
+  return archive_path
+
 # build installer data, will be included as part of Installer.exe resources
-# The format is:
-#   int32 number of files
-# for each file:
-#   int32 file size uncompressed
-#   int32 file size compressed
-#   string file name, 0-terminated
-# for each file:
-#   file data
 def build_installer_data(dir):
   src = os.path.join("mupdf", "fonts", "droid", "DroidSansFallback.ttf")
   dst = os.path.join(dir, "DroidSansFallback.ttf")
   if not os.path.exists(dst) or is_more_recent(src, dst):
     copy_to_dst_dir(src, dir)
 
-  files = ["SumatraPDF-no-MuPDF.exe", "DroidSansFallback.ttf", "libmupdf.dll", "npPdfViewer.dll", "PdfFilter.dll", "PdfPreview.dll", "uninstall.exe"]
-  for src in files:
-    src = os.path.join(dir, src)
-    dst = src + ".lzma"
-    if not os.path.exists(dst) or is_more_recent(src, dst):
-      lzma_compress(src, dst)
-  d = struct.pack("<I", len(files))
-  for f in files:
-    path = os.path.join(dir, f)
-    d += struct.pack("<I", os.path.getsize(path))
-    d += struct.pack("<I", os.path.getsize(path + ".lzma"))
-    d += struct.pack("<Q", int((os.path.getmtime(path) + 11644473600L) * 10000000))
-    if f == "SumatraPDF-no-MuPDF.exe": f = "SumatraPDF.exe"
-    d += f + "\0"
+  files = [ ["SumatraPDF-no-MuPDF.exe", "SumatraPDF.exe"], "DroidSansFallback.ttf",
+    "libmupdf.dll", "npPdfViewer.dll", "PdfFilter.dll", "PdfPreview.dll",
+    "uninstall.exe"]
+  create_lzma_archive(dir, "InstallerData.dat", files)
+  installer_res = os.path.join(dir, "sumatrapdf", "Installer.res")
+  util.delete_file(installer_res)
 
-  dst = os.path.join(dir, "InstallerData.dat")
-  with open(dst, "wb") as fo:
-    checksum = crc32(d, 0)
-    fo.write(d)
-    for f in files:
-      path = os.path.join(dir, f) + ".lzma"
-      d = open(path, "rb").read()
-      checksum = crc32(d, checksum & 0xFFFFFFFF)
-      fo.write(d)
-    fo.write(struct.pack("<I", checksum & 0xFFFFFFFF))
+def create_pdb_archive(dir, archive_name):
+  files = ["libmupdf.pdb", "Installer.pdb", "SumatraPDF-no-MuPDF.pdb", "SumatraPDF.pdb"]
+  return create_lzma_archive(dir, archive_name, files)
 
 # delete all but the last 3 pre-release builds in order to use less s3 storage
 def delete_old_pre_release_builds():
@@ -141,6 +191,10 @@ def sign(file_path, cert_pwd):
   run_cmd_throw("signtool.exe", "sign", "/t", "http://timestamp.verisign.com/scripts/timstamp.dll",
  "/du", "http://blog.kowalczyk.info/software/sumatrapdf/", "/f", "cert.pfx", "/p", cert_pwd, file_name)
   os.chdir(curr_dir)
+
+def print_run_resp(out, err):
+  if len(out) > 0: print(out)
+  if len(err) > 0: print(err)
 
 def main():
   args = sys.argv[1:]
@@ -234,14 +288,17 @@ def main():
     extcflags = "EXTCFLAGS=-DSVN_PRE_RELEASE_VER=%s" % ver
   platform = "PLATFORM=%s" % (target_platform or "X86")
 
-  run_cmd_throw("nmake", "-f", "makefile.msvc", config, extcflags, platform, "all_sumatrapdf")
+  (out, err) = run_cmd_throw("nmake", "-f", "makefile.msvc", config, extcflags, platform, "all_sumatrapdf")
+  if build_test_installer: print_run_resp(out, err)
+
   exe = os.path.join(obj_dir, "SumatraPDF.exe")
   if upload:
     sign(exe, cert_pwd)
     sign(os.path.join(obj_dir, "uninstall.exe"), cert_pwd)
 
   build_installer_data(obj_dir)
-  run_cmd_throw("nmake", "-f", "makefile.msvc", "Installer", config, platform, extcflags)
+  (out, err) = run_cmd_throw("nmake", "-f", "makefile.msvc", "Installer", config, platform, extcflags)
+  if build_test_installer: print_run_resp(out, err)
 
   if build_test_installer or build_rel_installer:
     sys.exit(0)
@@ -250,12 +307,7 @@ def main():
   if upload:
     sign(installer, cert_pwd)
 
-  pdb_zip = os.path.join(obj_dir, "%s.pdb.zip" % filename_base)
-
-  zip_file(pdb_zip, os.path.join(obj_dir, "libmupdf.pdb"))
-  zip_file(pdb_zip, os.path.join(obj_dir, "Installer.pdb"), append=True)
-  zip_file(pdb_zip, os.path.join(obj_dir, "SumatraPDF-no-MuPDF.pdb"), append=True)
-  zip_file(pdb_zip, os.path.join(obj_dir, "SumatraPDF.pdb"), append=True)
+  pdb_archive = create_pdb_archive(obj_dir, "%s.pdb.lzma" % filename_base)
 
   builds_dir = os.path.join("builds", ver)
   if os.path.exists(builds_dir):
@@ -264,7 +316,7 @@ def main():
 
   copy_to_dst_dir(exe, builds_dir)
   copy_to_dst_dir(installer, builds_dir)
-  copy_to_dst_dir(pdb_zip, builds_dir)
+  copy_to_dst_dir(pdb_archive, builds_dir)
 
   if not build_prerelease:
     exe_zip = os.path.join(obj_dir, "%s.zip" % filename_base)
@@ -283,7 +335,7 @@ def main():
     jstxt += 'var sumLatestInstaller = "http://kjkpub.s3.amazonaws.com/%s";\n' % s3_installer
 
   s3.upload_file_public(installer, s3_installer)
-  s3.upload_file_public(pdb_zip, s3_pdb_zip)
+  s3.upload_file_public(pdb_archive, s3_pdb_zip)
   s3.upload_file_public(exe, s3_exe)
 
   if build_prerelease:
