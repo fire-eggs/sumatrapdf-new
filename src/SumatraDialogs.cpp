@@ -9,7 +9,7 @@
 #include "DialogSizer.h"
 #include "Resource.h"
 #include "SumatraPDF.h"
-#include "Translations2.h"
+#include "Translations.h"
 #include "WinUtil.h"
 #include "WindowInfo.h"
 

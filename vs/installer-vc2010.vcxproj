@@ -117,7 +117,7 @@
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|x64'">del /s obj-rel64</NMakeCleanCommandLine>
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Release analyze|Win32'">del /s obj-rel</NMakeCleanCommandLine>
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Release analyze|x64'">del /s obj-rel64</NMakeCleanCommandLine>
-    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\obj-rel\SumatraPDF-install.exe</NMakeOutput>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\obj-rel\Installer.exe</NMakeOutput>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\obj-rel64\SumatraPDF-install.exe</NMakeOutput>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Release analyze|Win32'">obj-rel\SumatraPDF-install.exe</NMakeOutput>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Release analyze|x64'">obj-rel64\SumatraPDF-install.exe</NMakeOutput>
