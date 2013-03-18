@@ -59,7 +59,7 @@ static inline void ProgressStep()
         PostMessage(gHwndProgressBar, PBM_STEPIT, 0, 0);
 }
 
-static bool ExtractFiles(lzma::ArchiveInfo *archive)
+static bool ExtractFiles(lzma::SimpleArchive *archive)
 {
     lzma::FileInfo *fi;
     char *uncompressed;
@@ -102,8 +102,8 @@ static bool InstallCopyFiles()
     const char *data = (const char*)LockResource(res);
     DWORD dataSize = SizeofResource(NULL, resSrc);
 
-    lzma::ArchiveInfo archive;
-    ok = lzma::ParseArchiveInfo(data, dataSize, &archive);
+    lzma::SimpleArchive archive;
+    ok = lzma::ParseSimpleArchive(data, dataSize, &archive);
     if (!ok)
         goto Corrupted;
 
