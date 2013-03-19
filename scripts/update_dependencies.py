@@ -6,8 +6,7 @@ from sources in src and subfolders, so that changing a header file always
 leads to the recompilation of all the files depending on this header.
 """
 
-import os, re, fnmatch
-from util import verify_started_in_right_directory, group, uniquify
+import os, re, fnmatch, util2, update_vs, update_vs2008
 pjoin = os.path.join
 
 DIRS = ["src", pjoin("src", "utils"), pjoin("src", "installer"), pjoin("src", "ifilter"), pjoin("src", "browserplugin"), pjoin("src", "previewer"), pjoin("src", "mui"), pjoin("src", "memtrace"), pjoin("src", "regress")]
@@ -15,14 +14,6 @@ INCLUDE_DIRS = DIRS + [pjoin("mupdf", "fitz"), pjoin("mupdf", "pdf"), pjoin("mup
 OBJECT_DIRS = { "src\\utils": "$(OU)", "src\\browserplugin": "$(ODLL)", "src\\ifilter": "$(ODLL)", "src\\previewer": "$(ODLL)", "src\\mui": "$(OMUI)", "src\\memtrace": "$(OM)" } # default: "$(OS)"
 MAKEFILE = "makefile.deps"
 DEPENDENCIES_PER_LINE = 3
-
-def memoize(func):
-	memory = {}
-	def __decorated(*args):
-		if args not in memory:
-			memory[args] = func(*args)
-		return memory[args]
-	return __decorated
 
 def prependPath(files, basefile=None):
 	result = []
@@ -45,7 +36,7 @@ def getObjectPath(file):
 			return odir
 	return "$(OS)"
 
-@memoize
+@util2.memoize
 def extractIncludes(file):
 	content = open(file, "r").read()
 	content = content.replace("\r\n", "\n")
@@ -58,7 +49,7 @@ def extractIncludes(file):
 	
 	for inc in includes:
 		includes += extractIncludes(inc)
-	return uniquify(includes)
+	return util2.uniquify(includes)
 
 def createDependencyList():
 	dependencies = {}
@@ -77,7 +68,7 @@ def flattenDependencyList(dependencies):
 			filename = os.path.splitext(os.path.split(file)[1])[0]
 			# TODO: normalizing paths already in prependPath makes getObjectPath fail under cygwin
 			deplist = sorted(dependencies[file], key=lambda s: str.lower(s.replace("/", "\\")))
-			for depgroup in group(deplist, DEPENDENCIES_PER_LINE):
+			for depgroup in util2.group(deplist, DEPENDENCIES_PER_LINE):
 				flatlist.append("%s\\%s.obj: $B\\%s" % (opath, filename, " $B\\".join(depgroup)))
 	return flatlist
 
@@ -94,16 +85,11 @@ def injectDependencyList(flatlist):
 	
 	open(MAKEFILE, "wb").write(content.replace("\n", "\r\n"))
 
-def update_vs():
-	import update_vs, update_vs2008
-	update_vs.main()
-	update_vs2008.main()
-
 def main():
-	verify_started_in_right_directory(True)
-	
+	util2.chdir_top()
 	injectDependencyList(flattenDependencyList(createDependencyList()))
-	update_vs()
 
 if __name__ == "__main__":
 	main()
+	update_vs.main()
+	update_vs2008.main()
