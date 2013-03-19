@@ -320,7 +320,7 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="unclassified"
+				Name="unused"
 				>
 				<File
 					RelativePath="..\src\utils\NoFreeAllocator.cpp"
@@ -335,6 +335,18 @@
 					>
 				</File>
 				<File
+					RelativePath="..\src\utils\Settings.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\src\utils\Settings.h"
+					>
+				</File>
+				<File
+					RelativePath="..\src\utils\Settings_ut.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\src\utils\StrFormat.cpp"
 					>
 				</File>
@@ -344,6 +356,10 @@
 				</File>
 				<File
 					RelativePath="..\src\utils\StrFormat_ut.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\src\utils\StrHash.h"
 					>
 				</File>
 			</Filter>
@@ -606,10 +622,6 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\src\resource.h"
-				>
-			</File>
-			<File
 				RelativePath="..\src\SumatraPDF.cpp"
 				>
 			</File>
@@ -619,10 +631,6 @@
 			</File>
 			<File
 				RelativePath="..\src\SumatraStartup.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\src\UnitTests.cpp"
 				>
 			</File>
 			<File
@@ -861,6 +869,14 @@
 					>
 				</File>
 				<File
+					RelativePath="..\src\SumatraAbout2.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\src\SumatraAbout2.h"
+					>
+				</File>
+				<File
 					RelativePath="..\src\TableOfContents.cpp"
 					>
 				</File>
@@ -886,10 +902,6 @@
 				</File>
 				<File
 					RelativePath="..\src\Translations.h"
-					>
-				</File>
-				<File
-					RelativePath="..\src\UiMsgSumatra.h"
 					>
 				</File>
 			</Filter>
@@ -956,6 +968,14 @@
 					RelativePath="..\src\StressTesting.h"
 					>
 				</File>
+				<File
+					RelativePath="..\src\Tester.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\src\UnitTests.cpp"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="Windows"
@@ -1016,11 +1036,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\libmupdf.rc"
+				>
+			</File>
+			<File
 				RelativePath="..\src\PdfDoc.ico"
 				>
 			</File>
 			<File
 				RelativePath="..\src\reloading.bmp"
+				>
+			</File>
+			<File
+				RelativePath="..\src\resource.h"
 				>
 			</File>
 			<File
@@ -1080,6 +1108,10 @@
 				</File>
 				<File
 					RelativePath="..\mupdf\fitz\base_time.c"
+					>
+				</File>
+				<File
+					RelativePath="..\mupdf\fitz\base_trans.c"
 					>
 				</File>
 				<File
@@ -1171,10 +1203,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\mupdf\fitz\filt_pipeline.c"
-					>
-				</File>
-				<File
 					RelativePath="..\mupdf\fitz\filt_predict.c"
 					>
 				</File>
@@ -1256,10 +1284,6 @@
 				</File>
 				<File
 					RelativePath="..\mupdf\fitz\stm_comp_buf.c"
-					>
-				</File>
-				<File
-					RelativePath="..\mupdf\fitz\stm_filter.c"
 					>
 				</File>
 				<File
@@ -1372,6 +1396,10 @@
 				</File>
 				<File
 					RelativePath="..\mupdf\pdf\pdf_encoding.c"
+					>
+				</File>
+				<File
+					RelativePath="..\mupdf\pdf\pdf_event.c"
 					>
 				</File>
 				<File
