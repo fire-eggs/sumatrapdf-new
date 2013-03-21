@@ -89,7 +89,7 @@ public:
         DisplayState *state = Find(filePath);
         if (!state) {
             state = new DisplayState();
-            state->filePath = str::Dup(filePath);
+            state->filePath.Set(str::Dup(filePath));
         }
         else {
             states.Remove(state);
