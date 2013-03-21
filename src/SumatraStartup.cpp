@@ -4,10 +4,6 @@
 // TODO: for the moment it needs to be included from SumatraPDF.cpp
 // and not compiled as stand-alone
 
-#ifdef DEBUG
-#include "AppPrefs2.h"
-#endif
-
 static bool TryLoadMemTrace()
 {
     ScopedMem<WCHAR> exePath(GetExePath());
@@ -259,16 +255,26 @@ static void RunUnitTests()
 static void GetCommandLineInfo(CommandLineInfo& i)
 {
     i.bgColor = gGlobalPrefs.bgColor;
-    i.fwdSearch.offset = gGlobalPrefs.fwdSearch.offset;
-    i.fwdSearch.width = gGlobalPrefs.fwdSearch.width;
-    i.fwdSearch.color = gGlobalPrefs.fwdSearch.color;
-    i.fwdSearch.permanent = gGlobalPrefs.fwdSearch.permanent;
+    i.fwdSearch.offset = gGlobalPrefs.fwdSearchOffset;
+    i.fwdSearch.width = gGlobalPrefs.fwdSearchWidth;
+    i.fwdSearch.color = gGlobalPrefs.fwdSearchColor;
+    i.fwdSearch.permanent = gGlobalPrefs.fwdSearchPermanent;
     i.escToExit = gGlobalPrefs.escToExit;
     i.cbxR2L = gGlobalPrefs.cbxR2L;
     if (gGlobalPrefs.useSysColors) {
         i.colorRange[0] = GetSysColor(COLOR_WINDOWTEXT);
         i.colorRange[1] = GetSysColor(COLOR_WINDOW);
     }
+
+    // update defaults from SumatraPDF-user.ini
+    i.escToExit = gUserPrefs.escToExit;
+    i.colorRange[0] = gUserPrefs.textColor;
+    i.colorRange[1] = gUserPrefs.pageColor;
+    i.fwdSearch.offset = gUserPrefs.highlightOffset;
+    i.fwdSearch.width = gUserPrefs.highlightWidth;
+    i.fwdSearch.color = gUserPrefs.highlightColor;
+    i.fwdSearch.permanent = gUserPrefs.highlightPermanent;
+
     i.ParseCommandLine(GetCommandLine());
 }
 
@@ -335,13 +341,6 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     uitask::Initialize();
 
     LoadPrefs();
-#ifdef DEBUG
-    {
-        // TODO: add advanced settings as a pointer to SerializableGlobalPrefs ?
-        AdvancedSettings adv;
-        LoadAdvancedPrefs(&adv);
-    }
-#endif
 
     CommandLineInfo i;
     GetCommandLineInfo(i);
@@ -362,20 +361,21 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     gCrashOnOpen = i.crashOnOpen;
 
     gGlobalPrefs.bgColor = i.bgColor;
-    gGlobalPrefs.fwdSearch.offset = i.fwdSearch.offset;
-    gGlobalPrefs.fwdSearch.width = i.fwdSearch.width;
-    gGlobalPrefs.fwdSearch.color = i.fwdSearch.color;
-    gGlobalPrefs.fwdSearch.permanent = i.fwdSearch.permanent;
+    gGlobalPrefs.fwdSearchOffset = i.fwdSearch.offset;
+    gGlobalPrefs.fwdSearchWidth = i.fwdSearch.width;
+    gGlobalPrefs.fwdSearchColor = i.fwdSearch.color;
+    gGlobalPrefs.fwdSearchPermanent = i.fwdSearch.permanent;
     gGlobalPrefs.escToExit = i.escToExit;
     gGlobalPrefs.cbxR2L = i.cbxR2L;
+    gGlobalPrefs.enableTeXEnhancements |= gUserPrefs.enableTeXEnhancements;
     gPolicyRestrictions = GetPolicies(i.restrictedUse);
     gRenderCache.colorRange[0] = i.colorRange[0];
     gRenderCache.colorRange[1] = i.colorRange[1];
     DebugGdiPlusDevice(gUseGdiRenderer);
-    DebugAlternateChmEngine(!gUseEbookUI);
+    DebugAlternateChmEngine(gUserPrefs.traditionalEbookUI);
 
     if (i.inverseSearchCmdLine) {
-        str::ReplacePtr(&gGlobalPrefs.inverseSearchCmdLine, i.inverseSearchCmdLine);
+        gGlobalPrefs.inverseSearchCmdLine.Set(str::Dup(i.inverseSearchCmdLine));
         gGlobalPrefs.enableTeXEnhancements = true;
     }
 
@@ -406,6 +406,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
         SHFILEINFO sfi;
         SHGetFileInfo(L".pdf", 0, &sfi, sizeof(sfi), SHGFI_SYSICONINDEX | SHGFI_SMALLICON | SHGFI_USEFILEATTRIBUTES);
     }
+
+    if (!i.reuseInstance && gUserPrefs.reuseInstance && FindWindow(FRAME_CLASS_NAME, 0))
+        i.reuseInstance = true;
 
     WindowInfo *win = NULL;
     bool isFirstWin = true;
