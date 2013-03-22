@@ -11,9 +11,6 @@
 #include "SumatraPDF.h"
 #include "Translations.h"
 #include "WinUtil.h"
-#include "WindowInfo.h"
-
-class TopWindowInfo;
 
 // Maybe better to be as a static local variable in Dialog_Preference_Proc.
 WCHAR * captionChildDlg[3] = { L"General", L"View", L"Color" };
