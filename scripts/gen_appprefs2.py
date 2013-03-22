@@ -4,11 +4,11 @@ a variety of preference values from a user provided settings file.
 See further below for the definition of all currently supported options.
 """
 
-import os, util2
+import util2
 
 class Type(object):
 	def __init__(self, name, ctype, vectype=None):
-		self.name = name; self.ctype = ctype; self.vectype = vectype or "Vec<%s>" % ctype
+		self.name = name; self.ctype = ctype; self.vectype = vectype or "Vec<%s,1>" % ctype
 
 Bool = Type("Bool", "bool")
 Color = Type("Color", "COLORREF")
@@ -18,7 +18,7 @@ Int = Type("Int", "int")
 String = Type("String", "ScopedMem<WCHAR>", "WStrVec")
 Utf8String = Type("Utf8String", "ScopedMem<char>", "StrVec")
 
-Flag_None, Flag_OnlyNonDefault, Flag_NonGlobal = [0, 1, 2]
+Flag_None, Flag_OnlyNonDefault, Flag_NonGlobal, Flag_LegacyOnly = [0, 1, 2, 4]
 
 class Field(object):
 	def __init__(self, name, type, default, comment, alias=None, internalName=None, flags=0):
@@ -83,8 +83,6 @@ PrinterDefaults = [
 ]
 
 ForwardSearch = [
-	Field("EnableTeXEnhancements", Bool, False,
-		"whether the inverse search command line setting is visible in the Settings dialog"),
 	Field("HighlightOffset", Int, 0,
 		"when set to a positive value, the forward search highlight style will " +
 		"be changed to a rectangle at the left of the page (with the indicated " +
@@ -109,6 +107,8 @@ ExternalViewer = [
 ]
 
 IniSettings = [
+	"All values in this structure are read from SumatraPDF-user.ini and can't be " +
+	"changed from within the UI",
 	Section("AdvancedOptions", AdvancedOptions),
 	Section("PrinterDefaults", PrinterDefaults),
 	Section("PagePadding", PagePadding),
@@ -135,9 +135,11 @@ LegacyPrefs = [
 		"if true, we remember which files we opened and their settings"),
 	Field("BgColor", Color, (0x00F2FF - 0x80000000),
 		"used for the Start page, About page and Properties dialog " +
-		"(negative values indicate that the default color will be used)"),
+		"(negative values indicate that the default color will be used)",
+		flags=Flag_LegacyOnly),
 	Field("EscToExit", Bool, False,
-		"whether the Esc key will exit SumatraPDF same as 'q'"),
+		"whether the Esc key will exit SumatraPDF same as 'q'",
+		flags=Flag_LegacyOnly),
 	Field("UseSysColors", Bool, False,
 		"whether to display documents black-on-white or in system colors"),
 	Field("InverseSearchCmdLine", String, None,
@@ -170,14 +172,18 @@ LegacyPrefs = [
 		"the height of bookmarks (table of contents) part", alias="Toc Dy"),
 	Field("FwdSearchOffset", Int, 0,
 		"if <=0 then use the standard (inline) highlighting style, otherwise use the " +
-		"margin highlight (i.e. coloured block on the left side of the page)", alias="ForwardSearch_HighlightOffset"),
+		"margin highlight (i.e. coloured block on the left side of the page)", alias="ForwardSearch_HighlightOffset",
+		flags=Flag_LegacyOnly),
 	Field("FwdSearchColor", Color, 0x6581FF,
-		"highlight color of the forward-search for both the standard and margin style", alias="ForwardSearch_HighlightColor"),
+		"highlight color of the forward-search for both the standard and margin style", alias="ForwardSearch_HighlightColor",
+		flags=Flag_LegacyOnly),
 	Field("FwdSearchWidth", Int, 15,
-		"width of the coloured blocks for the margin style", alias="ForwardSearch_HighlightWidth"),
+		"width of the coloured blocks for the margin style", alias="ForwardSearch_HighlightWidth",
+		flags=Flag_LegacyOnly),
 	Field("FwdSearchPermanent", Bool, False,
 		"if false then highlights are hidden automatically after a short period of time, " +
-		"if true then highlights remain until the next forward search", alias="ForwardSearch_HighlightPermanent"),
+		"if true then highlights remain until the next forward search", alias="ForwardSearch_HighlightPermanent",
+		flags=Flag_LegacyOnly),
 	Field("ShowStartPage", Bool, True,
 		"whether to display Frequently Read documents or the About page in an empty window"),
 	Field("OpenCountWeek", Int, 0,
@@ -191,18 +197,24 @@ InternalSettings = [
 		"modification time of the preferences file when it was last read"),
 	Field("PrevSerialization", Utf8String, None,
 		"serialization of what was loaded (needed to prevent discarding unknown options)"),
+	Field("UnknownSettings", Utf8String, None,
+		"a list of settings which this version of SumatraPDF didn't know how to handle " +
+		"(this field is for INI (de)serialization while prevSerialization is for Benc)"),
 	Field("WindowPos", Type(None, "RectI"), None,
 		"default position (can be on any monitor)"),
 ]
 
 GlobalPrefs = [
+	"Most values on this structure can be updated through the UI and are persisted " +
+	"in SumatraPDF.ini (previously in sumatrapdfprefs.dat)",
 	Section(None, LegacyPrefs), # section without header
 	Section("InternalPrefs", InternalSettings, True),
 ]
 
 FileSettings = [
 	Field("FilePath", String, None,
-		"absolute path to a document that's been loaded successfully", alias="File"),
+		"absolute path to a document that's been loaded successfully", alias="File",
+		flags=Flag_LegacyOnly),
 	Field("OpenCount", Int, 0,
 		"in order to prevent documents that haven't been opened for a while " +
 		"but used to be opened very frequently constantly remain in top positions, " +
@@ -274,23 +286,41 @@ FileInternals = [
 ]
 
 FileState = [
+	"Most values in this structure are remembered individually for every file and " +
+	"are by default also persisted so that reading can be resumed",
 	Section(None, FileSettings), # section without header
 	Section("FileInternals", FileInternals, True),
 ]
 
+FavName = [
+	"Values which are persisted for bookmarks/favorites",
+	Section(None, [
+		Field("Name", String, None, "name of this favorite as shown in the menu"),
+		Field("PageNo", Int, 0, "which page this favorite is about"),
+		Field("PageLabel", String, None, "optional label for this page (if logical and physical numers disagree)"),
+	]), # section without header
+	Section("FavInternals", [
+		Field("MenuId", Int, 0, "assigned in AppendFavMenuItems()"),
+	], True)
+]
+
 # ##### end of setting definitions for SumatraPDF #####
 
-def FormatComment(comment):
-	result, parts, line = [], comment.split(), "\t//"
+def FormatComment(comment, indent="\t"):
+	result, parts, line = [], comment.split(), indent + "//"
 	while parts:
 		while parts and len(line + parts[0]) < 72:
 			line += " " + parts.pop(0)
 		result.append(line)
-		line = "\t//"
+		line = indent + "//"
 	return result
 
 def BuildStruct(sections, name):
-	lines = ["class %s {" % name, "public:"]
+	lines = []
+	if sections and type(sections[0]) == str:
+		lines += FormatComment(sections[0], "")
+		sections = sections[1:]
+	lines += ["class %s {" % name, "public:"]
 	defaults, structs = [], []
 	for section in sections:
 		if type(section) == SectionArray:
@@ -310,7 +340,7 @@ def BuildStruct(sections, name):
 					defaults.append(field.cdefault())
 				elif field.type == FileTime:
 					structs.append(field.cname)
-	
+
 	if defaults or structs:
 		lines.append("")
 		lines.append("\t%s()" % name)
@@ -323,15 +353,15 @@ def BuildStruct(sections, name):
 	lines.append("};")
 	return "\n".join(lines)
 
-def BuildMetaData(sections, name, sort=False):
+def BuildMetaData(sections, name):
 	lines = ["static SettingInfo g%sInfo[] = {" % name]
+	if sections and type(sections[0]) == str:
+		sections = sections[1:]
 	for section in sections:
 		if section.internal:
 			lines.append("\t/* ***** skipping internal section %s ***** */" % section.name)
 			continue
-		fields = section.fields
-		if sort:
-			fields = sorted(fields, key=lambda field: field.alias)
+		fields = sorted(section.fields, key=lambda field: field.alias)
 		if type(section) == SectionArray:
 			lines.append("\t/* ***** fields for array section %s ***** */" % section.name)
 			lines.append("\t{ \"%s\", Type_SectionVec }," % section.name)
@@ -348,6 +378,9 @@ def BuildMetaData(sections, name, sort=False):
 	lines.append("};")
 	return "\n".join(lines)
 
+def BuildStructAndMetaData(sections, name):
+	return BuildStruct(sections, name), BuildMetaData(sections, name)
+
 AppPrefs2_Header = """\
 /* Copyright 2013 the SumatraPDF project authors (see AUTHORS file).
    License: GPLv3 (see COPYING) */
@@ -361,6 +394,8 @@ AppPrefs2_Header = """\
 
 %(fileStructDef)s
 
+%(favStructDef)s
+
 %(advStructDef)s
 
 #ifdef INCLUDE_APPPREFS2_METADATA
@@ -368,8 +403,6 @@ enum SettingType {
 	Type_Section, Type_SectionVec, Type_Custom,
 	Type_Bool, Type_Color, Type_FileTime, Type_Float, Type_Int, Type_String, Type_Utf8String,
 };
-
-enum SettingFlag { Flag_None, Flag_NonGlobal, Flag_OnlyNonDefault };
 
 struct SettingInfo {
 	const char *name;
@@ -382,6 +415,8 @@ struct SettingInfo {
 
 %(fileStructMetadata)s
 
+%(favStructMetadata)s
+
 %(advStructMetadata)s
 #endif
 
@@ -390,13 +425,12 @@ struct SettingInfo {
 
 def main():
 	util2.chdir_top()
-	
-	mainStructDef = BuildStruct(GlobalPrefs, "SerializableGlobalPrefs")
-	mainStructMetadata = BuildMetaData(GlobalPrefs, "SerializableGlobalPrefs", True)
-	fileStructDef = BuildStruct(FileState, "DisplayState")
-	fileStructMetadata = BuildMetaData(FileState, "DisplayState", True)
-	advStructDef = BuildStruct(IniSettings, "AdvancedSettings")
-	advStructMetadata = BuildMetaData(IniSettings, "AdvancedSettings")
+
+	mainStructDef, mainStructMetadata = BuildStructAndMetaData(GlobalPrefs, "SerializableGlobalPrefs")
+	fileStructDef, fileStructMetadata = BuildStructAndMetaData(FileState, "DisplayState")
+	favStructDef, favStructMetadata = BuildStructAndMetaData(FavName, "FavName")
+	advStructDef, advStructMetadata = BuildStructAndMetaData(IniSettings, "AdvancedSettings")
+
 	content = AppPrefs2_Header % locals()
 	open("src/AppPrefs2.h", "wb").write(content.replace("\n", "\r\n").replace("\t", "    "))
 
