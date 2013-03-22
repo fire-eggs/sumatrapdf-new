@@ -11,6 +11,7 @@
 #include "EbookControls.h"
 #include "EbookDoc.h"
 #include "EbookFormatter.h"
+#include "ExternalPdfViewer.h"
 #include "FileHistory.h"
 using namespace Gdiplus;
 #include "GdiPlusUtil.h"
@@ -298,6 +299,12 @@ static LRESULT OnCommand(EbookWindow *win, UINT msg, WPARAM wParam, LPARAM lPara
         return 0;
     }
 
+    if (win && IDM_OPEN_WITH_EXTERNAL_FIRST <= wmId && wmId <= IDM_OPEN_WITH_EXTERNAL_LAST)
+    {
+        ViewWithExternalViewer(wmId - IDM_OPEN_WITH_EXTERNAL_FIRST, win->LoadedFilePath());
+        return 0;
+    }
+
     switch (wmId)
     {
         case IDM_OPEN:
@@ -362,9 +369,9 @@ static LRESULT OnCommand(EbookWindow *win, UINT msg, WPARAM wParam, LPARAM lPara
             break;
 
         case IDM_DEBUG_EBOOK_UI:
-            gUseEbookUI = !gUseEbookUI;
-            win::menu::SetChecked(GetMenu(win->hwndFrame), IDM_DEBUG_EBOOK_UI, !gUseEbookUI);
-            DebugAlternateChmEngine(!gUseEbookUI);
+            gUserPrefs.traditionalEbookUI = !gUserPrefs.traditionalEbookUI;
+            win::menu::SetChecked(GetMenu(win->hwndFrame), IDM_DEBUG_EBOOK_UI, gUserPrefs.traditionalEbookUI);
+            DebugAlternateChmEngine(gUserPrefs.traditionalEbookUI);
             break;
 
         case IDM_DEBUG_MUI:

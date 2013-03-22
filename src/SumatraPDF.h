@@ -92,7 +92,6 @@ extern OSVERSIONINFOEX          gOS;
 extern HINSTANCE                ghinst;
 extern bool                     gDebugShowLinks;
 extern bool                     gUseGdiRenderer;
-extern bool                     gUseEbookUI;
 extern HCURSOR                  gCursorHand;
 extern HCURSOR                  gCursorArrow;
 extern HCURSOR                  gCursorIBeam;

@@ -24,6 +24,7 @@ using namespace Gdiplus;
 #include "GdiPlusUtil.h"
 #include "HttpUtil.h"
 #include "HtmlWindow.h"
+#include "IniParser.h"
 #include "Menu.h"
 #include "Mui.h"
 #include "Notifications.h"
@@ -67,13 +68,6 @@ bool             gDebugShowLinks = false;
    otherwise Fitz/MuPDF is used at least for screen rendering.
    In Debug builds, you can switch between the two through the Debug menu */
 bool             gUseGdiRenderer = false;
-
-/* if true, ebooks are rendered flowed instead of in fixed-sized pages */
-#ifndef DISABLE_EBOOK_UI
-bool             gUseEbookUI = true;
-#else
-bool             gUseEbookUI = false;
-#endif
 
 // in plugin mode, the window's frame isn't drawn and closing and
 // fullscreen are disabled, so that SumatraPDF can be displayed
@@ -535,8 +529,8 @@ WCHAR *HwndPasswordUI::GetPassword(const WCHAR *fileName, unsigned char *fileDig
     DisplayState *fileFromHistory = gFileHistory.Find(fileName);
     if (fileFromHistory && fileFromHistory->decryptionKey) {
         ScopedMem<char> fingerprint(str::MemToHex(fileDigest, 16));
-        *saveKey = str::StartsWith(fileFromHistory->decryptionKey, fingerprint.Get());
-        if (*saveKey && str::HexToMem(fileFromHistory->decryptionKey + 32, decryptionKeyOut, 32))
+        *saveKey = str::StartsWith(fileFromHistory->decryptionKey.Get(), fingerprint.Get());
+        if (*saveKey && str::HexToMem(fileFromHistory->decryptionKey.Get() + 32, decryptionKeyOut, 32))
             return NULL;
     }
 
@@ -643,7 +637,7 @@ static void UpdateSidebarDisplayState(EbookWindow *win, DisplayState *ds)
 static void DisplayStateFromEbookWindow(EbookWindow* win, DisplayState* ds)
 {
     if (!ds->filePath || !str::EqI(ds->filePath, win->LoadedFilePath()))
-        str::ReplacePtr(&ds->filePath, win->LoadedFilePath());
+        ds->filePath.Set(str::Dup(win->LoadedFilePath()));
 
     // don't modify any of the other DisplayState values
     // as long as they're not used, so that the same
@@ -752,16 +746,16 @@ void UpdateRtlLayoutForAllWindows()
 static int GetPolicies(bool isRestricted)
 {
     static struct {
-        const WCHAR *name;
+        const char *name;
         int perm;
     } policies[] = {
-        { L"InternetAccess", Perm_InternetAccess },
-        { L"DiskAccess",     Perm_DiskAccess },
-        { L"SavePreferences",Perm_SavePreferences },
-        { L"RegistryAccess", Perm_RegistryAccess },
-        { L"PrinterAccess",  Perm_PrinterAccess },
-        { L"CopySelection",  Perm_CopySelection },
-        { L"FullscreenAccess",Perm_FullscreenAccess },
+        { "InternetAccess", Perm_InternetAccess },
+        { "DiskAccess",     Perm_DiskAccess },
+        { "SavePreferences",Perm_SavePreferences },
+        { "RegistryAccess", Perm_RegistryAccess },
+        { "PrinterAccess",  Perm_PrinterAccess },
+        { "CopySelection",  Perm_CopySelection },
+        { "FullscreenAccess",Perm_FullscreenAccess },
     };
 
     // allow to restrict SumatraPDF's functionality from an INI file in the
@@ -775,35 +769,42 @@ static int GetPolicies(bool isRestricted)
     gAllowedFileTypes.Reset();
     if (file::Exists(restrictPath)) {
         int policy = Perm_RestrictedUse;
-        for (size_t i = 0; i < dimof(policies); i++) {
-            int check = GetPrivateProfileInt(L"Policies", policies[i].name, 0, restrictPath);
-            if (check)
-                policy = policy | policies[i].perm;
+
+        IniFile ini(restrictPath);
+        IniSection *polsec = ini.FindSection("Policies");
+        IniLine *line;
+        if (polsec) {
+            for (size_t i = 0; i < dimof(policies); i++) {
+                line = polsec->FindLine(policies[i].name);
+                if (line && atoi(line->value) != 0)
+                    policy = policy | policies[i].perm;
+            }
         }
-
         // determine the list of allowed link protocols and perceived file types
-        if ((policy & Perm_DiskAccess)) {
-            ScopedMem<WCHAR> protocols(ReadIniString(restrictPath, L"Policies", L"LinkProtocols"));
-            str::ToLower(protocols);
-            str::TransChars(protocols, L":; ", L",,,");
-            gAllowedLinkProtocols.Split(protocols, L",", true);
-
-            ScopedMem<WCHAR> types(ReadIniString(restrictPath, L"Policies", L"SafeFileTypes"));
-            str::ToLower(types);
-            str::TransChars(types, L":; ", L",,,");
-            gAllowedFileTypes.Split(types, L",", true);
+        if ((policy & Perm_DiskAccess) && polsec) {
+            if ((line = polsec->FindLine("LinkProtocols"))) {
+                ScopedMem<WCHAR> protocols(str::conv::FromUtf8(line->value));
+                str::ToLower(protocols);
+                str::TransChars(protocols, L":; ", L",,,");
+                gAllowedLinkProtocols.Split(protocols, L",", true);
+            }
+            if ((line = polsec->FindLine("SafeFileTypes"))) {
+                ScopedMem<WCHAR> protocols(str::conv::FromUtf8(line->value));
+                str::ToLower(protocols);
+                str::TransChars(protocols, L":; ", L",,,");
+                gAllowedFileTypes.Split(protocols, L",", true);
+            }
         }
 
         return policy;
     }
 
-    if (!isRestricted) {
-        gAllowedLinkProtocols.Split(DEFAULT_LINK_PROTOCOLS, L",");
-        gAllowedFileTypes.Split(DEFAULT_FILE_PERCEIVED_TYPES, L",");
-        return Perm_All;
-    }
+    if (isRestricted)
+        return Perm_RestrictedUse;
 
-    return Perm_RestrictedUse;
+    gAllowedLinkProtocols.Split(DEFAULT_LINK_PROTOCOLS, L",");
+    gAllowedFileTypes.Split(DEFAULT_FILE_PERCEIVED_TYPES, L",");
+    return Perm_All;
 }
 
 void SaveThumbnailForFile(const WCHAR *filePath, RenderedBitmap *bmp)
@@ -1061,7 +1062,7 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
 
     str::ReplacePtr(&win->loadedFilePath, args.fileName);
     DocType engineType;
-    BaseEngine *engine = EngineManager::CreateEngine(args.fileName, pwdUI, &engineType, gUseEbookUI);
+    BaseEngine *engine = EngineManager::CreateEngine(args.fileName, pwdUI, &engineType, !gUserPrefs.traditionalEbookUI);
 
     if (engine && Engine_Chm == engineType) {
         // make sure that MSHTML can't be used as a potential exploit
@@ -1298,7 +1299,7 @@ void ReloadDocument(WindowInfo *win, bool autorefresh)
     if (decryptionKey) {
         DisplayState *state = gFileHistory.Find(ds.filePath);
         if (state && !str::Eq(state->decryptionKey, decryptionKey))
-            str::ReplacePtr(&state->decryptionKey, decryptionKey);
+            state->decryptionKey.Set(decryptionKey.StealData());
     }
 }
 
@@ -1786,7 +1787,7 @@ static void RenameFileInHistory(const WCHAR *oldPath, const WCHAR *newPath)
     }
     ds = gFileHistory.Find(oldPath);
     if (ds) {
-        str::ReplacePtr(&ds->filePath, newPath);
+        ds->filePath.Set(str::Dup(newPath));
         // merge Frequently Read data, so that a file
         // doesn't accidentally vanish from there
         ds->isPinned = ds->isPinned || oldIsPinned;
@@ -1896,7 +1897,7 @@ static WindowInfo* LoadDocumentOld(LoadArgs& args)
         return NULL;
     }
 
-    if (gUseEbookUI && IsEbookFile(fullPath)) {
+    if (!gUserPrefs.traditionalEbookUI && IsEbookFile(fullPath)) {
         if (!win) {
             if ((1 == gWindows.Count()) && gWindows.At(0)->IsAboutWindow())
                 win = gWindows.At(0);
@@ -2213,7 +2214,7 @@ static DWORD ShowAutoUpdateDialog(HWND hParent, HttpReq *ctx, bool silent)
     bool skipThisVersion = false;
     INT_PTR res = Dialog_NewVersionAvailable(hParent, UPDATE_CHECK_VER, verTxt, &skipThisVersion);
     if (skipThisVersion)
-        str::ReplacePtr(&gGlobalPrefs.versionToSkip, verTxt);
+        gGlobalPrefs.versionToSkip.Set(verTxt.StealData());
     if (IDYES == res) {
 #ifdef SUPPORTS_AUTO_UPDATE
         if (str::EndsWith(SVN_UPDATE_LINK, L".exe")) {
@@ -2242,7 +2243,7 @@ static DWORD ShowAutoUpdateDialog(HWND hParent, HttpReq *ctx, bool silent)
 static bool AutoUpdateMain()
 {
     WStrVec argList;
-    ParseCmdLine(GetCommandLine(), argList);
+    ParseCmdLine(GetCommandLine(), argList, 4);
     if (argList.Count() != 3 || !str::Eq(argList.At(1), L"-autoupdate")) {
         // the argument was misinterpreted, let SumatraPDF start as usual
         return false;
@@ -2328,18 +2329,17 @@ void AutoUpdateCheckAsync(HWND hwnd, bool autoCheck)
 
     // don't check for updates at the first start, so that privacy
     // sensitive users can disable the update check in time
-    if (autoCheck && !gGlobalPrefs.lastUpdateTime) {
-        FILETIME lastUpdateTimeFt = { 0 };
-        gGlobalPrefs.lastUpdateTime =_MemToHex(&lastUpdateTimeFt);
+    if (autoCheck && 0 == gGlobalPrefs.lastUpdateTime.dwLowDateTime &&
+                     0 == gGlobalPrefs.lastUpdateTime.dwHighDateTime) {
         return;
     }
 
     /* For auto-check, only check if at least a day passed since last check */
-    if (autoCheck && gGlobalPrefs.lastUpdateTime) {
-        FILETIME lastUpdateTimeFt, currentTimeFt;
-        _HexToMem(gGlobalPrefs.lastUpdateTime, &lastUpdateTimeFt);
+    if (autoCheck && (gGlobalPrefs.lastUpdateTime.dwLowDateTime != 0 ||
+                      gGlobalPrefs.lastUpdateTime.dwHighDateTime != 0)) {
+        FILETIME currentTimeFt;
         GetSystemTimeAsFileTime(&currentTimeFt);
-        int secs = FileTimeDiffInSecs(currentTimeFt, lastUpdateTimeFt);
+        int secs = FileTimeDiffInSecs(currentTimeFt, gGlobalPrefs.lastUpdateTime);
         assert(secs >= 0);
         // if secs < 0 => somethings wrong, so ignore that case
         if ((secs > 0) && (secs < SECS_IN_DAY))
@@ -2349,10 +2349,7 @@ void AutoUpdateCheckAsync(HWND hwnd, bool autoCheck)
     const WCHAR *url = SUMATRA_UPDATE_INFO_URL L"?v=" UPDATE_CHECK_VER;
     new HttpReq(url, new UpdateDownloadTask(hwnd, autoCheck));
 
-    FILETIME ft;
-    GetSystemTimeAsFileTime(&ft);
-    free(gGlobalPrefs.lastUpdateTime);
-    gGlobalPrefs.lastUpdateTime = _MemToHex(&ft);
+    GetSystemTimeAsFileTime(&gGlobalPrefs.lastUpdateTime);
 }
 
 class FileExistenceChecker : public ThreadBase, public UITask
@@ -3660,8 +3657,8 @@ void OnMenuOpen(SumatraWindow& win)
         { _TR("EPUB ebooks"),           L"*.epub",      true },
         { _TR("FictionBook documents"), L"*.fb2;*.fb2z;*.zfb2", true },
         { NULL, /* multi-page images */ L"*.tif;*.tiff",true },
-        { NULL, /* further ebooks */    L"*.pdb;*.tcr", !gUseEbookUI },
-        { _TR("Text documents"),        L"*.txt;*.log;*.nfo;file_id.diz;read.me", !gUseEbookUI },
+        { NULL, /* further ebooks */    L"*.pdb;*.tcr", gUserPrefs.traditionalEbookUI },
+        { _TR("Text documents"),        L"*.txt;*.log;*.nfo;file_id.diz;read.me", gUserPrefs.traditionalEbookUI },
     };
     // Prepare the file filters (use \1 instead of \0 so that the
     // double-zero terminated string isn't cut by the string handling
@@ -6373,6 +6370,12 @@ static LRESULT FrameOnCommand(WindowInfo *win, HWND hwnd, UINT msg, WPARAM wPara
         return 0;
     }
 
+    if (win && IDM_OPEN_WITH_EXTERNAL_FIRST <= wmId && wmId <= IDM_OPEN_WITH_EXTERNAL_LAST)
+    {
+        ViewWithExternalViewer(wmId - IDM_OPEN_WITH_EXTERNAL_FIRST, win->loadedFilePath, win->dm ? win->dm->CurrentPageNo() : 0);
+        return 0;
+    }
+
     // 10 submenus max with 10 items each max (=100) plus generous buffer => 200
     STATIC_ASSERT(IDM_FAV_LAST - IDM_FAV_FIRST == 200, enough_fav_menu_ids);
     if ((wmId >= IDM_FAV_FIRST) && (wmId <= IDM_FAV_LAST))
@@ -6666,8 +6669,8 @@ static LRESULT FrameOnCommand(WindowInfo *win, HWND hwnd, UINT msg, WPARAM wPara
             break;
 
         case IDM_DEBUG_EBOOK_UI:
-            gUseEbookUI = !gUseEbookUI;
-            DebugAlternateChmEngine(!gUseEbookUI);
+            gUserPrefs.traditionalEbookUI = !gUserPrefs.traditionalEbookUI;
+            DebugAlternateChmEngine(gUserPrefs.traditionalEbookUI);
             break;
 
         case IDM_DEBUG_MUI:
