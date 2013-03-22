@@ -169,7 +169,6 @@
     <ClCompile Include="..\src\RenderCache.cpp" />
     <ClCompile Include="..\src\Search.cpp" />
     <ClCompile Include="..\src\Selection.cpp" />
-    <ClCompile Include="..\src\Sidebar.cpp" />
     <ClCompile Include="..\src\StressTesting.cpp" />
     <ClCompile Include="..\src\SumatraAbout.cpp" />
     <ClCompile Include="..\src\SumatraAbout2.cpp" />
@@ -177,7 +176,6 @@
     <ClCompile Include="..\src\SumatraPDF.cpp" />
     <ClCompile Include="..\src\SumatraProperties.cpp" />
     <ClCompile Include="..\src\SumatraStartup.cpp" />
-    <ClCompile Include="..\src\Tab.cpp" />
     <ClCompile Include="..\src\TableOfContents.cpp" />
     <ClCompile Include="..\src\Tester.cpp" />
     <ClCompile Include="..\src\TextSearch.cpp" />
@@ -427,7 +425,6 @@
     <ClInclude Include="..\src\resource.h" />
     <ClInclude Include="..\src\Search.h" />
     <ClInclude Include="..\src\Selection.h" />
-    <ClInclude Include="..\src\Sidebar.h" />
     <ClInclude Include="..\src\StressTesting.h" />
     <ClInclude Include="..\src\SumatraAbout.h" />
     <ClInclude Include="..\src\SumatraAbout2.h" />
@@ -435,7 +432,6 @@
     <ClInclude Include="..\src\SumatraPDF.h" />
     <ClInclude Include="..\src\SumatraProperties.h" />
     <ClInclude Include="..\src\SumatraWindow.h" />
-    <ClInclude Include="..\src\Tab.h" />
     <ClInclude Include="..\src\TableOfContents.h" />
     <ClInclude Include="..\src\TextSearch.h" />
     <ClInclude Include="..\src\TextSelection.h" />
