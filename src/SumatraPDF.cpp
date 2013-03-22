@@ -3874,8 +3874,8 @@ static LRESULT DrawMenuBarBackground(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
     RECT rcMenu;
 
     rcMenu.left = rcItem.right - rcFrame.left;
-    rcMenu.top = GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CXFRAME);
-    rcMenu.right = rcFrame.right - rcFrame.left - GetSystemMetrics(SM_CXFRAME);
+    rcMenu.top = GetSystemMetrics(SM_CYFRAME) + GetSystemMetrics(SM_CYCAPTION);
+    rcMenu.right = rcFrame.right - GetSystemMetrics(SM_CXFRAME) - rcFrame.left;
     rcMenu.bottom = rcMenu.top + GetSystemMetrics(SM_CYMENU);
 
     HBRUSH hBrush = CreateSolidBrush(RGB(0xDE, 0xDE, 0xDE));
@@ -3884,8 +3884,8 @@ static LRESULT DrawMenuBarBackground(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 
     rcMenu.left = GetSystemMetrics(SM_CXFRAME);
     rcMenu.top = rcMenu.bottom - 1;
-    rcMenu.bottom = rcMenu.top + 1;
-    rcMenu.right = rcFrame.right - rcFrame.left - GetSystemMetrics(SM_CXFRAME);
+    // rcMenu.right = rcFrame.right - GetSystemMetrics(SM_CXFRAME) - rcFrame.left;
+    // rcMenu.bottom = rcMenu.top + 1;
     FillRect(hdc, &rcMenu, gBrushSepLineBg);
 
     DeleteObject(hBrush);
