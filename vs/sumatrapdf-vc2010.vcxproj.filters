@@ -114,6 +114,9 @@
     <ClCompile Include="..\src\Selection.cpp">
       <Filter>sumatra</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\Sidebar.cpp">
+      <Filter>sumatra</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\StressTesting.cpp">
       <Filter>sumatra</Filter>
     </ClCompile>
@@ -133,6 +136,9 @@
       <Filter>sumatra</Filter>
     </ClCompile>
     <ClCompile Include="..\src\SumatraStartup.cpp">
+      <Filter>sumatra</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Tab.cpp">
       <Filter>sumatra</Filter>
     </ClCompile>
     <ClCompile Include="..\src\TableOfContents.cpp">
@@ -878,6 +884,9 @@
     <ClInclude Include="..\src\Selection.h">
       <Filter>sumatra</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\Sidebar.h">
+      <Filter>sumatra</Filter>
+    </ClInclude>
     <ClInclude Include="..\src\StressTesting.h">
       <Filter>sumatra</Filter>
     </ClInclude>
@@ -897,6 +906,9 @@
       <Filter>sumatra</Filter>
     </ClInclude>
     <ClInclude Include="..\src\SumatraWindow.h">
+      <Filter>sumatra</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Tab.h">
       <Filter>sumatra</Filter>
     </ClInclude>
     <ClInclude Include="..\src\TableOfContents.h">
