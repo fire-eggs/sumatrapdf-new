@@ -426,6 +426,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     gCrashOnOpen = i.crashOnOpen;
 
     gGlobalPrefs.bgColor = i.bgColor;
+    // TODO: set enableTeXEnhancements if any of these is non-default
     gGlobalPrefs.docTextColor = i.colorRange[0];
     gGlobalPrefs.docBgColor = i.colorRange[1];
     gGlobalPrefs.fwdSearchOffset = i.fwdSearch.offset;
@@ -434,7 +435,6 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     gGlobalPrefs.fwdSearchPermanent = i.fwdSearch.permanent;
     gGlobalPrefs.escToExit = i.escToExit;
     gGlobalPrefs.cbxR2L = i.cbxR2L;
-    gGlobalPrefs.enableTeXEnhancements |= gUserPrefs.enableTeXEnhancements;
     gPolicyRestrictions = GetPolicies(i.restrictedUse);
     gRenderCache.colorRange[0] = i.colorRange[0];
     gRenderCache.colorRange[1] = i.colorRange[1];
