@@ -30,7 +30,6 @@ Global
 		{9458F693-A9CC-4786-B79A-A2103EC71FA3}.Release|x64.Build.0 = Release|x64
 		{BC42DA91-3BE7-410E-8ACE-E5F42DEDF41B}.Debug|Win32.ActiveCfg = Debug|Win32
 		{BC42DA91-3BE7-410E-8ACE-E5F42DEDF41B}.Debug|x64.ActiveCfg = Debug|x64
-		{BC42DA91-3BE7-410E-8ACE-E5F42DEDF41B}.Debug|x64.Build.0 = Debug|x64
 		{BC42DA91-3BE7-410E-8ACE-E5F42DEDF41B}.Release analyze|Win32.ActiveCfg = Release analyze|Win32
 		{BC42DA91-3BE7-410E-8ACE-E5F42DEDF41B}.Release analyze|x64.ActiveCfg = Release analyze|x64
 		{BC42DA91-3BE7-410E-8ACE-E5F42DEDF41B}.Release|Win32.ActiveCfg = Release|Win32
