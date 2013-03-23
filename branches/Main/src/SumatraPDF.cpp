@@ -621,7 +621,6 @@ static void UpdateSidebarDisplayState(WindowInfo *win, DisplayState *ds)
             UpdateTocExpansionState(win, hRoot);
     }
 
-    delete ds->tocState;
     ds->tocState = NULL;
     if (win->tocState.Count() > 0)
         ds->tocState = new Vec<int>(win->tocState);
@@ -630,7 +629,6 @@ static void UpdateSidebarDisplayState(WindowInfo *win, DisplayState *ds)
 static void UpdateSidebarDisplayState(EbookWindow *win, DisplayState *ds)
 {
     ds->tocVisible = false;
-    delete ds->tocState;
     ds->tocState = NULL;
 }
 
@@ -814,7 +812,6 @@ void SaveThumbnailForFile(const WCHAR *filePath, RenderedBitmap *bmp)
         delete bmp;
         return;
     }
-    delete ds->thumbnail;
     ds->thumbnail = bmp;
     SaveThumbnail(*ds);
 }
@@ -1793,7 +1790,6 @@ static void RenameFileInHistory(const WCHAR *oldPath, const WCHAR *newPath)
         ds->isPinned = ds->isPinned || oldIsPinned;
         ds->openCount += oldOpenCount;
         // the thumbnail is recreated by LoadDocument
-        delete ds->thumbnail;
         ds->thumbnail = NULL;
     }
 
