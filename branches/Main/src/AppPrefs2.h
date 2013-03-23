@@ -130,7 +130,7 @@ public:
 
     SerializableGlobalPrefs() : globalPrefsOnly(false), currLangCode("en"), enableSplitWindow(false), enableTab(false), tabVisible(false), toolbarForEachPanel(false), sidebarForEachPanel(false), toolbarForEachPanelNew(false), sidebarForEachPanelNew(false), toolbarVisible(true),
         favVisible(false), pdfAssociateDontAskAgain(false), pdfAssociateShouldAssociate(false),
-        enableAutoUpdate(true), rememberOpenedFiles(true), bgColor(-0x7fff0d01),
+        enableAutoUpdate(true), rememberOpenedFiles(true), bgColor(-0x7f2b0001),
         escToExit(false), useSysColors(false), noDocBgColor(0x999999), docBgColor(0xffffff), docTextColor(0x000000), tocBgColor(0xffffff), favBgColor(0xffffff), enableTeXEnhancements(false),
         defaultDisplayMode(DM_AUTOMATIC), defaultZoom(-1.000000), windowState(1),
         tocVisible(true), sidebarDx(0), tocDy(0),
