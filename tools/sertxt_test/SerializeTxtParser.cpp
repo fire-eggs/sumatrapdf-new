@@ -129,6 +129,11 @@ struct TokenVal {
     char *  keyEnd;
 };
 
+static bool IsCommentChar(char c)
+{
+    return (';' == c ) || ('#' == c);
+}
+
 // TODO: maybe also allow things like:
 // foo: [1 3 4]
 // i.e. a child on a single line
@@ -138,6 +143,8 @@ static void ParseNextToken(TxtParser& parser, TokenVal& tok)
     tok.type = TokenError;
 
     str::Slice& slice = parser.toParse;
+
+Again:
     if (slice.Finished())
         return;
 
@@ -154,6 +161,12 @@ static void ParseNextToken(TxtParser& parser, TokenVal& tok)
         return;
 
     char c = slice.CurrChar();
+    if (IsCommentChar(c)) {
+        slice.SkipUntil('\n');
+        slice.Skip(1);
+        goto Again;
+    }
+
     if ('[' == c || ']' == c) {
         tok.type = ('[' == c) ? TokenOpen : TokenClose;
         slice.ZeroCurr();
@@ -186,6 +199,7 @@ static void ParseNextToken(TxtParser& parser, TokenVal& tok)
     // this is "foo [", '[' will be returned in subsequent call
     // it'll also be zero'ed, properly terminating this token's valStart
     if ('[' == slice.CurrChar()) {
+        // TODO: should this be returned as key instead?
         tok.valEnd = slice.curr;
         // interpret "foo: [" as "foo ["
         if (tok.keyEnd) {
@@ -268,22 +282,13 @@ static TxtNode *ParseNextNode(TxtParser& parser)
 bool ParseTxt(TxtParser& parser)
 {
     CrashIf(!parser.allocator);
-    // TODO: first, normalize newlines and remove empty lines
+    str::Slice& slice = parser.toParse;
+    size_t n = str::NormalizeNewlinesInPlace(slice.begin, slice.end);
+    slice.end = slice.begin + n;
     parser.firstNode = ParseNextNode(parser);
     if (parser.firstNode == NULL)
         return false;
     return true;
-}
-
-static void TrimWsEnd(char *s, char *&e)
-{
-    while (e > s) {
-        --e;
-        if (!str::IsWs(*e)) {
-            ++e;
-            return;
-        }
-    }
 }
 
 static void AppendNest(str::Str<char>& s, int nest)
@@ -296,27 +301,31 @@ static void AppendNest(str::Str<char>& s, int nest)
 
 static void AppendWsTrimEnd(str::Str<char>& res, char *s, char *e)
 {
-    TrimWsEnd(s, e);
+    str::TrimWsEnd(s, e);
     res.Append(s, e - s);
+}
+
+static void PrettyPrintVal(TxtNode *curr, int nest, str::Str<char>& res)
+{
+    AppendNest(res, nest);
+    if (curr->keyStart) {
+        AppendWsTrimEnd(res, curr->keyStart, curr->keyEnd);
+        res.Append(" = ");
+    }
+    AppendWsTrimEnd(res, curr->valStart, curr->valEnd);
 }
 
 static void PrettyPrintNode(TxtNode *curr, int nest, str::Str<char>& res)
 {
     while (curr) {
         if (curr->child) {
-            AppendNest(res, nest);
-            AppendWsTrimEnd(res, curr->valStart, curr->valEnd);
+            PrettyPrintVal(curr, nest, res);
             res.Append(" [\n");
             PrettyPrintNode(curr->child, nest + 1, res);
             AppendNest(res, nest);
             res.Append("]\n");
         } else {
-            AppendNest(res, nest);
-            if (curr->keyStart) {
-                AppendWsTrimEnd(res, curr->keyStart, curr->keyEnd);
-                res.Append(" = ");
-            }
-            AppendWsTrimEnd(res, curr->valStart, curr->valEnd);
+            PrettyPrintVal(curr, nest, res);
             res.Append("\n");
         }
         curr = curr->next;
