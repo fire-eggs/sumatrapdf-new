@@ -1,0 +1,26 @@
+; comment
+les: [
+   foo: bar  
+   # this is  comment too
+   [  
+   val  
+	]
+
+
+go
+]
+---
+les [
+  foo = bar [
+    val
+  ]
+  go
+]
+---
+foo   [
+x: value of me
+]
+---
+foo [
+  x = value of me
+]
