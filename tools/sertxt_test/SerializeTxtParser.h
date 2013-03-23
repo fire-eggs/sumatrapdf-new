@@ -15,34 +15,59 @@ struct Slice {
         Init(txt, len);
     }
 
+    Slice(const Slice& other) {
+        this->begin = other.begin;
+        this->end = other.end;
+        this->curr = other.curr;
+    }
+
     void Init(char *txt, size_t len) {
         begin = txt;
         curr = txt;
         end = txt + len;
     }
 
-    bool Finished() { return begin >= end; }
+    bool Finished() const { return curr >= end; }
+
+    char PrevChar() const;
+    char CurrChar() const;
+    int SkipWsUntilNewline();
+    int SkipUntil(char toFind);
+    int SkipNonWs();
+    int Skip(int n);
+    void ZeroCurr();
 };
 
 } // namespace str
 
-struct ParsedEl {
-    ParsedEl *      next;
-    ParsedEl *      child;
-    const char *    s;
+struct TxtNode {
+    char *      lineStart;
+    char *      valStart;
+    char *      valEnd;
+    char *      keyStart;
+    char *      keyEnd;
+
+    TxtNode *   next;
+    TxtNode *   child;
 };
 
 struct TxtParser {
     Allocator *     allocator;
-    ParsedEl *      root;
-    str::Slice      s;
+    TxtNode *       firstNode;
+    str::Slice      toParse;
+    int             bracketNesting; // nesting level of '[', ']'
 
     TxtParser() {
         allocator = new PoolAllocator();
-        root = NULL;
+        firstNode = NULL;
+        bracketNesting = 0;
+    }
+    ~TxtParser() {
+        delete allocator;
     }
 };
 
 bool ParseTxt(TxtParser& parser);
+char *PrettyPrintTxt(TxtParser& parser);
 
 #endif
