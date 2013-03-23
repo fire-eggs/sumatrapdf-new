@@ -25,32 +25,51 @@ class Field(object):
 
 	def cdefault(self):
 		if self.type == Bool:
-			return "%s(%s)" % (self.cname, "true" if self.default else "false")
+			return "true" if self.default else "false"
 		if self.type == Color:
-			return "%s(%#06x)" % (self.cname, self.default)
+			return "0x%06x" % self.default
 		if self.type == Float:
-			return "%s(%f)" % (self.cname, self.default)
-		if self.type == Int:
-			return "%s(%d)" % (self.cname, self.default)
-		if self.type == String and self.default is not None:
-			return "%s(str::Dup(L\"%s\"))" % (self.cname, self.default)
-		if self.type == Utf8String and self.default is not None:
-			return "%s(str::Dup(\"%s\"))" % (self.cname, self.default)
-		if self.type.name == "Struct" or self.type.name == "Array":
-			return "%s(NULL)" % self.cname
-		if self.type.name == "Custom" and self.default is not None:
-			return "%s(%s)" % (self.cname, self.default)
+			return "%g" % self.default
+		if self.type == Int or self.type == Int64:
+			return "%d" % self.default
+		if self.type == String:
+			return '(int64_t)L"%s"' % self.default if self.default is not None else "NULL"
+		if self.type == Utf8String:
+			return '(int64_t)"%s"' % self.default if self.default is not None else "NULL"
+		if self.type.name == "Custom":
+			return self.default
 		return None
 
+	def inidefault(self):
+		if self.type == Bool:
+			return "%s = %s" % (self.name, "true" if self.default else "false")
+		if self.type == Color:
+			return "%s = #%02x%02x%02x" % (self.name, self.default & 0xFF, (self.default >> 8) & 0xFF, (self.default >> 16) & 0xFF)
+		if self.type == Float:
+			return "%s = %g" % (self.name, self.default)
+		if self.type == Int or self.type == Int64:
+			return "%s = %d" % (self.name, self.default)
+		if self.type == String:
+			if self.default is not None:
+				return "%s = %s" % (self.name, self.default.encode("UTF-8"))
+			return "; %s =" % self.name
+		if self.type == Utf8String:
+			if self.default is not None:
+				return "%s = %s" % (self.name, self.default)
+			return "; %s =" % self.name
+		if self.type.name == "Custom":
+			return self.default
+		return "; %s = ???" % self.name
+
 class Struct(Field):
-	def __init__(self, name, fields, comment, predefined=None):
-		super(Struct, self).__init__(name, Type("Struct", "%s *" % name), fields, comment)
-		self.predefined = predefined
+	def __init__(self, name, fields, comment, structName=None):
+		self.structName = structName or name
+		super(Struct, self).__init__(name, Type("Struct", "%s *" % self.structName), fields, comment)
 
 class Array(Field):
-	def __init__(self, name, fields, comment, predefined=None):
-		super(Array, self).__init__(name, Type("Array", "%s *" % name), fields, comment)
-		self.predefined = predefined
+	def __init__(self, name, fields, comment, structName=None):
+		self.structName = structName or name
+		super(Array, self).__init__(name, Type("Array", "%s **" % self.structName), fields, comment)
 
 # ##### setting definitions for SumatraPDF #####
 
@@ -66,6 +85,23 @@ PointI = [
 	Field("Y", Int, 0, "y coordinate"),
 ]
 
+AdvancedPrefs = [
+	Field("TraditionalEbookUI", Bool, False,
+		"whether the UI used for PDF documents will be used for ebooks as well " +
+		"(enables printing and searching, disables automatic reflow)"),
+	Field("ReuseInstance", Bool, False,
+		"whether opening a new document should happen in an already running SumatraPDF " +
+		"instance so that there's only one process and documents aren't opend twice"),
+	Field("MainWindowBackground", Color, 0xFFF200,
+		"background color of the non-document windows, traditionally yellow"),
+	Field("EscToExit", Bool, False,
+		"whether the Esc key will exit SumatraPDF same as 'q'"),
+	Field("TextColor", Color, 0x000000,
+		"color value with which black (text) will be substituted"),
+	Field("PageColor", Color, 0xFFFFFF,
+		"color value with which white (background) will be substituted"),
+]
+
 PagePadding = [
 	Field("OuterX", Int, 4, "size of the left/right margin between window and document"),
 	Field("OuterY", Int, 2, "size of the top/bottom margin between window and document"),
@@ -74,7 +110,7 @@ PagePadding = [
 ]
 
 PrinterDefaults = [
-	Field("PrintScale", String, None, "default value for scaling (shrink, fit, none or NULL)"),
+	Field("PrintScale", Utf8String, "shrink", "default value for scaling (shrink, fit, none)"),
 	Field("PrintAsImage", Bool, False, "default value for the compatibility option"),
 ]
 
@@ -103,24 +139,13 @@ ExternalViewer = [
 ]
 
 UserPrefs = [
-	Field("TraditionalEbookUI", Bool, False,
-		"whether the UI used for PDF documents will be used for ebooks as well " +
-		"(enables printing and searching, disables automatic reflow)"),
-	Field("ReuseInstance", Bool, False,
-		"whether opening a new document should happen in an already running SumatraPDF " +
-		"instance so that there's only one process and documents aren't opend twice"),
-	Field("MainWindowBackground", Color, 0xFFF200,
-		"background color of the non-document windows, traditionally yellow"),
-	Field("EscToExit", Bool, False,
-		"whether the Esc key will exit SumatraPDF same as 'q'"),
-	Field("TextColor", Color, 0x000000,
-		"color value with which black (text) will be substituted"),
-	Field("PageColor", Color, 0xFFFFFF,
-		"color value with which white (background) will be substituted"),
+	Struct("AdvancedPrefs", AdvancedPrefs,
+		"these values allow to tweak various bits and pieces of SumatraPDF"),
 	Struct("PrinterDefaults", PrinterDefaults,
 		"these values allow to override the default settings in the Print dialog"),
 	Struct("PagePadding", PagePadding,
 		"these values allow to change how far apart pages are layed out"),
+	# renamed from ForwardSearch for interoperability with gen_settings.py
 	Struct("ForwardSearch3", ForwardSearch,
 		"these values allow to customize how the forward search highlight appears"),
 	Array("ExternalViewers", ExternalViewer,
@@ -144,10 +169,10 @@ FileSettings = [
 	Field("UseGlobalValues", Bool, False,
 		"whether global defaults should be used when reloading this file instead of " +
 		"the values listed below"),
-	Field("DisplayMode", Int, 1, # TODO: Type_Custom, DM_AUTOMATIC
+	Field("DisplayMode", String, "automatic", # TODO: Type_Custom, DM_AUTOMATIC
 		"how pages should be layed out for this document"),
 	Struct("ScrollPos", PointI,
-		"how far this document has been scrolled", predefined="PointI"),
+		"how far this document has been scrolled", structName="PointI"),
 	Field("PageNo", Int, 1,
 		"the scrollPos values are relative to the top-left corner of this page"),
 	Field("ReparseIdx", Int, 0,
@@ -159,7 +184,7 @@ FileSettings = [
 	Field("WindowState", Int, 0,
 		"default state of new SumatraPDF windows (same as the last closed)"),
 	Struct("WindowPos", RectI,
-		"default position (can be on any monitor)", predefined="RectI"),
+		"default position (can be on any monitor)", structName="RectI"),
 	Field("DecryptionKey", Utf8String, None,
 		"hex encoded MD5 fingerprint of file content (32 chars) followed by " +
 		"crypt key (64 chars) - only applies for PDF documents"),
@@ -167,7 +192,7 @@ FileSettings = [
 		"whether the table of contents (Bookmarks) sidebar is shown for this document"),
 	Field("SidebarDx", Int, 0,
 		"the width of the left sidebar panel containing the table of contents"),
-	Field("TocState", Utf8String, None,
+	Field("TocState", Utf8String, None, # TODO: inline int array?
 		"tocState is an array of ids for ToC items that have been toggled by " +
 		"the user (i.e. aren't in their default expansion state). - " +
 		"Note: We intentionally track toggle state as opposed to expansion state " +
@@ -184,7 +209,7 @@ FileSettings = [
 AppPrefs = [
 	Field("GlobalPrefsOnly", Bool, False,
 		"whether not to store display settings for individual documents"),
-	Field("CurrLangCode", String, None, # TODO: Type_Custom, "en"
+	Field("CurrLangCode", String, "en", # TODO: Type_Custom
 		"pointer to a static string that is part of LangDef, don't free"),
 	Field("ToolbarVisible", Bool, True,
 		"whether the toolbar should be visible by default in the main window"),
@@ -209,14 +234,14 @@ AppPrefs = [
 		"This remembers which version is to be skipped. If NULL - don't skip"),
 	Field("LastUpdateTime", Int64, 0,
 		"the time SumatraPDF has last checked for updates (cf. EnableAutoUpdate)"),
-	Field("DefaultDisplayMode", Int, 1, # TODO: Type_Custom, DM_AUTOMATIC
+	Field("DefaultDisplayMode", String, "automatic", # TODO: Type_Custom, DM_AUTOMATIC
 		"how pages should be layed out by default"),
 	Field("DefaultZoom", Float, -1,
 		"the default zoom factor in % (negative values indicate virtual settings)"),
 	Field("WindowState", Int, 1,
 		"default state of new SumatraPDF windows (same as the last closed)"),
 	Struct("WindowPos", RectI,
-		"default position (can be on any monitor)", predefined="RectI"),
+		"default position (can be on any monitor)", structName="RectI"),
 	Field("TocVisible", Bool, True,
 		"whether the table of contents (Bookmarks) sidebar should be shown by " +
 		"default when its available for a document"),
@@ -261,66 +286,66 @@ UserPrefs = Struct("UserPrefs", UserPrefs,
 
 # ##### end of setting definitions for SumatraPDF #####
 
-def FormatComment(comment, indent="\t"):
-	result, parts, line = [], comment.split(), indent + "//"
+def FormatComment(comment, start="\t//"):
+	result, parts, line = [], comment.split(), start
 	while parts:
 		while parts and len(line + parts[0]) < 72:
 			line += " " + parts.pop(0)
 		result.append(line)
-		line = indent + "//"
+		line = start
 	return result
 
 def BuildStruct(struct, built=[]):
 	lines = ["struct %s {" % struct.name]
 	if struct.comment:
-		lines = FormatComment(struct.comment, "") + lines
+		lines = FormatComment(struct.comment, "//") + lines
 	for field in struct.default:
-		if type(field) == Struct:
-			lines += FormatComment(field.comment)
-			lines.append("\t%s %s;" % (field.predefined or field.type.ctype, field.cname))
-			if not field.predefined and field.name not in built:
-				lines = [BuildStruct(field), ""] + lines
-				built.append(field.name)
-		elif type(field) == Array:
-			lines += FormatComment(field.comment)
+		lines += FormatComment(field.comment)
+		lines.append("\t%s %s;" % (field.type.ctype, field.cname))
+		if type(field) == Array:
 			lines.append("\tsize_t %sCount;" % field.cname)
-			lines.append("\t%s %s;" % (field.predefined or field.type.ctype, field.cname))
-			if not field.predefined and field.name not in built:
-				lines = [BuildStruct(field), ""] + lines
-				built.append(field.name)
-		else:
-			lines += FormatComment(field.comment)
-			lines.append("\t%s %s;" % (field.type.ctype, field.cname))
+		if type(field) in [Struct, Array] and field.name == field.structName and field.name not in built:
+			lines = [BuildStruct(field), ""] + lines
+			built.append(field.name)
 	lines.append("};")
 	return "\n".join(lines)
 
 def BuildMetaData(struct, built=[]):
 	fieldInfo, metadata = [], []
-	structName = struct.predefined or struct.name
 	for field in sorted(struct.default, key=lambda field: field.name):
 		if field.internal:
 			continue
 		if type(field) == Struct:
-			fieldInfo.append("\t{ \"%s\", Type_Struct, offsetof(%s, %s), g%sInfo }," % (field.name, structName, field.cname, field.name))
-			if field.name not in built:
-				metadata.append(BuildMetaData(field))
-				built.append(field.name)
+			fieldInfo.append("\t{ \"%s\", Type_%s, offsetof(%s, %s), g%sInfo, NULL }," % (field.name, field.type.name, struct.structName, field.cname, field.structName))
 		elif type(field) == Array:
-			fieldInfo.append("\t{ \"%s\", Type_Array, offsetof(%s, %s), g%sInfo }," % (field.name, structName, field.cname, field.name))
-			fieldInfo.append("\t{ NULL, Type_Array, offsetof(%s, %sCount), g%sInfo }," % (structName, field.cname, field.name))
-			if field.name not in built:
-				metadata.append(BuildMetaData(field))
-				built.append(field.name)
+			fieldInfo.append("\t{ \"%s\", Type_%s, offsetof(%s, %s), g%sInfo, NULL }," % (field.name, field.type.name, struct.structName, field.cname, field.structName))
+			fieldInfo.append("\t{ NULL, Type_Array, offsetof(%s, %sCount), g%sInfo, NULL }," % (struct.structName, field.cname, field.name))
 		else:
-			fieldInfo.append("\t{ \"%s\", Type_%s, offsetof(%s, %s), NULL }," % (field.name, field.type.name, structName, field.cname))
+			fieldInfo.append("\t{ \"%s\", Type_%s, offsetof(%s, %s), NULL, %s }," % (field.name, field.type.name, struct.structName, field.cname, field.cdefault()))
+		if type(field) in [Struct, Array] and field.structName not in built:
+			metadata.append(BuildMetaData(field))
+			built.append(field.structName)
 	metadata.append("\n".join([
-		"static SettingInfo g%sInfo[] = {" % struct.name,
-		"\t/* TODO: replace this hack with two different structs? */",
-		"\t{ NULL, (SettingType)%d, sizeof(%s), NULL }," % (len(fieldInfo), structName),
+		"static SettingInfo g%sInfo[] = {" % struct.structName,
+		"\t/* TODO: replace this hack with a second meta-struct? */",
+		"\t{ NULL, (SettingType)%d, sizeof(%s), NULL }," % (len(fieldInfo), struct.structName),
 	] + fieldInfo + [
 		"};"
 	]))
 	return "\n\n".join(metadata)
+
+def AssembleDefaults(struct):
+	lines, more = [], []
+	for field in struct.default:
+		if field.internal:
+			continue
+		if type(field) in [Struct, Array]:
+			more.append("\n".join(FormatComment(field.comment, ";") + ["[%s]" % field.name, AssembleDefaults(field)]))
+		else:
+			if field.comment:
+				lines += FormatComment(field.comment, ";")
+			lines.append(field.inidefault())
+	return "\n".join(lines) + "\n".join(more) + "\n"
 
 AppPrefs3_Header = """\
 /* Copyright 2013 the SumatraPDF project authors (see AUTHORS file).
@@ -345,7 +370,9 @@ struct SettingInfo {
 	SettingType type;
 	size_t offset;
 	SettingInfo *substruct;
+	int64_t def;
 };
+STATIC_ASSERT(sizeof(int64_t) >= sizeof(void *), ptr_is_max_64_bit);
 
 #ifdef INCLUDE_APPPREFS3_METADATA
 %(appStructMetadata)s
@@ -366,6 +393,9 @@ def main():
 
 	content = AppPrefs3_Header % locals()
 	open("tools/serini_test/AppPrefs3.h", "wb").write(content.replace("\n", "\r\n").replace("\t", "    "))
+	
+	content = AssembleDefaults(UserPrefs)
+	open("tools/serini_test/SumatraPDF-user.ini", "wb").write(content.replace("\n", "\r\n"))
 
 if __name__ == "__main__":
 	main()
