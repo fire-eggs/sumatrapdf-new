@@ -44,66 +44,90 @@ static char *UnescapeStr(const char *s)
     return ret.StealData();
 }
 
-static void *DeserializeRec(IniFile& ini, SettingInfo *meta, const char *sectionName=NULL, size_t idx=0)
+static IniSection *FindSection(IniFile& ini, const char *name, size_t idx, size_t endIdx, size_t *foundIdx)
 {
-    IniSection *section = ini.FindSection(sectionName, idx);
-    IniLine *line = NULL;
+    for (size_t i = idx; i < endIdx; i++) {
+        if (str::EqI(ini.sections.At(i)->name, name)) {
+            *foundIdx = i;
+            return ini.sections.At(i);
+        }
+    }
+    return NULL;
+}
+
+static void *DeserializeRec(IniFile& ini, SettingInfo *meta, const char *sectionName=NULL, size_t startIdx=0, size_t endIdx=-1)
+{
+    size_t secIdx = startIdx;
+    IniSection *section = FindSection(ini, sectionName, startIdx, endIdx, &secIdx);
     int r, g, b, a;
 
-    if (idx > 0 && !(section = ini.FindSection(sectionName, idx - 1)))
-        return NULL;
+    if ((size_t)-1 == endIdx)
+        endIdx = ini.sections.Count();
 
     uint8_t *base = (uint8_t *)calloc(1, meta[0].offset);
+    if (secIdx >= endIdx) {
+        section = NULL;
+        secIdx = startIdx - 1;
+    }
+
     for (size_t i = 1; i <= (size_t)meta[0].type; i++) {
         if (Type_Struct == meta[i].type) {
             ScopedMem<char> name(sectionName ? str::Join(sectionName, ".", meta[i].name) : str::Dup(meta[i].name));
-            // TODO: reconstruct this index for nested arrays
-            *(void **)(base + meta[i].offset) = DeserializeRec(ini, meta[i].substruct, name, idx);
+            *(void **)(base + meta[i].offset) = DeserializeRec(ini, meta[i].substruct, name, secIdx + 1, endIdx);
             continue;
         }
         if (Type_Array == meta[i].type) {
             ScopedMem<char> name(sectionName ? str::Join(sectionName, ".", meta[i].name) : str::Dup(meta[i].name));
             Vec<void *> array;
-            void *item;
-            for (size_t j = 1; (item = DeserializeRec(ini, meta[i].substruct, name, j)); j++) {
-                array.Append(item);
+            size_t nextSecIdx = endIdx;
+            FindSection(ini, sectionName, secIdx + 1, endIdx, &nextSecIdx);
+            size_t subSecIdx = nextSecIdx;
+            IniSection *subSection = FindSection(ini, name, secIdx + 1, nextSecIdx, &subSecIdx);
+            while (subSection && subSecIdx < nextSecIdx) {
+                size_t nextSubSecIdx = nextSecIdx;
+                IniSection *nextSubSec = FindSection(ini, name, subSecIdx + 1, nextSecIdx, &nextSubSecIdx);
+                array.Append(DeserializeRec(ini, meta[i].substruct, name, subSecIdx, nextSubSecIdx));
+                subSection = nextSubSec; subSecIdx = nextSubSecIdx;
             }
             *(size_t *)(base + meta[i+1].offset) = array.Size();
             *(void ***)(base + meta[i].offset) = array.StealData();
             i++; // skip implicit array count field
             continue;
         }
-        if (!section || !(line = section->FindLine(meta[i].name))) {
-            // printf("couldn't find line for %s (%s)\n", meta[i].name, sectionName);
-            continue;
-        }
+        IniLine *line = section ? section->FindLine(meta[i].name) : NULL;
         switch (meta[i].type) {
         case Type_Bool:
-            *(bool *)(base + meta[i].offset) = str::EqI(line->value, "true") || ParseBencInt(line->value) != 0;
+            *(bool *)(base + meta[i].offset) = line ? str::EqI(line->value, "true") || ParseBencInt(line->value) != 0 : meta[i].def != 0;
             break;
         case Type_Int:
-            *(int *)(base + meta[i].offset) = (int)ParseBencInt(line->value);
+            *(int *)(base + meta[i].offset) = (int)(line ? ParseBencInt(line->value) : meta[i].def);
             break;
         case Type_Int64:
-            *(int64_t *)(base + meta[i].offset) = ParseBencInt(line->value);
+            *(int64_t *)(base + meta[i].offset) = line ? ParseBencInt(line->value) : meta[i].def;
             break;
         case Type_Float:
-            if (!str::Parse(line->value, "%f", (float *)(base + meta[i].offset)))
-                *(float *)(base + meta[i].offset) = 0.f;
+            if (!line || !str::Parse(line->value, "%f", (float *)(base + meta[i].offset)))
+                *(float *)(base + meta[i].offset) = (float)meta[i].def;
             break;
         case Type_Color:
-            if (str::Parse(line->value, "#%2x%2x%2x%2x", &a, &r, &g, &b))
+            if (line && str::Parse(line->value, "#%2x%2x%2x%2x", &a, &r, &g, &b))
                 *(COLORREF *)(base + meta[i].offset) = RGB(r, g, b) | (a << 24);
-            else if (str::Parse(line->value, "#%2x%2x%2x", &r, &g, &b))
+            else if (line && str::Parse(line->value, "#%2x%2x%2x", &r, &g, &b))
                 *(COLORREF *)(base + meta[i].offset) = RGB(r, g, b);
             else
-                *(COLORREF *)(base + meta[i].offset) = (COLORREF)0;
+                *(COLORREF *)(base + meta[i].offset) = (COLORREF)meta[i].def;
             break;
         case Type_String:
-            *(WCHAR **)(base + meta[i].offset) = str::conv::FromUtf8(ScopedMem<char>(UnescapeStr(line->value)));
+            if (line)
+                *(WCHAR **)(base + meta[i].offset) = str::conv::FromUtf8(ScopedMem<char>(UnescapeStr(line->value)));
+            else if (meta[i].def)
+                *(WCHAR **)(base + meta[i].offset) = str::Dup((const WCHAR *)meta[i].def);
             break;
         case Type_Utf8String:
-            *(char **)(base + meta[i].offset) = UnescapeStr(line->value);
+            if (line)
+                *(char **)(base + meta[i].offset) = UnescapeStr(line->value);
+            else if (meta[i].def)
+                *(char **)(base + meta[i].offset) = str::Dup((const char *)meta[i].def);
             break;
         default:
             CrashIf(true);
@@ -221,10 +245,13 @@ static void SerializeRec(str::Str<char>& out, const void *data, SettingInfo *met
     }
 }
 
-char *Serialize(const void *data, SettingInfo *def, size_t *sizeOut)
+char *Serialize(const void *data, SettingInfo *def, size_t *sizeOut, const char *comment)
 {
     str::Str<char> out;
-    out.Append(UTF8_BOM "; this file will be overwritten - modify at your own risk\r\n");
+    if (comment)
+        out.AppendFmt(UTF8_BOM "; %s\r\n", comment);
+    else
+        out.Append(UTF8_BOM "; this file will be overwritten - modify at your own risk\r\n");
     SerializeRec(out, data, def);
     if (sizeOut)
         *sizeOut = out.Size();
