@@ -6,6 +6,7 @@
 #include "AppPrefs3.h"
 #include "FileUtil.h"
 #include "SerializeIni3.h"
+#include "../sertxt_test/SerializeTxt.h"
 #include "../sertxt_test/SettingsSumatra.h"
 
 #define Check(x) CrashIf(!(x)); if (!(x)) return false; else NoOp()
@@ -115,7 +116,7 @@ CommandLine = serini_test.exe\n\
 
 static bool TestDefaultValues()
 {
-    UserPrefs *p = (UserPrefs *)serini3::Deserialize("", 0, gUserPrefsInfo);
+    UserPrefs *p = (UserPrefs *)serini3::Deserialize(NULL, 0, gUserPrefsInfo);
     Check(!p->advancedPrefs->escToExit && !p->advancedPrefs->traditionalEbookUI);
     Check(0xffffff == p->advancedPrefs->pageColor && 0x000000 == p->advancedPrefs->textColor);
     Check(0x6581ff == p->forwardSearch3->highlightColor && 15 == p->forwardSearch3->highlightWidth);
