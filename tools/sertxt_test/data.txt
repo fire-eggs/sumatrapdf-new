@@ -48,3 +48,17 @@ advanced [
   default_zoom: -1
   ws: A wide string
 ]
+app_state [
+  favorites [
+    [
+      name: favorite name
+      page_no: 0
+      page_label: favorite label
+    ]
+    [
+      name: favorite name two
+      page_no: 18
+      page_label: favorite label of mine
+    ]
+  ]
+]
