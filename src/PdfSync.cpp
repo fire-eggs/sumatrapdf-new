@@ -167,7 +167,7 @@ WCHAR * Synchronizer::PrepareCommandline(const WCHAR* pattern, const WCHAR* file
     const WCHAR* perc;
     str::Str<WCHAR> cmdline(256);
 
-    while ((perc = str::FindChar(pattern, '%'))) {
+    while ((perc = str::FindChar(pattern, '%')) != NULL) {
         cmdline.Append(pattern, perc - pattern);
         pattern = perc + 2;
         perc++;
@@ -246,7 +246,9 @@ int Pdfsync::RebuildIndex()
 
     // parse data
     UINT maxPageNo = engine->PageCount();
-    while ((line = Advance0Line(line, dataEnd))) {
+    while ((line = Advance0Line(line, dataEnd)) != NULL) {
+        if (!line)
+            break;
         switch (*line) {
         case 'l':
             psline.file = filestack.Last();
@@ -398,7 +400,7 @@ int Pdfsync::DocToSource(UINT pageNo, PointI pt, ScopedMem<WCHAR>& filename, UIN
 // (within a range of EPSILON_LINE)
 //
 // The function returns PDFSYNCERR_SUCCESS if a matching record was found.
-UINT Pdfsync::SourceToRecord(const WCHAR* srcfilename, UINT line, UINT col, Vec<size_t> &records)
+UINT Pdfsync::SourceToRecord(const WCHAR* srcfilename, UINT line, UINT, Vec<size_t> &records)
 {
     if (!srcfilename)
         return PDFSYNCERR_INVALID_ARGUMENT;
@@ -587,7 +589,7 @@ TryAgainAnsi:
     int firstpage = -1;
     rects.Reset();
 
-    while (node = synctex_next_result(this->scanner)) {
+    while ((node = synctex_next_result(this->scanner)) != NULL) {
         if (firstpage == -1) {
             firstpage = synctex_node_page(node);
             if (firstpage <= 0 || firstpage > engine->PageCount())

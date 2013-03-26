@@ -1,3 +1,4 @@
+﻿; see http://blog.kowalczyk.info/software/sumatrapdf/settings.html for documentation
 basic [
   global_prefs_only: false
   toolbar_visible: true
@@ -26,9 +27,9 @@ basic [
 advanced [
   traditional_ebook_ui: true
   esc_to_exit: false
-  text_color: #00000000
-  page_color: #00ffffff
-  main_window_background: #00fff200
+  text_color: #000000
+  page_color: #ffffff
+  main_window_background: #fff200
   page_padding [
     top: 2
     bottom: 2
@@ -41,24 +42,27 @@ advanced [
     highlight_offset: 0
     highlight_width: 15
     highlight_permanent: 0
-    highlight_color: #006581ff
+    highlight_color: #6581ff
     enable_tex_enhancements: false
   ]
-  s: Hello
-  default_zoom: -1
   ws: A wide string
 ]
 app_state [
   favorites [
     [
-      name: favorite name
-      page_no: 0
-      page_label: favorite label
+        name: my first fav
+        page_no: 22
+        page_label: my label for first fav
     ]
     [
-      name: favorite name two
-      page_no: 18
-      page_label: favorite label of mine
+        name: my second fav
+        page_no: 13
+        page_label: my label for second fav
+    ]
+    [
+        name: third fav
+        page_no: 3
+        page_label: my label for third fav
     ]
   ]
 ]
