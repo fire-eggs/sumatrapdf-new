@@ -2,8 +2,9 @@
    License: GPLv3 */
 
 #include "BaseUtil.h"
-#include "IniParser.h"
 #include "../sertxt_test/SerializeTxt.h"
+
+#include "IniParser.h"
 
 namespace sertxt {
 
@@ -42,21 +43,60 @@ static char *UnescapeStr(const char *s)
     return ret.StealData();
 }
 
-static void *DeserializeRec(IniFile& p, StructMetadata *def, const char *sectionName=NULL)
+static IniSection *FindSection(IniFile& ini, const char *name, size_t idx, size_t endIdx, size_t *foundIdx)
 {
-    IniSection *section = p.FindSection(sectionName);
-    IniLine *line = NULL;
+    for (size_t i = idx; i < endIdx; i++) {
+        if (str::EqI(ini.sections.At(i)->name, name)) {
+            *foundIdx = i;
+            return ini.sections.At(i);
+        }
+    }
+    return NULL;
+}
+
+static void *DeserializeRec(IniFile& ini, StructMetadata *def, const char *fieldNamesSeq, const char *sectionName=NULL, size_t startIdx=0, size_t endIdx=-1)
+{
+    if ((size_t)-1 == endIdx)
+        endIdx = ini.sections.Count();
+
+    size_t secIdx = startIdx;
+    IniSection *section = FindSection(ini, sectionName, startIdx, endIdx, &secIdx);
+    IniLine *line;
     int r, g, b, a;
 
-    uint8_t *data = (uint8_t *)calloc(1, def->size);
+    uint8_t *data = AllocArray<uint8_t>(def->size);
+    if (secIdx >= endIdx) {
+        section = NULL;
+        secIdx = startIdx - 1;
+    }
+
     for (size_t i = 0; i < def->nFields; i++) {
         FieldMetadata& field = def->fields[i];
+        const char *fieldName = fieldNamesSeq + field.nameOffset;
         if (TYPE_STRUCT_PTR == field.type) {
-            ScopedMem<char> name(sectionName ? str::Join(sectionName, ".", field.name) : str::Dup(field.name));
-            *(void **)(data + field.offset) = DeserializeRec(p, field.def, name);
+            ScopedMem<char> name(sectionName ? str::Format("%s.%s", sectionName, fieldName) : str::Dup(fieldName));
+            *(void **)(data + field.offset) = DeserializeRec(ini, field.def, fieldNamesSeq, name, secIdx + 1, endIdx);
             continue;
         }
-        if (!section || !(line = section->FindLine(field.name))) {
+        if (TYPE_ARRAY == field.type) {
+            ScopedMem<char> name(sectionName ? str::Format("%s.%s", sectionName, fieldName) : str::Dup(fieldName));
+            ListNode<void> *root = NULL, **next = &root;
+            size_t nextSecIdx = endIdx;
+            FindSection(ini, sectionName, secIdx + 1, endIdx, &nextSecIdx);
+            size_t subSecIdx = nextSecIdx;
+            IniSection *subSection = FindSection(ini, name, secIdx + 1, nextSecIdx, &subSecIdx);
+            while (subSection && subSecIdx < nextSecIdx) {
+                size_t nextSubSecIdx = nextSecIdx;
+                IniSection *nextSubSec = FindSection(ini, name, subSecIdx + 1, nextSecIdx, &nextSubSecIdx);
+                *next = AllocStruct<ListNode<void>>();
+                (*next)->val = DeserializeRec(ini, field.def, fieldNamesSeq, name, subSecIdx, nextSubSecIdx);
+                next = &(*next)->next;
+                subSection = nextSubSec; subSecIdx = nextSubSecIdx;
+            }
+            *(ListNode<void> **)(data + field.offset) = root;
+            continue;
+        }
+        if (!section || (line = section->FindLine(fieldName)) == NULL) {
             // printf("couldn't find line for %s (%s)\n", field.name, sectionName);
             continue;
         }
@@ -105,12 +145,12 @@ static void *DeserializeRec(IniFile& p, StructMetadata *def, const char *section
     return data;
 }
 
-uint8_t *Deserialize(const uint8_t *data, int dataSize, const char *version, StructMetadata *def)
+uint8_t *Deserialize(char *data, int dataSize, StructMetadata *def, const char *fieldNamesSeq)
 {
     CrashIf(!data); // TODO: where to get defaults from?
     CrashIf(str::Len((const char *)data) != (size_t)dataSize);
-    IniFile p((const char *)data);
-    return (uint8_t *)DeserializeRec(p, def);
+    IniFile ini((const char *)data);
+    return (uint8_t *)DeserializeRec(ini, def, fieldNamesSeq);
 }
 
 // only escape characters which are significant to IniParser:
@@ -140,84 +180,101 @@ static char *EscapeStr(const char *s)
     return ret.StealData();
 }
 
-static void SerializeRec(str::Str<char>& out, const uint8_t *data, StructMetadata *def, const char *sectionName=NULL)
+static void SerializeRec(str::Str<char>& out, const uint8_t *data, StructMetadata *def, const char *fieldNamesSeq, const char *sectionName=NULL)
 {
-    if (sectionName)
-        out.AppendFmt("[%s]\r\n", sectionName);
+    if (sectionName) {
+        out.Append("[");
+        out.Append(sectionName);
+        out.Append("]\r\n");
+    }
 
     COLORREF c;
     for (size_t i = 0; i < def->nFields; i++) {
         FieldMetadata& field = def->fields[i];
-        CrashIf(str::FindChar(field.name, '=') || NeedsEscaping(field.name));
+        const char *fieldName = fieldNamesSeq + field.nameOffset;
+        CrashIf(str::FindChar(fieldName, '=') || NeedsEscaping(fieldName));
+        ScopedMem<char> value;
         switch (field.type) {
         case TYPE_BOOL:
-            out.AppendFmt("%s = %s\r\n", field.name, *(bool *)(data + field.offset) ? "true" : "false");
+            value.Set(str::Dup(*(bool *)(data + field.offset) ? "true" : "false"));
             break;
         case TYPE_I16:
-            out.AppendFmt("%s = %d\r\n", field.name, (int32_t)*(int16_t *)(data + field.offset));
+            value.Set(str::Format("%d", (int32_t)*(int16_t *)(data + field.offset)));
             break;
         case TYPE_U16:
-            out.AppendFmt("%s = %u\r\n", field.name, (uint32_t)*(int16_t *)(data + field.offset));
+            value.Set(str::Format("%u", (uint32_t)*(uint16_t *)(data + field.offset)));
             break;
         case TYPE_I32:
-            out.AppendFmt("%s = %d\r\n", field.name, *(int32_t *)(data + field.offset));
+            value.Set(str::Format("%d", *(int32_t *)(data + field.offset)));
             break;
         case TYPE_U32:
-            out.AppendFmt("%s = %u\r\n", field.name, *(uint32_t *)(data + field.offset));
+            value.Set(str::Format("%u", *(uint32_t *)(data + field.offset)));
             break;
         case TYPE_U64:
-            out.AppendFmt("%s = %I64u\r\n", field.name, *(uint64_t *)(data + field.offset));
+            value.Set(str::Format("%I64u", *(uint64_t *)(data + field.offset)));
             break;
         case TYPE_FLOAT:
-            out.AppendFmt("%s = %g\r\n", field.name, *(float *)(data + field.offset));
+            value.Set(str::Format("%g", *(float *)(data + field.offset)));
             break;
         case TYPE_COLOR:
             c = *(COLORREF *)(data + field.offset);
             // TODO: COLORREF doesn't really have an alpha value
             if (((c >> 24) & 0xff))
-                out.AppendFmt("%s = #%02x%02x%02x%02x\r\n", field.name, (c >> 24) & 0xff, GetRValue(c), GetGValue(c), GetBValue(c));
+                value.Set(str::Format("#%02x%02x%02x%02x", (c >> 24) & 0xff, GetRValue(c), GetGValue(c), GetBValue(c)));
             else
-                out.AppendFmt("%s = #%02x%02x%02x\r\n", field.name, GetRValue(c), GetGValue(c), GetBValue(c));
+                value.Set(str::Format("#%02x%02x%02x", GetRValue(c), GetGValue(c), GetBValue(c)));
             break;
         case TYPE_STR:
             if (!*(const char **)(data + field.offset))
                 /* skip empty string */;
             else if (!NeedsEscaping(*(const char **)(data + field.offset)))
-                out.AppendFmt("%s = %s\r\n", field.name, *(const char **)(data + field.offset));
+                value.Set(str::Dup(*(const char **)(data + field.offset)));
             else
-                out.AppendFmt("%s = %s\r\n", field.name, ScopedMem<char>(EscapeStr(*(const char **)(data + field.offset))));
+                value.Set(EscapeStr(*(const char **)(data + field.offset)));
             break;
         case TYPE_WSTR:
             if (*(const WCHAR **)(data + field.offset)) {
-                ScopedMem<char> value(str::conv::ToUtf8(*(const WCHAR **)(data + field.offset)));
-                if (!NeedsEscaping(value))
-                    out.AppendFmt("%s = %s\r\n", field.name, value);
-                else
-                    out.AppendFmt("%s = %s\r\n", field.name, ScopedMem<char>(EscapeStr(value)));
+                value.Set(str::conv::ToUtf8(*(const WCHAR **)(data + field.offset)));
+                if (NeedsEscaping(value))
+                    value.Set(EscapeStr(value));
             }
             break;
         case TYPE_STRUCT_PTR:
+        case TYPE_ARRAY:
             // nested structs are serialized after all other values
             break;
         default:
-            CrashIf(true);
+            CrashIf(!(field.type & TYPE_NO_STORE_MASK));
+        }
+        if (value) {
+            out.Append(fieldName);
+            out.Append(" = ");
+            out.Append(value);
+            out.Append("\r\n");
         }
     }
 
     for (size_t i = 0; i < def->nFields; i++) {
         FieldMetadata& field = def->fields[i];
-        if (TYPE_STRUCT_PTR != field.type)
-            continue;
-        ScopedMem<char> name(sectionName ? str::Join(sectionName, ".", field.name) : str::Dup(field.name));
-        SerializeRec(out, *(const uint8_t **)(data + field.offset), field.def, name);
+        const char *fieldName = fieldNamesSeq + field.nameOffset;
+        if (TYPE_STRUCT_PTR == field.type) {
+            ScopedMem<char> name(sectionName ? str::Format("%s.%s", sectionName, fieldName) : str::Dup(fieldName));
+            SerializeRec(out, *(const uint8_t **)(data + field.offset), field.def, fieldNamesSeq, name);
+        }
+        else if (TYPE_ARRAY == field.type) {
+            ScopedMem<char> name(sectionName ? str::Format("%s.%s", sectionName, fieldName) : str::Dup(fieldName));
+            for (ListNode<void> *node = *(ListNode<void> **)(data + field.offset); node; node = node->next) {
+                SerializeRec(out, (const uint8_t *)node->val, field.def, fieldNamesSeq, name);
+            }
+        }
     }
 }
 
-uint8_t *Serialize(const uint8_t *data, const char *version, StructMetadata *def, int *sizeOut)
+uint8_t *Serialize(const uint8_t *data, StructMetadata *def, const char *fieldNamesSeq, int *sizeOut)
 {
     str::Str<char> out;
     out.Append(UTF8_BOM "; this file will be overwritten - modify at your own risk\r\n");
-    SerializeRec(out, data, def);
+    SerializeRec(out, data, def, fieldNamesSeq);
     if (sizeOut)
         *sizeOut = (int)out.Size();
     return (uint8_t *)out.StealData();
@@ -231,6 +288,15 @@ void FreeStruct(uint8_t *data, StructMetadata *def)
         FieldMetadata& field = def->fields[i];
         if (TYPE_STRUCT_PTR == field.type)
             FreeStruct(*(uint8_t **)(data + field.offset), field.def);
+        else if (TYPE_ARRAY == field.type) {
+            ListNode<void> *node = *(ListNode<void> **)(data + field.offset);
+            while (node) {
+                ListNode<void> *next = node->next;
+                FreeStruct((uint8_t *)node->val, field.def);
+                free(node);
+                node = next;
+            }
+        }
         else if (TYPE_WSTR == field.type || TYPE_STR == field.type)
             free(*(void **)(data + field.offset));
     }
