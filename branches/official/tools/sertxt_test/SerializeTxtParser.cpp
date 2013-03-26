@@ -3,7 +3,6 @@
 
 /*
 TODO:
- - comments (; and/or #)
  - allow "foo = bar" in addition to "foo: bar"
 */
 
@@ -14,120 +13,16 @@ foo [
   key: val
   k2 [
     val
-    another val
+    mulit-line values are possible
   ]
 ]
 
-This is not a very strict format. On purpose it doesn't try to break
+
+This is not a very strict format. On purpose it doesn't try to strictly break
 things into key/values, just to decode tree structure and *help* to interpret
 a given line either as a simple string or key/value pair. It's
 up to the caller to interpret the data.
 */
-
-namespace str {
-
-inline bool IsWsOrNewline(char c)
-{
-    return ( ' ' == c) ||
-           ('\r' == c) ||
-           ('\t' == c) ||
-           ('\n' == c);
-}
-
-inline bool IsWsNoNewline(char c)
-{
-    return ( ' ' == c) ||
-           ('\r' == c) ||
-           ('\t' == c);
-}
-
-// returns number of characters skipped
-int Slice::SkipWsUntilNewline()
-{
-    char *start = curr;
-    for (; !Finished(); ++curr) {
-        if (!IsWsNoNewline(*curr))
-            break;
-    }
-    return curr - start;
-}
-
-// returns number of characters skipped
-int Slice::SkipNonWs()
-{
-    char *start = curr;
-    for (; !Finished(); ++curr) {
-        if (IsWsOrNewline(*curr))
-            break;
-    }
-    return curr - start;
-}
-
-// advances to a given character or end
-int Slice::SkipUntil(char toFind)
-{
-    char *start = curr;
-    for (; !Finished(); ++curr) {
-        if (*curr == toFind)
-            break;
-    }
-    return curr - start;
-}
-
-char Slice::PrevChar() const
-{
-    if (curr > begin)
-        return curr[-1];
-    return 0;
-}
-
-char Slice::CurrChar() const
-{
-    if (curr < end)
-        return *curr;
-    return 0;
-}
-
-// skip up to n characters
-// returns the number of characters skipped
-int Slice::Skip(int n)
-{
-    char *start = curr;
-    while ((curr < end) && (n > 0)) {
-        ++curr;
-        --n;
-    }
-    return curr - start;
-}
-
-void Slice::ZeroCurr()
-{
-    if (curr < end)
-        *curr = 0;
-}
-
-} // namespace str
-
-enum Token {
-    TokenOpen, // '['
-    TokenClose, // ']'
-    TokenString,
-    TokenKeyVal, // foo: bar
-    TokenError
-};
-
-struct TokenVal {
-    Token   type;
-
-    // TokenString, TokenKeyVal
-    char *  lineStart;
-    char *  valStart;
-    char *  valEnd;
-
-    // TokenKeyVal
-    char *  keyStart;
-    char *  keyEnd;
-};
 
 static bool IsCommentChar(char c)
 {
@@ -137,10 +32,11 @@ static bool IsCommentChar(char c)
 // TODO: maybe also allow things like:
 // foo: [1 3 4]
 // i.e. a child on a single line
-static void ParseNextToken(TxtParser& parser, TokenVal& tok)
+static void ParseNextToken(TxtParser& parser)
 {
-    ZeroMemory(&tok, sizeof(TokenVal));
-    tok.type = TokenError;
+    TokenVal& tok = parser.tok;
+    parser.prevToken = tok.type;
+    ClearToken(parser.tok);
 
     str::Slice& slice = parser.toParse;
 
@@ -220,11 +116,32 @@ Again:
     } else {
         CrashIf(tok.keyStart || tok.keyEnd);
     }
+    bool wasUnescaped = false;
+NextLine:
     slice.SkipUntil('\n');
     // "  foo:  bar  "
     //               ^
-
-    tok.valEnd = slice.curr;
+    if ('\\' == slice.PrevChar()) {
+        wasUnescaped = true;
+        slice.curr[-1] = 0;
+        slice.Skip(1);
+        goto NextLine;
+    }
+    if (wasUnescaped) {
+        // we replaced '\' with 0, we need to remove those zeroes
+        char *s = tok.valStart;
+        char *end = slice.curr;
+        char *dst = s;
+        while (s < end) {
+            if (*s)
+                *dst++ = *s;
+            s++;
+        }
+        *dst = 0;
+        tok.valEnd = dst;
+    } else {
+        tok.valEnd = slice.curr;
+    }
     slice.ZeroCurr();
     slice.Skip(1);
 }
@@ -242,16 +159,27 @@ static TxtNode *TxtNodeFromToken(Allocator *allocator, TokenVal& tok)
 
 static TxtNode *ParseNextNode(TxtParser& parser)
 {
-    TokenVal tok;
     TxtNode *firstNode = NULL;
     TxtNode *currNode = NULL;
+    int arrayNest = 0;
     for (;;) {
-        ParseNextToken(parser, tok);
-        if (TokenError == tok.type)
+        if (parser.encounteredError)
             return NULL;
+
+        if (0 == parser.bracketNesting && parser.toParse.Finished())
+            return firstNode;
+
+        ParseNextToken(parser);
+        TokenVal& tok = parser.tok;
+
+        if (TokenError == tok.type) {
+            parser.encounteredError = true;
+            return NULL;
+        }
+
         if (TokenString == tok.type || TokenKeyVal == tok.type) {
             TxtNode *tmp = TxtNodeFromToken(parser.allocator, tok);
-            if (firstNode == NULL) {
+            if (NULL == firstNode) {
                 firstNode = tmp;
                 CrashIf(currNode);
                 currNode = tmp;
@@ -260,28 +188,48 @@ static TxtNode *ParseNextNode(TxtParser& parser)
                 currNode = tmp;
             }
         } else if (TokenOpen == tok.type) {
-            parser.bracketNesting += 1;
-            if (NULL == currNode) {
-                CrashIf(firstNode);
-                // '[' that starts an array
+            if ((TokenOpen == parser.prevToken) || (TokenClose == parser.prevToken)) {
+                // array element
+                ++arrayNest;
                 TxtNode *tmp = TxtNodeFromToken(parser.allocator, tok);
-                firstNode = tmp;
-                currNode = tmp;
+                tmp->child = ParseNextNode(parser);
+                if (tmp->child == NULL) {
+                    // TODO: is it valid?
+                    parser.encounteredError = true;
+                }
+                if (parser.encounteredError)
+                    return NULL;
+                if (NULL == firstNode) {
+                    firstNode = tmp;
+                    currNode = tmp;
+                } else {
+                    currNode->next = tmp;
+                    currNode = tmp;
+                }
+            } else {
+                ++parser.bracketNesting;
+                currNode->child = ParseNextNode(parser);
+                // note: it's valid for currNode->child to be NULL. It
+                // corresponds to an empty structure i.e.:
+                // foo [
+                // ]
+                if (parser.encounteredError)
+                    return NULL;
             }
-            currNode->child = ParseNextNode(parser);
-            // propagate errors
-            if (!currNode->child)
-                return NULL;
-            if (0 == parser.bracketNesting && parser.toParse.Finished())
-                return firstNode;
         } else {
             CrashIf(TokenClose != tok.type);
-            if (0 == parser.bracketNesting) {
-                // bad input!
-                return NULL;
+            if (arrayNest > 0) {
+                --arrayNest;
+                if (0 == arrayNest)
+                    return firstNode;
+            } else {
+                --parser.bracketNesting;
+                if (parser.bracketNesting < 0) {
+                    // bad input!
+                    parser.encounteredError = true;
+                }
+                return firstNode;
             }
-            --parser.bracketNesting;
-            return firstNode;
         }
     }
 }
@@ -326,14 +274,25 @@ static void PrettyPrintNode(TxtNode *curr, int nest, str::Str<char>& res)
 {
     while (curr) {
         if (curr->child) {
-            PrettyPrintVal(curr, nest, res);
-            if (curr->valStart != NULL)
-                res.Append(" [\n"); // start of dict
-            else
-                res.Append("[\n"); // start of array
-            PrettyPrintNode(curr->child, nest + 1, res);
-            AppendNest(res, nest);
-            res.Append("]\n");
+            if (curr->valStart != NULL) {
+                // dict
+                PrettyPrintVal(curr, nest, res);
+                res.Append(" [\n");
+                PrettyPrintNode(curr->child, nest + 1, res);
+                AppendNest(res, nest);
+                res.Append("]\n");
+            } else {
+                // array
+                while (curr) {
+                    AppendNest(res, nest);
+                    res.Append("[\n");
+                    PrettyPrintNode(curr->child, nest + 1, res);
+                    AppendNest(res, nest);
+                    res.Append("]\n");
+                    curr = curr->next;
+                }
+                return;
+            }
         } else {
             PrettyPrintVal(curr, nest, res);
             res.Append("\n");

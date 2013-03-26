@@ -378,6 +378,14 @@
 					RelativePath="..\src\utils\StrHash.h"
 					>
 				</File>
+				<File
+					RelativePath="..\src\utils\StrSlice.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\src\utils\StrSlice.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="tools"
@@ -930,10 +938,6 @@
 				</File>
 				<File
 					RelativePath="..\src\AppPrefs.h"
-					>
-				</File>
-				<File
-					RelativePath="..\src\AppPrefs2.h"
 					>
 				</File>
 				<File

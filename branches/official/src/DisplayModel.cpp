@@ -1143,7 +1143,7 @@ bool DisplayModel::GoToPrevPage(int scrollY)
         return true;
     }
     int firstPageInNewRow = FirstPageInARowNo(currPageNo - columns, columns, DisplayModeShowCover(GetDisplayMode()));
-    if (firstPageInNewRow < 1) {
+    if (firstPageInNewRow < 1 || 1 == currPageNo) {
         /* we're on a first page, can't go back */
         return false;
     }
@@ -1287,7 +1287,7 @@ void DisplayModel::ZoomTo(float zoomLevel, PointI *fixPt)
 
     ScrollState ss = GetScrollState();
 
-    int centerPage;
+    int centerPage = -1;
     PointD centerPt;
     if (fixPt) {
         centerPage = GetPageNoByPoint(*fixPt);
