@@ -8,6 +8,23 @@ namespace sertxt {
 
 struct FieldMetadata;
 
+// TODO: to make the operations on elements easier, ListNode should be nt kernel style
+// list i.e. double-linked, with root that points to start and end
+#if 0
+template <typename T>
+struct ListNode {
+    ListNode<T> *   next;
+    ListNode<T> *   prev;
+    void *          val;
+}
+
+template <typename T>
+struct ListRoot {
+    ListNode<T> *   first;
+    ListNode<T> *   last;
+};
+#endif
+
 template <typename T>
 struct ListNode {
     ListNode<T> *   next;
@@ -20,7 +37,7 @@ typedef struct {
     FieldMetadata * fields;
 } StructMetadata;
 
-typedef enum : uint16_t {
+typedef enum {
     TYPE_BOOL,
     TYPE_I16,
     TYPE_U16,
@@ -33,21 +50,23 @@ typedef enum : uint16_t {
     TYPE_WSTR,
     TYPE_STRUCT_PTR,
     TYPE_ARRAY,
+    // a flag, if set, the value is not to be serialized
+    TYPE_NO_STORE_MASK = 0x4000
 } Type;
 
 // information about a single field
 struct FieldMetadata {
-    const char *     name;
-    Type             type;
+    uint16_t         nameOffset;
     // from the beginning of the struct
     uint16_t         offset;
+    Type             type;
     // for TYP_ARRAY and TYPE_STRUCT_PTR, otherwise NULL
     StructMetadata * def;
 };
 
 void        FreeStruct(uint8_t *data, StructMetadata *def);
-uint8_t*    Deserialize(const uint8_t *data, int dataSize, const char *version, StructMetadata *def);
-uint8_t *   Serialize(const uint8_t *data, const char *version, StructMetadata *def, int *sizeOut);
+uint8_t*    Deserialize(char *data, int dataSize, StructMetadata *def, const char *fieldNamesSeq);
+uint8_t *   Serialize(const uint8_t *data, StructMetadata *def, const char *fieldNamesSeq, int *sizeOut);
 
 } // namespace sertxt
 
