@@ -62,14 +62,15 @@ class Field(object):
 		return "; %s = ???" % self.name
 
 class Struct(Field):
-	def __init__(self, name, fields, comment, structName=None):
+	def __init__(self, name, fields, comment, structName=None, compact=False):
 		self.structName = structName or name
-		super(Struct, self).__init__(name, Type("Struct", "%s *" % self.structName), fields, comment)
+		super(Struct, self).__init__(name, Type("Struct", "%s" % self.structName), fields, comment)
+		if compact and all(field.type == Int for field in fields): self.type.name = "Compact"
 
 class Array(Field):
 	def __init__(self, name, fields, comment, structName=None):
 		self.structName = structName or name
-		super(Array, self).__init__(name, Type("Array", "%s **" % self.structName), fields, comment)
+		super(Array, self).__init__(name, Type("Array", "%s *" % self.structName), fields, comment)
 
 # ##### setting definitions for SumatraPDF #####
 
@@ -109,6 +110,13 @@ PagePadding = [
 	Field("InnerY", Int, 4, "size of the vertical margin between two pages"),
 ]
 
+BackgroundGradient = [
+	Field("Enabled", Bool, False, "whether to draw a gradient behind the pages"),
+	Field("ColorTop", Color, 0xAA2828, "color at the top of the document (first page)"),
+	Field("ColorMiddle", Color, 0x28AA28, "color at the center of the document (middlest page)"),
+	Field("ColorBottom", Color, 0x2828AA, "color at the bottom of the document (last page)"),
+]
+
 PrinterDefaults = [
 	Field("PrintScale", Utf8String, "shrink", "default value for scaling (shrink, fit, none)"),
 	Field("PrintAsImage", Bool, False, "default value for the compatibility option"),
@@ -144,11 +152,14 @@ UserPrefs = [
 	Struct("PrinterDefaults", PrinterDefaults,
 		"these values allow to override the default settings in the Print dialog"),
 	Struct("PagePadding", PagePadding,
-		"these values allow to change how far apart pages are layed out"),
+		"these values allow to change how far apart pages are layed out"), # TODO: compact?
+	Struct("BackgroundGradient", BackgroundGradient,
+		"these values allow to tweak the experimental feature for using a color " +
+		"gradient to subconsciously determine reading progress"),
 	# renamed from ForwardSearch for interoperability with gen_settings.py
 	Struct("ForwardSearch3", ForwardSearch,
 		"these values allow to customize how the forward search highlight appears"),
-	Array("ExternalViewers", ExternalViewer,
+	Array("ExternalViewer", ExternalViewer,
 		"this list contains a list of additional external viewers for various file types"),
 ]
 
@@ -172,7 +183,7 @@ FileSettings = [
 	Field("DisplayMode", String, "automatic", # TODO: Type_Custom, DM_AUTOMATIC
 		"how pages should be layed out for this document"),
 	Struct("ScrollPos", PointI,
-		"how far this document has been scrolled", structName="PointI"),
+		"how far this document has been scrolled", structName="PointI", compact=True),
 	Field("PageNo", Int, 1,
 		"the scrollPos values are relative to the top-left corner of this page"),
 	Field("ReparseIdx", Int, 0,
@@ -184,7 +195,7 @@ FileSettings = [
 	Field("WindowState", Int, 0,
 		"default state of new SumatraPDF windows (same as the last closed)"),
 	Struct("WindowPos", RectI,
-		"default position (can be on any monitor)", structName="RectI"),
+		"default position (can be on any monitor)", structName="RectI", compact=True),
 	Field("DecryptionKey", Utf8String, None,
 		"hex encoded MD5 fingerprint of file content (32 chars) followed by " +
 		"crypt key (64 chars) - only applies for PDF documents"),
@@ -198,6 +209,12 @@ FileSettings = [
 		"Note: We intentionally track toggle state as opposed to expansion state " +
 		"so that we only have to save a diff instead of all states for the whole " +
 		"tree (which can be quite large) - and also due to backwards compatibility"),
+	Array("Favorite", [
+		Field("Name", String, None, "name of this favorite as shown in the menu"),
+		Field("PageNo", Int, 0, "which page this favorite is about"),
+		Field("PageLabel", String, None, "optional label for this page (if logical and physical numers disagree)"),
+		Field("MenuId", Int, 0, "assigned in AppendFavMenuItems()", internal=True),
+	], "Values which are persisted for bookmarks/favorites"),
 	Field("Index", Type("Custom", "size_t"), "0",
 		"temporary value needed for FileHistory::cmpOpenCount",
 		internal=True),
@@ -241,7 +258,7 @@ AppPrefs = [
 	Field("WindowState", Int, 1,
 		"default state of new SumatraPDF windows (same as the last closed)"),
 	Struct("WindowPos", RectI,
-		"default position (can be on any monitor)", structName="RectI"),
+		"default position (can be on any monitor)", structName="RectI", compact=True),
 	Field("TocVisible", Bool, True,
 		"whether the table of contents (Bookmarks) sidebar should be shown by " +
 		"default when its available for a document"),
@@ -258,15 +275,9 @@ AppPrefs = [
 	Field("CbxR2L", Bool, False,
 		"display CBX double pages from right to left"),
 	# file history and favorites
-	Array("FileHistory", FileSettings,
+	Array("File", FileSettings,
 		"Most values in this structure are remembered individually for every file and " +
 		"are by default also persisted so that reading can be resumed"),
-	Array("Favorites", [
-		Field("Name", String, None, "name of this favorite as shown in the menu"),
-		Field("PageNo", Int, 0, "which page this favorite is about"),
-		Field("PageLabel", String, None, "optional label for this page (if logical and physical numers disagree)"),
-		Field("MenuId", Int, 0, "assigned in AppendFavMenuItems()", internal=True),
-	], "Values which are persisted for bookmarks/favorites"),
 	# non-serialized fields
 	Field("LastPrefUpdate", Int64, 0,
 		"modification time of the preferences file when it was last read",
@@ -312,7 +323,7 @@ def BuildStruct(struct, built=[]):
 
 def BuildMetaData(struct, built=[]):
 	fieldInfo, metadata = [], []
-	for field in sorted(struct.default, key=lambda field: field.name):
+	for field in struct.default:
 		if field.internal:
 			continue
 		if type(field) == Struct:
@@ -327,7 +338,7 @@ def BuildMetaData(struct, built=[]):
 			built.append(field.structName)
 	metadata.append("\n".join([
 		"static SettingInfo g%sInfo[] = {" % struct.structName,
-		"\t/* TODO: replace this hack with a second meta-struct? */",
+		# include size information in the first line instead of a second structure
 		"\t{ NULL, (SettingType)%d, sizeof(%s), NULL }," % (len(fieldInfo), struct.structName),
 	] + fieldInfo + [
 		"};"
@@ -361,7 +372,7 @@ AppPrefs3_Header = """\
 %(userStructDef)s
 
 enum SettingType {
-	Type_Struct, Type_Array,
+	Type_Struct, Type_Array, Type_Compact,
 	Type_Bool, Type_Color, Type_Float, Type_Int, Type_Int64, Type_String, Type_Utf8String,
 };
 
@@ -373,6 +384,9 @@ struct SettingInfo {
 	int64_t def;
 };
 STATIC_ASSERT(sizeof(int64_t) >= sizeof(void *), ptr_is_max_64_bit);
+
+static inline size_t GetFieldCount(SettingInfo *meta) { return (size_t)meta[0].type; }
+static inline size_t GetStructSize(SettingInfo *meta) { return meta[0].offset; }
 
 #ifdef INCLUDE_APPPREFS3_METADATA
 %(appStructMetadata)s

@@ -346,6 +346,7 @@ pdf_read_new_xref(pdf_document *xref, pdf_lexbuf *buf)
 	}
 	fz_catch(ctx)
 	{
+		pdf_drop_obj(trailer);
 		fz_throw(ctx, "cannot parse compressed xref stream object");
 	}
 
@@ -777,6 +778,12 @@ pdf_init_document(pdf_document *xref)
 	{
 		if (xref->table)
 		{
+			/* SumatraPDF: fix memory leak */
+			for (i = 0; i < xref->len; i++)
+			{
+				pdf_drop_obj(xref->table[i].obj);
+				fz_drop_buffer(ctx, xref->table[i].stm_buf);
+			}
 			fz_free(xref->ctx, xref->table);
 			xref->table = NULL;
 			xref->len = 0;

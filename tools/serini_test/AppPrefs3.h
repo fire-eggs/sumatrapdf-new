@@ -7,7 +7,7 @@
 #define AppPrefs3_h
 
 // Values which are persisted for bookmarks/favorites
-struct Favorites {
+struct Favorite {
     // name of this favorite as shown in the menu
     WCHAR * name;
     // which page this favorite is about
@@ -21,7 +21,7 @@ struct Favorites {
 
 // Most values in this structure are remembered individually for every
 // file and are by default also persisted so that reading can be resumed
-struct FileHistory {
+struct File {
     // absolute path to a document that's been loaded successfully
     WCHAR * filePath;
     // in order to prevent documents that haven't been opened for a while
@@ -43,7 +43,7 @@ struct FileHistory {
     // how pages should be layed out for this document
     WCHAR * displayMode;
     // how far this document has been scrolled
-    PointI * scrollPos;
+    PointI scrollPos;
     // the scrollPos values are relative to the top-left corner of this
     // page
     int pageNo;
@@ -58,7 +58,7 @@ struct FileHistory {
     // default state of new SumatraPDF windows (same as the last closed)
     int windowState;
     // default position (can be on any monitor)
-    RectI * windowPos;
+    RectI windowPos;
     // hex encoded MD5 fingerprint of file content (32 chars) followed by
     // crypt key (64 chars) - only applies for PDF documents
     char * decryptionKey;
@@ -74,6 +74,9 @@ struct FileHistory {
     // tree (which can be quite large) - and also due to backwards
     // compatibility
     char * tocState;
+    // Values which are persisted for bookmarks/favorites
+    Favorite * favorite;
+    size_t favoriteCount;
     // temporary value needed for FileHistory::cmpOpenCount
     size_t index;
     // the thumbnail is persisted separately as a PNG in sumatrapdfcache
@@ -124,7 +127,7 @@ struct GlobalPrefs {
     // default state of new SumatraPDF windows (same as the last closed)
     int windowState;
     // default position (can be on any monitor)
-    RectI * windowPos;
+    RectI windowPos;
     // whether the table of contents (Bookmarks) sidebar should be shown by
     // default when its available for a document
     bool tocVisible;
@@ -145,11 +148,8 @@ struct GlobalPrefs {
     // Most values in this structure are remembered individually for every
     // file and are by default also persisted so that reading can be
     // resumed
-    FileHistory ** fileHistory;
-    size_t fileHistoryCount;
-    // Values which are persisted for bookmarks/favorites
-    Favorites ** favorites;
-    size_t favoritesCount;
+    File * file;
+    size_t fileCount;
     // modification time of the preferences file when it was last read
     int64_t lastPrefUpdate;
     // a list of settings which this version of SumatraPDF didn't know how
@@ -159,7 +159,7 @@ struct GlobalPrefs {
 
 // this list contains a list of additional external viewers for various
 // file types
-struct ExternalViewers {
+struct ExternalViewer {
     // command line with which to call the external viewer, may contain %p
     // for page numer and %1 for the file name
     WCHAR * commandLine;
@@ -185,6 +185,19 @@ struct ForwardSearch3 {
     // whether the forward search highlight will remain visible until the
     // next mouse click instead of fading away instantly
     bool highlightPermanent;
+};
+
+// these values allow to tweak the experimental feature for using a
+// color gradient to subconsciously determine reading progress
+struct BackgroundGradient {
+    // whether to draw a gradient behind the pages
+    bool enabled;
+    // color at the top of the document (first page)
+    COLORREF colorTop;
+    // color at the center of the document (middlest page)
+    COLORREF colorMiddle;
+    // color at the bottom of the document (last page)
+    COLORREF colorBottom;
 };
 
 // these values allow to change how far apart pages are layed out
@@ -231,23 +244,26 @@ struct AdvancedPrefs {
 // can't be changed from within the UI
 struct UserPrefs {
     // these values allow to tweak various bits and pieces of SumatraPDF
-    AdvancedPrefs * advancedPrefs;
+    AdvancedPrefs advancedPrefs;
     // these values allow to override the default settings in the Print
     // dialog
-    PrinterDefaults * printerDefaults;
+    PrinterDefaults printerDefaults;
     // these values allow to change how far apart pages are layed out
-    PagePadding * pagePadding;
+    PagePadding pagePadding;
+    // these values allow to tweak the experimental feature for using a
+    // color gradient to subconsciously determine reading progress
+    BackgroundGradient backgroundGradient;
     // these values allow to customize how the forward search highlight
     // appears
-    ForwardSearch3 * forwardSearch3;
+    ForwardSearch3 forwardSearch3;
     // this list contains a list of additional external viewers for various
     // file types
-    ExternalViewers ** externalViewers;
-    size_t externalViewersCount;
+    ExternalViewer * externalViewer;
+    size_t externalViewerCount;
 };
 
 enum SettingType {
-    Type_Struct, Type_Array,
+    Type_Struct, Type_Array, Type_Compact,
     Type_Bool, Type_Color, Type_Float, Type_Int, Type_Int64, Type_String, Type_Utf8String,
 };
 
@@ -260,138 +276,139 @@ struct SettingInfo {
 };
 STATIC_ASSERT(sizeof(int64_t) >= sizeof(void *), ptr_is_max_64_bit);
 
+static inline size_t GetFieldCount(SettingInfo *meta) { return (size_t)meta[0].type; }
+static inline size_t GetStructSize(SettingInfo *meta) { return meta[0].offset; }
+
 #ifdef INCLUDE_APPPREFS3_METADATA
-static SettingInfo gFavoritesInfo[] = {
-    /* TODO: replace this hack with a second meta-struct? */
-    { NULL, (SettingType)3, sizeof(Favorites), NULL },
-    { "Name", Type_String, offsetof(Favorites, name), NULL, NULL },
-    { "PageLabel", Type_String, offsetof(Favorites, pageLabel), NULL, NULL },
-    { "PageNo", Type_Int, offsetof(Favorites, pageNo), NULL, 0 },
+static SettingInfo gRectIInfo[] = {
+    { NULL, (SettingType)4, sizeof(RectI), NULL },
+    { "X", Type_Int, offsetof(RectI, x), NULL, 0 },
+    { "Y", Type_Int, offsetof(RectI, y), NULL, 0 },
+    { "Dx", Type_Int, offsetof(RectI, dx), NULL, 0 },
+    { "Dy", Type_Int, offsetof(RectI, dy), NULL, 0 },
 };
 
 static SettingInfo gPointIInfo[] = {
-    /* TODO: replace this hack with a second meta-struct? */
     { NULL, (SettingType)2, sizeof(PointI), NULL },
     { "X", Type_Int, offsetof(PointI, x), NULL, 0 },
     { "Y", Type_Int, offsetof(PointI, y), NULL, 0 },
 };
 
-static SettingInfo gRectIInfo[] = {
-    /* TODO: replace this hack with a second meta-struct? */
-    { NULL, (SettingType)4, sizeof(RectI), NULL },
-    { "Dx", Type_Int, offsetof(RectI, dx), NULL, 0 },
-    { "Dy", Type_Int, offsetof(RectI, dy), NULL, 0 },
-    { "X", Type_Int, offsetof(RectI, x), NULL, 0 },
-    { "Y", Type_Int, offsetof(RectI, y), NULL, 0 },
+static SettingInfo gFavoriteInfo[] = {
+    { NULL, (SettingType)3, sizeof(Favorite), NULL },
+    { "Name", Type_String, offsetof(Favorite, name), NULL, NULL },
+    { "PageNo", Type_Int, offsetof(Favorite, pageNo), NULL, 0 },
+    { "PageLabel", Type_String, offsetof(Favorite, pageLabel), NULL, NULL },
 };
 
-static SettingInfo gFileHistoryInfo[] = {
-    /* TODO: replace this hack with a second meta-struct? */
-    { NULL, (SettingType)17, sizeof(FileHistory), NULL },
-    { "DecryptionKey", Type_Utf8String, offsetof(FileHistory, decryptionKey), NULL, NULL },
-    { "DisplayMode", Type_String, offsetof(FileHistory, displayMode), NULL, (int64_t)L"automatic" },
-    { "FilePath", Type_String, offsetof(FileHistory, filePath), NULL, NULL },
-    { "IsMissing", Type_Bool, offsetof(FileHistory, isMissing), NULL, false },
-    { "IsPinned", Type_Bool, offsetof(FileHistory, isPinned), NULL, false },
-    { "OpenCount", Type_Int, offsetof(FileHistory, openCount), NULL, 0 },
-    { "PageNo", Type_Int, offsetof(FileHistory, pageNo), NULL, 1 },
-    { "ReparseIdx", Type_Int, offsetof(FileHistory, reparseIdx), NULL, 0 },
-    { "Rotation", Type_Int, offsetof(FileHistory, rotation), NULL, 0 },
-    { "ScrollPos", Type_Struct, offsetof(FileHistory, scrollPos), gPointIInfo, NULL },
-    { "SidebarDx", Type_Int, offsetof(FileHistory, sidebarDx), NULL, 0 },
-    { "TocState", Type_Utf8String, offsetof(FileHistory, tocState), NULL, NULL },
-    { "TocVisible", Type_Bool, offsetof(FileHistory, tocVisible), NULL, true },
-    { "UseGlobalValues", Type_Bool, offsetof(FileHistory, useGlobalValues), NULL, false },
-    { "WindowPos", Type_Struct, offsetof(FileHistory, windowPos), gRectIInfo, NULL },
-    { "WindowState", Type_Int, offsetof(FileHistory, windowState), NULL, 0 },
-    { "ZoomVirtual", Type_Float, offsetof(FileHistory, zoomVirtual), NULL, 100 },
+static SettingInfo gFileInfo[] = {
+    { NULL, (SettingType)19, sizeof(File), NULL },
+    { "FilePath", Type_String, offsetof(File, filePath), NULL, NULL },
+    { "OpenCount", Type_Int, offsetof(File, openCount), NULL, 0 },
+    { "IsPinned", Type_Bool, offsetof(File, isPinned), NULL, false },
+    { "IsMissing", Type_Bool, offsetof(File, isMissing), NULL, false },
+    { "UseGlobalValues", Type_Bool, offsetof(File, useGlobalValues), NULL, false },
+    { "DisplayMode", Type_String, offsetof(File, displayMode), NULL, (int64_t)L"automatic" },
+    { "ScrollPos", Type_Compact, offsetof(File, scrollPos), gPointIInfo, NULL },
+    { "PageNo", Type_Int, offsetof(File, pageNo), NULL, 1 },
+    { "ReparseIdx", Type_Int, offsetof(File, reparseIdx), NULL, 0 },
+    { "ZoomVirtual", Type_Float, offsetof(File, zoomVirtual), NULL, 100 },
+    { "Rotation", Type_Int, offsetof(File, rotation), NULL, 0 },
+    { "WindowState", Type_Int, offsetof(File, windowState), NULL, 0 },
+    { "WindowPos", Type_Compact, offsetof(File, windowPos), gRectIInfo, NULL },
+    { "DecryptionKey", Type_Utf8String, offsetof(File, decryptionKey), NULL, NULL },
+    { "TocVisible", Type_Bool, offsetof(File, tocVisible), NULL, true },
+    { "SidebarDx", Type_Int, offsetof(File, sidebarDx), NULL, 0 },
+    { "TocState", Type_Utf8String, offsetof(File, tocState), NULL, NULL },
+    { "Favorite", Type_Array, offsetof(File, favorite), gFavoriteInfo, NULL },
+    { NULL, Type_Array, offsetof(File, favoriteCount), gFavoriteInfo, NULL },
 };
 
 static SettingInfo gGlobalPrefsInfo[] = {
-    /* TODO: replace this hack with a second meta-struct? */
-    { NULL, (SettingType)27, sizeof(GlobalPrefs), NULL },
-    { "CbxR2L", Type_Bool, offsetof(GlobalPrefs, cbxR2L), NULL, false },
-    { "CurrLangCode", Type_String, offsetof(GlobalPrefs, currLangCode), NULL, NULL },
-    { "DefaultDisplayMode", Type_String, offsetof(GlobalPrefs, defaultDisplayMode), NULL, (int64_t)L"automatic" },
-    { "DefaultZoom", Type_Float, offsetof(GlobalPrefs, defaultZoom), NULL, -1 },
-    { "EnableAutoUpdate", Type_Bool, offsetof(GlobalPrefs, enableAutoUpdate), NULL, true },
-    { "EnableTeXEnhancements", Type_Bool, offsetof(GlobalPrefs, enableTeXEnhancements), NULL, false },
-    { "FavVisible", Type_Bool, offsetof(GlobalPrefs, favVisible), NULL, false },
-    { "Favorites", Type_Array, offsetof(GlobalPrefs, favorites), gFavoritesInfo, NULL },
-    { NULL, Type_Array, offsetof(GlobalPrefs, favoritesCount), gFavoritesInfo, NULL },
-    { "FileHistory", Type_Array, offsetof(GlobalPrefs, fileHistory), gFileHistoryInfo, NULL },
-    { NULL, Type_Array, offsetof(GlobalPrefs, fileHistoryCount), gFileHistoryInfo, NULL },
+    { NULL, (SettingType)25, sizeof(GlobalPrefs), NULL },
     { "GlobalPrefsOnly", Type_Bool, offsetof(GlobalPrefs, globalPrefsOnly), NULL, false },
-    { "InverseSearchCmdLine", Type_String, offsetof(GlobalPrefs, inverseSearchCmdLine), NULL, NULL },
-    { "LastUpdateTime", Type_Int64, offsetof(GlobalPrefs, lastUpdateTime), NULL, 0 },
-    { "OpenCountWeek", Type_Int, offsetof(GlobalPrefs, openCountWeek), NULL, 0 },
+    { "CurrLangCode", Type_String, offsetof(GlobalPrefs, currLangCode), NULL, NULL },
+    { "ToolbarVisible", Type_Bool, offsetof(GlobalPrefs, toolbarVisible), NULL, true },
+    { "FavVisible", Type_Bool, offsetof(GlobalPrefs, favVisible), NULL, false },
     { "PdfAssociateDontAskAgain", Type_Bool, offsetof(GlobalPrefs, pdfAssociateDontAskAgain), NULL, false },
     { "PdfAssociateShouldAssociate", Type_Bool, offsetof(GlobalPrefs, pdfAssociateShouldAssociate), NULL, false },
+    { "EnableAutoUpdate", Type_Bool, offsetof(GlobalPrefs, enableAutoUpdate), NULL, true },
     { "RememberOpenedFiles", Type_Bool, offsetof(GlobalPrefs, rememberOpenedFiles), NULL, true },
-    { "ShowStartPage", Type_Bool, offsetof(GlobalPrefs, showStartPage), NULL, true },
+    { "UseSysColors", Type_Bool, offsetof(GlobalPrefs, useSysColors), NULL, false },
+    { "InverseSearchCmdLine", Type_String, offsetof(GlobalPrefs, inverseSearchCmdLine), NULL, NULL },
+    { "EnableTeXEnhancements", Type_Bool, offsetof(GlobalPrefs, enableTeXEnhancements), NULL, false },
+    { "VersionToSkip", Type_String, offsetof(GlobalPrefs, versionToSkip), NULL, NULL },
+    { "LastUpdateTime", Type_Int64, offsetof(GlobalPrefs, lastUpdateTime), NULL, 0 },
+    { "DefaultDisplayMode", Type_String, offsetof(GlobalPrefs, defaultDisplayMode), NULL, (int64_t)L"automatic" },
+    { "DefaultZoom", Type_Float, offsetof(GlobalPrefs, defaultZoom), NULL, -1 },
+    { "WindowState", Type_Int, offsetof(GlobalPrefs, windowState), NULL, 1 },
+    { "WindowPos", Type_Compact, offsetof(GlobalPrefs, windowPos), gRectIInfo, NULL },
+    { "TocVisible", Type_Bool, offsetof(GlobalPrefs, tocVisible), NULL, true },
     { "SidebarDx", Type_Int, offsetof(GlobalPrefs, sidebarDx), NULL, 0 },
     { "TocDy", Type_Int, offsetof(GlobalPrefs, tocDy), NULL, 0 },
-    { "TocVisible", Type_Bool, offsetof(GlobalPrefs, tocVisible), NULL, true },
-    { "ToolbarVisible", Type_Bool, offsetof(GlobalPrefs, toolbarVisible), NULL, true },
-    { "UseSysColors", Type_Bool, offsetof(GlobalPrefs, useSysColors), NULL, false },
-    { "VersionToSkip", Type_String, offsetof(GlobalPrefs, versionToSkip), NULL, NULL },
-    { "WindowPos", Type_Struct, offsetof(GlobalPrefs, windowPos), gRectIInfo, NULL },
-    { "WindowState", Type_Int, offsetof(GlobalPrefs, windowState), NULL, 1 },
+    { "ShowStartPage", Type_Bool, offsetof(GlobalPrefs, showStartPage), NULL, true },
+    { "OpenCountWeek", Type_Int, offsetof(GlobalPrefs, openCountWeek), NULL, 0 },
+    { "CbxR2L", Type_Bool, offsetof(GlobalPrefs, cbxR2L), NULL, false },
+    { "File", Type_Array, offsetof(GlobalPrefs, file), gFileInfo, NULL },
+    { NULL, Type_Array, offsetof(GlobalPrefs, fileCount), gFileInfo, NULL },
 };
 
 static SettingInfo gAdvancedPrefsInfo[] = {
-    /* TODO: replace this hack with a second meta-struct? */
     { NULL, (SettingType)6, sizeof(AdvancedPrefs), NULL },
-    { "EscToExit", Type_Bool, offsetof(AdvancedPrefs, escToExit), NULL, false },
-    { "MainWindowBackground", Type_Color, offsetof(AdvancedPrefs, mainWindowBackground), NULL, 0xfff200 },
-    { "PageColor", Type_Color, offsetof(AdvancedPrefs, pageColor), NULL, 0xffffff },
-    { "ReuseInstance", Type_Bool, offsetof(AdvancedPrefs, reuseInstance), NULL, false },
-    { "TextColor", Type_Color, offsetof(AdvancedPrefs, textColor), NULL, 0x000000 },
     { "TraditionalEbookUI", Type_Bool, offsetof(AdvancedPrefs, traditionalEbookUI), NULL, false },
-};
-
-static SettingInfo gExternalViewersInfo[] = {
-    /* TODO: replace this hack with a second meta-struct? */
-    { NULL, (SettingType)3, sizeof(ExternalViewers), NULL },
-    { "CommandLine", Type_String, offsetof(ExternalViewers, commandLine), NULL, NULL },
-    { "Filter", Type_String, offsetof(ExternalViewers, filter), NULL, NULL },
-    { "Name", Type_String, offsetof(ExternalViewers, name), NULL, NULL },
-};
-
-static SettingInfo gForwardSearch3Info[] = {
-    /* TODO: replace this hack with a second meta-struct? */
-    { NULL, (SettingType)4, sizeof(ForwardSearch3), NULL },
-    { "HighlightColor", Type_Color, offsetof(ForwardSearch3, highlightColor), NULL, 0x6581ff },
-    { "HighlightOffset", Type_Int, offsetof(ForwardSearch3, highlightOffset), NULL, 0 },
-    { "HighlightPermanent", Type_Bool, offsetof(ForwardSearch3, highlightPermanent), NULL, false },
-    { "HighlightWidth", Type_Int, offsetof(ForwardSearch3, highlightWidth), NULL, 15 },
-};
-
-static SettingInfo gPagePaddingInfo[] = {
-    /* TODO: replace this hack with a second meta-struct? */
-    { NULL, (SettingType)4, sizeof(PagePadding), NULL },
-    { "InnerX", Type_Int, offsetof(PagePadding, innerX), NULL, 4 },
-    { "InnerY", Type_Int, offsetof(PagePadding, innerY), NULL, 4 },
-    { "OuterX", Type_Int, offsetof(PagePadding, outerX), NULL, 4 },
-    { "OuterY", Type_Int, offsetof(PagePadding, outerY), NULL, 2 },
+    { "ReuseInstance", Type_Bool, offsetof(AdvancedPrefs, reuseInstance), NULL, false },
+    { "MainWindowBackground", Type_Color, offsetof(AdvancedPrefs, mainWindowBackground), NULL, 0xfff200 },
+    { "EscToExit", Type_Bool, offsetof(AdvancedPrefs, escToExit), NULL, false },
+    { "TextColor", Type_Color, offsetof(AdvancedPrefs, textColor), NULL, 0x000000 },
+    { "PageColor", Type_Color, offsetof(AdvancedPrefs, pageColor), NULL, 0xffffff },
 };
 
 static SettingInfo gPrinterDefaultsInfo[] = {
-    /* TODO: replace this hack with a second meta-struct? */
     { NULL, (SettingType)2, sizeof(PrinterDefaults), NULL },
-    { "PrintAsImage", Type_Bool, offsetof(PrinterDefaults, printAsImage), NULL, false },
     { "PrintScale", Type_Utf8String, offsetof(PrinterDefaults, printScale), NULL, (int64_t)"shrink" },
+    { "PrintAsImage", Type_Bool, offsetof(PrinterDefaults, printAsImage), NULL, false },
+};
+
+static SettingInfo gPagePaddingInfo[] = {
+    { NULL, (SettingType)4, sizeof(PagePadding), NULL },
+    { "OuterX", Type_Int, offsetof(PagePadding, outerX), NULL, 4 },
+    { "OuterY", Type_Int, offsetof(PagePadding, outerY), NULL, 2 },
+    { "InnerX", Type_Int, offsetof(PagePadding, innerX), NULL, 4 },
+    { "InnerY", Type_Int, offsetof(PagePadding, innerY), NULL, 4 },
+};
+
+static SettingInfo gBackgroundGradientInfo[] = {
+    { NULL, (SettingType)4, sizeof(BackgroundGradient), NULL },
+    { "Enabled", Type_Bool, offsetof(BackgroundGradient, enabled), NULL, false },
+    { "ColorTop", Type_Color, offsetof(BackgroundGradient, colorTop), NULL, 0xaa2828 },
+    { "ColorMiddle", Type_Color, offsetof(BackgroundGradient, colorMiddle), NULL, 0x28aa28 },
+    { "ColorBottom", Type_Color, offsetof(BackgroundGradient, colorBottom), NULL, 0x2828aa },
+};
+
+static SettingInfo gForwardSearch3Info[] = {
+    { NULL, (SettingType)4, sizeof(ForwardSearch3), NULL },
+    { "HighlightOffset", Type_Int, offsetof(ForwardSearch3, highlightOffset), NULL, 0 },
+    { "HighlightWidth", Type_Int, offsetof(ForwardSearch3, highlightWidth), NULL, 15 },
+    { "HighlightColor", Type_Color, offsetof(ForwardSearch3, highlightColor), NULL, 0x6581ff },
+    { "HighlightPermanent", Type_Bool, offsetof(ForwardSearch3, highlightPermanent), NULL, false },
+};
+
+static SettingInfo gExternalViewerInfo[] = {
+    { NULL, (SettingType)3, sizeof(ExternalViewer), NULL },
+    { "CommandLine", Type_String, offsetof(ExternalViewer, commandLine), NULL, NULL },
+    { "Name", Type_String, offsetof(ExternalViewer, name), NULL, NULL },
+    { "Filter", Type_String, offsetof(ExternalViewer, filter), NULL, NULL },
 };
 
 static SettingInfo gUserPrefsInfo[] = {
-    /* TODO: replace this hack with a second meta-struct? */
-    { NULL, (SettingType)6, sizeof(UserPrefs), NULL },
+    { NULL, (SettingType)7, sizeof(UserPrefs), NULL },
     { "AdvancedPrefs", Type_Struct, offsetof(UserPrefs, advancedPrefs), gAdvancedPrefsInfo, NULL },
-    { "ExternalViewers", Type_Array, offsetof(UserPrefs, externalViewers), gExternalViewersInfo, NULL },
-    { NULL, Type_Array, offsetof(UserPrefs, externalViewersCount), gExternalViewersInfo, NULL },
-    { "ForwardSearch3", Type_Struct, offsetof(UserPrefs, forwardSearch3), gForwardSearch3Info, NULL },
-    { "PagePadding", Type_Struct, offsetof(UserPrefs, pagePadding), gPagePaddingInfo, NULL },
     { "PrinterDefaults", Type_Struct, offsetof(UserPrefs, printerDefaults), gPrinterDefaultsInfo, NULL },
+    { "PagePadding", Type_Struct, offsetof(UserPrefs, pagePadding), gPagePaddingInfo, NULL },
+    { "BackgroundGradient", Type_Struct, offsetof(UserPrefs, backgroundGradient), gBackgroundGradientInfo, NULL },
+    { "ForwardSearch3", Type_Struct, offsetof(UserPrefs, forwardSearch3), gForwardSearch3Info, NULL },
+    { "ExternalViewer", Type_Array, offsetof(UserPrefs, externalViewer), gExternalViewerInfo, NULL },
+    { NULL, Type_Array, offsetof(UserPrefs, externalViewerCount), gExternalViewerInfo, NULL },
 };
 #endif
 
