@@ -17,13 +17,13 @@ static bool TestSerializeIni()
 
     ScopedMem<char> data(file::ReadAll(path, NULL));
     Check(data); // failed to read file
-    Settings *s = DeserializeSettings(data.Get(), str::Len(data));
+    Settings *s = DeserializeSettings(data, str::Len(data));
     Check(s); // failed to parse file
-    Check(str::Find(s->advanced->ws, L"\r\n"));
+    Check(str::Find(s->basic->inverseSearchCmdLine, L"\r\n"));
 
-    int len;
+    size_t len;
     ScopedMem<char> ser((char *)SerializeSettings(s, &len));
-    Check(str::Len(ser) == (size_t)len);
+    Check(str::Len(ser) == len);
     Check(str::Eq(data, ser));
     FreeSettings(s);
 
@@ -67,8 +67,8 @@ static bool TestSerializeUserIni3()
 
 struct Rec {
     size_t recCount;
-    Rec ** rec;
-    UserPrefs *up;
+    Rec * rec;
+    UserPrefs up;
 };
 
 static SettingInfo gRecInfo[] = {
@@ -91,15 +91,16 @@ static bool TestSerializeRecursiveArray()
 [Rec]\n\
 [Rec.Rec]\n\
 # [Rec.Up] may be omitted\n\
-[Rec.Up.ExternalViewers]\n\
+[Rec.Up.ExternalViewer]\n\
 CommandLine = serini_test.exe\n\
 ";
     Rec *r = (Rec *)serini3::Deserialize(data, str::Len(data), gRecInfo);
-    Check(2 == r->recCount && 2 == r->rec[0]->recCount && 2 == r->rec[0]->rec[0]->recCount);
-    Check(0 == r->rec[0]->rec[0]->rec[0]->recCount && 0 == r->rec[0]->rec[0]->rec[1]->recCount);
-    Check(1 == r->rec[0]->rec[1]->recCount && 0 == r->rec[0]->rec[1]->rec[0]->recCount);
-    Check(1 == r->rec[1]->recCount && 0 == r->rec[1]->rec[0]->recCount);
-    Check(1 == r->rec[1]->up->externalViewersCount && str::Eq(r->rec[1]->up->externalViewers[0]->commandLine, L"serini_test.exe"));
+    Check(2 == r->recCount && 2 == r->rec[0].recCount && 2 == r->rec[0].rec[0].recCount);
+    Check(0 == r->rec[0].rec[0].rec[0].recCount && 0 == r->rec[0].rec[0].rec[1].recCount);
+    Check(1 == r->rec[0].rec[1].recCount && 0 == r->rec[0].rec[1].rec[0].recCount);
+    Check(1 == r->rec[1].recCount && 0 == r->rec[1].rec[0].recCount);
+    Check(1 == r->rec[1].up.externalViewerCount && str::Eq(r->rec[1].up.externalViewer[0].commandLine, L"serini_test.exe"));
+    Check(str::Eq(r->rec[0].rec[1].up.printerDefaults.printScale, "shrink"));
     serini3::FreeStruct(r, gRecInfo);
 
     // TODO: recurse even if array parents are missing?
@@ -115,11 +116,11 @@ CommandLine = serini_test.exe\n\
 static bool TestDefaultValues()
 {
     UserPrefs *p = (UserPrefs *)serini3::Deserialize(NULL, 0, gUserPrefsInfo);
-    Check(!p->advancedPrefs->escToExit && !p->advancedPrefs->traditionalEbookUI);
-    Check(0xffffff == p->advancedPrefs->pageColor && 0x000000 == p->advancedPrefs->textColor);
-    Check(0x6581ff == p->forwardSearch3->highlightColor && 15 == p->forwardSearch3->highlightWidth);
-    Check(4 == p->pagePadding->innerX && 2 == p->pagePadding->outerY);
-    Check(str::Eq(p->printerDefaults->printScale, "shrink"));
+    Check(!p->advancedPrefs.escToExit && !p->advancedPrefs.traditionalEbookUI);
+    Check(0xffffff == p->advancedPrefs.pageColor && 0x000000 == p->advancedPrefs.textColor);
+    Check(0x6581ff == p->forwardSearch3.highlightColor && 15 == p->forwardSearch3.highlightWidth);
+    Check(4 == p->pagePadding.innerX && 2 == p->pagePadding.outerY);
+    Check(str::Eq(p->printerDefaults.printScale, "shrink"));
     serini3::FreeStruct(p, gUserPrefsInfo);
 
     return true;
