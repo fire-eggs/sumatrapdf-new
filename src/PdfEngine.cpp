@@ -225,7 +225,7 @@ unsigned char *fz_extract_stream_data(fz_stream *stream, size_t *cbCount)
 
 void fz_stream_fingerprint(fz_stream *file, unsigned char digest[16])
 {
-    int fileLen;
+    int fileLen = -1;
     fz_buffer *buffer = NULL;
 
     fz_try(file->ctx) {
@@ -968,12 +968,12 @@ WCHAR *FormatPageLabel(const char *type, int pageNo, const WCHAR *prefix)
 void BuildPageLabelRec(pdf_obj *node, int pageCount, Vec<PageLabelInfo>& data)
 {
     pdf_obj *obj;
-    if ((obj = pdf_dict_gets(node, "Kids")) && !pdf_obj_mark(node)) {
+    if ((obj = pdf_dict_gets(node, "Kids")) != NULL && !pdf_obj_mark(node)) {
         for (int i = 0; i < pdf_array_len(obj); i++)
             BuildPageLabelRec(pdf_array_get(obj, i), pageCount, data);
         pdf_obj_unmark(node);
     }
-    else if ((obj = pdf_dict_gets(node, "Nums"))) {
+    else if ((obj = pdf_dict_gets(node, "Nums")) != NULL) {
         for (int i = 0; i < pdf_array_len(obj); i += 2) {
             pdf_obj *info = pdf_array_get(obj, i + 1);
             PageLabelInfo pli;
@@ -1413,7 +1413,7 @@ bool PdfEngineImpl::Load(const WCHAR *fileName, PasswordUI *pwdUI)
     if (!_fileName || !ctx)
         return false;
 
-    fz_stream *file;
+    fz_stream *file = NULL;
     // File names ending in :<digits>:<digits> are interpreted as containing
     // embedded PDF documents (the digits are :<num>:<gen> of the embedded file stream)
     WCHAR *embedMarks = (WCHAR *)findEmbedMarks(_fileName);
@@ -1856,7 +1856,7 @@ bool PdfEngineImpl::RunPage(pdf_page *page, fz_device *dev, const fz_matrix *ctm
     bool ok = true;
 
     PdfPageRun *run;
-    if (Target_View == target && (run = GetPageRun(page, !cacheRun))) {
+    if (Target_View == target && (run = GetPageRun(page, !cacheRun)) != NULL) {
         EnterCriticalSection(&ctxAccess);
         Vec<PageAnnotation> pageAnnots = fz_get_user_page_annots(userAnnots, GetPageNo(page));
         fz_try(ctx) {
@@ -3448,7 +3448,7 @@ bool XpsEngineImpl::Load(const WCHAR *fileName)
     if (!_fileName || !ctx)
         return false;
 
-    fz_stream *stm;
+    fz_stream *stm = NULL;
     fz_try(ctx) {
         stm = fz_open_file2(ctx, _fileName);
     }
@@ -3735,7 +3735,7 @@ RectD XpsEngineImpl::PageMediabox(int pageNo)
             return _mediaboxes[pageNo-1];
         }
     }
-    if (!page && !(page = GetXpsPage(pageNo)))
+    if (!page && (page = GetXpsPage(pageNo)) == NULL)
         return RectD();
 
     fz_rect pagerect;
