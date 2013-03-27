@@ -15,7 +15,7 @@ static void TestParseSumatraSettings()
     }
 
     TxtParser parser;
-    parser.toParse.Init(s, fileSize);
+    parser.SetToParse(s, fileSize);
     bool ok = ParseTxt(parser);
     if (!ok)
         printf("failed to parse \n'%s'\n", s);
@@ -24,14 +24,14 @@ static void TestParseSumatraSettings()
 
 static bool TestString(const char *s, char *expected)
 {
-    TxtParser parser;
 
     size_t n = str::NormalizeNewlinesInPlace(expected);
     expected[n] = '\n';
     expected[n+1] = 0;
 
     char *sCopy = str::Dup(s);
-    parser.toParse.Init(sCopy, str::Len(sCopy));
+    TxtParser parser;
+    parser.SetToParse(sCopy,  str::Len(sCopy));
     bool ok = ParseTxt(parser);
     if (!ok) {
         printf("Failed to parse:'\n%s'\n", s);
@@ -94,12 +94,12 @@ static void TestSettingsDeserialize()
         printf("failed to load '%s'", path);
         return;
     }
-    Settings *settings = DeserializeSettings(s, (int)fileSize);
+    Settings *settings = DeserializeSettings(s, fileSize);
     if (!settings) {
-        printf("failed to parse\n'%s'\n", s);
+        printf("failed to deserialize\n'%s'\n", s);
         return;
     }
-    int serializedLen;
+    size_t serializedLen;
     char *s2 = (char*)SerializeSettings(settings, &serializedLen);
     s2 += 3; // skip utf8 bom
     char *toFree = s;

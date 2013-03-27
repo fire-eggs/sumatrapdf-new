@@ -45,24 +45,23 @@ advanced [
     highlight_color: #6581ff
     enable_tex_enhancements: false
   ]
-  ws: A wide string
 ]
 app_state [
   favorites [
     [
-        name: my first fav
-        page_no: 22
-        page_label: my label for first fav
+      name: my first fav
+      page_no: 22
+      page_label: my label for first fav
     ]
     [
-        name: my second fav
-        page_no: 13
-        page_label: my label for second fav
+      name: my second fav
+      page_no: 13
+      page_label: my label for second fav
     ]
     [
-        name: third fav
-        page_no: 3
-        page_label: my label for third fav
+      name: third fav
+      page_no: 3
+      page_label: my label for third fav
     ]
   ]
 ]
