@@ -487,7 +487,7 @@ static void UpdateSidebarDisplayState(WindowInfo *win, DisplayState *ds)
         ds->tocState = new Vec<int>(win->tocState);
 }
 
-static void UpdateSidebarDisplayState(EbookWindow *win, DisplayState *ds)
+static void UpdateSidebarDisplayState(EbookWindow *, DisplayState *ds)
 {
     ds->tocVisible = false;
     ds->tocState = NULL;
@@ -696,14 +696,15 @@ public:
     }
 
     virtual void PageNoChanged(int pageNo) {
+        (void)pageNo;
         CrashIf(pageNo != 1);
         RectI area(0, 0, THUMBNAIL_DX * 2, THUMBNAIL_DY * 2);
         bmp = engine->TakeScreenshot(area, SizeI(THUMBNAIL_DX, THUMBNAIL_DY));
         uitask::Post(this);
     }
 
-    virtual void LaunchBrowser(const WCHAR *url) { }
-    virtual void FocusFrame(bool always) { }
+    virtual void LaunchBrowser(const WCHAR*) { }
+    virtual void FocusFrame(bool) { }
 };
 
 // Create a thumbnail of chm document by loading it again and rendering
@@ -1956,7 +1957,7 @@ static void PaintPageFrameAndShadow(HDC hdc, RectI& bounds, RectI& pageRect, boo
     Rectangle(hdc, frame.x, frame.y, frame.x + frame.dx, frame.y + frame.dy);
 }
 #else
-static void PaintPageFrameAndShadow(HDC hdc, RectI& bounds, RectI& pageRect, bool presentation)
+static void PaintPageFrameAndShadow(HDC hdc, RectI& bounds, RectI&, bool)
 {
     ScopedGdiObj<HPEN> pe(CreatePen(PS_NULL, 0, 0));
     ScopedGdiObj<HBRUSH> brush(CreateSolidBrush(gRenderCache.colorRange[1]));
@@ -2017,15 +2018,12 @@ static void DebugShowLinks(DisplayModel& dm, HDC hdc)
 }
 
 // cf. http://forums.fofou.org/sumatrapdf/topic?id=3183580
-// #define DRAW_GRADIENT_BACKGROUND
-#ifdef DRAW_GRADIENT_BACKGROUND
 static void GetGradientColor(COLORREF a, COLORREF b, float perc, TRIVERTEX *tv)
 {
     tv->Red = (COLOR16)((GetRValue(a) + perc * (GetRValue(b) - GetRValue(a))) * 256);
     tv->Green = (COLOR16)((GetGValue(a) + perc * (GetGValue(b) - GetGValue(a))) * 256);
     tv->Blue = (COLOR16)((GetBValue(a) + perc * (GetBValue(b) - GetBValue(a))) * 256);
 }
-#endif
 
 static void DrawDocument(WindowInfo& win, HDC hdc, RECT *rcArea)
 {
@@ -2040,10 +2038,10 @@ static void DrawDocument(WindowInfo& win, HDC hdc, RECT *rcArea)
         ScopedGdiObj<HBRUSH> brush(CreateSolidBrush(gRenderCache.colorRange[0]));
         FillRect(hdc, rcArea, brush);
     }
-    else {
-#ifndef DRAW_GRADIENT_BACKGROUND
+    else if (!gUserPrefs.enabled) {
         FillRect(hdc, rcArea, gBrushNoDocBg);
-#else
+    }
+    else {
         SizeI size = win.dm->GetCanvasSize();
         float percTop = 1.0f * win.dm->viewPort.y / size.dy;
         float percBot = 1.0f * win.dm->viewPort.BR().y / size.dy;
@@ -2054,27 +2052,24 @@ static void DrawDocument(WindowInfo& win, HDC hdc, RECT *rcArea)
         SizeI vp = win.dm->viewPort.Size();
         TRIVERTEX tv[4] = { { 0, 0 }, { vp.dx, vp.dy / 2 }, { 0, vp.dy / 2 }, { vp.dx, vp.dy } };
         GRADIENT_RECT gr[2] = { { 0, 1 }, { 2, 3 } };
-        // TODO: make enabling this and selecting the colors user configurable
-        COLORREF colors[3] = { RGB(40, 40, 170), RGB(40, 170, 40), RGB(170, 40, 40) };
         if (percTop < 0.5f)
-            GetGradientColor(colors[0], colors[1], 2 * percTop, &tv[0]);
+            GetGradientColor(gUserPrefs.colorTop, gUserPrefs.colorMiddle, 2 * percTop, &tv[0]);
         else
-            GetGradientColor(colors[1], colors[2], 2 * (percTop - 0.5f), &tv[0]);
+            GetGradientColor(gUserPrefs.colorMiddle, gUserPrefs.colorBottom, 2 * (percTop - 0.5f), &tv[0]);
         if (percBot < 0.5f)
-            GetGradientColor(colors[0], colors[1], 2 * percBot, &tv[3]);
+            GetGradientColor(gUserPrefs.colorTop, gUserPrefs.colorMiddle, 2 * percBot, &tv[3]);
         else
-            GetGradientColor(colors[1], colors[2], 2 * (percBot - 0.5f), &tv[3]);
+            GetGradientColor(gUserPrefs.colorMiddle, gUserPrefs.colorBottom, 2 * (percBot - 0.5f), &tv[3]);
         bool needCenter = percTop < 0.5f && percBot > 0.5f;
         if (needCenter) {
-            GetGradientColor(colors[1], colors[1], 0, &tv[1]);
-            GetGradientColor(colors[1], colors[1], 0, &tv[2]);
+            GetGradientColor(gUserPrefs.colorMiddle, gUserPrefs.colorMiddle, 0, &tv[1]);
+            GetGradientColor(gUserPrefs.colorMiddle, gUserPrefs.colorMiddle, 0, &tv[2]);
             tv[1].y = tv[2].y = (LONG)((0.5f - percTop) / (percBot - percTop) * vp.dy);
         }
         else
             gr[0].LowerRight = 3;
         // TODO: disable for less than about two screen heights?
         GradientFill(hdc, tv, dimof(tv), gr, needCenter ? 2 : 1, GRADIENT_FILL_RECT_V);
-#endif
     }
 
     bool rendering = false;
@@ -2212,7 +2207,7 @@ static void OnDraggingStop(WindowInfo& win, int x, int y, bool aborted)
     win.MoveDocBy(drag.dx, -2 * drag.dy);
 }
 
-static void OnMouseMove(WindowInfo& win, int x, int y, WPARAM flags)
+static void OnMouseMove(WindowInfo& win, int x, int y, WPARAM)
 {
     if (!win.IsDocLoaded())
         return;
@@ -2423,7 +2418,7 @@ static void OnMouseLeftButtonDblClk(WindowInfo& win, int x, int y, WPARAM key)
     delete pageEl;
 }
 
-static void OnMouseMiddleButtonDown(WindowInfo& win, int x, int y, WPARAM key)
+static void OnMouseMiddleButtonDown(WindowInfo& win, int x, int y, WPARAM)
 {
     // Handle message by recording placement then moving document as mouse moves.
 
@@ -2443,7 +2438,7 @@ static void OnMouseMiddleButtonDown(WindowInfo& win, int x, int y, WPARAM key)
     }
 }
 
-static void OnMouseRightButtonDown(WindowInfo& win, int x, int y, WPARAM key)
+static void OnMouseRightButtonDown(WindowInfo& win, int x, int y, WPARAM)
 {
     //lf("Right button clicked on %d %d", x, y);
     if (!win.IsDocLoaded()) {
