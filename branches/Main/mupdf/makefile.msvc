@@ -171,82 +171,6 @@ ZLIB_OBJS = \
 	$(OZ)\zutil.obj \
 	$(OZ)\gzlib.obj $(OZ)\gzread.obj $(OZ)\gzwrite.obj $(OZ)\gzclose.obj \
 	$(OZ)\inftree9.obj
-<<<<<<< .working
-
-JPEG_TURBO_OBJS = \
-	$(OT)\jcomapi.obj $(OT)\jdapimin.obj $(OT)\jdapistd.obj \
-	$(OT)\jdatadst.obj $(OT)\jdatasrc.obj $(OT)\jdcoefct.obj $(OT)\jdcolor.obj $(OT)\jddctmgr.obj \
-	$(OT)\jdhuff.obj $(OT)\jdinput.obj $(OT)\jdmainct.obj $(OT)\jdmarker.obj $(OT)\jdmaster.obj \
-	$(OT)\jdmerge.obj $(OT)\jdpostct.obj $(OT)\jdsample.obj $(OT)\jdtrans.obj $(OT)\jerror.obj \
-	$(OT)\jfdctflt.obj $(OT)\jfdctint.obj $(OT)\jidctflt.obj $(OT)\jidctfst.obj $(OT)\jidctint.obj \
-	$(OT)\jquant1.obj $(OT)\jquant2.obj $(OT)\jutils.obj $(OT)\jmemmgr.obj $(OT)\jmemnobs.obj \
-	$(OT)\jaricom.obj $(OT)\jdarith.obj $(OT)\jfdctfst.obj $(OT)\jdphuff.obj $(OT)\jidctred.obj
-
-!if "$(PLATFORM)"=="X64"
-JPEG_TURBO_OBJS = $(JPEG_TURBO_OBJS) \
-	$(OT)\jfsseflt-64.obj $(OT)\jccolss2-64.obj $(OT)\jdcolss2-64.obj $(OT)\jcgrass2-64.obj \
-	$(OT)\jcsamss2-64.obj $(OT)\jdsamss2-64.obj $(OT)\jdmerss2-64.obj $(OT)\jcqnts2i-64.obj  \
-	$(OT)\jfss2fst-64.obj $(OT)\jfss2int-64.obj $(OT)\jiss2red-64.obj $(OT)\jiss2int-64.obj \
-	$(OT)\jiss2fst-64.obj $(OT)\jcqnts2f-64.obj $(OT)\jiss2flt-64.obj $(OT)\jsimd_x86_64.obj
-!else
-JPEG_TURBO_OBJS = $(JPEG_TURBO_OBJS) \
-	$(OT)\jsimdcpu.obj $(OT)\jccolmmx.obj $(OT)\jcgrammx.obj $(OT)\jdcolmmx.obj \
-	$(OT)\jcsammmx.obj $(OT)\jdsammmx.obj $(OT)\jdmermmx.obj $(OT)\jcqntmmx.obj \
-	$(OT)\jfmmxfst.obj $(OT)\jfmmxint.obj $(OT)\jimmxred.obj $(OT)\jimmxint.obj \
-	$(OT)\jimmxfst.obj $(OT)\jcqnt3dn.obj $(OT)\jf3dnflt.obj $(OT)\ji3dnflt.obj \
-	$(OT)\jcqntsse.obj $(OT)\jfsseflt.obj $(OT)\jisseflt.obj $(OT)\jccolss2.obj \
-	$(OT)\jcgrass2.obj $(OT)\jdcolss2.obj $(OT)\jcsamss2.obj $(OT)\jdsamss2.obj \
-	$(OT)\jdmerss2.obj $(OT)\jcqnts2i.obj $(OT)\jfss2fst.obj $(OT)\jfss2int.obj \
-	$(OT)\jiss2red.obj $(OT)\jiss2int.obj $(OT)\jiss2fst.obj $(OT)\jcqnts2f.obj \
-	$(OT)\jiss2flt.obj $(OT)\jsimd_i386.obj
-!endif
-
-JBIG2_OBJS = \
-	$(OJB)\jbig2.obj $(OJB)\jbig2_arith.obj $(OJB)\jbig2_arith_int.obj \
-	$(OJB)\jbig2_arith_iaid.obj $(OJB)\jbig2_huffman.obj $(OJB)\jbig2_segment.obj \
-	$(OJB)\jbig2_page.obj $(OJB)\jbig2_symbol_dict.obj $(OJB)\jbig2_text.obj \
-	$(OJB)\jbig2_generic.obj $(OJB)\jbig2_refinement.obj $(OJB)\jbig2_mmr.obj \
-	$(OJB)\jbig2_image.obj $(OJB)\jbig2_metadata.obj $(OJB)\jbig2_halftone.obj
-
-OPENJPEG_OBJS = \
-	$(OOJ)\bio.obj $(OOJ)\cio.obj $(OOJ)\dwt.obj $(OOJ)\event.obj $(OOJ)\image.obj \
-	$(OOJ)\j2k.obj $(OOJ)\j2k_lib.obj $(OOJ)\jp2.obj $(OOJ)\jpt.obj $(OOJ)\mct.obj \
-	$(OOJ)\mqc.obj $(OOJ)\openjpeg.obj $(OOJ)\pi.obj $(OOJ)\raw.obj $(OOJ)\t1.obj \
-	$(OOJ)\t2.obj $(OOJ)\tcd.obj $(OOJ)\tgt.obj $(OOJ)\cidx_manager.obj $(OOJ)\phix_manager.obj \
-	$(OOJ)\ppix_manager.obj $(OOJ)\thix_manager.obj $(OOJ)\tpix_manager.obj
-
-FITZ_DRAW_OBJS = \
-	$(OFZ)\draw_affine.obj $(OFZ)\draw_blend.obj $(OFZ)\draw_edge.obj \
-	$(OFZ)\draw_glyph.obj $(OFZ)\draw_mesh.obj $(OFZ)\draw_paint.obj $(OFZ)\draw_path.obj \
-	$(OFZ)\draw_scale.obj $(OFZ)\draw_unpack.obj $(OFZ)\draw_device.obj
-
-FITZ_OBJS = \
-	$(OFZ)\base_error.obj $(OFZ)\base_geometry.obj $(OFZ)\base_getopt.obj $(OFZ)\base_hash.obj \
-	$(OFZ)\base_memory.obj $(OFZ)\base_string.obj $(OFZ)\base_time.obj $(OFZ)\base_trans.obj \
-	$(OFZ)\base_context.obj $(OFZ)\base_xml.obj $(OFZ)\crypt_sha2.obj $(OFZ)\dev_gdiplus.obj \
-	$(OFZ)\dev_bbox.obj $(OFZ)\dev_list.obj $(OFZ)\dev_null.obj $(OFZ)\dev_text.obj \
-	$(OFZ)\dev_trace.obj $(OFZ)\crypt_aes.obj $(OFZ)\crypt_arc4.obj $(OFZ)\crypt_md5.obj \
-	$(OFZ)\doc_document.obj $(OFZ)\doc_interactive.obj $(OFZ)\doc_link.obj $(OFZ)\doc_outline.obj $(OFZ)\doc_search.obj \
-	$(OFZ)\filt_basic.obj $(OFZ)\filt_faxd.obj $(OFZ)\filt_flate.obj $(OFZ)\filt_jbig2d.obj \
-	$(OFZ)\filt_dctd.obj $(OFZ)\filt_lzwd.obj $(OFZ)\filt_predict.obj $(OFZ)\res_store.obj \
-	$(OFZ)\image_jpeg.obj $(OFZ)\image_jpx.obj $(OFZ)\image_png.obj $(OFZ)\image_tiff.obj \
-	$(OFZ)\res_path.obj $(OFZ)\res_pixmap.obj $(OFZ)\res_text.obj $(OFZ)\res_bitmap.obj \
-	$(OFZ)\res_colorspace.obj $(OFZ)\res_font.obj $(OFZ)\res_shade.obj $(OFZ)\res_halftone.obj \
-	$(OFZ)\stm_buffer.obj $(OFZ)\stm_comp_buf.obj $(OFZ)\stm_open.obj $(OFZ)\stm_read.obj \
-	$(OFZ)\stm_output.obj $(OFZ)\image_md5.obj $(OFZ)\image_save.obj $(OFZ)\image_jxr.obj
-
-MUPDF_OBJS = \
-	$(OP)\pdf_object.obj $(OP)\pdf_annot.obj $(OP)\pdf_cmap.obj $(OP)\pdf_store.obj \
-	$(OP)\pdf_colorspace.obj $(OP)\pdf_crypt.obj $(OP)\pdf_encoding.obj \
-	$(OP)\pdf_font.obj $(OP)\pdf_fontfile.obj $(OP)\pdf_metrics.obj \
-	$(OP)\pdf_function.obj $(OP)\pdf_image.obj $(OP)\pdf_interpret.obj $(OP)\pdf_lex.obj \
-	$(OP)\pdf_nametree.obj $(OP)\pdf_outline.obj $(OP)\pdf_page.obj \
-	$(OP)\pdf_parse.obj $(OP)\pdf_pattern.obj $(OP)\pdf_repair.obj $(OP)\pdf_shade.obj \
-	$(OP)\pdf_stream.obj $(OP)\pdf_type3.obj $(OP)\pdf_unicode.obj \
-	$(OP)\pdf_xobject.obj $(OP)\pdf_xref.obj $(OP)\pdf_xref_aux.obj \
-	$(OP)\pdf_cmap_load.obj $(OP)\pdf_cmap_parse.obj $(OP)\pdf_cmap_table.obj \
-	$(OP)\pdf_write.obj $(OP)\pdf_form.obj $(OP)\pdf_event.obj $(OP)\pdf_js_none.obj \
-=======
 
 JPEG_TURBO_OBJS = \
 	$(OT)\jcomapi.obj $(OT)\jdapimin.obj $(OT)\jdapistd.obj \
@@ -322,7 +246,6 @@ MUPDF_OBJS = \
 	$(OP)\pdf_xobject.obj $(OP)\pdf_xref.obj $(OP)\pdf_xref_aux.obj \
 	$(OP)\pdf_cmap_load.obj $(OP)\pdf_cmap_parse.obj $(OP)\pdf_cmap_table.obj \
 	$(OP)\pdf_write.obj $(OP)\pdf_form.obj $(OP)\pdf_event.obj $(OP)\pdf_js_none.obj \
->>>>>>> .merge-right.r257
 	$(OP)\pdf_device.obj $(OP)\pdf_field.obj $(OP)\pdf_ft_tools.obj
 
 MUXPS_OBJS = \
