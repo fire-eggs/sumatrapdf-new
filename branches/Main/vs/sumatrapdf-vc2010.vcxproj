@@ -252,6 +252,7 @@
     <ClCompile Include="..\src\utils\Sigslot_ut.cpp" />
     <ClCompile Include="..\src\utils\StrFormat.cpp" />
     <ClCompile Include="..\src\utils\StrFormat_ut.cpp" />
+    <ClCompile Include="..\src\utils\StrSlice.cpp" />
     <ClCompile Include="..\src\utils\StrUtil.cpp" />
     <ClCompile Include="..\src\utils\StrUtil_ut.cpp" />
     <ClCompile Include="..\src\utils\TgaReader.cpp" />
@@ -407,7 +408,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\AppPrefs.h" />
-    <ClInclude Include="..\src\AppPrefs2.h" />
     <ClInclude Include="..\src\AppTools.h" />
     <ClInclude Include="..\src\CrashHandler.h" />
     <ClInclude Include="..\src\DisplayModel.h" />
@@ -507,6 +507,7 @@
     <ClInclude Include="..\src\utils\SimpleLog.h" />
     <ClInclude Include="..\src\utils\StrFormat.h" />
     <ClInclude Include="..\src\utils\StrHash.h" />
+    <ClInclude Include="..\src\utils\StrSlice.h" />
     <ClInclude Include="..\src\utils\StrUtil.h" />
     <ClInclude Include="..\src\utils\TgaReader.h" />
     <ClInclude Include="..\src\utils\ThreadUtil.h" />
