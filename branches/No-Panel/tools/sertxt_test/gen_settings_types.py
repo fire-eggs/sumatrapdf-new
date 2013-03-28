@@ -1,4 +1,4 @@
-import types
+﻿import types
 
 def is_valid_signed(bits, val):
     if type(val) not in (types.IntType, types.LongType): return False
@@ -176,12 +176,19 @@ class Array(Type):
 
 # those are bit flags
 NoStore = 1
+Compact = 2
 
 class Field(object):
     def __init__(self, name, typ_val, flags=0):
         self.name = name
         self.typ = typ_val
         self.flags = flags
+
+        if self.is_no_store(): assert not self.is_compact()
+        if self.is_compact():
+            assert typ_val.is_struct()
+            for field in typ_val.fields:
+                assert not field.is_struct()
 
         if typ_val.is_struct():
             # TODO: support NULL values for the struct, represented by using
@@ -219,6 +226,9 @@ class Field(object):
     def is_no_store(self):
         return self.flags & NoStore == NoStore
 
+    def is_compact(self):
+        return self.flags & Compact == Compact
+
     def is_array(self):
         return type(self.typ) == Array
 
@@ -230,8 +240,13 @@ class Field(object):
 
     def get_typ_enum(self):
         type_enum = self.typ.get_type_typ_enum()
-        if self.is_no_store():
-            return "(Type)(%s | TYPE_NO_STORE_MASK)" % type_enum
+        if self.is_no_store() or self.is_compact():
+            s = "(Type)(" + type_enum
+            if self.is_no_store():
+                s = s + " | TYPE_NO_STORE_MASK"
+            if self.is_compact():
+                s = s + " | TYPE_STORE_COMPACT_MASK"
+            return s + ")"
         return type_enum
 
 class PaddingSettings(Struct):
@@ -287,7 +302,7 @@ class BasicSettings(Struct):
         # -1 == Fit Page
         Field("defaultZoom", Float(-1)),
         Field("windowState", I32(1)), # WIN_STATE_NORMAL
-        Field("windowPos", RectInt()),
+        Field("windowPos", RectInt(), Compact),
         Field("tocVisible", Bool(True)),
         Field("favVisible", Bool(False)),
         Field("sidebarDx", I32(0)),
@@ -312,19 +327,21 @@ class AdvancedSettings(Struct):
 
 fav1 = Fav("my first fav", 22,  "my label for first fav")
 fav2 = Fav("my second fav", 13, "my label for second fav")
-fav3 = Fav("third fav", 3, "my label for third fav")
 
 class AppState(Struct):
     fields = [
-        Field("favorites", Array(Fav, [fav1, fav2, fav3]))
+        Field("favorites", Array(Fav, [fav1, fav2]))
     ]
 
+g_escape_test_str =  "[lo\r $fo\to\\ l\na]]"
 # TODO: merge basic/advanced into one?
 class Settings(Struct):
     fields = [
         Field("basic", BasicSettings()),
         Field("advanced", AdvancedSettings()),
         Field("appState", AppState()),
+        Field("str_escape_test", String(g_escape_test_str)),
+        Field("wstr_1", WString(u"wide string Πραγματικό &Μέγεθος\tCtrl+1")),
     ]
 
 class Simple(Struct):
@@ -338,6 +355,12 @@ class Simple(Struct):
         Field("col_1", Color(0xacff00ed)),
         Field("float_1", Float(3.12348)),
         Field("str_1", String("lola")),
-        Field("wstr_1", WString("wide string")),
+        Field("str_escape", String(g_escape_test_str)),
+        Field("wstr_1", WString(u"wide string Πραγματικό &Μέγεθος\nCtrl+1")),
+    ]
+
+class ForDefaultTesting(Struct):
+    fields = [
+        Field("bFalse", Bool(False)),
     ]
 
