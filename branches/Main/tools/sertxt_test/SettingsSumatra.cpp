@@ -7,7 +7,7 @@
 
 using namespace sertxt;
 
-#define FIELD_NAMES_SEQ "x\0y\0dx\0dy\0global_prefs_only\0curr_language\0toolbar_visible\0pdf_associate_dont_ask\0pdf_associate_do_it\0check_for_updates\0remember_mru_files\0use_system_color_scheme\0inverse_search_cmd_line\0version_to_skip\0last_update_time\0default_display_mode\0default_zoom\0window_state\0window_pos\0toc_visible\0fav_visible\0sidebar_dx\0toc_dy\0show_start_page\0open_count_week\0last_pref_update\0top\0bottom\0left\0right\0space_x\0space_y\0highlight_offset\0highlight_width\0highlight_permanent\0highlight_color\0enable_tex_enhancements\0traditional_ebook_ui\0esc_to_exit\0text_color\0page_color\0main_window_background\0page_padding\0forward_search\0name\0page_no\0page_label\0menu_id\0favorites\0basic\0advanced\0app_state\0\0"
+#define FIELD_NAMES_SEQ "x\0y\0dx\0dy\0global_prefs_only\0curr_language\0toolbar_visible\0pdf_associate_dont_ask\0pdf_associate_do_it\0check_for_updates\0remember_mru_files\0use_system_color_scheme\0inverse_search_cmd_line\0version_to_skip\0last_update_time\0default_display_mode\0default_zoom\0window_state\0window_pos\0toc_visible\0fav_visible\0sidebar_dx\0toc_dy\0show_start_page\0open_count_week\0last_pref_update\0top\0bottom\0left\0right\0space_x\0space_y\0highlight_offset\0highlight_width\0highlight_permanent\0highlight_color\0enable_tex_enhancements\0traditional_ebook_ui\0esc_to_exit\0text_color\0page_color\0main_window_background\0page_padding\0forward_search\0name\0page_no\0page_label\0menu_id\0favorites\0basic\0advanced\0app_state\0str_escape_test\0wstr_1\0\0"
 
 #define of offsetof
 FieldMetadata gRectIntFieldMetadata[] = {
@@ -20,28 +20,28 @@ FieldMetadata gRectIntFieldMetadata[] = {
 StructMetadata gRectIntMetadata = { sizeof(RectInt), 4, &gRectIntFieldMetadata[0] };
 
 FieldMetadata gBasicSettingsFieldMetadata[] = {
-    {  10, of(BasicSettings, globalPrefsOnly),      TYPE_BOOL,       NULL              },
-    {  28, of(BasicSettings, currLanguage),         TYPE_STR,        NULL              },
-    {  42, of(BasicSettings, toolbarVisible),       TYPE_BOOL,       NULL              },
-    {  58, of(BasicSettings, pdfAssociateDontAsk),  TYPE_BOOL,       NULL              },
-    {  81, of(BasicSettings, pdfAssociateDoIt),     TYPE_BOOL,       NULL              },
-    { 101, of(BasicSettings, checkForUpdates),      TYPE_BOOL,       NULL              },
-    { 119, of(BasicSettings, rememberMruFiles),     TYPE_BOOL,       NULL              },
-    { 138, of(BasicSettings, useSystemColorScheme), TYPE_BOOL,       NULL              },
-    { 162, of(BasicSettings, inverseSearchCmdLine), TYPE_WSTR,       NULL              },
-    { 186, of(BasicSettings, versionToSkip),        TYPE_STR,        NULL              },
-    { 202, of(BasicSettings, lastUpdateTime),       TYPE_STR,        NULL              },
-    { 219, of(BasicSettings, defaultDisplayMode),   TYPE_U16,        NULL              },
-    { 240, of(BasicSettings, defaultZoom),          TYPE_FLOAT,      NULL              },
-    { 253, of(BasicSettings, windowState),          TYPE_I32,        NULL              },
-    { 266, of(BasicSettings, windowPos),            TYPE_STRUCT_PTR, &gRectIntMetadata },
-    { 277, of(BasicSettings, tocVisible),           TYPE_BOOL,       NULL              },
-    { 289, of(BasicSettings, favVisible),           TYPE_BOOL,       NULL              },
-    { 301, of(BasicSettings, sidebarDx),            TYPE_I32,        NULL              },
-    { 312, of(BasicSettings, tocDy),                TYPE_I32,        NULL              },
-    { 319, of(BasicSettings, showStartPage),        TYPE_BOOL,       NULL              },
-    { 335, of(BasicSettings, openCountWeek),        TYPE_I32,        NULL              },
-    { 351, of(BasicSettings, lastPrefUpdate),       TYPE_U64,        NULL              },
+    {  10, of(BasicSettings, globalPrefsOnly),      TYPE_BOOL,                                         NULL              },
+    {  28, of(BasicSettings, currLanguage),         TYPE_STR,                                          NULL              },
+    {  42, of(BasicSettings, toolbarVisible),       TYPE_BOOL,                                         NULL              },
+    {  58, of(BasicSettings, pdfAssociateDontAsk),  TYPE_BOOL,                                         NULL              },
+    {  81, of(BasicSettings, pdfAssociateDoIt),     TYPE_BOOL,                                         NULL              },
+    { 101, of(BasicSettings, checkForUpdates),      TYPE_BOOL,                                         NULL              },
+    { 119, of(BasicSettings, rememberMruFiles),     TYPE_BOOL,                                         NULL              },
+    { 138, of(BasicSettings, useSystemColorScheme), TYPE_BOOL,                                         NULL              },
+    { 162, of(BasicSettings, inverseSearchCmdLine), TYPE_WSTR,                                         NULL              },
+    { 186, of(BasicSettings, versionToSkip),        TYPE_STR,                                          NULL              },
+    { 202, of(BasicSettings, lastUpdateTime),       TYPE_STR,                                          NULL              },
+    { 219, of(BasicSettings, defaultDisplayMode),   TYPE_U16,                                          NULL              },
+    { 240, of(BasicSettings, defaultZoom),          TYPE_FLOAT,                                        NULL              },
+    { 253, of(BasicSettings, windowState),          TYPE_I32,                                          NULL              },
+    { 266, of(BasicSettings, windowPos),            (Type)(TYPE_STRUCT_PTR | TYPE_STORE_COMPACT_MASK), &gRectIntMetadata },
+    { 277, of(BasicSettings, tocVisible),           TYPE_BOOL,                                         NULL              },
+    { 289, of(BasicSettings, favVisible),           TYPE_BOOL,                                         NULL              },
+    { 301, of(BasicSettings, sidebarDx),            TYPE_I32,                                          NULL              },
+    { 312, of(BasicSettings, tocDy),                TYPE_I32,                                          NULL              },
+    { 319, of(BasicSettings, showStartPage),        TYPE_BOOL,                                         NULL              },
+    { 335, of(BasicSettings, openCountWeek),        TYPE_I32,                                          NULL              },
+    { 351, of(BasicSettings, lastPrefUpdate),       TYPE_U64,                                          NULL              },
 };
 
 StructMetadata gBasicSettingsMetadata = { sizeof(BasicSettings), 22, &gBasicSettingsFieldMetadata[0] };
@@ -95,20 +95,29 @@ FieldMetadata gAppStateFieldMetadata[] = {
 StructMetadata gAppStateMetadata = { sizeof(AppState), 1, &gAppStateFieldMetadata[0] };
 
 FieldMetadata gSettingsFieldMetadata[] = {
-    { 647, of(Settings, basic),    TYPE_STRUCT_PTR, &gBasicSettingsMetadata    },
-    { 653, of(Settings, advanced), TYPE_STRUCT_PTR, &gAdvancedSettingsMetadata },
-    { 662, of(Settings, appState), TYPE_STRUCT_PTR, &gAppStateMetadata         },
+    { 647, of(Settings, basic),           TYPE_STRUCT_PTR, &gBasicSettingsMetadata    },
+    { 653, of(Settings, advanced),        TYPE_STRUCT_PTR, &gAdvancedSettingsMetadata },
+    { 662, of(Settings, appState),        TYPE_STRUCT_PTR, &gAppStateMetadata         },
+    { 672, of(Settings, str_escape_test), TYPE_STR,        NULL                       },
+    { 688, of(Settings, wstr_1),          TYPE_WSTR,       NULL                       },
 };
 
-StructMetadata gSettingsMetadata = { sizeof(Settings), 3, &gSettingsFieldMetadata[0] };
+StructMetadata gSettingsMetadata = { sizeof(Settings), 5, &gSettingsFieldMetadata[0] };
 
 #undef of
 
 Settings *DeserializeSettings(const char *data, size_t dataLen)
 {
+    return DeserializeSettingsWithDefault(data, dataLen, NULL, 0);
+}
+
+Settings *DeserializeSettingsWithDefault(const char *data, size_t dataLen, const char *defaultData, size_t defaultDataLen)
+{
     char *dataCopy = str::DupN(data, dataLen);
-    void *res = Deserialize(dataCopy, dataLen, &gSettingsMetadata, FIELD_NAMES_SEQ);
+    char *defaultDataCopy = str::DupN(defaultData, defaultDataLen);
+    void *res = DeserializeWithDefault(dataCopy, dataLen, defaultDataCopy, defaultDataLen, &gSettingsMetadata, FIELD_NAMES_SEQ);
     free(dataCopy);
+    free(defaultDataCopy);
     return (Settings*)res;
 }
 

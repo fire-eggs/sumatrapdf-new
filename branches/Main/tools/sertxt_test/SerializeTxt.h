@@ -50,8 +50,11 @@ typedef enum {
     TYPE_WSTR,
     TYPE_STRUCT_PTR,
     TYPE_ARRAY,
-    // a flag, if set, the value is not to be serialized
-    TYPE_NO_STORE_MASK = 0x4000
+    TYPE_NO_FLAGS_MASK = 0xFF,
+    // a flag, if set the value is not to be serialized
+    TYPE_NO_STORE_MASK = 0x4000,
+    // a flag, if set the value is serialized in a compact form
+    TYPE_STORE_COMPACT_MASK = 0x8000,
 } Type;
 
 // information about a single field
@@ -66,6 +69,7 @@ struct FieldMetadata {
 
 void        FreeStruct(uint8_t *data, StructMetadata *def);
 uint8_t*    Deserialize(char *data, size_t dataSize, StructMetadata *def, const char *fieldNamesSeq);
+uint8_t*    DeserializeWithDefault(char *data, size_t dataSize, char *defaultData, size_t defaultDataSize, StructMetadata *def, const char *fieldNamesSeq);
 uint8_t *   Serialize(const uint8_t *data, StructMetadata *def, const char *fieldNamesSeq, size_t *sizeOut);
 
 } // namespace sertxt
