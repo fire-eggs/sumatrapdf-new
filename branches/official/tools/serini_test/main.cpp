@@ -30,6 +30,26 @@ static bool TestSerializeIni()
     return true;
 }
 
+static bool TestSerializeIniWithDefaults()
+{
+    const WCHAR *defaultPath = L"..\\tools\\serini_test\\data.ini";
+    const char *data = "\
+[basic]\n\
+global_prefs_only = true\n\
+default_zoom = 38.5\n\
+";
+
+    ScopedMem<char> defaultData(file::ReadAll(defaultPath, NULL));
+    Check(defaultData); // failed to read file
+    Settings *s = DeserializeSettingsWithDefault(data, str::Len(data), defaultData, str::Len(defaultData));
+    Check(s); // failed to parse file
+    Check(s->basic->globalPrefsOnly && 38.5f == s->basic->defaultZoom);
+    Check(s->basic->showStartPage && !s->basic->pdfAssociateDoIt);
+    FreeSettings(s);
+
+    return true;
+}
+
 static bool TestSerializeIni3()
 {
     const WCHAR *path = L"..\\tools\\serini_test\\data3.ini";
@@ -72,11 +92,10 @@ struct Rec {
 };
 
 static SettingInfo gRecInfo[] = {
-    /* TODO: replace this hack with a second meta-struct? */
-    { NULL, (SettingType)3, sizeof(Rec), NULL },
-    { "Rec", Type_Array, offsetof(Rec, rec), gRecInfo },
-    { NULL, Type_Array, offsetof(Rec, recCount), gRecInfo },
-    { "Up", Type_Struct, offsetof(Rec, up), gUserPrefsInfo },
+    { NULL, Type_Meta, sizeof(Rec), NULL, 3 },
+    { "Rec", Type_Array, offsetof(Rec, rec), gRecInfo, NULL },
+    { NULL, Type_Meta, offsetof(Rec, recCount), gRecInfo, NULL },
+    { "Up", Type_Struct, offsetof(Rec, up), gUserPrefsInfo, NULL },
 };
 
 static bool TestSerializeRecursiveArray()
@@ -133,6 +152,8 @@ int main(int argc, char **argv)
 #endif
     int errors = 0;
     if (!TestSerializeIni())
+        errors++;
+    if (!TestSerializeIniWithDefaults())
         errors++;
     if (!TestSerializeIni3())
         errors++;
