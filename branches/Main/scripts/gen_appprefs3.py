@@ -29,7 +29,7 @@ class Field(object):
 		if self.type == Color:
 			return "0x%06x" % self.default
 		if self.type == Float:
-			return "%g" % self.default
+			return '(int64_t)"%g"' % self.default # converting float to int64_t rounds the value
 		if self.type == Int or self.type == Int64:
 			return "%d" % self.default
 		if self.type == String:
@@ -156,8 +156,7 @@ UserPrefs = [
 	Struct("BackgroundGradient", BackgroundGradient,
 		"these values allow to tweak the experimental feature for using a color " +
 		"gradient to subconsciously determine reading progress"),
-	# renamed from ForwardSearch for interoperability with gen_settings.py
-	Struct("ForwardSearch3", ForwardSearch,
+	Struct("ForwardSearch", ForwardSearch,
 		"these values allow to customize how the forward search highlight appears"),
 	Array("ExternalViewer", ExternalViewer,
 		"this list contains a list of additional external viewers for various file types"),
