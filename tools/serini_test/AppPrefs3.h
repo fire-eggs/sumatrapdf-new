@@ -173,7 +173,7 @@ struct ExternalViewer {
 
 // these values allow to customize how the forward search highlight
 // appears
-struct ForwardSearch3 {
+struct ForwardSearch {
     // when set to a positive value, the forward search highlight style
     // will be changed to a rectangle at the left of the page (with the
     // indicated amount of margin from the page margin)
@@ -255,7 +255,7 @@ struct UserPrefs {
     BackgroundGradient backgroundGradient;
     // these values allow to customize how the forward search highlight
     // appears
-    ForwardSearch3 forwardSearch3;
+    ForwardSearch forwardSearch;
     // this list contains a list of additional external viewers for various
     // file types
     ExternalViewer * externalViewer;
@@ -312,7 +312,7 @@ static SettingInfo gFileInfo[] = {
     { "ScrollPos", Type_Compact, offsetof(File, scrollPos), gPointIInfo, NULL },
     { "PageNo", Type_Int, offsetof(File, pageNo), NULL, 1 },
     { "ReparseIdx", Type_Int, offsetof(File, reparseIdx), NULL, 0 },
-    { "ZoomVirtual", Type_Float, offsetof(File, zoomVirtual), NULL, 100 },
+    { "ZoomVirtual", Type_Float, offsetof(File, zoomVirtual), NULL, (int64_t)"100" },
     { "Rotation", Type_Int, offsetof(File, rotation), NULL, 0 },
     { "WindowState", Type_Int, offsetof(File, windowState), NULL, 0 },
     { "WindowPos", Type_Compact, offsetof(File, windowPos), gRectIInfo, NULL },
@@ -340,7 +340,7 @@ static SettingInfo gGlobalPrefsInfo[] = {
     { "VersionToSkip", Type_String, offsetof(GlobalPrefs, versionToSkip), NULL, NULL },
     { "LastUpdateTime", Type_Int64, offsetof(GlobalPrefs, lastUpdateTime), NULL, 0 },
     { "DefaultDisplayMode", Type_String, offsetof(GlobalPrefs, defaultDisplayMode), NULL, (int64_t)L"automatic" },
-    { "DefaultZoom", Type_Float, offsetof(GlobalPrefs, defaultZoom), NULL, -1 },
+    { "DefaultZoom", Type_Float, offsetof(GlobalPrefs, defaultZoom), NULL, (int64_t)"-1" },
     { "WindowState", Type_Int, offsetof(GlobalPrefs, windowState), NULL, 1 },
     { "WindowPos", Type_Compact, offsetof(GlobalPrefs, windowPos), gRectIInfo, NULL },
     { "TocVisible", Type_Bool, offsetof(GlobalPrefs, tocVisible), NULL, true },
@@ -385,12 +385,12 @@ static SettingInfo gBackgroundGradientInfo[] = {
     { "ColorBottom", Type_Color, offsetof(BackgroundGradient, colorBottom), NULL, 0x2828aa },
 };
 
-static SettingInfo gForwardSearch3Info[] = {
-    { NULL, Type_Meta, sizeof(ForwardSearch3), NULL, 4 },
-    { "HighlightOffset", Type_Int, offsetof(ForwardSearch3, highlightOffset), NULL, 0 },
-    { "HighlightWidth", Type_Int, offsetof(ForwardSearch3, highlightWidth), NULL, 15 },
-    { "HighlightColor", Type_Color, offsetof(ForwardSearch3, highlightColor), NULL, 0x6581ff },
-    { "HighlightPermanent", Type_Bool, offsetof(ForwardSearch3, highlightPermanent), NULL, false },
+static SettingInfo gForwardSearchInfo[] = {
+    { NULL, Type_Meta, sizeof(ForwardSearch), NULL, 4 },
+    { "HighlightOffset", Type_Int, offsetof(ForwardSearch, highlightOffset), NULL, 0 },
+    { "HighlightWidth", Type_Int, offsetof(ForwardSearch, highlightWidth), NULL, 15 },
+    { "HighlightColor", Type_Color, offsetof(ForwardSearch, highlightColor), NULL, 0x6581ff },
+    { "HighlightPermanent", Type_Bool, offsetof(ForwardSearch, highlightPermanent), NULL, false },
 };
 
 static SettingInfo gExternalViewerInfo[] = {
@@ -406,7 +406,7 @@ static SettingInfo gUserPrefsInfo[] = {
     { "PrinterDefaults", Type_Struct, offsetof(UserPrefs, printerDefaults), gPrinterDefaultsInfo, NULL },
     { "PagePadding", Type_Struct, offsetof(UserPrefs, pagePadding), gPagePaddingInfo, NULL },
     { "BackgroundGradient", Type_Struct, offsetof(UserPrefs, backgroundGradient), gBackgroundGradientInfo, NULL },
-    { "ForwardSearch3", Type_Struct, offsetof(UserPrefs, forwardSearch3), gForwardSearch3Info, NULL },
+    { "ForwardSearch", Type_Struct, offsetof(UserPrefs, forwardSearch), gForwardSearchInfo, NULL },
     { "ExternalViewer", Type_Array, offsetof(UserPrefs, externalViewer), gExternalViewerInfo, NULL },
     { NULL, Type_Meta, offsetof(UserPrefs, externalViewerCount), gExternalViewerInfo, NULL },
 };
