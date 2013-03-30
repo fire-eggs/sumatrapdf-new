@@ -1165,11 +1165,12 @@ protected:
     CRITICAL_SECTION pagesAccess;
     pdf_page **     _pages;
 
-    virtual bool    Load(const WCHAR *fileName, PasswordUI *pwdUI=NULL);
-    virtual bool    Load(IStream *stream, PasswordUI *pwdUI=NULL);
+    bool            Load(const WCHAR *fileName, PasswordUI *pwdUI=NULL);
+    bool            Load(IStream *stream, PasswordUI *pwdUI=NULL);
     bool            Load(fz_stream *stm, PasswordUI *pwdUI=NULL);
     bool            LoadFromStream(fz_stream *stm, PasswordUI *pwdUI=NULL);
     bool            FinishLoading();
+
     pdf_page      * GetPdfPage(int pageNo, bool failIfBusy=false);
     int             GetPageNo(pdf_page *page);
     fz_matrix       viewctm(int pageNo, float zoom, int rotation) {
@@ -3275,8 +3276,8 @@ protected:
     CRITICAL_SECTION _pagesAccess;
     xps_page **     _pages;
 
-    virtual bool    Load(const WCHAR *fileName);
-    virtual bool    Load(IStream *stream);
+    bool            Load(const WCHAR *fileName);
+    bool            Load(IStream *stream);
     bool            Load(fz_stream *stm);
     bool            LoadFromStream(fz_stream *stm);
 
@@ -3464,6 +3465,14 @@ bool XpsEngineImpl::Load(const WCHAR *fileName)
     if (!_fileName || !ctx)
         return false;
 
+    if (dir::Exists(_fileName)) {
+        // load uncompressed documents as a recompressed ZIP stream
+        ScopedComPtr<IStream> zipStream(OpenDirAsZipStream(_fileName, true));
+        if (!zipStream)
+            return false;
+        return Load(zipStream);
+    }
+
     fz_stream *stm = NULL;
     fz_try(ctx) {
         stm = fz_open_file2(ctx, _fileName);
@@ -3476,7 +3485,7 @@ bool XpsEngineImpl::Load(const WCHAR *fileName)
 
 bool XpsEngineImpl::Load(IStream *stream)
 {
-    assert(!_fileName && !_doc && ctx);
+    assert(!_doc && ctx);
     if (!ctx)
         return false;
 
@@ -4267,6 +4276,11 @@ bool XpsEngineImpl::HasClipOptimizations(int pageNo)
 bool XpsEngine::IsSupportedFile(const WCHAR *fileName, bool sniff)
 {
     if (sniff) {
+        if (dir::Exists(fileName)) {
+            // allow opening uncompressed XPS files as well
+            ScopedMem<WCHAR> relsPath(path::Join(fileName, L"_rels\\.rels"));
+            return file::Exists(relsPath) || dir::Exists(relsPath);
+        }
         ZipFile zip(fileName, Zip_Deflate);
         return zip.GetFileIndex(L"_rels/.rels") != (size_t)-1 ||
                zip.GetFileIndex(L"_rels/.rels/[0].piece") != (size_t)-1 ||

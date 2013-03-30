@@ -42,6 +42,8 @@ public:
     bool UnzipFile(const WCHAR *filename, const WCHAR *dir, const WCHAR *unzippedName=NULL);
 };
 
+IStream *OpenDirAsZipStream(const WCHAR *dirPath, bool recursive=false);
+
 class ZipCreatorData;
 
 class ZipCreator {
