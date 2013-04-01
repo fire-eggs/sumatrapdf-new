@@ -5,8 +5,8 @@
 #include "SquareTreeParser.h"
 
 /*
-A square tree is a format for representing string values contained in a
-tree structure. Consumers may parse these strings values further (as integers,
+A 'square tree' is a format for representing string values contained in a
+tree structure. Consumers may parse these string values further (as integers,
 etc.) as required.
 
 Each non-empty line which doesn't start with either '#' or ';' (comment line)
@@ -35,6 +35,19 @@ list [
 list [
   value 3
 ]
+
+The below parser always tries to recover from errors as well as possible.
+One intentional side-effect of this is that INI files can be parsed mostly as
+expected as well. E.g.
+
+[Section]
+key = value
+
+is read as if it were written as
+
+Section [
+  key = value
+]
 */
 
 static inline char *SkipWsRev(char *begin, char *s)
@@ -55,9 +68,11 @@ static char *SkipWsAndComments(char *s)
     return s;
 }
 
-static inline bool IsEmptyLine(char *s)
+static inline bool IsBracketLine(char *s, char bracket)
 {
-    for (; *s && *s != '\n'; s++) {
+    if (*s != bracket)
+        return false;
+    for (s++; *s && *s != '\n'; s++) {
         if (!str::IsWs(*s))
             return false;
     }
@@ -93,7 +108,7 @@ SquareTreeNode *SquareTreeNode::GetChild(const char *key, size_t idx) const
     return NULL;
 }
 
-static SquareTreeNode *ParseSquareTreeRec(char *& data, bool isRootNode=false)
+static SquareTreeNode *ParseSquareTreeRec(char *& data, bool isTopLevel=false)
 {
     SquareTreeNode *node = new SquareTreeNode();
 
@@ -106,16 +121,21 @@ static SquareTreeNode *ParseSquareTreeRec(char *& data, bool isRootNode=false)
         for (data = key; *data && *data != '=' && *data != ':' && *data != '[' && *data != ']' && *data != '\n'; data++);
         if (!*data || '\n' == *data) {
             // use first whitespace as a fallback separator
-            for (data = key; !str::IsWs(*data); data++);
+            for (data = key; *data && !str::IsWs(*data); data++);
         }
         char *separator = data;
-        if ('=' == *data || ':' == *data || str::IsWs(*data) && *data != '\n') {
-            for (data++; *data && str::IsWs(*data) && *data != '\n'; data++);
+        if (*data && *data != '[' && *data != ']' && *data != '\n') {
+            // skip to the first non-whitespace character on the same line (value)
+            for (data++; str::IsWs(*data) && *data != '\n'; data++);
         }
         char *value = data;
-        if ('[' == *value && IsEmptyLine(data + 1)) {
-            // parse child node(s)
-            data++;
+        if (IsBracketLine(value, '[') ||
+            // also tolerate "key \n [ \n ... \n ]" (else the key
+            // gets an empty value and the child node an empty key)
+            '\n' == *value && IsBracketLine(SkipWsAndComments(data), '[')) {
+            // parse child node(s) //
+            *SkipWsRev(key, separator) = '\0';
+            data = SkipWsAndComments(data) + 1;
             node->data.Append(SquareTreeNode::DataItem(key, ParseSquareTreeRec(data)));
             // array are created by either reusing the same key for a different child
             // or by concatenating multiple children ("[ \n ] [ \n ] [ \n ]")
@@ -124,29 +144,51 @@ static SquareTreeNode *ParseSquareTreeRec(char *& data, bool isRootNode=false)
                 node->data.Append(SquareTreeNode::DataItem(key, ParseSquareTreeRec(data)));
             }
         }
-        else if (']' == *separator && (IsEmptyLine(data + 1) || '[' == *SkipWsAndComments(data + 1))) {
-            // finish parsing this node
+        else if (']' == *key || ']' == *separator && '[' == *SkipWsAndComments(data + 1) ||
+            // also tolerate "key ]" (else the key gets ']' as value),
+            // not however the explicit "key = ]"
+            IsBracketLine(separator, ']')) {
+            // finish parsing this node //
             data++;
-            // interpret "key]" as "key =" and "]"
             if (key < separator) {
+                // interpret "key ]" as "key =" and "]"
                 *SkipWsRev(key, separator) = '\0';
                 node->data.Append(SquareTreeNode::DataItem(key, ""));
             }
-            if (!isRootNode)
-                break;
-            // ignore superfluous closing square brackets instead of
-            // ignoring all content following them
+            if (isTopLevel) {
+                // ignore superfluous closing square brackets instead of
+                // ignoring all content following them
+                continue;
+            }
+            return node;
         }
         else {
-            // string value (decoding is left to the consumer)
+            // string value (decoding is left to the consumer) //
             for (; *data && *data != '\n'; data++);
             bool hasMoreLines = '\n' == *data;
             *SkipWsRev(value, data) = '\0';
+            if (*key == '[' && *value && ']' == value[str::Len(value) - 1] && hasMoreLines) {
+                // treat INI section headers as top-level node names (else
+                // "[Section]" would be parsed as "[Section] = [Section]")
+                if (!isTopLevel) {
+                    value[str::Len(value)] = '\n';
+                    data = key;
+                    return node;
+                }
+                else {
+                    value[str::Len(value) - 1] = '\0';
+                    data++;
+                    node->data.Append(SquareTreeNode::DataItem(key + 1, ParseSquareTreeRec(data)));
+                    continue;
+                }
+            }
+            // parse "key[value" as "key[value = [value" (for now)
+            if (separator < value)
+                *SkipWsRev(key, separator) = '\0';
             node->data.Append(SquareTreeNode::DataItem(key, value));
             if (hasMoreLines)
                 data++;
         }
-        *SkipWsRev(key, separator) = '\0';
     }
 
     // assume that all square brackets have been properly balanced
@@ -167,5 +209,5 @@ SquareTree::SquareTree(const char *data) : root(NULL)
 
     char *start = dataUtf8.Get();
     root = ParseSquareTreeRec(start, true);
-    CrashIf(*start);
+    CrashIf(*start || !root);
 }

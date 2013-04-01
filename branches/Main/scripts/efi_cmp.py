@@ -17,18 +17,22 @@ directory. You might occasionally delete it, if disk space is a concern.
 """
 TODO:
  - diff for symbols in text format
- - summary of biggest functions
- - summary of
- - upload efi results as part of buildbot
+ - upload efi diff results in text format as part of buildbot
  - diff for symbols in html format
  - upload efi html diff as part of buildbot
+ - summary of biggest functions
+
+Maybe:
+ - record data type (http://msdn.microsoft.com/en-US/library/w3a9kc5s(v=vs.80).aspx,
+   http://msdn.microsoft.com/en-US/library/b2x2t313(v=vs.80).aspx)
 """
 
 import sys, os
 # assumes is being run as ./scripts/efi_cmp.py
 efi_scripts_dir = os.path.join("tools", "efi")
 sys.path.append(efi_scripts_dir)
-import os, sys, shutil, util, efiparse
+
+import os, sys, shutil, bz2, util, efiparse
 
 g_top_dir = os.path.realpath("..")
 
@@ -42,6 +46,9 @@ def sum_efi_cache_dir(ver):
 
 def efi_result_file(ver):
 	return os.path.join(sum_efi_cache_dir(ver), "efi.txt")
+
+def efi_result_bz2_file(ver):
+	return os.path.join(sum_efi_cache_dir(ver), "efi.txt.bz2")
 
 def usage():
 	name = os.path.basename(__file__)
@@ -87,11 +94,17 @@ def build_ver(ver):
 		dst = os.path.join(sum_efi_cache_dir(ver), f)
 		shutil.copyfile(src, dst)
 
+def bz_file_compress(src, dst):
+	with open(src, "rb") as src_fo:
+		with bz2.BZ2File(dst, "w", buffering=16*1024*1024, compresslevel=9) as dst_fo:
+			shutil.copyfileobj(src_fo, dst_fo, length=1*1024*1024)
+
 def build_efi_result(ver):
 	path = efi_result_file(ver)
 	if os.path.exists(path): return # was already done
 	os.chdir(sum_efi_cache_dir(ver))
 	util.run_cmd_throw("efi", "SumatraPDF.exe", ">efi.txt")
+	bz_file_compress("efi.txt", "efi.txt.bz2")
 
 def main():
 	# early checks
@@ -110,26 +123,40 @@ def main():
 	build_ver(svn_ver2)
 	build_efi_result(svn_ver2)
 
-	efi1 = efiparse.parse_file(efi_result_file(svn_ver1))
-	efi2 = efiparse.parse_file(efi_result_file(svn_ver2))
+	obj_file_splitters = ["obj-rel\\", "INTEL\\"]
+	efi1 = efiparse.parse_file(efi_result_bz2_file(svn_ver1), obj_file_splitters)
+	efi2 = efiparse.parse_file(efi_result_bz2_file(svn_ver2), obj_file_splitters)
 	diff = efiparse.diff(efi1, efi2)
 	#print("Diffing done")
 	print(diff)
 	diff.added.sort(key=lambda sym: sym.size, reverse=True)
-	added = diff.added[:30]
+	diff.removed.sort(key=lambda sym: sym.size, reverse=True)
+	diff.changed.sort(key=lambda sym: sym.size_diff, reverse=True)
 
+	max = 5
+	added = diff.added
 	if len(added) > 0:
 		print("\nAdded symbols:")
-	for sym in added:
-		#sym = diff.syms2.name_to_sym[sym_name]
-		size = sym.size
-		print("%4d : %s" % (size, sym.name))
+		for sym in added[:max]:
+			#sym = diff.syms2.name_to_sym[sym_name]
+			size = sym.size
+			print("%4d : %s" % (size, sym.full_name()))
 
-	changed = diff.changed[:20]
+	removed = diff.removed
+	if len(removed) > 0:
+		print("\nAdded symbols:")
+		for sym in removed[:max]:
+			#sym = diff.syms2.name_to_sym[sym_name]
+			size = sym.size
+			print("%4d : %s" % (size, sym.full_name()))
+
+	changed = diff.changed
 	if len(changed) > 0:
+		changed = diff.changed[:20]
 		print("\nChanged symbols:")
-	for sym_name in changed:
-		print("%s" % sym_name)
+		for sym in changed:
+			size = sym.size_diff
+			print("%4d : %s" % (size, sym.full_name()))
 
 if __name__ == "__main__":
 	main()
