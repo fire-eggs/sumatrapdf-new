@@ -81,7 +81,7 @@ IDiaDataSource *LoadDia()
             {
                 hr = classFactory->CreateInstance(0,__uuidof(IDiaDataSource),(void**) &g_dia_source);
                 classFactory->Release();
-                logf("using loaded dia %s\n", dllName);
+                //logf("using loaded dia %s\n", dllName);
                 return g_dia_source;
             } else {
                 logf("DllGetClassObject() in %s failed", dllName);
@@ -95,7 +95,7 @@ IDiaDataSource *LoadDia()
     return NULL;
 }
 
-void BStrToString(str::Str<char>& strInOut, BSTR str, char *defString, bool stripWhitespace)
+void BStrToString(str::Str<char>& strInOut, BSTR str, const char *defString, bool stripWhitespace)
 {
     strInOut.Reset();
     if (!str) {

@@ -126,7 +126,7 @@ void  SetCurrentLanguageAndRefreshUi(const char *langCode);
 void  ShowOrHideToolbarGlobally();
 void  UpdateDocumentColors(COLORREF fore=RGB(0x00, 0x00, 0x00), COLORREF back=RGB(0xFF, 0xFF, 0xFF));
 void  UpdateColorAll(COLORREF docFore, COLORREF docBack, COLORREF tocBg, COLORREF favBg);
-void  UpdateCurrentFileDisplayStateForWin(SumatraWindow& win);
+void  UpdateCurrentFileDisplayStateForWin(const SumatraWindow& win);
 bool  FrameOnKeydown(WindowInfo* win, WPARAM key, LPARAM lparam, bool inTextfield=false);
 void  SwitchToDisplayMode(WindowInfo *win, DisplayMode displayMode, bool keepContinuous=false);
 void  ReloadDocument(WindowInfo *win, bool autorefresh=false);
@@ -136,7 +136,7 @@ void  OnMenuExit(TopWindowInfo *WIN, HWND hwnd);
 void  AutoUpdateCheckAsync(HWND hwnd, bool autoCheck);
 void  OnMenuChangeLanguage(HWND hwnd);
 void  OnDropFiles(HDROP hDrop, bool dragFinish=true);
-void  OnMenuOpen(SumatraWindow& win);
+void  OnMenuOpen(const SumatraWindow& win);
 size_t TotalWindowsCount();
 void  CloseDocumentInWindow(WindowInfo *win);
 void  CloseDocumentAndDeleteWindowInfo(WindowInfo *win);
@@ -179,7 +179,7 @@ public:
 };
 
 WindowInfo* LoadDocument(LoadArgs& args);
-void        LoadDocument2(const WCHAR *fileName, SumatraWindow& win);
+void        LoadDocument2(const WCHAR *fileName, const SumatraWindow& win);
 WindowInfo *CreateAndShowWindowInfo();
 
 #endif
