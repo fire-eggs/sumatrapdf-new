@@ -563,7 +563,7 @@ static void UpdateCurrentFileDisplayStateForWinInfo(WindowInfo* win)
     UpdateSidebarDisplayState(win, ds);
 }
 
-void UpdateCurrentFileDisplayStateForWin(SumatraWindow& win)
+void UpdateCurrentFileDisplayStateForWin(const SumatraWindow& win)
 {
     if (win.AsWindowInfo())
         UpdateCurrentFileDisplayStateForWinInfo(win.AsWindowInfo());
@@ -1454,7 +1454,7 @@ static bool DocumentPathExists(const WCHAR *path)
     return false;
 }
 
-void LoadDocument2(const WCHAR *fileName, SumatraWindow& win)
+void LoadDocument2(const WCHAR *fileName, const SumatraWindow& win)
 {
     // TODO: opening non-mobi files from mobi window doesn't work exactly
     // the same as opening them from non-mobi window
@@ -1470,6 +1470,7 @@ void LoadDocument2(const WCHAR *fileName, SumatraWindow& win)
     LoadDocument(args);
 }
 
+#if 0
 // Load a file into a new or existing window, show error message
 // if loading failed, set the right window position (based on history
 // settings for this file or default position), update file history,
@@ -1483,13 +1484,13 @@ static WindowInfo* LoadDocumentNew(LoadArgs& args)
     CrashIf(true);
     return NULL;
 }
+#endif
 
 // TODO: eventually I would like to move all loading to be async. To achieve that
 // we need clear separatation of loading process into 2 phases: loading the
 // file (and showing progress/load failures in topmost window) and placing
 // the loaded document in the window (either by replacing document in existing
 // window or creating a new window for the document)
-// TODO: loading a document should never be slow enough to require async loading
 static WindowInfo* LoadDocumentOld(LoadArgs& args)
 {
     if (gCrashOnOpen)
@@ -2283,12 +2284,14 @@ void UpdateDocumentColors()
         gBrushNoDocBg = CreateSolidBrush(COL_WINDOW_BG);
 }
 
+#if defined(SHOW_DEBUG_MENU_ITEMS) || defined(DEBUG)
 static void ToggleGdiDebugging()
 {
     gUseGdiRenderer = !gUseGdiRenderer;
     DebugGdiPlusDevice(gUseGdiRenderer);
     RerenderEverything();
 }
+#endif
 
 static void OnDraggingStart(WindowInfo& win, int x, int y, bool right=false)
 {
@@ -2913,7 +2916,7 @@ static void OnMenuSaveAs(WindowInfo& win)
         !(canConvertToPDF && str::EndsWithI(dstFileName, L".pdf"))) {
         if (hasCopyPerm && 2 == ofn.nFilterIndex)
             defExt = L".txt";
-        else if (canConvertToPDF && (hasCopyPerm ? 3 : 2) == ofn.nFilterIndex)
+        else if (canConvertToPDF && (hasCopyPerm ? 3 : 2) == (int)ofn.nFilterIndex)
             defExt = L".pdf";
         realDstFileName = str::Format(L"%s%s", dstFileName, defExt);
     }
@@ -3180,7 +3183,7 @@ HWND GetSumatraWindowHwnd(const SumatraWindow& win)
     return NULL;
 }
 
-void OnMenuOpen(SumatraWindow& win)
+void OnMenuOpen(const SumatraWindow& win)
 {
     if (!HasPermission(Perm_DiskAccess)) return;
     // don't allow opening different files in plugin mode
@@ -4538,7 +4541,8 @@ static LRESULT CanvasOnMouseWheel(WindowInfo& win, UINT message, WPARAM wParam, 
         GetCursorPosInHwnd(win.hwndCanvas, pt);
 
         float zoom = win.dm->NextZoomStep(delta < 0 ? ZOOM_MIN : ZOOM_MAX);
-        win.dm->ZoomTo(zoom, &PointI(pt.x, pt.y));
+        PointI tmpPoint(pt.x, pt.y);
+        win.dm->ZoomTo(zoom, &tmpPoint);
         UpdateToolbarState(&win);
 
         // don't show the context menu when zooming with the right mouse-button down

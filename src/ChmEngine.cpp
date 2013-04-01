@@ -358,9 +358,9 @@ class ChmTocBuilder : public EbookTocVisitor {
         bool inserted = urlsSet.Insert(plainUrl, pageNo, &pageNo);
         if (inserted) {
             pages->Append(plainUrl.StealData());
-            CrashIf(pageNo != pages->Count());
+            CrashIf((size_t)pageNo != pages->Count());
         } else {
-            CrashIf(pageNo == pages->Count() + 1);
+            CrashIf((size_t)pageNo == pages->Count() + 1);
         }
         return pageNo;
     }
@@ -397,7 +397,8 @@ bool ChmEngineImpl::Load(const WCHAR *fileName)
     pages.Append(str::conv::FromAnsi(doc->GetHomePath()));
     // parse the ToC here, since page numbering depends on it
     t.Start();
-    doc->ParseToc(&ChmTocBuilder(doc, &pages, &tocTrace, &poolAlloc));
+    ChmTocBuilder tmpTocBuilder(doc, &pages, &tocTrace, &poolAlloc);
+    doc->ParseToc(&tmpTocBuilder);
     dbglog::LogF("doc->ParseToc(): %.2f ms", t.GetTimeInMs());
     CrashIf(pages.Count() == 0);
     return pages.Count() > 0;
