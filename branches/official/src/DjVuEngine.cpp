@@ -305,7 +305,7 @@ DjVuEngineImpl::~DjVuEngineImpl()
 // so try to either only use them when actually needed or replace them
 // with a function that extracts all the data at once:
 
-static bool ReadBytes(HANDLE h, int offset, void *buffer, int count)
+static bool ReadBytes(HANDLE h, DWORD offset, void *buffer, DWORD count)
 {
     DWORD res = SetFilePointer(h, offset, NULL, FILE_BEGIN);
     if (res != offset)
@@ -343,7 +343,7 @@ bool DjVuEngineImpl::LoadMediaboxes()
     if (!ReadBytes(h, 0, buffer, 16) || r.DWordBE(0) != DJVU_MARK_MAGIC || r.DWordBE(4) != DJVU_MARK_FORM)
         return false;
 
-    int offset = r.DWordBE(12) == DJVU_MARK_DJVM ? 16 : 4;
+    DWORD offset = r.DWordBE(12) == DJVU_MARK_DJVM ? 16 : 4;
     for (int pages = 0; pages < pageCount; ) {
         if (!ReadBytes(h, offset, buffer, 16))
             return false;
@@ -470,7 +470,10 @@ void DjVuEngineImpl::AddUserAnnots(RenderedBitmap *bmp, int pageNo, float zoom, 
             case Annot_Highlight:
                 arect = Transform(annot.rect, pageNo, zoom, rotation);
                 arect.Offset(-screen.x, -screen.y);
-                g.FillRectangle(&SolidBrush(Unblend(annot.color, 119)), arect.ToGdipRectF());
+                {
+                SolidBrush tmpBrush(Unblend(annot.color, 119));
+                g.FillRectangle(&tmpBrush, arect.ToGdipRectF());
+                }
                 break;
             case Annot_Underline:
             case Annot_StrikeOut:
@@ -479,8 +482,11 @@ void DjVuEngineImpl::AddUserAnnots(RenderedBitmap *bmp, int pageNo, float zoom, 
                     arect.y -= annot.rect.dy / 2;
                 arect = Transform(arect, pageNo, zoom, rotation);
                 arect.Offset(-screen.x, -screen.y);
-                g.DrawLine(&Pen(FromColor(annot.color), zoom), (float)arect.x,
+                {
+                Pen tmpPen(FromColor(annot.color), zoom);
+                g.DrawLine(&tmpPen, (float)arect.x,
                            (float)arect.y, (float)arect.BR().x, (float)arect.BR().y);
+                }
                 break;
             case Annot_Squiggly:
                 {
