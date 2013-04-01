@@ -261,9 +261,12 @@ public:
         int hideStep;       // value used to gradually hide the markers
     } fwdSearchMark;
 
-    StressTest *stressTest;
+    StressTest *    stressTest;
 
-    TouchState touchState;
+    TouchState      touchState;
+
+    Vec<PageAnnotation> *userAnnots;
+    bool            userAnnotsModified;
 
     ToolbarInfo * toolBar() const; // For functions like UpdateToolbarPageText(win), one needs "win to toolBar" to get hwnd.
     SidebarInfo * sideBar() const;
