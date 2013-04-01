@@ -76,6 +76,7 @@ static void OnTimer(EbookWindow *win, WPARAM timerId)
     win->ebookController->OnLayoutTimer();
 }
 
+#if defined(SHOW_DEBUG_MENU_ITEMS) || defined(DEBUG)
 static void OnToggleBbox(EbookWindow *win)
 {
     gShowTextBoundingBoxes = !gShowTextBoundingBoxes;
@@ -84,6 +85,7 @@ static void OnToggleBbox(EbookWindow *win)
     InvalidateRect(win->hwndFrame, NULL, TRUE);
     win::menu::SetChecked(GetMenu(win->hwndFrame), IDM_DEBUG_SHOW_LINKS, gShowTextBoundingBoxes);
 }
+#endif
 
 // closes a physical window, deletes the EbookWindow object and removes it
 // from the global list of windows
@@ -489,7 +491,8 @@ RenderedBitmap *RenderFirstDocPageToBitmap(Doc doc, SizeI pageSize, SizeI bmpSiz
     SolidBrush br(Color(255, 255, 255));
     g.FillRectangle(&br, r);
 
-    DrawHtmlPage(&g, &pd->instructions, (REAL)border, (REAL)border, false, &Color(Color::Black));
+    Color tmpColor((ARGB)Color::Black);
+    DrawHtmlPage(&g, &pd->instructions, (REAL)border, (REAL)border, false, &tmpColor);
     delete pd;
 
     Bitmap res(bmpSize.dx, bmpSize.dy, PixelFormat24bppRGB);
@@ -499,7 +502,7 @@ RenderedBitmap *RenderFirstDocPageToBitmap(Doc doc, SizeI pageSize, SizeI bmpSiz
                  0, 0, pageSize.dx, pageSize.dy, UnitPixel);
 
     HBITMAP hbmp;
-    Status ok = res.GetHBITMAP(Color::White, &hbmp);
+    Status ok = res.GetHBITMAP((ARGB)Color::White, &hbmp);
     if (ok != Ok)
         return NULL;
     return new RenderedBitmap(hbmp, bmpSize);
@@ -524,7 +527,7 @@ static RenderedBitmap *ThumbFromCoverPage(Doc doc)
     g.DrawImage(coverBmp, Rect(0, 0, THUMBNAIL_DX, THUMBNAIL_DY),
         0, 0, coverBmp->GetWidth(), fromDy, UnitPixel);
     HBITMAP hbmp;
-    Status ok = res.GetHBITMAP(Color::White, &hbmp);
+    Status ok = res.GetHBITMAP((ARGB)Color::White, &hbmp);
     delete coverBmp;
     if (ok == Ok)
         return new RenderedBitmap(hbmp, SizeI(THUMBNAIL_DX, THUMBNAIL_DY));
@@ -683,9 +686,7 @@ void RegisterMobiWinClass(HINSTANCE hinst)
     wcex.style          = 0;
     wcex.hIcon          = LoadIcon(hinst, MAKEINTRESOURCE(IDI_SUMATRAPDF));
     wcex.hbrBackground  = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
-
-    ATOM atom = RegisterClassEx(&wcex);
-    CrashIf(!atom);
+    RegisterClassEx(&wcex);
 }
 
 bool IsEbookFile(const WCHAR *fileName)
@@ -695,7 +696,7 @@ bool IsEbookFile(const WCHAR *fileName)
            MobiDoc::IsSupportedFile(fileName);
 }
 
-Doc GetDocForWindow(SumatraWindow& win)
+Doc GetDocForWindow(const SumatraWindow& win)
 {
     if (win.AsWindowInfo()) {
         WindowInfo *iwin = win.AsWindowInfo();

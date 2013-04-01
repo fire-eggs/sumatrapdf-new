@@ -4,15 +4,15 @@
 Parses the output of efi.exe.
 """
 
-g_file_name = "efi_out.txt"
+import bz2, bisect
+
+g_file_name = "efi.txt"
 
 (SECTION_CODE, SECTION_DATA, SECTION_BSS, SECTION_UNKNOWN) = ("C", "D", "B", "U")
 
 # maps a numeric string idx to string. We take advantage of the fact that
-# strings in efi.exe output are stored with consequitive indexes so can use
-#
+# strings in efi.exe output are stored with consequitive indexes
 class Strings():
-
 	def __init__(self):
 		self.strings = []
 
@@ -26,15 +26,87 @@ class Strings():
 # type | sectionNo | length | offset | objFileId
 # C|1|35|0|C:\Users\kkowalczyk\src\sumatrapdf\obj-dbg\sumatrapdf\SumatraPDF.obj
 class Section(object):
-	def __init__(self, l):
+	def __init__(self, l, strings):
 		parts = l.split("|")
 		assert len(parts) == 5
 		self.type = parts[0]
 		self.section_no = int(parts[1])
 		self.size = int(parts[2])
 		self.offset = int(parts[3])
-		# it's either name id in compact mode or full name
-		self.name = parts[4]
+		idx = int(parts[4])
+		self.name = strings.idx_to_str(idx)
+
+def print_i_off_sec(i, off, section):
+	print("""i: %d
+off:            %d
+section.offset: %d
+""" % (i, off, section.offset))
+
+class SectionsSorted(object):
+	def __init__(self):
+		self.offsets = []
+		self.sections = []
+
+	def add(self, section):
+		prev_sec_idx = len(self.offsets) - 1
+		self.offsets.append(section.offset)
+		self.sections.append(section)
+		if prev_sec_idx > 1:
+			prev_off = self.offsets[prev_sec_idx]
+			assert prev_off <= section.offset
+
+	def objname_by_offset(self, off):
+		i = bisect.bisect_left(self.offsets, off)
+		if i >= len(self.sections):
+			i = len(self.sections) - 1
+		section = self.sections[i]
+		if off < section.offset:
+			try:
+				assert i > 0
+			except:
+				print_i_off_sec(i, off, section)
+				raise
+			i -= 1
+			section = self.sections[i]
+		try:
+			assert off >= section.offset
+		except:
+			print_i_off_sec(i, off, section)
+			raise
+		if len(self.sections) < i + 1:
+			next_section = self.sections[i+1]
+			assert off < next_section.offset
+		return section.name
+
+class SectionToObjFile(object):
+	def __init__(self, sections, strings):
+		self.strings = strings
+
+		sec_no_to_sec = {}
+		curr_sec_no = -1
+		curr_sec_sorted = None
+		for s in sections:
+			if s.section_no != curr_sec_no:
+				assert s.section_no not in sec_no_to_sec
+				assert s.section_no > curr_sec_no
+				curr_sec_no = s.section_no
+				curr_sec_sorted = SectionsSorted()
+				sec_no_to_sec[curr_sec_no] = curr_sec_sorted
+			curr_sec_sorted.add(s)
+		self.sec_no_to_sec = sec_no_to_sec
+
+	def get_objname_by_sec_no_off(self, sec_no, sec_off):
+		# Note: it does happen that we have symbols in sections
+		# that are not in sections list, like:
+		# P|6|553|0|0|__except_list
+		# D|6|0|553|0|__safe_se_handler_count|
+		if sec_no not in self.sec_no_to_sec:
+			return ""
+		sec_sorted = self.sec_no_to_sec[sec_no]
+		return sec_sorted.objname_by_offset(sec_off)
+
+	def get_objname_by_symbol(self, sym):
+		return self.get_objname_by_sec_no_off(sym.section, sym.offset)
 
 (SYM_NULL, SYM_EXE, SYM_COMPILAND, SYM_COMPILAND_DETAILS) = ("N", "Exe", "C", "CD")
 (SYM_COMPILAND_ENV, SYM_FUNCTION, SYM_BLOCK, SYM_DATA) = ("CE", "F", "B", "D")
@@ -50,26 +122,70 @@ class Section(object):
 class Symbol(object):
 	def __init__(self, l):
 		parts = l.split("|")
-		assert len(parts) == 6, "len(parts) is %d\n'%s'" % (len(parts), l)
+		assert len(parts) in (6,7), "len(parts) is %d\n'%s'" % (len(parts), l)
 		self.type = parts[0]
 		self.section = int(parts[1])
 		self.size = int(parts[2])
 		self.offset = int(parts[3])
 		self.rva = int(parts[4])
 		self.name = parts[5]
+		if self.type == SYM_THUNK:
+			self.thunk_type = parts[6]
+		elif self.type == SYM_DATA:
+			self.data_type_name = parts[6]
+		self.objname = None
+
+	def full_name(self):
+		return self.name + "@" + self.objname
 
 class Type(object):
 	def __init__(self, l):
 		# TODO: parse the line
 		self.line = l
 
+def print_sym(sym):
+	print(sym)
+	print("name : %s" % sym.name)
+	print("off  : %d" % sym.offset)
+	print("size : %d" % sym.size)
+
 class ParseState(object):
-	def __init__(self, fo):
+	def __init__(self, fo, obj_file_splitters):
 		self.fo = fo
+		self.obj_file_splitters = obj_file_splitters
 		self.strings = Strings()
 		self.types = []
 		self.symbols = []
 		self.sections = []
+		# functions, strings etc. are laid out rounded so e.g. a function 11 bytes
+		# in size really takes 16 bytes in the binary, due to rounding of the symbol
+		# after it. Those values allow us to calculate how much is wasted due
+		# to rounding
+		self.symbols_unrounded_size = 0
+		self.symbols_rounding_waste = 0
+
+	def add_symbol(self, sym):
+		self.symbols.append(sym)
+		self.symbols_unrounded_size += sym.size
+		# TODO: this doesn't quite work because it seems symbols can be
+		# inter-leaved e.g. a data symbol can be inside function symbol, which
+		# breaks the simplistic logic of calculating rounded size as curr.offset - prev.offset
+		"""
+		prev_sym_idx = len(self.symbols) - 2
+		if prev_sym_idx < 0: return
+		prev_sym = self.symbols[prev_sym_idx]
+		prev_sym_rounded_size = sym.offset - prev_sym.offset
+		assert prev_sym_rounded_size >= 0
+		prev_sym_wasted = prev_sym_rounded_size - prev_sym.size
+		try:
+			assert prev_sym_wasted >= 0
+		except:
+			print_sym(prev_sym)
+			print_sym(sym)
+			print("prev_sym_wasted (%d) = prev_sym_rounded_size (%d) - prev_sym.size (%d)" % (prev_sym_wasted, prev_sym_rounded_size, prev_sym.size))
+			raise
+		self.symbols_rounding_waste += prev_sym_wasted
+"""
 
 	def readline(self):
 		l = self.fo.readline()
@@ -107,21 +223,27 @@ def parse_strings(state):
 		if l == "": return parse_next_section
 		parts = l.split("|", 2)
 		idx = int(parts[0])
-		state.strings.add(idx, parts[1])
+		s = parts[1]
+		for splitter in state.obj_file_splitters:
+			pos = s.find(splitter)
+			if -1 != pos:
+				s = s[pos + len(splitter):]
+				break
+		state.strings.add(idx, s)
 
 def parse_sections(state):
 	while True:
 		l = state.readline()
 		if l == None: return None
 		if l == "": return parse_next_section
-		state.sections.append(Section(l))
+		state.sections.append(Section(l, state.strings))
 
 def parse_symbols(state):
 	while True:
 		l = state.readline()
 		if l == None: return None
 		if l == "": return parse_next_section
-		state.symbols.append(Symbol(l))
+		state.add_symbol(Symbol(l))
 
 def parse_types(state):
 	while True:
@@ -132,30 +254,71 @@ def parse_types(state):
 		if l.startswith("struct"):
 			state.types.append(Type(l))
 
-def parse_file_object(fo):
+def calc_symbols_objname(state):
+	sec_to_objfile = SectionToObjFile(state.sections, state.strings)
+	for sym in state.symbols:
+		sym.objname = sec_to_objfile.get_objname_by_symbol(sym)
+
+def parse_file_object(fo, obj_file_splitters):
+	state = ParseState(fo, obj_file_splitters)
 	curr = parse_start
-	state = ParseState(fo)
 	while curr:
 		curr = curr(state)
+	calc_symbols_objname(state)
 	return state
 
-def parse_file(file_name):
+def parse_file(file_name, obj_file_splitters=[]):
 	print("parse_file: %s" % file_name)
+	if file_name.endswith(".bz2"):
+		with bz2.BZ2File(file_name, "r", buffering=2*1024*1024) as fo:
+			return parse_file_object(fo, obj_file_splitters)
 	with open(file_name, "r") as fo:
-		return parse_file_object(fo)
+		return parse_file_object(fo, obj_file_splitters)
+
+def n_as_str(n):
+	if n > 0: return "+" + str(n)
+	return str(n)
 
 class Diff(object):
 	def __init__(self):
 		self.added = []
 		self.removed = []
 		self.changed = []
-		self.str_sizes_diff = 0
+		self.str_sizes1 = 0
+		self.str_sizes2 = 0
+
+		self.n_symbols1 = 0
+		self.symbols_unrounded_size1 = 0
+		self.symbols_rounding_waste1 = 0
+
+		self.n_symbols2 = 0
+		self.symbols_unrounded_size2 = 0
+		self.symbols_rounding_waste2 = 0
 
 	def __repr__(self):
-		str_sizes = "%s" % self.str_sizes_diff
-		if self.str_sizes_diff > 0:
-			str_sizes = "+" + str_sizes
-		s = "%d added\n%d removed\n%d changed\nstring sizes: %s" % (len(self.added), len(self.removed), len(self.changed), str_sizes)
+		str_sizes1 = self.str_sizes1
+		str_sizes2 = self.str_sizes2
+		str_sizes_diff = n_as_str(str_sizes2 - str_sizes1)
+		n_symbols1 = self.n_symbols1
+		n_symbols2 = self.n_symbols2
+		symbols_diff = n_as_str(n_symbols2 - n_symbols1)
+		sym_size1 = self.symbols_unrounded_size1
+		sym_size2 = self.symbols_unrounded_size2
+		sym_size_diff = n_as_str(sym_size2 - sym_size1)
+		#wasted1 = self.symbols_rounding_waste1
+		#wasted2 = self.symbols_rounding_waste2
+		#wasted_diff = n_as_str(wasted2 - wasted1)
+		n_added = len(self.added)
+		n_removed = len(self.removed)
+		n_changed = len(self.changed)
+
+		#wasted rouding: %(wasted_diff)s %(wasted1)d => %(wasted2)d
+		s = """symbols       : %(symbols_diff)-6s (%(n_symbols1)d => %(n_symbols2)d)
+added         : %(n_added)d
+removed       : %(n_removed)d
+changed       : %(n_changed)d
+symbol sizes  : %(sym_size_diff)-6s (%(sym_size1)d => %(sym_size2)d)
+string sizes  : %(str_sizes_diff)-6s (%(str_sizes1)d => %(str_sizes2)d)""" % locals()
 		return s
 
 def same_sym_sizes(syms):
@@ -171,9 +334,17 @@ def syms_len(syms):
 		return len(syms)
 	return 1
 
-# Unfortunately dia2 sometimes doesn't give us unique names for functions,
-# so we need to
-class DiffSyms(object):
+class ChangedSymbol(object):
+	def __init__(self, sym1, sym2):
+		assert sym1.name == sym2.name
+		self.name = sym1.name
+		self.size_diff = sym2.size - sym1.size
+		self._full_name = sym1.full_name()
+
+	def full_name(self):
+		return self._full_name
+
+class SymbolStats(object):
 	def __init__(self):
 		self.name_to_sym = {}
 		self.str_sizes = 0
@@ -213,10 +384,10 @@ def find_added(name, diff_syms1, diff_syms2):
 def diff(parse1, parse2):
 	assert isinstance(parse1, ParseState)
 	assert isinstance(parse2, ParseState)
-	diff_syms1 = DiffSyms()
+	diff_syms1 = SymbolStats()
 	diff_syms1.process_symbols(parse1.symbols)
 
-	diff_syms2 = DiffSyms()
+	diff_syms2 = SymbolStats()
 	diff_syms2.process_symbols(parse2.symbols)
 
 	added = []
@@ -232,17 +403,30 @@ def diff(parse1, parse2):
 				sym1 = diff_syms1.name_to_sym[name]
 				sym2 = diff_syms2.name_to_sym[name]
 				if sym1.size != sym2.size:
-					changed += [name]
+					changed += [ChangedSymbol(sym1, sym2)]
 
 	removed = []
+	for name in diff_syms1.name_to_sym.keys():
+		len1 = diff_syms2.syms_len(name)
+		len2 = diff_syms1.syms_len(name)
+		if len2 > len1:
+			removed += find_added(name, diff_syms2, diff_syms1)
 
 	diff = Diff()
 	diff.syms1 = diff_syms1
 	diff.syms2 = diff_syms2
+	diff.str_sizes1 =  diff_syms1.str_sizes
+	diff.str_sizes2 =  diff_syms2.str_sizes
 	diff.added = added
 	diff.removed = removed
 	diff.changed = changed
-	diff.str_sizes_diff = diff_syms2.str_sizes - diff_syms1.str_sizes
+	diff.n_symbols1 = len(parse1.symbols)
+	diff.symbols_unrounded_size1 = parse1.symbols_unrounded_size
+	diff.symbols_rounding_waste1 = parse1.symbols_rounding_waste
+
+	diff.n_symbols2 = len(parse2.symbols)
+	diff.symbols_unrounded_size2 = parse2.symbols_unrounded_size
+	diff.symbols_rounding_waste2 = parse2.symbols_rounding_waste
 	return diff
 
 def main():
