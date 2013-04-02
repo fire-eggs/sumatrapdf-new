@@ -2,8 +2,13 @@
 Builds sumatra and uploads results to s3 for easy analysis, viewable at:
 http://kjkpub.s3.amazonaws.com/sumatrapdf/buildbot/index.html
 """
-import os, shutil, time, datetime, cPickle, traceback
-import s3, util
+import sys, os
+# assumes is being run as ./scripts/buildbot.py
+efi_scripts_dir = os.path.join("tools", "efi")
+sys.path.append(efi_scripts_dir)
+
+import shutil, time, datetime, cPickle, traceback
+import s3, util, efiparse
 from util import file_remove_try_hard, run_cmd_throw
 from util import parse_svnlog_out, Serializable, create_dir
 from util import load_config, run_cmd, strip_empty_lines
@@ -14,6 +19,10 @@ from buildbot_html import build_sizes_json, g_first_analyze_build
 
 """
 TODO:
+ - diff for symbols in html format
+ - upload efi html diff as part of buildbot
+
+ MAYBE:
  - at some point the index.html page will get too big, so split it into N-item chunks
    (100? 300?)
  - should also do pre-release builds if there was a new checkin since the last uploaded
@@ -50,9 +59,15 @@ def str2bool(s):
 	if s.lower() in ("false", "0"): return False
 	assert(False)
 
-def get_cache_dir(): return create_dir(os.path.join("..", "sumatrapdfcache", "buildbot"))
-def get_stats_cache_dir(): return create_dir(os.path.join(get_cache_dir(), "stats"))
-def get_logs_cache_dir(): return create_dir(os.path.join(get_cache_dir(), "logs"))
+g_cache_dir = create_dir(os.path.realpath(os.path.join("..", "sumatrapdfcache", "buildbot")))
+g_stats_cache_dir = create_dir(os.path.join(g_cache_dir, "stats"))
+g_logs_cache_dir = create_dir(os.path.join(g_cache_dir, "logs"))
+def get_cache_dir(): return g_cache_dir
+def get_stats_cache_dir(): return g_stats_cache_dir
+def get_logs_cache_dir(): return g_logs_cache_dir
+
+def logs_efi_out_path(ver):
+	return os.path.join(get_logs_cache_dir(), str(ver) + "_efi.txt.bz2")
 
 # logs are only kept for potential troubleshooting and they're quite big,
 # so we delete old files (we keep logs for the last $to_keep revisions)
@@ -81,6 +96,14 @@ def stats_for_ver(ver):
 		s3.download_to_file(s3_path, local_path)
 		assert(os.path.exists(local_path))
 	return Stats(local_path)
+
+def previous_successful_build_ver(ver):
+	ver = int(ver) - 1
+	while True:
+		stats = stats_for_ver(str(ver))
+		if None == stats: return 0
+		if not stats.rel_failed: return ver
+		ver -= 1
 
 # We cache results of running svn log in a dict mapping
 # version to string returned by svn log
@@ -134,6 +157,16 @@ def has_already_been_built(ver):
 		if k.name in [n1, n2]:
 			return True
 	return False
+
+def verify_efi_present():
+	try:
+		(out, err, errcode) = util.run_cmd("efi.exe")
+	except:
+		print("Must have efi.exe in the %PATH%!!!")
+		sys.exit(1)
+	if "Usage:" not in out:
+		print("efi.exe created unexpected output:\n%s" % out)
+		sys.exit(1)
 
 def file_size_in_obj(file_name):
 	return file_size(os.path.join("obj-rel", file_name))
@@ -191,6 +224,89 @@ def svn_update_to_ver(ver):
 	run_cmd_throw("svn", "update", "-r" + ver)
 	rebuild_trans_src_path_cache()
 
+# runs efi.exe on obj-rel/SumatraPDF.exe, stores the data in obj-rel/efi.txt.bz2
+# and uploads to s3 as efi.txt.bz2
+def build_and_upload_efi_out(ver):
+	obj_dir = "obj-rel"
+	s3dir = "sumatrapdf/buildbot/%s/" % ver
+	os.chdir(obj_dir)
+	util.run_cmd_throw("efi", "SumatraPDF.exe", ">efi.txt")
+	util.bz_file_compress("efi.txt", "efi.txt.bz2")
+	s3.upload_file_public("efi.txt.bz2", s3dir + "efi.txt.bz2", silent=True)
+	shutil.copyfile("efi.txt.bz2", logs_efi_out_path(ver))
+	os.chdir("..")
+
+def get_efi_out(ver):
+	ver = str(ver)
+	p = logs_efi_out_path(ver)
+	if os.path.exists(p):
+		return p
+	# TODO: try download from s3 if doesn't exist? For now we rely on the fact
+	# that it was build on this machine, so the results should still be in logs
+	# cache
+	return None
+
+def efi_diff_as_txt(diff, max=-1):
+	lines = []
+	diff.added.sort(key=lambda sym: sym.size, reverse=True)
+	diff.removed.sort(key=lambda sym: sym.size, reverse=True)
+	diff.changed.sort(key=lambda sym: sym.size_diff, reverse=True)
+
+	added = diff.added
+	if len(added) > 0:
+		lines.append("\nAdded symbols:")
+		if max != -1:
+			added = added[:max]
+		for sym in added:
+			#sym = diff.syms2.name_to_sym[sym_name]
+			size = sym.size
+			s = "%4d : %s" % (size, sym.full_name())
+			lines.append(s)
+
+	removed = diff.removed
+	if len(removed) > 0:
+		lines.append("\nRemoved symbols:")
+		if max != -1:
+			removed = removed[:max]
+		for sym in removed:
+			#sym = diff.syms2.name_to_sym[sym_name]
+			size = sym.size
+			s = "%4d : %s" % (size, sym.full_name())
+			lines.append(s)
+
+	changed = diff.changed
+	if len(changed) > 0:
+		lines.append("\nChanged symbols:")
+		if max != -1:
+			changed = changed[:max]
+		for sym in changed:
+			size = sym.size_diff
+			lines.append("%4d : %s" % (size, sym.full_name()))
+	return "\n".join(lines)
+
+# builds efi diff between this version and previous succesful version
+# and uploads as efi_diff.txt
+def build_and_upload_efi_txt_diff(ver):
+	prev_ver = previous_successful_build_ver(ver)
+	if 0 == prev_ver:
+		return
+	efi_path_curr = get_efi_out(ver)
+	if not efi_path_curr:
+		print("didn't find efi output for %s" % str(ver))
+		return
+	efi_path_prev = get_efi_out(prev_ver)
+	if not efi_path_prev:
+		print("didn't find efi output for %s" % str(prev_ver))
+		return
+	obj_file_splitters = ["obj-rel\\", "INTEL\\"]
+	efi1 = efiparse.parse_file(efi_path_prev, obj_file_splitters)
+	efi2 = efiparse.parse_file(efi_path_curr, obj_file_splitters)
+	diff = efiparse.diff(efi1, efi2)
+	s = str(diff)
+	s = s + "\n" + efi_diff_as_txt(diff)
+	s3dir = "sumatrapdf/buildbot/%s/" % str(ver)
+	s3.upload_data_public_with_content_type(s, s3dir + "efi_diff.txt", silent=True)
+
 # TODO: maybe add debug build and 64bit release?
 # skip_release is just for testing
 def build_version(ver, skip_release=False):
@@ -212,6 +328,9 @@ def build_version(ver, skip_release=False):
 			run_analyze = False # don't bother running analyze if release failed
 			s3.upload_data_public_with_content_type(stats.rel_build_log, s3dir + "release_build_log.txt", silent=True)
 
+	if not stats.rel_failed:
+		build_and_upload_efi_out(ver)
+
 	if run_analyze:
 		start_time = datetime.datetime.now()
 		build_analyze(stats, ver)
@@ -221,6 +340,9 @@ def build_version(ver, skip_release=False):
 		p = os.path.join(get_logs_cache_dir(), "%s_analyze.html" % str(ver))
 		open(p, "w").write(html)
 		s3.upload_data_public_with_content_type(html, s3dir + "analyze.html", silent=True)
+
+	if not stats.rel_failed:
+		build_and_upload_efi_txt_diff(ver)
 
 	# TODO: it appears we might throw an exception after uploading analyze.html but
 	# before/dufing uploading stats.txt. Would have to implement transactional
@@ -233,6 +355,15 @@ def build_version(ver, skip_release=False):
 	s3.upload_data_public_with_content_type(json_s, "sumatrapdf/buildbot/sizes.js", silent=True)
 	if stats.rel_failed:
 		email_build_failed(ver)
+
+def test_build_html_index():
+	print("test_build_html_index()")
+	html = build_index_html(stats_for_ver, checkin_comment_for_ver)
+	print("after build_index_html()")
+	import codecs
+	codecs.open("index.html", "w", "utf8").write(html)
+	print("after write")
+	sys.exit(1)
 
 g_email_to = ["kkowalczyk@gmail.com"]
 
@@ -313,6 +444,7 @@ def buildbot_loop():
 		time.sleep(60*15) # 15 mins
 
 def main():
+	verify_efi_present()
 	verify_started_in_right_directory()
 	# to avoid problems, we build a separate source tree, just for the buildbot
 	src_path = os.path.join("..", "sumatrapdf_buildbot")
@@ -323,7 +455,7 @@ def main():
 	os.chdir(src_path)
 
 	#build_version("6698", skip_release=True)
-	#build_index_html()
+	#test_build_html_index()
 	#build_sizes_json()
 	#build_curr(force=True)
 	buildbot_loop()
