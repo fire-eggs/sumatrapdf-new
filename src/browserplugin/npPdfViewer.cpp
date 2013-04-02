@@ -65,8 +65,9 @@ int gTranslationIdx = 0;
 
 /* ::::: DLL Exports ::::: */
 
-BOOL APIENTRY DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
+BOOL APIENTRY DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /* lpReserved */)
 {
+    UNREFERENCED_PARAMETER(dwReason);
     plogf("sp: DllMain() reason: %d (%s)", dwReason, DllMainReason(dwReason));
 
     g_hInstance = hInstance;
@@ -461,8 +462,9 @@ LRESULT CALLBACK PluginWndProc(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lPar
 
 /* ::::: Plugin Methods ::::: */
 
-NPError NP_LOADDS NPP_New(NPMIMEType pluginType, NPP instance, uint16_t mode, int16_t argc, char* argn[], char* argv[], NPSavedData* saved)
+NPError NP_LOADDS NPP_New(NPMIMEType pluginType, NPP instance, uint16_t mode, int16_t /* argc */, char* /* argn */[], char* /* argv */[], NPSavedData* saved)
 {
+    UNREFERENCED_PARAMETER(mode);
     plogf("sp: NPP_New() mode=%d ", mode);
 
     if (!instance)
@@ -550,7 +552,7 @@ void TriggerRepaintOnProgressChange(InstanceData *data)
     }
 }
 
-NPError NP_LOADDS NPP_NewStream(NPP instance, NPMIMEType type, NPStream* stream, NPBool seekable, uint16_t* stype)
+NPError NP_LOADDS NPP_NewStream(NPP instance, NPMIMEType /* type */, NPStream* stream, NPBool /* seekable */, uint16_t* stype)
 {
     InstanceData *data = (InstanceData *)instance->pdata;
 
@@ -584,7 +586,7 @@ NPError NP_LOADDS NPP_NewStream(NPP instance, NPMIMEType type, NPStream* stream,
     return NPERR_NO_ERROR;
 }
 
-int32_t NP_LOADDS NPP_WriteReady(NPP instance, NPStream* stream)
+int32_t NP_LOADDS NPP_WriteReady(NPP /* instance */, NPStream* stream)
 {
     int32_t res = stream->end > 0 ? stream->end : INT_MAX;
     plogf("sp: NPP_WriteReady() res=%d", res);
@@ -681,6 +683,7 @@ NPError NP_LOADDS NPP_DestroyStream(NPP instance, NPStream* stream, NPReason rea
 {
     InstanceData *data;
 
+    UNREFERENCED_PARAMETER(reason);
     plogf("sp: NPP_DestroyStream() reason: %d", reason);
     if (stream)
     {
@@ -719,7 +722,7 @@ Exit:
     return NPERR_NO_ERROR;
 }
 
-NPError NP_LOADDS NPP_Destroy(NPP instance, NPSavedData** save)
+NPError NP_LOADDS NPP_Destroy(NPP instance, NPSavedData** /* save */)
 {
     if (!instance)
     {
