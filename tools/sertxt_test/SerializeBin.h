@@ -8,16 +8,10 @@ namespace serbin {
 
 struct FieldMetadata;
 
-template <typename T>
-struct ListNode {
-    ListNode<T> *   next;
-    T *             val;
-};
-
 typedef struct {
     uint16_t        size;
     uint16_t        nFields;
-    FieldMetadata * fields;
+    const FieldMetadata * fields;
 } StructMetadata;
 
 typedef enum {
@@ -33,7 +27,8 @@ typedef enum {
     TYPE_WSTR,
     TYPE_STRUCT_PTR,
     TYPE_ARRAY,
-    TYPE_NO_FLAGS_MASK = 0xFF,
+    // do && with TYPE_MASK to get just the type, no flags
+    TYPE_MASK = 0xFF,
     // a flag, if set the value is not to be serialized
     TYPE_NO_STORE_MASK = 0x4000,
 } Type;
@@ -44,12 +39,12 @@ struct FieldMetadata {
     uint16_t         offset;
     Type             type; // TYPE_*
     // type is TYPE_STRUCT_PTR, otherwise NULL
-    StructMetadata * def;
+    const StructMetadata * def;
 };
 
-void        FreeStruct(uint8_t *data, StructMetadata *def);
-uint8_t*    Deserialize(const uint8_t *data, int dataSize, const char *version, StructMetadata *def);
-uint8_t *   Serialize(const uint8_t *data, const char *version, StructMetadata *def, int *sizeOut);
+void        FreeStruct(uint8_t *data, const StructMetadata *def);
+uint8_t*    Deserialize(const uint8_t *data, int dataSize, const char *version, const StructMetadata *def);
+uint8_t *   Serialize(const uint8_t *data, const char *version, const StructMetadata *def, int *sizeOut);
 
 } // namespace serbin
 

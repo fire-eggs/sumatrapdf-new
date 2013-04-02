@@ -8,24 +8,38 @@
 namespace sertxt {
 
 #define of offsetof
+const FieldMetadata gSimpleXYFieldMetadata[] = {
+    { of(SimpleXY, x), TYPE_I32, NULL },
+    { of(SimpleXY, y), TYPE_I32, NULL },
+};
+
+const StructMetadata gSimpleXYMetadata = {
+    sizeof(SimpleXY),
+    2,
+    "x\0y\0\0",
+    &gSimpleXYFieldMetadata[0]
+};
+
 const FieldMetadata gSimpleFieldMetadata[] = {
-    {  0, of(Simple, bTrue),      TYPE_BOOL,  NULL },
-    {  7, of(Simple, bFalse),     TYPE_BOOL,  NULL },
-    { 15, of(Simple, u16_1),      TYPE_U16,   NULL },
-    { 21, of(Simple, i32_1),      TYPE_I32,   NULL },
-    { 27, of(Simple, u32_1),      TYPE_U32,   NULL },
-    { 33, of(Simple, u64_1),      TYPE_U64,   NULL },
-    { 39, of(Simple, col_1),      TYPE_COLOR, NULL },
-    { 45, of(Simple, float_1),    TYPE_FLOAT, NULL },
-    { 53, of(Simple, str_1),      TYPE_STR,   NULL },
-    { 59, of(Simple, str_escape), TYPE_STR,   NULL },
-    { 70, of(Simple, wstr_1),     TYPE_WSTR,  NULL },
+    { of(Simple, bTrue),      TYPE_BOOL,       NULL               },
+    { of(Simple, bFalse),     TYPE_BOOL,       NULL               },
+    { of(Simple, u16_1),      TYPE_U16,        NULL               },
+    { of(Simple, i32_1),      TYPE_I32,        NULL               },
+    { of(Simple, u32_1),      TYPE_U32,        NULL               },
+    { of(Simple, u64_1),      TYPE_U64,        NULL               },
+    { of(Simple, col_1),      TYPE_COLOR,      NULL               },
+    { of(Simple, float_1),    TYPE_FLOAT,      NULL               },
+    { of(Simple, xy1),        TYPE_STRUCT_PTR, &gSimpleXYMetadata },
+    { of(Simple, str_1),      TYPE_STR,        NULL               },
+    { of(Simple, str_escape), TYPE_STR,        NULL               },
+    { of(Simple, xy2),        TYPE_STRUCT_PTR, &gSimpleXYMetadata },
+    { of(Simple, wstr_1),     TYPE_WSTR,       NULL               },
 };
 
 const StructMetadata gSimpleMetadata = {
     sizeof(Simple),
-    11,
-    "b_true\0b_false\0u16_1\0i32_1\0u32_1\0u64_1\0col_1\0float_1\0str_1\0str_escape\0wstr_1\0\0",
+    13,
+    "b_true\0b_false\0u16_1\0i32_1\0u32_1\0u64_1\0col_1\0float_1\0xy1\0str_1\0str_escape\0xy2\0wstr_1\0\0",
     &gSimpleFieldMetadata[0]
 };
 
@@ -48,12 +62,12 @@ Simple *DeserializeSimpleWithDefault(const char *data, size_t dataLen, const cha
 
 uint8_t *SerializeSimple(Simple *val, size_t *dataLenOut)
 {
-    return Serialize((const uint8_t*)val, dataLenOut);
+    return Serialize((const uint8_t*)val, &gSimpleMetadata, dataLenOut);
 }
 
 void FreeSimple(Simple *val)
 {
-    FreeStruct((uint8_t*)val);
+    FreeStruct((uint8_t*)val, &gSimpleMetadata);
 }
 
 } // namespace sertxt

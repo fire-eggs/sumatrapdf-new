@@ -7,6 +7,8 @@ from gen_settings_types import Field
 
 """
 TODO:
+  - test perf on a large document i.e. ~ 1 MB. Randomly generate a big
+    file and see how fast is SerializeTxtParser.cpp on that file
   - add a way to pass Allocator to Serialize/Deserialize
 
 Todo maybe: arrays of basic types
@@ -21,6 +23,9 @@ g_escape_char = "$"
 
 # if true, will add whitespace at the end of the string, just for testing
 g_add_whitespace = False
+
+# if True, adds per-object reflection info. Not really working
+g_with_reflection = False
 
 def settings_src_dir():
     return util.verify_path_exists(g_script_dir)
@@ -168,7 +173,8 @@ def gen_struct_def(stru_cls):
     name = stru_cls.__name__
     lines = ["struct %s {" % name]
     rows = [[field.c_type(), field.name] for field in stru_cls.fields]
-    rows = [["const StructMetadata *", "def"]] + rows
+    if g_with_reflection:
+        rows = [["const StructMetadata *", "def"]] + rows
     lines += ["    %s  %s;" % (e1, e2) for (e1, e2) in util.fmt_rows(rows, [util.FMT_RIGHT])]
     lines += ["};\n"]
     return "\n".join(lines)
@@ -219,26 +225,25 @@ namespace sertxt {
 
 """
 const FieldMetadata g${name}FieldMetadata[] = {
-    { $name_off, $offset, $type, &g${name}StructMetadata },
+    { $offset, $type, &g${name}StructMetadata },
 };
 """
 def gen_struct_fields_txt(stru_cls):
     struct_name = stru_cls.__name__
-    field_names = stru_cls.field_names
     lines = ["const FieldMetadata g%sFieldMetadata[] = {" % struct_name]
     rows = []
     for field in stru_cls.fields:
         assert isinstance(field, Field)
         typ_enum = field.get_typ_enum()
-        name_off = field_names.get_offset(name2name(field.name))
         offset = "of(%s, %s)" % (struct_name, field.name)
         val = "NULL"
         if field.is_struct() or field.is_array():
             val = "&g%sMetadata" % field.typ.name()
-        col = [str(name_off) + ",", offset + ",", typ_enum + ",", val]
+        col = [offset + ",", typ_enum + ",", val]
         rows.append(col)
-    rows = util.fmt_rows(rows, [util.FMT_LEFT, util.FMT_RIGHT, util.FMT_RIGHT, util.FMT_RIGHT])
-    lines += ["    { %s %s %s %s }," % (e1, e2, e3, e4) for (e1, e2, e3, e4) in rows]
+    rows = util.fmt_rows(rows, [util.FMT_RIGHT, util.FMT_RIGHT, util.FMT_RIGHT])
+    lines += ["    { %s %s %s }," % (e1, e2, e3) for (e1, e2, e3) in rows]
+    #lines += ["    { %s %s %s }," % els for els in rows]
     lines += ["};\n"]
     return lines
 
@@ -280,12 +285,12 @@ top_level_funcs_txt_tmpl = """
 
 uint8_t *Serialize%(name)s(%(name)s *val, size_t *dataLenOut)
 {
-    return Serialize((const uint8_t*)val, dataLenOut);
+    return Serialize((const uint8_t*)val, &g%(name)sMetadata, dataLenOut);
 }
 
 void Free%(name)s(%(name)s *val)
 {
-    FreeStruct((uint8_t*)val);
+    FreeStruct((uint8_t*)val, &g%(name)sMetadata);
 }"""
 
 def add_cls(cls, structs):
@@ -336,7 +341,13 @@ def gen_txt_for_top_level_val(top_level_val, file_path):
     # to make it more readable
     ser_struct(top_level_val, None, lines, -1)
     if g_add_whitespace:
-        lines = [add_random_ws(s) for s in lines]
+        new_lines = []
+        for l in lines:
+            # add empty lines to test resilience of the parser
+            if 1 == random.randint(1,3):
+                new_lines.append(add_random_ws(" "))
+            new_lines.append(add_random_ws(l))
+        lines = new_lines
     s = "\n".join(lines) + "\n" # for consistency with how C code does it
     write_to_file_utf8_bom(file_path, s)
 
@@ -352,6 +363,8 @@ def gen_sumatra_settings():
 def gen_simple():
     global g_add_whitespace
     g_add_whitespace = True
+    # seed with a known value so that we generate the same random whitespace
+    random.seed(0)
     dst_dir = settings_src_dir()
     top_level_val = gen_settings_types.Simple()
     file_path = os.path.join(dst_dir, "SettingsTxtSimple")
