@@ -4,6 +4,7 @@
 #include "BaseUtil.h"
 #include "SerializeSqt.h"
 
+#define INCLUDE_APPPREFS3_STRUCTS
 #include "AppPrefs3.h"
 #include "SquareTreeParser.h"
 
@@ -42,6 +43,33 @@ static char *UnescapeStr(const char *s)
         default: ret.Append('$'); ret.Append(*c); break;
         }
     }
+    return ret.StealData();
+}
+
+// only escape characters which are significant to SquareTreeParser:
+// newlines, heading/trailing whitespace and single square brackets
+static bool NeedsEscaping(const char *s)
+{
+    return str::IsWs(*s) || *s && str::IsWs(*(s + str::Len(s) - 1)) ||
+           str::FindChar(s, '\n') || str::FindChar(s, '\r');
+}
+
+// escapes strings containing newlines or heading/trailing whitespace
+static char *EscapeStr(const char *s)
+{
+    str::Str<char> ret;
+    // use an unlikely character combination for indicating an escaped string
+    ret.Append("$[");
+    for (const char *c = s; *c; c++) {
+        switch (*c) {
+        // TODO: escape any other characters?
+        case '$': ret.Append("$$"); break;
+        case '\n': ret.Append("$n"); break;
+        case '\r': ret.Append("$r"); break;
+        default: ret.Append(*c);
+        }
+    }
+    ret.Append("]$");
     return ret.StealData();
 }
 
@@ -119,9 +147,9 @@ static void *DeserializeRec(SquareTreeNode *node, const SettingInfo *meta, uint8
     if (!base)
         base = AllocArray<uint8_t>(meta->structSize);
 
+    const char *fieldName = meta->fieldNames;
     for (size_t i = 0; i < meta->fieldCount; i++) {
         const FieldInfo& field = meta->fields[i];
-        const char *fieldName = GetFieldName(meta, i);
         if (Type_Struct == field.type) {
             SquareTreeNode *child = node ? node->GetChild(fieldName) : NULL;
             DeserializeRec(child, GetSubstruct(field), base + field.offset);
@@ -129,7 +157,8 @@ static void *DeserializeRec(SquareTreeNode *node, const SettingInfo *meta, uint8
         else if (Type_Array == field.type) {
             Vec<void *> *array = new Vec<void *>();
             SquareTreeNode *child;
-            for (size_t j = 0; node && (child = node->GetChild(fieldName, j)) != NULL; j++) {
+            size_t idx = 0;
+            while (node && (child = node->GetChild(fieldName, &idx)) != NULL) {
                 array->Append(DeserializeRec(child, GetSubstruct(field)));
             }
             *(Vec<void *> **)(base + field.offset) = array;
@@ -138,6 +167,7 @@ static void *DeserializeRec(SquareTreeNode *node, const SettingInfo *meta, uint8
             const char *value = node ? node->GetValue(fieldName) : NULL;
             DeserializeField(base, field, value);
         }
+        fieldName += str::Len(fieldName) + 1;
     }
     return base;
 }
@@ -147,34 +177,6 @@ void *Deserialize(const char *data, size_t dataLen, const SettingInfo *def)
     CrashIf(str::Len(data) != dataLen);
     SquareTree sqt(data);
     return DeserializeRec(sqt.root, def);
-}
-
-// only escape characters which are significant to SquareTreeParser:
-// newlines, heading/trailing whitespace and single square brackets
-static bool NeedsEscaping(const char *s)
-{
-    return str::IsWs(*s) || *s && str::IsWs(*(s + str::Len(s) - 1)) ||
-           str::FindChar(s, '\n') || str::FindChar(s, '\r') ||
-           str::Eq(s, "[") || str::Eq(s, "]");
-}
-
-// escapes strings containing newlines or heading/trailing whitespace
-static char *EscapeStr(const char *s)
-{
-    str::Str<char> ret;
-    // use an unlikely character combination for indicating an escaped string
-    ret.Append("$[");
-    for (const char *c = s; *c; c++) {
-        switch (*c) {
-        // TODO: escape any other characters?
-        case '$': ret.Append("$$"); break;
-        case '\n': ret.Append("$n"); break;
-        case '\r': ret.Append("$r"); break;
-        default: ret.Append(*c);
-        }
-    }
-    ret.Append("]$");
-    return ret.StealData();
 }
 
 static char *SerializeField(const uint8_t *base, const FieldInfo& field)
@@ -232,9 +234,9 @@ static inline void Indent(str::Str<char>& out, int indent)
 static void SerializeRec(str::Str<char>& out, const void *data, const SettingInfo *meta, int indent=0)
 {
     const uint8_t *base = (const uint8_t *)data;
+    const char *fieldName = meta->fieldNames;
     for (size_t i = 0; i < meta->fieldCount; i++) {
         const FieldInfo& field = meta->fields[i];
-        const char *fieldName = GetFieldName(meta, i);
         CrashIf(str::FindChar(fieldName, '=') || str::FindChar(fieldName, ':') ||
                 str::FindChar(fieldName, '[') || str::FindChar(fieldName, ']') ||
                 NeedsEscaping(fieldName));
@@ -245,31 +247,32 @@ static void SerializeRec(str::Str<char>& out, const void *data, const SettingInf
             SerializeRec(out, base + field.offset, GetSubstruct(field), indent + 1);
             Indent(out, indent);
             out.Append("]\r\n");
-            continue;
         }
-        if (Type_Array == field.type) {
+        else if (Type_Array == field.type) {
             Vec<void *> *array = *(Vec<void *> **)(base + field.offset);
-            if (array->Count() == 0)
-                continue;
-            Indent(out, indent);
-            out.Append(fieldName);
-            for (size_t j = 0; j < array->Count(); j++) {
-                out.Append(" [\r\n");
-                SerializeRec(out, array->At(j), GetSubstruct(field), indent + 1);
+            if (array->Count() > 0) {
                 Indent(out, indent);
-                out.Append("]");
+                out.Append(fieldName);
+                for (size_t j = 0; j < array->Count(); j++) {
+                    out.Append(" [\r\n");
+                    SerializeRec(out, array->At(j), GetSubstruct(field), indent + 1);
+                    Indent(out, indent);
+                    out.Append("]");
+                }
+                out.Append("\r\n");
             }
-            out.Append("\r\n");
-            continue;
         }
-        ScopedMem<char> value(SerializeField(base, field));
-        if (value) {
-            Indent(out, indent);
-            out.Append(fieldName);
-            out.Append(" = ");
-            out.Append(value);
-            out.Append("\r\n");
+        else {
+            ScopedMem<char> value(SerializeField(base, field));
+            if (value) {
+                Indent(out, indent);
+                out.Append(fieldName);
+                out.Append(" = ");
+                out.Append(value);
+                out.Append("\r\n");
+            }
         }
+        fieldName += str::Len(fieldName) + 1;
     }
 }
 
