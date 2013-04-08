@@ -73,7 +73,7 @@ struct File {
     // that we only have to save a diff instead of all states for the whole
     // tree (which can be quite large) - and also due to backwards
     // compatibility
-    char * tocState;
+    Vec<int> * tocState;
     // Values which are persisted for bookmarks/favorites
     Vec<Favorite *> * favorite;
     // temporary value needed for FileHistory::cmpOpenCount
@@ -169,6 +169,18 @@ struct ExternalViewer {
     WCHAR * filter;
 };
 
+// these values allow to customize the UI used for ebooks (with
+// TraditionalEbookUI disabled)
+struct EbookUI {
+    // whether the UI used for PDF documents will be used for ebooks as
+    // well (enables printing and searching, disables automatic reflow)
+    bool traditionalEbookUI;
+    // color for text
+    COLORREF textColor;
+    // color of the page (background)
+    COLORREF pageColor;
+};
+
 // these values allow to customize how the forward search highlight
 // appears
 struct ForwardSearch {
@@ -190,12 +202,9 @@ struct ForwardSearch {
 struct BackgroundGradient {
     // whether to draw a gradient behind the pages
     bool enabled;
-    // color at the top of the document (first page)
-    COLORREF colorTop;
-    // color at the center of the document (middlest page)
-    COLORREF colorMiddle;
-    // color at the bottom of the document (last page)
-    COLORREF colorBottom;
+    // colors to use for the gradient from top to bottom (stops will be
+    // inserted at regular intervals throughout the document)
+    Vec<COLORREF> * colors;
 };
 
 // these values allow to change how far apart pages are layed out
@@ -221,9 +230,6 @@ struct PrinterDefaults {
 
 // these values allow to tweak various bits and pieces of SumatraPDF
 struct AdvancedPrefs {
-    // whether the UI used for PDF documents will be used for ebooks as
-    // well (enables printing and searching, disables automatic reflow)
-    bool traditionalEbookUI;
     // whether opening a new document should happen in an already running
     // SumatraPDF instance so that there's only one process and documents
     // aren't opend twice
@@ -236,6 +242,13 @@ struct AdvancedPrefs {
     COLORREF textColor;
     // color value with which white (background) will be substituted
     COLORREF pageColor;
+    // zoom step size in percents relative to the current zoom level (if
+    // zero or negative, the values from ZoomLevels are used instead)
+    float zoomIncrement;
+    // zoom levels which zooming steps through, excluding the virtual zoom
+    // levels fit page, fit content and fit width (minimal allowed value is
+    // 8.33 and maximum allowed value is 6400)
+    Vec<float> * zoomLevels;
 };
 
 // All values in this structure are read from SumatraPDF-user.ini and
@@ -254,6 +267,9 @@ struct UserPrefs {
     // these values allow to customize how the forward search highlight
     // appears
     ForwardSearch forwardSearch;
+    // these values allow to customize the UI used for ebooks (with
+    // TraditionalEbookUI disabled)
+    EbookUI ebookUI;
     // this list contains a list of additional external viewers for various
     // file types (multiple entries of the same format are recognised)
     Vec<ExternalViewer *> * externalViewer;
@@ -262,8 +278,9 @@ struct UserPrefs {
 #if defined(INCLUDE_APPPREFS3_STRUCTS) || defined(INCLUDE_APPPREFS3_METADATA)
 
 enum SettingType {
-    Type_Struct, Type_Array, Type_Compact, Type_Custom,
+    Type_Struct, Type_Array, Type_Compact,
     Type_Bool, Type_Color, Type_Float, Type_Int, Type_String, Type_Utf8String,
+    Type_ColorArray, Type_FloatArray, Type_IntArray,
 };
 
 struct FieldInfo {
@@ -329,7 +346,7 @@ static const FieldInfo gFileFields[] = {
     { offsetof(File, decryptionKey),   Type_Utf8String, NULL                     },
     { offsetof(File, tocVisible),      Type_Bool,       true                     },
     { offsetof(File, sidebarDx),       Type_Int,        0                        },
-    { offsetof(File, tocState),        Type_Utf8String, NULL                     },
+    { offsetof(File, tocState),        Type_IntArray,   NULL                     },
     { offsetof(File, favorite),        Type_Array,      (intptr_t)&gFavoriteInfo },
 };
 static const SettingInfo gFileInfo = { sizeof(File), 18, gFileFields, "FilePath\0OpenCount\0IsPinned\0IsMissing\0UseGlobalValues\0DisplayMode\0ScrollPos\0PageNo\0ReparseIdx\0ZoomVirtual\0Rotation\0WindowState\0WindowPos\0DecryptionKey\0TocVisible\0SidebarDx\0TocState\0Favorite" };
@@ -363,14 +380,15 @@ static const FieldInfo gGlobalPrefsFields[] = {
 static const SettingInfo gGlobalPrefsInfo = { sizeof(GlobalPrefs), 24, gGlobalPrefsFields, "GlobalPrefsOnly\0CurrLangCode\0ToolbarVisible\0FavVisible\0PdfAssociateDontAskAgain\0PdfAssociateShouldAssociate\0EnableAutoUpdate\0RememberOpenedFiles\0UseSysColors\0InverseSearchCmdLine\0EnableTeXEnhancements\0VersionToSkip\0LastUpdateTime\0DefaultDisplayMode\0DefaultZoom\0WindowState\0WindowPos\0TocVisible\0SidebarDx\0TocDy\0ShowStartPage\0OpenCountWeek\0CbxR2L\0File" };
 
 static const FieldInfo gAdvancedPrefsFields[] = {
-    { offsetof(AdvancedPrefs, traditionalEbookUI),   Type_Bool,  false    },
-    { offsetof(AdvancedPrefs, reuseInstance),        Type_Bool,  false    },
-    { offsetof(AdvancedPrefs, mainWindowBackground), Type_Color, 0xfff200 },
-    { offsetof(AdvancedPrefs, escToExit),            Type_Bool,  false    },
-    { offsetof(AdvancedPrefs, textColor),            Type_Color, 0x000000 },
-    { offsetof(AdvancedPrefs, pageColor),            Type_Color, 0xffffff },
+    { offsetof(AdvancedPrefs, reuseInstance),        Type_Bool,       false                                                                                                                 },
+    { offsetof(AdvancedPrefs, mainWindowBackground), Type_Color,      0xfff200                                                                                                              },
+    { offsetof(AdvancedPrefs, escToExit),            Type_Bool,       false                                                                                                                 },
+    { offsetof(AdvancedPrefs, textColor),            Type_Color,      0x000000                                                                                                              },
+    { offsetof(AdvancedPrefs, pageColor),            Type_Color,      0xffffff                                                                                                              },
+    { offsetof(AdvancedPrefs, zoomIncrement),        Type_Float,      (intptr_t)"0"                                                                                                         },
+    { offsetof(AdvancedPrefs, zoomLevels),           Type_FloatArray, (intptr_t)"8.33 12.5 18 25 33.33 50 66.67 75 100 125 150 200 300 400 600 800 1000 1200 1600 2000 2400 3200 4800 6400" },
 };
-static const SettingInfo gAdvancedPrefsInfo = { sizeof(AdvancedPrefs), 6, gAdvancedPrefsFields, "TraditionalEbookUI\0ReuseInstance\0MainWindowBackground\0EscToExit\0TextColor\0PageColor" };
+static const SettingInfo gAdvancedPrefsInfo = { sizeof(AdvancedPrefs), 7, gAdvancedPrefsFields, "ReuseInstance\0MainWindowBackground\0EscToExit\0TextColor\0PageColor\0ZoomIncrement\0ZoomLevels" };
 
 static const FieldInfo gPrinterDefaultsFields[] = {
     { offsetof(PrinterDefaults, printScale),   Type_Utf8String, (intptr_t)"shrink" },
@@ -387,12 +405,10 @@ static const FieldInfo gPagePaddingFields[] = {
 static const SettingInfo gPagePaddingInfo = { sizeof(PagePadding), 4, gPagePaddingFields, "OuterX\0OuterY\0InnerX\0InnerY" };
 
 static const FieldInfo gBackgroundGradientFields[] = {
-    { offsetof(BackgroundGradient, enabled),     Type_Bool,  false    },
-    { offsetof(BackgroundGradient, colorTop),    Type_Color, 0xaa2828 },
-    { offsetof(BackgroundGradient, colorMiddle), Type_Color, 0x28aa28 },
-    { offsetof(BackgroundGradient, colorBottom), Type_Color, 0x2828aa },
+    { offsetof(BackgroundGradient, enabled), Type_Bool,       false                               },
+    { offsetof(BackgroundGradient, colors),  Type_ColorArray, (intptr_t)"#2828aa #28aa28 #aa2828" },
 };
-static const SettingInfo gBackgroundGradientInfo = { sizeof(BackgroundGradient), 4, gBackgroundGradientFields, "Enabled\0ColorTop\0ColorMiddle\0ColorBottom" };
+static const SettingInfo gBackgroundGradientInfo = { sizeof(BackgroundGradient), 2, gBackgroundGradientFields, "Enabled\0Colors" };
 
 static const FieldInfo gForwardSearchFields[] = {
     { offsetof(ForwardSearch, highlightOffset),    Type_Int,   0        },
@@ -401,6 +417,13 @@ static const FieldInfo gForwardSearchFields[] = {
     { offsetof(ForwardSearch, highlightPermanent), Type_Bool,  false    },
 };
 static const SettingInfo gForwardSearchInfo = { sizeof(ForwardSearch), 4, gForwardSearchFields, "HighlightOffset\0HighlightWidth\0HighlightColor\0HighlightPermanent" };
+
+static const FieldInfo gEbookUIFields[] = {
+    { offsetof(EbookUI, traditionalEbookUI), Type_Bool,  false    },
+    { offsetof(EbookUI, textColor),          Type_Color, 0x324b5f },
+    { offsetof(EbookUI, pageColor),          Type_Color, 0xfbf0d9 },
+};
+static const SettingInfo gEbookUIInfo = { sizeof(EbookUI), 3, gEbookUIFields, "TraditionalEbookUI\0TextColor\0PageColor" };
 
 static const FieldInfo gExternalViewerFields[] = {
     { offsetof(ExternalViewer, commandLine), Type_String, NULL },
@@ -415,9 +438,10 @@ static const FieldInfo gUserPrefsFields[] = {
     { offsetof(UserPrefs, pagePadding),        Type_Struct, (intptr_t)&gPagePaddingInfo        },
     { offsetof(UserPrefs, backgroundGradient), Type_Struct, (intptr_t)&gBackgroundGradientInfo },
     { offsetof(UserPrefs, forwardSearch),      Type_Struct, (intptr_t)&gForwardSearchInfo      },
+    { offsetof(UserPrefs, ebookUI),            Type_Struct, (intptr_t)&gEbookUIInfo            },
     { offsetof(UserPrefs, externalViewer),     Type_Array,  (intptr_t)&gExternalViewerInfo     },
 };
-static const SettingInfo gUserPrefsInfo = { sizeof(UserPrefs), 6, gUserPrefsFields, "AdvancedPrefs\0PrinterDefaults\0PagePadding\0BackgroundGradient\0ForwardSearch\0ExternalViewer" };
+static const SettingInfo gUserPrefsInfo = { sizeof(UserPrefs), 7, gUserPrefsFields, "AdvancedPrefs\0PrinterDefaults\0PagePadding\0BackgroundGradient\0ForwardSearch\0EbookUI\0ExternalViewer" };
 
 #endif
 
