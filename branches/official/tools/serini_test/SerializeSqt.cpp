@@ -47,11 +47,12 @@ static char *UnescapeStr(const char *s)
 }
 
 // only escape characters which are significant to SquareTreeParser:
-// newlines, heading/trailing whitespace and single square brackets
+// newlines and heading/trailing whitespace (and escape sequence delimiters)
 static bool NeedsEscaping(const char *s)
 {
     return str::IsWs(*s) || *s && str::IsWs(*(s + str::Len(s) - 1)) ||
-           str::FindChar(s, '\n') || str::FindChar(s, '\r');
+           str::FindChar(s, '\n') || str::FindChar(s, '\r') ||
+           str::StartsWith(s, "$[") && str::EndsWith(s, "]$");
 }
 
 // escapes strings containing newlines or heading/trailing whitespace
@@ -137,6 +138,21 @@ static void DeserializeField(uint8_t *base, const FieldInfo& field, const char *
                 for (; *value && !str::IsWs(*value); value++);
         }
         break;
+    case Type_ColorArray:
+    case Type_FloatArray:
+    case Type_IntArray:
+        CrashIf(sizeof(float) != sizeof(int) || sizeof(COLORREF) != sizeof(int));
+        if (!value)
+            value = (const char *)field.value;
+        *(Vec<int> **)fieldPtr = new Vec<int>();
+        while (value && *value) {
+            FieldInfo info = { 0 };
+            info.type = Type_IntArray == field.type ? Type_Int : Type_FloatArray == field.type ? Type_Float : Type_Color;
+            DeserializeField((uint8_t *)(*(Vec<int> **)fieldPtr)->AppendBlanks(1), info, value);
+            for (; *value && !str::IsWs(*value); value++);
+            for (; str::IsWs(*value); value++);
+        }
+        break;
     default:
         CrashIf(true);
     }
@@ -213,6 +229,20 @@ static char *SerializeField(const uint8_t *base, const FieldInfo& field)
         assert(IsCompactable(GetSubstruct(field)));
         for (size_t i = 0; i < GetSubstruct(field)->fieldCount; i++) {
             ScopedMem<char> val(SerializeField(fieldPtr, GetSubstruct(field)->fields[i]));
+            if (!value)
+                value.Set(val.StealData());
+            else
+                value.Set(str::Format("%s %s", value, val));
+        }
+        return value.StealData();
+    case Type_ColorArray:
+    case Type_FloatArray:
+    case Type_IntArray:
+        CrashIf(sizeof(float) != sizeof(int) || sizeof(COLORREF) != sizeof(int));
+        for (size_t i = 0; i < (*(Vec<int> **)fieldPtr)->Count(); i++) {
+            FieldInfo info = { 0 };
+            info.type = Type_IntArray == field.type ? Type_Int : Type_FloatArray == field.type ? Type_Float : Type_Color;
+            ScopedMem<char> val(SerializeField((const uint8_t *)&(*(Vec<int> **)fieldPtr)->At(i), info));
             if (!value)
                 value.Set(val.StealData());
             else
@@ -308,6 +338,10 @@ static void FreeStructData(uint8_t *base, const SettingInfo *meta)
         }
         else if (Type_String == field.type || Type_Utf8String == field.type)
             free(*(void **)(base + field.offset));
+        else if (Type_ColorArray == field.type || Type_FloatArray == field.type || Type_IntArray == field.type) {
+            CrashIf(sizeof(float) != sizeof(int) || sizeof(COLORREF) != sizeof(int));
+            delete *(Vec<int> **)(base + field.offset);
+        }
     }
 }
 
