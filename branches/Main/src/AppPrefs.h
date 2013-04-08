@@ -22,22 +22,22 @@ public:
     bool globalPrefsOnly;
     /* pointer to a static string that is part of LangDef, don't free */
     const char *currLangCode;
-	//
-	bool enableSplitWindow;
-	//
-	bool enableTab;
-	//
-	bool tabVisible;
-	// If yes, toolbar and sidebar are child windows of panel and each panel has its own toolbar and sidebar.
-	// Otherwise, toolbar and sidebar are child windows of WIN and each WIN has only one toolbar and sidebar.
-	bool toolbarForEachPanel;
-	//
-	bool sidebarForEachPanel;
-	//
-	bool toolbarForEachPanelNew;
-	//
-	bool sidebarForEachPanelNew;
-	//
+    //
+    bool enableSplitWindow;
+    //
+    bool enableTab;
+    //
+    bool tabVisible;
+    // If yes, toolbar and sidebar are child windows of panel and each panel has its own toolbar and sidebar.
+    // Otherwise, toolbar and sidebar are child windows of WIN and each WIN has only one toolbar and sidebar.
+    bool toolbarForEachPanel;
+    //
+    bool sidebarForEachPanel;
+    //
+    bool toolbarForEachPanelNew;
+    //
+    bool sidebarForEachPanelNew;
+    //
     bool toolbarVisible;
     bool favVisible;
 
@@ -55,16 +55,16 @@ public:
     /* used for the Start page, About page and Properties dialog
        (negative values indicate that the default color will be used) */
     int  bgColor;
-	//
-	int  noDocBgColor;
-	//
-	int  docBgColor;
-	//
-	int  docTextColor;
-	//
-	int  tocBgColor;
-	//
-	int  favBgColor;
+    //
+    int  noDocBgColor;
+    //
+    int  docBgColor;
+    //
+    int  docTextColor;
+    //
+    int  tocBgColor;
+    //
+    int  favBgColor;
     bool escToExit;
     /* whether to display documents black-on-white or in system colors */
     bool useSysColors;
