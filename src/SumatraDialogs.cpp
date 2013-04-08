@@ -894,8 +894,8 @@ static HBITMAP LoadExternalBitmap(HINSTANCE hInst, WCHAR * filename, INT resourc
 struct buttonInColorDlg {
     int textID;
     int buttonID;
-    COLORREF *color;
-    COLORREF colorOld;
+    int *color;
+    int colorOld;
     HWND hButton;
     HBITMAP hMemBmp;
 };
