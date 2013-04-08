@@ -35,10 +35,10 @@ class Field(object):
 			return '(intptr_t)L"%s"' % self.default if self.default is not None else "NULL"
 		if self.type == Utf8String:
 			return '(intptr_t)"%s"' % self.default if self.default is not None else "NULL"
-		if self.type.name == "Custom":
-			return self.default
 		if self.type.name in ["Struct", "Array", "Compact"]:
 			return "(intptr_t)&g%sInfo" % self.structName
+		if self.type.name in ["ColorArray", "FloatArray", "IntArray"]:
+			return '(intptr_t)"%s"' % self.default if self.default is not None else "NULL"
 		return None
 
 	def inidefault(self, commentChar=";"):
@@ -58,11 +58,13 @@ class Field(object):
 			if self.default is not None:
 				return "%s = %s" % (self.name, self.default)
 			return "%s %s =" % (commentChar, self.name)
-		if self.type.name == "Custom":
-			return self.default
 		if self.type.name == "Compact":
 			return "%s = %s" % (self.name, " ".join(field.inidefault().split(" = ", 1)[1] for field in self.default))
-		return "%s %s = ???" % (commentChar, self.name)
+		if self.type.name in ["ColorArray", "FloatArray", "IntArray"]:
+			if self.default is not None:
+				return "%s = %s" % (self.name, self.default)
+			return "%s %s =" % (commentChar, self.name)
+		assert False
 
 class Struct(Field):
 	def __init__(self, name, fields, comment, structName=None, compact=False, internal=False):
@@ -71,9 +73,13 @@ class Struct(Field):
 		if compact: self.type.name = "Compact"
 
 class Array(Field):
-	def __init__(self, name, fields, comment, structName=None):
+	def __init__(self, name, fields, comment, structName=None, internal=False):
 		self.structName = structName or name
-		super(Array, self).__init__(name, Type("Array", "Vec<%s *> *" % self.structName), fields, comment)
+		super(Array, self).__init__(name, Type("Array", "Vec<%s *> *" % self.structName), fields, comment, internal)
+
+class CompactArray(Field):
+	def __init__(self, name, type, default, comment, internal=False):
+		super(CompactArray, self).__init__(name, Type("%sArray" % type.name, "Vec<%s> *" % type.ctype), default, comment, internal)
 
 # ##### setting definitions for SumatraPDF #####
 
@@ -95,9 +101,6 @@ FileTime = [
 ]
 
 AdvancedPrefs = [
-	Field("TraditionalEbookUI", Bool, False,
-		"whether the UI used for PDF documents will be used for ebooks as well " +
-		"(enables printing and searching, disables automatic reflow)"),
 	Field("ReuseInstance", Bool, False,
 		"whether opening a new document should happen in an already running SumatraPDF " +
 		"instance so that there's only one process and documents aren't opend twice"),
@@ -109,6 +112,13 @@ AdvancedPrefs = [
 		"color value with which black (text) will be substituted"),
 	Field("PageColor", Color, 0xFFFFFF,
 		"color value with which white (background) will be substituted"),
+	Field("ZoomIncrement", Float, 0,
+		"zoom step size in percents relative to the current zoom level " +
+		"(if zero or negative, the values from ZoomLevels are used instead)"),
+	CompactArray("ZoomLevels", Float, "8.33 12.5 18 25 33.33 50 66.67 75 100 125 150 200 300 400 600 800 1000 1200 1600 2000 2400 3200 4800 6400",
+		"zoom levels which zooming steps through, excluding the virtual zoom levels " +
+		"fit page, fit content and fit width (minimal allowed value is 8.33 and maximum "
+		"allowed value is 6400)"),
 ]
 
 PagePadding = [
@@ -120,9 +130,9 @@ PagePadding = [
 
 BackgroundGradient = [
 	Field("Enabled", Bool, False, "whether to draw a gradient behind the pages"),
-	Field("ColorTop", Color, 0xAA2828, "color at the top of the document (first page)"),
-	Field("ColorMiddle", Color, 0x28AA28, "color at the center of the document (middlest page)"),
-	Field("ColorBottom", Color, 0x2828AA, "color at the bottom of the document (last page)"),
+	CompactArray("Colors", Color, "#2828aa #28aa28 #aa2828",
+		"colors to use for the gradient from top to bottom (stops will be inserted " +
+		"at regular intervals throughout the document)"),
 ]
 
 PrinterDefaults = [
@@ -142,6 +152,14 @@ ForwardSearch = [
 	Field("HighlightPermanent", Bool, False,
 		"whether the forward search highlight will remain visible until the next " +
 		"mouse click instead of fading away instantly"),
+]
+
+EbookUI = [
+	Field("TraditionalEbookUI", Bool, False,
+		"whether the UI used for PDF documents will be used for ebooks as well " +
+		"(enables printing and searching, disables automatic reflow)"),
+	Field("TextColor", Color, 0x324b5f, "color for text"),
+	Field("PageColor", Color, 0xfbf0d9, "color of the page (background)"),
 ]
 
 ExternalViewer = [
@@ -166,6 +184,8 @@ UserPrefs = [
 		"gradient to subconsciously determine reading progress"),
 	Struct("ForwardSearch", ForwardSearch,
 		"these values allow to customize how the forward search highlight appears"),
+	Struct("EbookUI", EbookUI,
+		"these values allow to customize the UI used for ebooks (with TraditionalEbookUI disabled)"),
 	Array("ExternalViewer", ExternalViewer,
 		"this list contains a list of additional external viewers for various file types " +
 		"(multiple entries of the same format are recognised)"),
@@ -188,7 +208,7 @@ FileSettings = [
 	Field("UseGlobalValues", Bool, False,
 		"whether global defaults should be used when reloading this file instead of " +
 		"the values listed below"),
-	Field("DisplayMode", String, "automatic", # TODO: Type_Custom, DM_AUTOMATIC
+	Field("DisplayMode", String, "automatic", # TODO: Type_Custom, DM_AUTOMATIC ?
 		"how pages should be layed out for this document"),
 	Struct("ScrollPos", PointI,
 		"how far this document has been scrolled", structName="PointI", compact=True),
@@ -211,7 +231,7 @@ FileSettings = [
 		"whether the table of contents (Bookmarks) sidebar is shown for this document"),
 	Field("SidebarDx", Int, 0,
 		"the width of the left sidebar panel containing the table of contents"),
-	Field("TocState", Utf8String, None, # TODO: inline int array?
+	CompactArray("TocState", Int, None,
 		"tocState is an array of ids for ToC items that have been toggled by " +
 		"the user (i.e. aren't in their default expansion state). - " +
 		"Note: We intentionally track toggle state as opposed to expansion state " +
@@ -223,18 +243,18 @@ FileSettings = [
 		Field("PageLabel", String, None, "optional label for this page (if logical and physical numers disagree)"),
 		Field("MenuId", Int, 0, "assigned in AppendFavMenuItems()", internal=True),
 	], "Values which are persisted for bookmarks/favorites"),
-	Field("Index", Type("Custom", "size_t"), "0",
+	Field("Index", Type(None, "size_t"), "0",
 		"temporary value needed for FileHistory::cmpOpenCount",
 		internal=True),
-	Field("Thumbnail", Type("Custom", "void *"), "NULL", # TODO: RenderedBitmap *
+	Field("Thumbnail", Type(None, "void *"), "NULL", # TODO: RenderedBitmap *
 		"the thumbnail is persisted separately as a PNG in sumatrapdfcache",
 		internal=True),
 ]
 
-AppPrefs = [
+GlobalPrefs = [
 	Field("GlobalPrefsOnly", Bool, False,
 		"whether not to store display settings for individual documents"),
-	Field("CurrLangCode", Utf8String, None, # TODO: Type_Custom
+	Field("CurrLangCode", Utf8String, None, # TODO: Type_Custom ?
 		"pointer to a static string that is part of LangDef, don't free"),
 	Field("ToolbarVisible", Bool, True,
 		"whether the toolbar should be visible by default in the main window"),
@@ -260,7 +280,7 @@ AppPrefs = [
 	Struct("LastUpdateTime", FileTime,
 		"the time SumatraPDF has last checked for updates (cf. EnableAutoUpdate)",
 		structName="FILETIME", compact=True),
-	Field("DefaultDisplayMode", String, "automatic", # TODO: Type_Custom, DM_AUTOMATIC
+	Field("DefaultDisplayMode", String, "automatic", # TODO: Type_Custom, DM_AUTOMATIC ?
 		"how pages should be layed out by default"),
 	Field("DefaultZoom", Float, -1,
 		"the default zoom factor in % (negative values indicate virtual settings)"),
@@ -296,7 +316,7 @@ AppPrefs = [
 		internal=True),
 ]
 
-GlobalPrefs = Struct("GlobalPrefs", AppPrefs,
+GlobalPrefs = Struct("GlobalPrefs", GlobalPrefs,
 	"Most values on this structure can be updated through the UI and are persisted " +
 	"in SumatraPDF.ini (previously in sumatrapdfprefs.dat)")
 
@@ -398,8 +418,9 @@ AppPrefs3_Header = """\
 #if defined(INCLUDE_APPPREFS3_STRUCTS) || defined(INCLUDE_APPPREFS3_METADATA)
 
 enum SettingType {
-	Type_Struct, Type_Array, Type_Compact, Type_Custom,
+	Type_Struct, Type_Array, Type_Compact,
 	Type_Bool, Type_Color, Type_Float, Type_Int, Type_String, Type_Utf8String,
+	Type_ColorArray, Type_FloatArray, Type_IntArray,
 };
 
 struct FieldInfo {
@@ -409,10 +430,10 @@ struct FieldInfo {
 };
 
 struct SettingInfo {
-    uint16_t structSize;
-    uint16_t fieldCount;
-    const FieldInfo *fields;
-    const char *fieldNames;
+	uint16_t structSize;
+	uint16_t fieldCount;
+	const FieldInfo *fields;
+	const char *fieldNames;
 };
 
 static inline const SettingInfo *GetSubstruct(const FieldInfo& field) { return (const SettingInfo *)field.value; }

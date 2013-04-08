@@ -1754,6 +1754,8 @@ static void DeletePanelInfo(PanelInfo *panel)
 
 static void DeleteTopWindowInfo(TopWindowInfo *WIN)
 {
+	Timer t(true);
+
     gWIN.Remove(WIN);
 
     if (!gGlobalPrefs.toolbarForEachPanel)
@@ -1766,7 +1768,10 @@ static void DeleteTopWindowInfo(TopWindowInfo *WIN)
         WIN->gPanel.Remove(panel);
         DeletePanelInfo(panel);
     }
-    delete WIN;    
+    delete WIN;
+
+	t.Stop();
+	lf("DeleteTopWindowInfo() time: %.2f", t.GetTimeInMs());
 }
 
 class FileChangeCallback : public UITask, public FileChangeObserver
@@ -3723,7 +3728,7 @@ void OnMenuOpen(const SumatraWindow& win)
         { _TR("CHM documents"),         L"*.chm",       true },
         { _TR("Mobi documents"),        L"*.mobi",      true },
         { _TR("EPUB ebooks"),           L"*.epub",      true },
-        { _TR("FictionBook documents"), L"*.fb2;*.fb2z;*.zfb2", true },
+        { _TR("FictionBook documents"), L"*.fb2;*.fb2z;*.zfb2;*.fb2.zip", true },
         { NULL, /* multi-page images */ L"*.tif;*.tiff",true },
         { NULL, /* further ebooks */    L"*.pdb;*.tcr", gUserPrefs.traditionalEbookUI },
         { _TR("Text documents"),        L"*.txt;*.log;*.nfo;file_id.diz;read.me", gUserPrefs.traditionalEbookUI },
