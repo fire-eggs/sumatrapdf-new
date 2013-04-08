@@ -210,6 +210,18 @@ PrefInfo gGlobalPrefInfo[] = {
     { "Window X", Pref_Int, sgpOffset(windowPos.x) },
     { "Window Y", Pref_Int, sgpOffset(windowPos.y) },
     { "ZoomVirtual", Pref_Float, sgpOffset(defaultZoom) },
+	{ "Enable Split Window", Pref_Bool, sgpOffset(enableSplitWindow) },
+	{ "Enable Tab", Pref_Bool, sgpOffset(enableTab) },
+	{ "ShowTab", Pref_Bool, sgpOffset(tabVisible) },
+	{ "Toolbar For Each Panel", Pref_Bool, sgpOffset(toolbarForEachPanel) },
+	{ "Sidebar For Each Panel", Pref_Bool, sgpOffset(sidebarForEachPanel) },
+	{ "Toolbar For Each Panel New", Pref_Bool, sgpOffset(toolbarForEachPanelNew) },
+	{ "Sidebar For Each Panel New", Pref_Bool, sgpOffset(sidebarForEachPanelNew) },
+	{ "NoDocBgColor", Pref_Int, sgpOffset(noDocBgColor) },
+	{ "DocBgColor", Pref_Int, sgpOffset(docBgColor) },
+	{ "DocTextColor", Pref_Int, sgpOffset(docTextColor) },
+	{ "TocBgColor", Pref_Int, sgpOffset(tocBgColor) },
+	{ "FavBgColor", Pref_Int, sgpOffset(favBgColor) },	
 #undef sgpOffset
 };
 
@@ -261,6 +273,13 @@ PrefInfo gFilePrefInfo[] = {
 SerializableGlobalPrefs gGlobalPrefs = {
     false, // bool globalPrefsOnly
     DEFAULT_LANGUAGE, // const char *currLangCode
+	false, // bool enableSplitWindow
+	false, // bool enableTab
+	false, // bool tabVisible
+	false, // bool toolbarForEachPanel
+	false, // bool sidebarForEachPanel
+	false, // bool toolbarForEachPanelNew
+	false, // bool sidebarForEachPanelNew
     true, // bool toolbarVisible
     false, // bool favVisible
     false, // bool pdfAssociateDontAskAgain
@@ -268,6 +287,11 @@ SerializableGlobalPrefs gGlobalPrefs = {
     true, // bool enableAutoUpdate
     true, // bool rememberOpenedFiles
     ABOUT_BG_COLOR_DEFAULT, // int bgColor
+	NO_DOC_BG_COLOR_DEFAULT, // int noDocBgColor
+	DOC_BG_COLOR_DEFAULT, //int docBgColor
+	DOC_TEXT_COLOR_DEFAULT, // int docTextColor
+	TOC_BG_COLOR_DEFAULT, // int tocBgColor
+	FAV_BG_COLOR_DEFAULT, // int favBgColor
     false, // bool escToExit
     false, // bool useSysColors
     ScopedMem<WCHAR>(), // ScopedMem<WCHAR> inverseSearchCmdLine
