@@ -117,7 +117,7 @@ $(OS)\AppPrefs.obj: $B\src\Doc.h $B\src\Favorites.h $B\src\FileHistory.h
 $(OS)\AppPrefs.obj: $B\src\SumatraPDF.h $B\src\SumatraWindow.h $B\src\Translations.h
 $(OS)\AppPrefs.obj: $B\src\utils\Allocator.h $B\src\utils\BaseUtil.h $B\src\utils\BencUtil.h
 $(OS)\AppPrefs.obj: $B\src\utils\DebugLog.h $B\src\utils\FileTransactions.h $B\src\utils\FileUtil.h
-$(OS)\AppPrefs.obj: $B\src\utils\GeomUtil.h $B\src\utils\IniParser.h $B\src\utils\Scoped.h
+$(OS)\AppPrefs.obj: $B\src\utils\GeomUtil.h $B\src\utils\Scoped.h $B\src\utils\SquareTreeParser.h
 $(OS)\AppPrefs.obj: $B\src\utils\StrUtil.h $B\src\utils\Vec.h $B\src\utils\WinUtil.h
 $(OS)\AppPrefs.obj: $B\src\WindowInfo.h
 $(OS)\AppTools.obj: $B\src\AppTools.h $B\src\Translations.h $B\src\utils\Allocator.h
@@ -174,10 +174,11 @@ $(OS)\EbookControls.obj: $B\src\EbookControls.h $B\src\HtmlFormatter.h $B\src\mu
 $(OS)\EbookControls.obj: $B\src\mui\MuiBase.h $B\src\mui\MuiButton.h $B\src\mui\MuiControl.h
 $(OS)\EbookControls.obj: $B\src\mui\MuiCss.h $B\src\mui\MuiEventMgr.h $B\src\mui\MuiGrid.h
 $(OS)\EbookControls.obj: $B\src\mui\MuiHwndWrapper.h $B\src\mui\MuiLayout.h $B\src\mui\MuiPainter.h
-$(OS)\EbookControls.obj: $B\src\mui\MuiScrollBar.h $B\src\mui\SvgPath.h $B\src\utils\Allocator.h
-$(OS)\EbookControls.obj: $B\src\utils\BaseUtil.h $B\src\utils\BitManip.h $B\src\utils\DebugLog.h
-$(OS)\EbookControls.obj: $B\src\utils\GdiPlusUtil.h $B\src\utils\GeomUtil.h $B\src\utils\HtmlParserLookup.h
-$(OS)\EbookControls.obj: $B\src\utils\Scoped.h $B\src\utils\Sigslot.h $B\src\utils\StrUtil.h
+$(OS)\EbookControls.obj: $B\src\mui\MuiScrollBar.h $B\src\mui\SvgPath.h $B\src\resource.h
+$(OS)\EbookControls.obj: $B\src\utils\Allocator.h $B\src\utils\BaseUtil.h $B\src\utils\BitManip.h
+$(OS)\EbookControls.obj: $B\src\utils\DebugLog.h $B\src\utils\GdiPlusUtil.h $B\src\utils\GeomUtil.h
+$(OS)\EbookControls.obj: $B\src\utils\HtmlParserLookup.h $B\src\utils\Scoped.h $B\src\utils\Sigslot.h
+$(OS)\EbookControls.obj: $B\src\utils\StrSlice.h $B\src\utils\StrUtil.h $B\src\utils\TxtParser.h
 $(OS)\EbookControls.obj: $B\src\utils\Vec.h
 $(OS)\EbookDoc.obj: $B\src\BaseEngine.h $B\src\EbookBase.h $B\src\EbookDoc.h
 $(OS)\EbookDoc.obj: $B\src\MobiDoc.h $B\src\utils\Allocator.h $B\src\utils\BaseUtil.h
@@ -412,8 +413,8 @@ $(OS)\SumatraPDF.obj: $B\src\Toolbar.h $B\src\Translations.h $B\src\utils\Alloca
 $(OS)\SumatraPDF.obj: $B\src\utils\BaseUtil.h $B\src\utils\CmdLineParser.h $B\src\utils\DebugLog.h
 $(OS)\SumatraPDF.obj: $B\src\utils\DirIter.h $B\src\utils\FileUtil.h $B\src\utils\FileWatcher.h
 $(OS)\SumatraPDF.obj: $B\src\utils\GdiPlusUtil.h $B\src\utils\GeomUtil.h $B\src\utils\HtmlWindow.h
-$(OS)\SumatraPDF.obj: $B\src\utils\HttpUtil.h $B\src\utils\IniParser.h $B\src\utils\Scoped.h
-$(OS)\SumatraPDF.obj: $B\src\utils\Sigslot.h $B\src\utils\StrUtil.h $B\src\utils\ThreadUtil.h
+$(OS)\SumatraPDF.obj: $B\src\utils\HttpUtil.h $B\src\utils\Scoped.h $B\src\utils\Sigslot.h
+$(OS)\SumatraPDF.obj: $B\src\utils\SquareTreeParser.h $B\src\utils\StrUtil.h $B\src\utils\ThreadUtil.h
 $(OS)\SumatraPDF.obj: $B\src\utils\Timer.h $B\src\utils\Touch.h $B\src\utils\UITask.h
 $(OS)\SumatraPDF.obj: $B\src\utils\Vec.h $B\src\utils\WinUtil.h $B\src\Version.h
 $(OS)\SumatraPDF.obj: $B\src\WindowInfo.h
@@ -570,6 +571,9 @@ $(OU)\PalmDbReader.obj: $B\src\utils\Allocator.h $B\src\utils\BaseUtil.h $B\src\
 $(OU)\PalmDbReader.obj: $B\src\utils\FileUtil.h $B\src\utils\GeomUtil.h $B\src\utils\PalmDbReader.h
 $(OU)\PalmDbReader.obj: $B\src\utils\Scoped.h $B\src\utils\StrUtil.h $B\src\utils\Vec.h
 $(OU)\Sigslot_ut.obj: $B\src\utils\Sigslot.h
+$(OU)\SquareTreeParser.obj: $B\src\utils\Allocator.h $B\src\utils\BaseUtil.h $B\src\utils\GeomUtil.h
+$(OU)\SquareTreeParser.obj: $B\src\utils\Scoped.h $B\src\utils\SquareTreeParser.h $B\src\utils\StrUtil.h
+$(OU)\SquareTreeParser.obj: $B\src\utils\Vec.h
 $(OU)\StrFormat.obj: $B\src\utils\Allocator.h $B\src\utils\BaseUtil.h $B\src\utils\GeomUtil.h
 $(OU)\StrFormat.obj: $B\src\utils\Scoped.h $B\src\utils\StrFormat.h $B\src\utils\StrUtil.h
 $(OU)\StrFormat.obj: $B\src\utils\Vec.h
@@ -595,6 +599,9 @@ $(OU)\TrivialHtmlParser.obj: $B\src\utils\GeomUtil.h $B\src\utils\HtmlParserLook
 $(OU)\TrivialHtmlParser.obj: $B\src\utils\Scoped.h $B\src\utils\StrUtil.h $B\src\utils\TrivialHtmlParser.h
 $(OU)\TrivialHtmlParser.obj: $B\src\utils\TrivialHtmlParser_ut.cpp $B\src\utils\Vec.h $B\src\utils\WinUtil.h
 $(OU)\TrivialHtmlParser_ut.obj: $B\src\utils\FileUtil.h $B\src\utils\WinUtil.h
+$(OU)\TxtParser.obj: $B\src\utils\Allocator.h $B\src\utils\BaseUtil.h $B\src\utils\GeomUtil.h
+$(OU)\TxtParser.obj: $B\src\utils\Scoped.h $B\src\utils\StrSlice.h $B\src\utils\StrUtil.h
+$(OU)\TxtParser.obj: $B\src\utils\TxtParser.h $B\src\utils\Vec.h
 $(OU)\UITask.obj: $B\src\utils\Allocator.h $B\src\utils\BaseUtil.h $B\src\utils\DebugLog.h
 $(OU)\UITask.obj: $B\src\utils\GeomUtil.h $B\src\utils\Scoped.h $B\src\utils\StrUtil.h
 $(OU)\UITask.obj: $B\src\utils\UITask.h $B\src\utils\Vec.h $B\src\utils\WinUtil.h
