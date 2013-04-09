@@ -879,18 +879,6 @@ static INT_PTR CALLBACK Dialog_View_Proc(HWND hDlg, UINT msg, WPARAM wParam, LPA
     return FALSE;
 }
 
-static HBITMAP LoadExternalBitmap(HINSTANCE hInst, WCHAR * filename, INT resourceId)
-{
-    ScopedMem<WCHAR> path(AppGenDataFilename(filename));
-
-    if (path) {
-        HBITMAP hBmp = (HBITMAP)LoadImage(NULL, path, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-        if (hBmp)
-            return hBmp;
-    }
-    return LoadBitmap(hInst, MAKEINTRESOURCE(resourceId));
-}
-
 struct buttonInColorDlg {
     int textID;
     int buttonID;

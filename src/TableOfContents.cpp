@@ -486,42 +486,6 @@ static LRESULT CALLBACK WndProcTocTree(HWND hwnd, UINT message, WPARAM wParam, L
     return CallWindowProc(DefWndProcTocTree, hwnd, message, wParam, lParam);
 }
 
-static WNDPROC DefWndProcTocBox = NULL;
-static LRESULT CALLBACK WndProcTocBox(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-    WindowInfo *win = FindWindowInfoByHwnd(hwnd);
-    if (!win)
-        return CallWindowProc(DefWndProcTocBox, hwnd, msg, wParam, lParam);
-
-    switch (msg) {
-        case WM_SIZE:
-            LayoutTreeContainer(hwnd, IDC_TOC_BOX);
-            break;
-
-        case WM_DRAWITEM:
-            if (IDC_TOC_CLOSE == wParam) {
-                DRAWITEMSTRUCT *dis = (DRAWITEMSTRUCT *)lParam;
-                DrawCloseButton(dis);
-                return TRUE;
-            }
-            break;
-
-        case WM_COMMAND:
-            if (LOWORD(wParam) == IDC_TOC_CLOSE && HIWORD(wParam) == STN_CLICKED)
-                ToggleTocBox(win);
-            break;
-
-        case WM_NOTIFY:
-            if (LOWORD(wParam) == IDC_TOC_TREE) {
-                LRESULT res = OnTocTreeNotify(win, (LPNMTREEVIEW)lParam);
-                if (res != -1)
-                    return res;
-            }
-            break;
-    }
-    return CallWindowProc(DefWndProcTocBox, hwnd, msg, wParam, lParam);
-}
-
 LRESULT CALLBACK WndProcTocBoxCB(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     WindowInfo *win = FindWindowInfoByHwnd(hwnd);
