@@ -2,7 +2,7 @@
    License: Simplified BSD (see COPYING.BSD) */
 
 #include "BaseUtil.h"
-#include "SerializeTxtParser.h"
+#include "TxtParser.h"
 #include <new>  // for placement new
 
 // unbreak placement new introduced by defining new as DEBUG_NEW
@@ -382,7 +382,7 @@ static void PrettyPrintNode(TxtNode *curr, int nest, str::Str<char>& res)
     }
 }
 
-char *PrettyPrintTxt(TxtParser& parser)
+char *PrettyPrintTxt(const TxtParser& parser)
 {
     str::Str<char> res;
     PrettyPrintNode(parser.nodes.At(0), -1, res);
