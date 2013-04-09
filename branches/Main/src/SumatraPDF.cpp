@@ -1455,8 +1455,10 @@ static WindowInfo* CreateWindowInfo()
 
     // One needs to use gGlobalPrefs.ToolbarForEachPanel to determine WIN or panel.
     // Here, it always creates a toolbar, either for WIN or for panel.
-    CreateToolbar(WinInfo::Make(gGlobalPrefs.toolbarForEachPanel, WIN, panel));
-    CreateSidebar(WinInfo::Make(gGlobalPrefs.sidebarForEachPanel, WIN, panel));
+    WinInfo winInfo = WinInfo::Make(gGlobalPrefs.toolbarForEachPanel, WIN, panel);
+    CreateToolbar(winInfo);
+    winInfo = WinInfo::Make(gGlobalPrefs.sidebarForEachPanel, WIN, panel);
+    CreateSidebar(winInfo);
 
     CreateTabControl(panel);
 
@@ -1599,8 +1601,9 @@ static WindowInfo* CreatePanel(ContainerInfo *container)
         win->hwndCanvas, NULL, ghinst, NULL);
     
     // Here it doesn't create any toolbar if gGlobalPrefs.toolbarForEachPanel is false.
-    CreateToolbar(WinInfo::Make(panel), gGlobalPrefs.toolbarForEachPanel);
-    CreateSidebar(WinInfo::Make(panel), gGlobalPrefs.sidebarForEachPanel);
+    WinInfo winInfo = WinInfo::Make(panel);
+    CreateToolbar(winInfo, gGlobalPrefs.toolbarForEachPanel);
+    CreateSidebar(winInfo, gGlobalPrefs.sidebarForEachPanel);
 
     CreateTabControl(panel);
  
@@ -1749,13 +1752,12 @@ static void DeletePanelInfo(PanelInfo *panel)
         panel->gWin.Remove(win);
         DeleteWindowInfo(win);
     }
+
     delete panel;
 }
 
 static void DeleteTopWindowInfo(TopWindowInfo *WIN)
 {
-	Timer t(true);
-
     gWIN.Remove(WIN);
 
     if (!gGlobalPrefs.toolbarForEachPanel)
@@ -1763,15 +1765,13 @@ static void DeleteTopWindowInfo(TopWindowInfo *WIN)
 
     size_t CountPanelInWIN = WIN->gPanel.Count();
 
-    for (int i = 0; i < CountPanelInWIN; i++) {
+    for (size_t i = 0; i < CountPanelInWIN; i++) {
         PanelInfo *panel = WIN->gPanel.At(0);
         WIN->gPanel.Remove(panel);
         DeletePanelInfo(panel);
     }
-    delete WIN;
 
-	t.Stop();
-	lf("DeleteTopWindowInfo() time: %.2f", t.GetTimeInMs());
+    delete WIN;
 }
 
 class FileChangeCallback : public UITask, public FileChangeObserver
@@ -1860,6 +1860,7 @@ void LoadDocument2(const WCHAR *fileName, const SumatraWindow& win)
     LoadDocument(args);
 }
 
+#if 0
 // Load a file into a new or existing window, show error message
 // if loading failed, set the right window position (based on history
 // settings for this file or default position), update file history,
@@ -1873,6 +1874,7 @@ static WindowInfo* LoadDocumentNew(LoadArgs& args)
     CrashIf(true);
     return NULL;
 }
+#endif
 
 // TODO: eventually I would like to move all loading to be async. To achieve that
 // we need clear separatation of loading process into 2 phases: loading the
@@ -3441,7 +3443,7 @@ static void OnMenuSaveAs(WindowInfo& win)
         !(canConvertToPDF && str::EndsWithI(dstFileName, L".pdf"))) {
         if (hasCopyPerm && 2 == ofn.nFilterIndex)
             defExt = L".txt";
-        else if (canConvertToPDF && (hasCopyPerm ? 3 : 2) == ofn.nFilterIndex)
+        else if (canConvertToPDF && (hasCopyPerm ? 3 : 2) == (int)ofn.nFilterIndex)
             defExt = L".pdf";
         realDstFileName = str::Format(L"%s%s", dstFileName, defExt);
     }
@@ -3998,8 +4000,8 @@ static void FrameOnDrawItem(HWND hwnd, LPARAM lParam)
     // Using COLOR_MENU (which is 4) has problem in XP (color not matched).
     COLORREF back = RGB(0xDE, 0xDE, 0xDE);
 
-    COLORREF boundary;
-    COLORREF boundaryBottom;
+    COLORREF boundary = back;
+    COLORREF boundaryBottom = back;
 
     // This only affects the rectangles containing the texts.
     bool needDrawBoundary = false;
@@ -5223,12 +5225,6 @@ LRESULT CALLBACK WndProcCloseButton(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
     return CallWindowProc(DefWndProcCloseButton, hwnd, msg, wParam, lParam);
 }
 
-static void SetWinPos(HWND hwnd, RectI r, bool isVisible)
-{
-    UINT flags = SWP_NOZORDER | (isVisible ? SWP_SHOWWINDOW : SWP_HIDEWINDOW);
-    SetWindowPos(hwnd, NULL, r.x, r.y, r.dx, r.dy, flags);
-}
-
 void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible, bool switchDoc)
 {
     if (gPluginMode || !HasPermission(Perm_DiskAccess))
@@ -5617,7 +5613,8 @@ static LRESULT CanvasOnMouseWheel(WindowInfo& win, UINT message, WPARAM wParam, 
         GetCursorPosInHwnd(win.hwndCanvas, pt);
 
         float zoom = win.dm->NextZoomStep(delta < 0 ? ZOOM_MIN : ZOOM_MAX);
-        win.dm->ZoomTo(zoom, &PointI(pt.x, pt.y));
+        PointI tmpPoint(pt.x, pt.y);
+        win.dm->ZoomTo(zoom, &tmpPoint);
         UpdateToolbarState(&win);
 
         // don't show the context menu when zooming with the right mouse-button down
