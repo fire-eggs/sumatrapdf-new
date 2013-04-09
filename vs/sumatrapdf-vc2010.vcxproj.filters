@@ -354,6 +354,9 @@
     <ClCompile Include="..\src\utils\Sigslot_ut.cpp">
       <Filter>utils</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\utils\SquareTreeParser.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\utils\StrFormat.cpp">
       <Filter>utils</Filter>
     </ClCompile>
@@ -382,6 +385,9 @@
       <Filter>utils</Filter>
     </ClCompile>
     <ClCompile Include="..\src\utils\TrivialHtmlParser_ut.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\utils\TxtParser.cpp">
       <Filter>utils</Filter>
     </ClCompile>
     <ClCompile Include="..\src\utils\UITask.cpp">
@@ -1124,6 +1130,9 @@
     <ClInclude Include="..\src\utils\SimpleLog.h">
       <Filter>utils</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\utils\SquareTreeParser.h">
+      <Filter>utils</Filter>
+    </ClInclude>
     <ClInclude Include="..\src\utils\StrFormat.h">
       <Filter>utils</Filter>
     </ClInclude>
@@ -1149,6 +1158,9 @@
       <Filter>utils</Filter>
     </ClInclude>
     <ClInclude Include="..\src\utils\TrivialHtmlParser.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\utils\TxtParser.h">
       <Filter>utils</Filter>
     </ClInclude>
     <ClInclude Include="..\src\utils\UITask.h">
