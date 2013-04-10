@@ -7,6 +7,7 @@
 #define __STDC_LIMIT_MACROS
 #include "BaseUtil.h"
 #include "Sigslot.h"
+#include "TxtParser.h"
 
 enum AlignAttr;
 
@@ -26,6 +27,7 @@ using namespace css;
 #include "MuiHwndWrapper.h"
 #include "MuiPainter.h"
 #include "MuiEventMgr.h"
+#include "MuiFromText.h"
 
 #define SizeInfinite ((INT)-1)
 

@@ -305,7 +305,8 @@ fz_draw_stroke_path(fz_device *devp, fz_path *path, fz_stroke_state *stroke, con
 	if (model == NULL)
 		model = fz_device_gray;
 
-	if (linewidth * expansion < 0.1f)
+	/* cf. https://code.google.com/p/sumatrapdf/issues/detail?id=2260 */
+	if (linewidth * expansion < FLT_EPSILON)
 		linewidth = 1 / expansion;
 
 	fz_reset_gel(dev->gel, &state->scissor);
@@ -427,7 +428,8 @@ fz_draw_clip_stroke_path(fz_device *devp, fz_path *path, const fz_rect *rect, fz
 	fz_colorspace *model;
 	fz_context *ctx = dev->ctx;
 
-	if (linewidth * expansion < 0.1f)
+	/* cf. https://code.google.com/p/sumatrapdf/issues/detail?id=2260 */
+	if (linewidth * expansion < FLT_EPSILON)
 		linewidth = 1 / expansion;
 
 	fz_reset_gel(dev->gel, &state->scissor);
@@ -572,7 +574,11 @@ fz_draw_fill_text(fz_device *devp, fz_text *text, const fz_matrix *ctm,
 			}
 			else
 			{
-				fz_matrix mat = {glyph->w, 0.0, 0.0, glyph->h, x + glyph->x, y + glyph->y};
+				/* SumatraPDF: prevent warning C4204 */
+				fz_matrix mat;
+				mat.a = glyph->w; mat.b = 0;
+				mat.c = 0; mat.d = glyph->h;
+				mat.e = x + glyph->x; mat.f = y + glyph->y;
 				fz_paint_image(state->dest, &state->scissor, state->shape, glyph, &mat, alpha * 255);
 			}
 			fz_drop_pixmap(dev->ctx, glyph);
