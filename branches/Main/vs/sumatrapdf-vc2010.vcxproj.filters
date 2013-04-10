@@ -210,6 +210,9 @@
     <ClCompile Include="..\src\MobiDoc.cpp">
       <Filter>sumatra\ebook</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\MuiEbookPageDef.cpp">
+      <Filter>sumatra\ebook</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\mui\MiniMui.cpp">
       <Filter>mui</Filter>
     </ClCompile>
@@ -222,6 +225,12 @@
     <ClCompile Include="..\src\mui\MuiButton.cpp">
       <Filter>mui</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\mui\MuiButtonDef.cpp">
+      <Filter>mui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\mui\MuiButtonVectorDef.cpp">
+      <Filter>mui</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\mui\MuiControl.cpp">
       <Filter>mui</Filter>
     </ClCompile>
@@ -229,6 +238,9 @@
       <Filter>mui</Filter>
     </ClCompile>
     <ClCompile Include="..\src\mui\MuiEventMgr.cpp">
+      <Filter>mui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\mui\MuiFromText.cpp">
       <Filter>mui</Filter>
     </ClCompile>
     <ClCompile Include="..\src\mui\MuiGrid.cpp">
@@ -244,6 +256,9 @@
       <Filter>mui</Filter>
     </ClCompile>
     <ClCompile Include="..\src\mui\MuiScrollBar.cpp">
+      <Filter>mui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\mui\MuiScrollBarDef.cpp">
       <Filter>mui</Filter>
     </ClCompile>
     <ClCompile Include="..\src\mui\SvgPath.cpp">
@@ -349,6 +364,9 @@
       <Filter>utils</Filter>
     </ClCompile>
     <ClCompile Include="..\src\utils\PalmDbReader.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\utils\SerializeTxt.cpp">
       <Filter>utils</Filter>
     </ClCompile>
     <ClCompile Include="..\src\utils\Sigslot_ut.cpp">
@@ -989,6 +1007,9 @@
     <ClInclude Include="..\src\MobiDoc.h">
       <Filter>sumatra\ebook</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\MuiEbookPageDef.h">
+      <Filter>sumatra\ebook</Filter>
+    </ClInclude>
     <ClInclude Include="..\src\mui\MiniMui.h">
       <Filter>mui</Filter>
     </ClInclude>
@@ -1001,6 +1022,12 @@
     <ClInclude Include="..\src\mui\MuiButton.h">
       <Filter>mui</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\mui\MuiButtonDef.h">
+      <Filter>mui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\mui\MuiButtonVectorDef.h">
+      <Filter>mui</Filter>
+    </ClInclude>
     <ClInclude Include="..\src\mui\MuiControl.h">
       <Filter>mui</Filter>
     </ClInclude>
@@ -1008,6 +1035,9 @@
       <Filter>mui</Filter>
     </ClInclude>
     <ClInclude Include="..\src\mui\MuiEventMgr.h">
+      <Filter>mui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\mui\MuiFromText.h">
       <Filter>mui</Filter>
     </ClInclude>
     <ClInclude Include="..\src\mui\MuiGrid.h">
@@ -1023,6 +1053,9 @@
       <Filter>mui</Filter>
     </ClInclude>
     <ClInclude Include="..\src\mui\MuiScrollBar.h">
+      <Filter>mui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\mui\MuiScrollBarDef.h">
       <Filter>mui</Filter>
     </ClInclude>
     <ClInclude Include="..\src\mui\SvgPath.h">
@@ -1122,6 +1155,9 @@
       <Filter>utils</Filter>
     </ClInclude>
     <ClInclude Include="..\src\utils\Scoped.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\utils\SerializeTxt.h">
       <Filter>utils</Filter>
     </ClInclude>
     <ClInclude Include="..\src\utils\Sigslot.h">
@@ -1257,6 +1293,9 @@
     </Manifest>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\src\EbookWinDesc.txt">
+      <Filter>sumatra</Filter>
+    </None>
     <None Include="..\docs\codingstyle.txt">
       <Filter>docs</Filter>
     </None>

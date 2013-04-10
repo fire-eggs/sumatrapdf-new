@@ -57,3 +57,19 @@ ButtonVector [
     style_default: styleNextDefault
     style_mouse_over: styleNextMouseOver
 ]
+
+Button [
+    name: statusButton
+    style: styleStatus
+]
+
+ScrollBar [
+    name: progressScrollBar
+    style: styleProgress
+    cursor: hand
+]
+
+EbookPage [
+    name: page
+    style: stylePage
+]
