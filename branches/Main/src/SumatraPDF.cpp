@@ -6103,10 +6103,6 @@ static LRESULT PanelOnCommand(PanelInfo *panel, HWND hwnd, UINT msg, WPARAM wPar
 
 static void PanelOnPaint(PanelInfo& panel)
 {
-    //int rebBarDy = WindowRect(panel.win->toolBar()->hwndReBar).dy;
-    //if (!gGlobalPrefs.toolbarVisible || !gGlobalPrefs.toolbarForEachPanel)
-    //    rebBarDy = -1;
-
     int rebBarDy = -1;
 
     if (!gGlobalPrefs.toolbarForEachPanel && gGlobalPrefs.toolbarVisible && panel.container->isAtTop)
