@@ -15,7 +15,6 @@ class LinkHandler;
 class Notifications;
 class StressTest;
 struct WatchedFile;
-class FileFavs;
 
 /* Describes actions which can be performed by mouse */
 enum MouseAction {
@@ -117,7 +116,7 @@ public:
     // state related to favorites
     HWND            hwndFavBox;
     HWND            hwndFavTree;
-    Vec<FileFavs *> expandedFavorites;
+    Vec<DisplayState *> expandedFavorites;
 
     // vertical splitter for resizing left side panel
     HWND            hwndSidebarSplitter;

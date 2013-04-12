@@ -17,7 +17,7 @@ using namespace Gdiplus;
 #include "GdiPlusUtil.h"
 #include "Menu.h"
 #include "MobiDoc.h"
-#include "Resource.h"
+#include "resource.h"
 #include "SumatraAbout.h"
 #include "SumatraDialogs.h"
 #include "SumatraPDF.h"
@@ -169,7 +169,7 @@ static LRESULT OnKeyDown(EbookWindow *win, UINT msg, WPARAM key, LPARAM lParam)
         OnMenuGoToPage(win);
         break;
     case VK_ESCAPE:
-        if (gGlobalPrefs.escToExit)
+        if (gGlobalPrefs->escToExit)
             CloseEbookWindow(win, true, true);
         break;
     default:
@@ -372,9 +372,11 @@ static LRESULT OnCommand(EbookWindow *win, UINT msg, WPARAM wParam, LPARAM lPara
             break;
 
         case IDM_DEBUG_EBOOK_UI:
-            gUserPrefs.traditionalEbookUI = !gUserPrefs.traditionalEbookUI;
-            win::menu::SetChecked(GetMenu(win->hwndFrame), IDM_DEBUG_EBOOK_UI, gUserPrefs.traditionalEbookUI);
-            DebugAlternateChmEngine(gUserPrefs.traditionalEbookUI);
+            gGlobalPrefs->ebookUI.useFixedPageUI = !gGlobalPrefs->ebookUI.useFixedPageUI;
+            win::menu::SetChecked(GetMenu(win->hwndFrame), IDM_DEBUG_EBOOK_UI, gGlobalPrefs->ebookUI.useFixedPageUI);
+            // use the same setting to also toggle the CHM UI
+            gGlobalPrefs->chmUI.useFixedPageUI = !gGlobalPrefs->chmUI.useFixedPageUI;
+            DebugAlternateChmEngine(gGlobalPrefs->chmUI.useFixedPageUI);
             break;
 
         case IDM_DEBUG_MUI:
@@ -440,10 +442,6 @@ static LRESULT CALLBACK MobiWndProcFrame(HWND hwnd, UINT msg, WPARAM wParam, LPA
             CloseEbookWindow(win, true, true);
             break;
 
-        case WM_PAINT:
-            win->hwndWrapper->OnPaint(hwnd);
-            break;
-
         case WM_KEYDOWN:
             return OnKeyDown(win, msg, wParam, lParam);
 
@@ -490,8 +488,7 @@ RenderedBitmap *RenderFirstDocPageToBitmap(Doc doc, SizeI pageSize, SizeI bmpSiz
     SolidBrush br(Color(255, 255, 255));
     g.FillRectangle(&br, r);
 
-    Color tmpColor((ARGB)Color::Black);
-    DrawHtmlPage(&g, &pd->instructions, (REAL)border, (REAL)border, false, &tmpColor);
+    DrawHtmlPage(&g, &pd->instructions, (REAL)border, (REAL)border, false, Color((ARGB)Color::Black));
     delete pd;
 
     Bitmap res(bmpSize.dx, bmpSize.dy, PixelFormat24bppRGB);
@@ -592,9 +589,9 @@ void OpenMobiInWindow(Doc doc, SumatraWindow& winToReplace)
         return;
     }
 
-    if (gGlobalPrefs.rememberOpenedFiles) {
+    if (gGlobalPrefs->rememberOpenedFiles) {
         ds = gFileHistory.MarkFileLoaded(fullPath);
-        if (gGlobalPrefs.showStartPage && ds) {
+        if (gGlobalPrefs->showStartPage && ds) {
             // TODO: do it on a background thread?
             CreateThumbnailForDoc(doc, *ds);
         }
@@ -621,7 +618,7 @@ void OpenMobiInWindow(Doc doc, SumatraWindow& winToReplace)
         return;
     }
 
-    RectI windowPos = gGlobalPrefs.windowPos;
+    RectI windowPos = gGlobalPrefs->windowPos;
     if (!windowPos.IsEmpty())
         EnsureAreaVisibility(windowPos);
     else

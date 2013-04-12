@@ -3,11 +3,10 @@
 
 #include "Mui.h"
 
-#include "HtmlFormatter.h"
-#include "MuiButtonVectorDef.h"
-#include "MuiButtonDef.h"
+#include "HtmlParserLookup.h"
+#include "MuiDefs.h"
 #include "SvgPath.h"
-#include "MuiScrollBarDef.h"
+#include "TxtParser.h"
 
 namespace mui {
 
@@ -92,6 +91,25 @@ Control *FindControlNamed(ParsedMui& muiInfo, const char *name)
     return NULL;
 }
 
+ILayout *FindLayoutNamed(ParsedMui& muiInfo, const char *name)
+{
+    for (size_t i = 0; i < muiInfo.layouts.Count(); i++) {
+        ILayout *l = muiInfo.layouts.At(i);
+        if (l->IsNamed(name))
+            return l;
+    }
+    return NULL;
+}
+
+ILayout *FindElementNamed(ParsedMui& muiInfo, const char *name)
+{
+    Control *c = FindControlNamed(muiInfo, name);
+    if (c)
+        return c;
+    return FindLayoutNamed(muiInfo, name);
+}
+
+
 static TxtNode *GetRootArray(TxtParser* parser)
 {
     TxtNode *root = parser->nodes.At(0);
@@ -119,22 +137,42 @@ static void ParsePadding(const char *s, ParsedPadding& p)
     str::Parse(s, "%d %d %d %d", &p.top, &p.right, &p.bottom, &p.left);
 }
 
-// TODO: more enums
 static AlignAttr ParseAlignAttr(const char *s)
 {
-    if (str::EqI(s, "center"))
-        return Align_Center;
-    CrashIf(true);
-    return Align_Left;
+    return FindAlignAttr(s, str::Len(s));
 }
 
-// TODO: more enums
+// TODO: optimize using seqstrings
 static ElAlign ParseElAlign(const char *s)
 {
     if (str::EqI(s, "center"))
         return ElAlignCenter;
+    if (str::EqI(s, "top"))
+        return ElAlignTop;
+    if (str::EqI(s, "bottome"))
+        return ElAlignBottom;
+    if (str::EqI(s, "left"))
+        return ElAlignLeft;
+    if (str::EqI(s, "right"))
+        return ElAlignRight;
     CrashIf(true);
     return ElAlignLeft;
+}
+
+static ElAlignData ParseElAlignData(const char *s)
+{
+    if (str::EqI(s, "center"))
+        return GetElAlignCenter();
+    if (str::EqI(s, "top"))
+        return GetElAlignTop();
+    if (str::EqI(s, "bottom"))
+        return GetElAlignBottom();
+    if (str::EqI(s, "left"))
+        return GetElAlignLeft();
+    if (str::EqI(s, "right"))
+        return GetElAlignRight();
+    CrashIf(true);
+    return GetElAlignCenter();
 }
 
 #if 0
@@ -244,8 +282,9 @@ static ButtonVector* ButtonVectorFromDef(TxtNode* structDef)
     CrashIf(!structDef->IsStructWithName("ButtonVector"));
     ButtonVectorDef *def = DeserializeButtonVectorDef(structDef);
     ButtonVector *b = new ButtonVector();
-    if (def->name)
-        b->SetName(def->name);
+    b->SetName(def->name);
+    b->SetNamedEventClick(def->clicked);
+
     if (def->path ){
         GraphicsPath *gp = svg::GraphicsPathFromPathData(def->path);
         b->SetGraphicsPath(gp);
@@ -270,8 +309,7 @@ static Button* ButtonFromDef(TxtNode* structDef)
     ButtonDef *def = DeserializeButtonDef(structDef);
     Style *style = StyleByName(def->style);
     Button *b = new Button(def->text, style, style);
-    if (def->name)
-        b->SetName(def->name);
+    b->SetName(def->name);
     FreeButtonDef(def);
     return b;
 }
@@ -283,14 +321,64 @@ static ScrollBar *ScrollBarFromDef(TxtNode *structDef)
     ScrollBar *sb = new ScrollBar();
     Style *style = StyleByName(def->style);
     sb->SetStyle(style);
-
-    if (def->name)
-        sb->SetName(def->name);
+    sb->SetName(def->name);
 
     // TODO: support def->cursor
 
     FreeScrollBarDef(def);
     return sb;
+}
+
+static float ParseLayoutFloat(const char *s)
+{
+    if (str::EqI(s, "self"))
+        return SizeSelf;
+    return ParseFloat(s);
+}
+
+static void SetDirectionalLayouData(DirectionalLayoutData& ld, ParsedMui& parsed, DirectionalLayoutDataDef *def)
+{
+    float sla = ParseLayoutFloat(def->sla);
+    float snla = ParseLayoutFloat(def->snla);
+    ElAlignData elAlign = ParseElAlignData(def->align);
+    ILayout *el = FindElementNamed(parsed, def->controlName);
+    ld.Set(el, sla, snla, elAlign);
+}
+
+static HorizontalLayout *HorizontalLayoutFromDef(ParsedMui& parsed, TxtNode *structDef)
+{
+    CrashIf(!structDef->IsStructWithName("HorizontalLayout"));
+    HorizontalLayoutDef *def = DeserializeHorizontalLayoutDef(structDef);
+    HorizontalLayout *l = new HorizontalLayout();
+    l->SetName(def->name);
+    Vec<DirectionalLayoutDataDef*> *children = def->children;
+
+    DirectionalLayoutData ld;
+    for (size_t i = 0; children && i < children->Count(); i++) {
+        SetDirectionalLayouData(ld, parsed, children->At(i));
+        l->Add(ld);
+    }
+
+    FreeHorizontalLayoutDef(def);
+    return l;
+}
+
+static VerticalLayout *VerticalLayoutFromDef(ParsedMui& parsed, TxtNode *structDef)
+{
+    CrashIf(!structDef->IsStructWithName("VerticalLayout"));
+    VerticalLayoutDef *def = DeserializeVerticalLayoutDef(structDef);
+    VerticalLayout *l = new VerticalLayout();
+    l->SetName(def->name);
+    Vec<DirectionalLayoutDataDef*> *children = def->children;
+
+    DirectionalLayoutData ld;
+    for (size_t i = 0; children && i < children->Count(); i++) {
+        SetDirectionalLayouData(ld, parsed, children->At(i));
+        l->Add(ld);
+    }
+
+    FreeVerticalLayoutDef(def);
+    return l;
 }
 
 // TODO: create the rest of controls
@@ -314,6 +402,12 @@ static void ParseMuiDefinition(TxtNode *root, ParsedMui& res)
             ScrollBar *sb = ScrollBarFromDef(node);
             res.allControls.Append(sb);
             res.scrollBars.Append(sb);
+        } else if (node->IsStructWithName("HorizontalLayout")) {
+            HorizontalLayout *l = HorizontalLayoutFromDef(res, node);
+            res.layouts.Append(l);
+        } else if (node->IsStructWithName("VerticalLayout")) {
+            VerticalLayout *l = VerticalLayoutFromDef(res, node);
+            res.layouts.Append(l);
         } else {
             ScopedMem<char> keyName(node->KeyDup());
             ControlCreatorFunc creatorFunc = FindCreatorFuncFor(keyName);
