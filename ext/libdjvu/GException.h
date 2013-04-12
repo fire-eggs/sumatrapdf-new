@@ -312,8 +312,9 @@ public:
   (GException(msg, __FILE__, __LINE__, __PRETTY_FUNCTION__, xtype)) 
 #define G_EMTHROW(ex) GExceptionHandler::emthrow(ex)
 #else
+// SumatraPDF: don't collect messages, file and line for smaller size
 #define G_THROW_TYPE(m,xtype) GExceptionHandler::emthrow \
-  (GException(m, __FILE__, __LINE__,0, xtype))
+  (GException(0, 0, 0, 0, xtype))
 #define G_EMTHROW(ex) GExceptionHandler::emthrow(ex)
 #endif
 

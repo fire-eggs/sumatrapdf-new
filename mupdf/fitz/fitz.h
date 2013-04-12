@@ -1430,6 +1430,12 @@ typedef struct fz_colorspace_s fz_colorspace;
 fz_colorspace *fz_find_device_colorspace(fz_context *ctx, char *name);
 
 /*
+	fz_colorspace_is_indexed: Return true, iff a given colorspace is
+	indexed.
+*/
+int fz_colorspace_is_indexed(fz_colorspace *cs);
+
+/*
 	fz_device_gray: Abstract colorspace representing device specific
 	gray.
 */
@@ -1917,6 +1923,9 @@ struct fz_text_block_s
 	int len, cap;
 	fz_text_line *lines;
 };
+
+/* SumatraPDF: make fz_shades use less memory */
+enum { FZ_MAX_COLORS = 8 };
 
 /*
 	fz_text_line: A text line is a list of text spans, with the same

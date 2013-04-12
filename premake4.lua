@@ -65,30 +65,6 @@ solution "sertxt"
     includedirs { "src/utils", "src/utils/msvc" }
     links { "Shlwapi" }
 
-solution "serini"
-  solution_common()
-
-  project "serini_test"
-    kind "ConsoleApp"
-    language "C++"
-    files {
-      "tools/serini_test/*",
-      "tools/sertxt_test/SerializeTxt.h",
-      "tools/sertxt_test/SettingsTxtSumatra.h",
-      "tools/sertxt_test/SettingsTxtSumatra.cpp",
-      "tools/sertxt_test/data.txt",
-      "src/utils/BaseUtil.*",
-      "src/utils/BencUtil.*",
-      "src/utils/FileUtil.*",
-      "src/utils/IniParser.*",
-      "src/utils/Scoped.*",
-      "src/utils/SquareTreeParser.*",
-      "src/utils/StrUtil.*",
-      "src/utils/Vec.*",
-    }
-    includedirs { "src/utils", "src/utils/msvc" }
-    links { "Shlwapi" }
-
 solution "efi"
   solution_common()
 
@@ -150,6 +126,8 @@ solution "muitest"
       "src/utils/DebugLog*",
       "src/Utils/FileUtil*",
       "src/utils/GdiPlusUtil*",
+      "src/utils/HtmlParserLookup*",
+      "src/utils/SerializeTxt*",
       "src/utils/StrSlice*",
       "src/utils/StrUtil*",
       "src/utils/TgaReader*",
@@ -164,5 +142,5 @@ solution "muitest"
       "src/mui/*_ut.cpp",
       "src/mui/MiniMui*",
     }
-    includedirs { "src/utils", "src/utils/msvc", "src/mui", "tools/sertxt_test" }
+    includedirs { "src", "src/utils", "src/utils/msvc", "src/mui"}
     links { "gdiplus", "comctl32", "shlwapi", "Version" }
