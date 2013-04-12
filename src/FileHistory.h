@@ -9,21 +9,20 @@
 
 /* Handling of file history list.
 
-   We keep an infinite list of all (still existing in the file system)
+   We keep a mostly infinite list of all (still existing in the file system)
    files that a user has ever opened. For each file we also keep a bunch of
    attributes describing the display state at the time the file was closed.
 
    We persist this list inside preferences file to something looking like this:
 
-File History:
-{
-   File: C:\path\to\file.pdf
-   Display Mode: single page
-   Page: 1
-   ZoomVirtual: 123.4567
-   Window State: 2
+FileStates [
+   FilePath =  C:\path\to\file.pdf
+   DisplayMode = single page
+   PageNo =  1
+   ZoomVirtual = 123.4567
+   Window State = 2
    ...
-}
+]
 etc...
 
     We deserialize this info at startup and serialize when the application
@@ -44,7 +43,8 @@ etc...
 #define FILE_HISTORY_MAX_FILES 1000
 
 class FileHistory {
-    Vec<DisplayState *> states;
+    // owned by gGlobalPrefs->fileStates
+    Vec<DisplayState *> *states;
 
     // sorts the most often used files first
     static int cmpOpenCount(const void *a, const void *b) {
@@ -65,22 +65,35 @@ class FileHistory {
 
 public:
     FileHistory() { }
-    ~FileHistory() { Clear(); }
-    void  Clear() { DeleteVecMembers(states); }
+    ~FileHistory() { }
 
-    void  Append(DisplayState *state) { states.Append(state); }
-    void  Remove(DisplayState *state) { states.Remove(state); }
+    void Clear(bool keepFavorites) {
+        if (!states)
+            return;
+        for (size_t i = 0; i < states->Count(); i++) {
+            if (keepFavorites && states->At(i)->favorites->Count() > 0)
+                continue;
+            DeleteDisplayState(states->At(i));
+        }
+        states->Reset();
+    }
+
+    void Append(DisplayState *state) { states->Append(state); }
+    void Remove(DisplayState *state) { states->Remove(state); }
 
     DisplayState *Get(size_t index) const {
-        if (index < states.Count())
-            return states.At(index);
+        if (index < states->Count())
+            return states->At(index);
         return NULL;
     }
 
-    DisplayState *Find(const WCHAR *filePath) const {
-        for (size_t i = 0; i < states.Count(); i++) {
-            if (str::EqI(states.At(i)->filePath, filePath))
-                return states.At(i);
+    DisplayState *Find(const WCHAR *filePath, size_t *idxOut=NULL) const {
+        for (size_t i = 0; i < states->Count(); i++) {
+            if (str::EqI(states->At(i)->filePath, filePath)) {
+                if (idxOut)
+                    *idxOut = i;
+                return states->At(i);
+            }
         }
         return NULL;
     }
@@ -92,14 +105,13 @@ public:
         // the file moves to the front of the list
         DisplayState *state = Find(filePath);
         if (!state) {
-            state = new DisplayState();
-            state->filePath.Set(str::Dup(filePath));
+            state = NewDisplayState(filePath);
         }
         else {
-            states.Remove(state);
+            states->Remove(state);
             state->isMissing = false;
         }
-        states.InsertAt(0, state);
+        states->InsertAt(0, state);
         state->openCount++;
         return state;
     }
@@ -115,16 +127,17 @@ public:
         // and so that we don't completely forget the settings,
         // should the file reappear later on
         int newIdx = hide ? INT_MAX : FILE_HISTORY_MAX_RECENT - 1;
-        int idx = states.Find(state);
-        if (idx < newIdx && state != states.Last()) {
-            states.Remove(state);
-            if (states.Count() <= (size_t)newIdx)
-                states.Append(state);
+        int idx = states->Find(state);
+        if (idx < newIdx && state != states->Last()) {
+            states->Remove(state);
+            if (states->Count() <= (size_t)newIdx)
+                states->Append(state);
             else
-                states.InsertAt(newIdx, state);
+                states->InsertAt(newIdx, state);
         }
         // also delete the thumbnail and move the link towards the
         // back in the Frequently Read list
+        delete state->thumbnail;
         state->thumbnail = NULL;
         state->openCount >>= 2;
         state->isMissing = hide;
@@ -138,7 +151,7 @@ public:
     void GetFrequencyOrder(Vec<DisplayState *>& list) {
         CrashIf(list.Count() > 0);
         size_t i = 0;
-        for (DisplayState **ds = states.IterStart(); ds; ds = states.IterNext()) {
+        for (DisplayState **ds = states->IterStart(); ds; ds = states->IterNext()) {
             (*ds)->index = i++;
             if (!(*ds)->isMissing || (*ds)->isPinned)
                 list.Append(*ds);
@@ -160,21 +173,29 @@ public:
                 minOpenCount = frequencyList.At(FILE_HISTORY_MAX_FREQUENT)->openCount / 2;
         }
 
-        for (size_t j = states.Count(); j > 0; j--) {
-            DisplayState *state = states.At(j - 1);
-            // never forget pinned documents and documents we've remembered a password for
-            if (state->isPinned || state->decryptionKey != NULL)
+        for (size_t j = states->Count(); j > 0; j--) {
+            DisplayState *state = states->At(j - 1);
+            // never forget pinned documents, documents we've remembered a password for and
+            // documents for which there are favorites
+            if (state->isPinned || state->decryptionKey != NULL || state->favorites->Count() > 0)
                 continue;
             // forget about missing documents without valuable state
             if (state->isMissing && (alwaysUseGlobalValues || state->useGlobalValues))
-                states.RemoveAt(j - 1);
+                states->RemoveAt(j - 1);
             // forget about files last opened longer ago than the last FILE_HISTORY_MAX_FILES ones
             else if (j > FILE_HISTORY_MAX_FILES)
-                states.RemoveAt(j - 1);
+                states->RemoveAt(j - 1);
             // forget about files that were hardly used (and without valuable state)
             else if (alwaysUseGlobalValues && state->openCount < minOpenCount && j > FILE_HISTORY_MAX_RECENT)
-                states.RemoveAt(j - 1);
+                states->RemoveAt(j - 1);
+            else
+                continue;
+            DeleteDisplayState(state);
         }
+    }
+
+    void UpdateStatesSource(Vec<DisplayState *> *states) {
+        this->states = states;
     }
 };
 

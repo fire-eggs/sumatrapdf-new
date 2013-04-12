@@ -1336,6 +1336,9 @@ miniexp_pprint_r(miniexp_io_t *io, miniexp_t p, int width)
 
 /* ---- PNAME */
 
+// SumatraPDF: don't compile as it's not used and it's the only place
+// using try/catch, which is not compatible with compiling as /EHs-c-
+#if 0
 static int
 pname_fputs(miniexp_io_t *io, const char *s)
 {
@@ -1383,6 +1386,7 @@ miniexp_pname(miniexp_t p, int width)
     }
   return r;
 }
+#endif
 
 
 /* ---- INPUT */
