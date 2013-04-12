@@ -16,11 +16,11 @@ using namespace mui;
 struct EbookControls {
     HwndWrapper *       mainWnd;
     PageControl *       page;
-    ButtonVector *      next;
-    ButtonVector *      prev;
+    //ButtonVector *      next;
+    //ButtonVector *      prev;
     ScrollBar *         progress;
     Button *            status;
-    HorizontalLayout *  topPart;
+    ILayout *           topPart;
 };
 
 EbookControls * CreateEbookControls(HWND hwnd);

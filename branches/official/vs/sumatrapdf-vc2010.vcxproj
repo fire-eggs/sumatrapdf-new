@@ -134,14 +134,12 @@
     <ClCompile Include="..\src\EbookWindow.cpp" />
     <ClCompile Include="..\src\MobiDoc.cpp" />
     <ClCompile Include="..\src\MuiEbookPageDef.cpp" />
-    <ClCompile Include="..\src\mui\MiniMui.cpp" />
     <ClCompile Include="..\src\mui\Mui.cpp" />
     <ClCompile Include="..\src\mui\MuiBase.cpp" />
     <ClCompile Include="..\src\mui\MuiButton.cpp" />
-    <ClCompile Include="..\src\mui\MuiButtonDef.cpp" />
-    <ClCompile Include="..\src\mui\MuiButtonVectorDef.cpp" />
     <ClCompile Include="..\src\mui\MuiControl.cpp" />
     <ClCompile Include="..\src\mui\MuiCss.cpp" />
+    <ClCompile Include="..\src\mui\MuiDefs.cpp" />
     <ClCompile Include="..\src\mui\MuiEventMgr.cpp" />
     <ClCompile Include="..\src\mui\MuiFromText.cpp" />
     <ClCompile Include="..\src\mui\MuiGrid.cpp" />
@@ -149,7 +147,6 @@
     <ClCompile Include="..\src\mui\MuiLayout.cpp" />
     <ClCompile Include="..\src\mui\MuiPainter.cpp" />
     <ClCompile Include="..\src\mui\MuiScrollBar.cpp" />
-    <ClCompile Include="..\src\mui\MuiScrollBarDef.cpp" />
     <ClCompile Include="..\src\mui\SvgPath.cpp" />
     <ClCompile Include="..\src\mui\SvgPath_ut.cpp" />
     <ClCompile Include="..\src\utils\BaseUtil.cpp" />
@@ -186,6 +183,7 @@
     <ClCompile Include="..\src\utils\NoFreeAllocator.cpp" />
     <ClCompile Include="..\src\utils\PalmDbReader.cpp" />
     <ClCompile Include="..\src\utils\SerializeTxt.cpp" />
+    <ClCompile Include="..\src\utils\SettingsUtil.cpp" />
     <ClCompile Include="..\src\utils\Sigslot_ut.cpp" />
     <ClCompile Include="..\src\utils\SquareTreeParser.cpp" />
     <ClCompile Include="..\src\utils\StrFormat.cpp" />
@@ -263,6 +261,7 @@
     <ClCompile Include="..\mupdf\fitz\res_font.c" />
     <ClCompile Include="..\mupdf\fitz\res_func.c" />
     <ClCompile Include="..\mupdf\fitz\res_halftone.c" />
+    <ClCompile Include="..\mupdf\fitz\res_image.c" />
     <ClCompile Include="..\mupdf\fitz\res_path.c" />
     <ClCompile Include="..\mupdf\fitz\res_pixmap.c" />
     <ClCompile Include="..\mupdf\fitz\res_shade.c" />
@@ -369,6 +368,7 @@
     <ClInclude Include="..\src\resource.h" />
     <ClInclude Include="..\src\Search.h" />
     <ClInclude Include="..\src\Selection.h" />
+    <ClInclude Include="..\src\SettingsStructs.h" />
     <ClInclude Include="..\src\StressTesting.h" />
     <ClInclude Include="..\src\SumatraAbout.h" />
     <ClInclude Include="..\src\SumatraAbout2.h" />
@@ -399,14 +399,12 @@
     <ClInclude Include="..\src\EbookWindow.h" />
     <ClInclude Include="..\src\MobiDoc.h" />
     <ClInclude Include="..\src\MuiEbookPageDef.h" />
-    <ClInclude Include="..\src\mui\MiniMui.h" />
     <ClInclude Include="..\src\mui\Mui.h" />
     <ClInclude Include="..\src\mui\MuiBase.h" />
     <ClInclude Include="..\src\mui\MuiButton.h" />
-    <ClInclude Include="..\src\mui\MuiButtonDef.h" />
-    <ClInclude Include="..\src\mui\MuiButtonVectorDef.h" />
     <ClInclude Include="..\src\mui\MuiControl.h" />
     <ClInclude Include="..\src\mui\MuiCss.h" />
+    <ClInclude Include="..\src\mui\MuiDefs.h" />
     <ClInclude Include="..\src\mui\MuiEventMgr.h" />
     <ClInclude Include="..\src\mui\MuiFromText.h" />
     <ClInclude Include="..\src\mui\MuiGrid.h" />
@@ -414,7 +412,6 @@
     <ClInclude Include="..\src\mui\MuiLayout.h" />
     <ClInclude Include="..\src\mui\MuiPainter.h" />
     <ClInclude Include="..\src\mui\MuiScrollBar.h" />
-    <ClInclude Include="..\src\mui\MuiScrollBarDef.h" />
     <ClInclude Include="..\src\mui\SvgPath.h" />
     <ClInclude Include="..\src\utils\Allocator.h" />
     <ClInclude Include="..\src\utils\BaseUtil.h" />
@@ -449,6 +446,7 @@
     <ClInclude Include="..\src\utils\RefCounted.h" />
     <ClInclude Include="..\src\utils\Scoped.h" />
     <ClInclude Include="..\src\utils\SerializeTxt.h" />
+    <ClInclude Include="..\src\utils\SettingsUtil.h" />
     <ClInclude Include="..\src\utils\Sigslot.h" />
     <ClInclude Include="..\src\utils\SimpleLog.h" />
     <ClInclude Include="..\src\utils\SquareTreeParser.h" />
@@ -497,6 +495,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\EbookWinDesc.txt" />
+    <None Include="..\src\mui\mui-todo.txt" />
     <None Include="..\docs\codingstyle.txt" />
     <None Include="..\docs\mui-html-fusion.txt" />
     <None Include="..\docs\releasenotes.txt" />
