@@ -472,7 +472,7 @@ static const FieldInfo gFileStateFields[] = {
 static const StructInfo gFileStateInfo = { sizeof(FileState), 18, gFileStateFields, "FilePath\0OpenCount\0IsPinned\0IsMissing\0UseGlobalValues\0DisplayMode\0ScrollPos\0PageNo\0ReparseIdx\0Zoom\0Rotation\0WindowState\0WindowPos\0DecryptionKey\0ShowToc\0SidebarDx\0TocState\0Favorites" };
 
 static const FieldInfo gGlobalPrefsFields[] = {
-    { offsetof(GlobalPrefs, mainWindowBackground),        Type_Color,      0x8000f2ff                                                                                                            },
+    { offsetof(GlobalPrefs, mainWindowBackground),        Type_Color,      0x80d4ffff                                                                                                            },
     { offsetof(GlobalPrefs, noDocBgColor),                Type_Color,      0x80999999                                                                                                            },
     { offsetof(GlobalPrefs, docBgColor),                  Type_Color,      0x80ffffff                                                                                                            },
     { offsetof(GlobalPrefs, docTextColor),                Type_Color,      0x80000000                                                                                                            },
@@ -491,8 +491,8 @@ static const FieldInfo gGlobalPrefsFields[] = {
     { offsetof(GlobalPrefs, forwardSearch),               Type_Struct,     (intptr_t)&gForwardSearchInfo                                                                                         },
     { offsetof(GlobalPrefs, rememberStatePerDocument),    Type_Bool,       true                                                                                                                  },
     { offsetof(GlobalPrefs, uiLanguage),                  Type_Utf8String, NULL                                                                                                                  },
-    { offsetof(GlobalPrefs, enableSplitWindow),           Type_Bool,       false  
-	{ offsetof(GlobalPrefs, enableTab),                   Type_Bool,       false                                                                                                                 },
+    { offsetof(GlobalPrefs, enableSplitWindow),           Type_Bool,       false                                                                                                                 },
+    { offsetof(GlobalPrefs, enableTab),                   Type_Bool,       false                                                                                                                 },
     { offsetof(GlobalPrefs, tabVisible),                  Type_Bool,       false                                                                                                                 },
     { offsetof(GlobalPrefs, toolbarForEachPanel),         Type_Bool,       false                                                                                                                 },
     { offsetof(GlobalPrefs, sidebarForEachPanel),         Type_Bool,       false                                                                                                                 },

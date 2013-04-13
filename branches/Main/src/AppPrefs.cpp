@@ -85,8 +85,8 @@ static FieldInfo gGlobalPrefsFieldsBenc[] = {
     { offsetof(GlobalPrefs, tabVisible), Type_Bool, false },
     { offsetof(GlobalPrefs, toolbarForEachPanel), Type_Bool, false },
     { offsetof(GlobalPrefs, sidebarForEachPanel), Type_Bool, false },
-	{ offsetof(GlobalPrefs, toolbarForEachPanelNew), Type_Bool, false },
-	{ offsetof(GlobalPrefs, sidebarForEachPanelNew), Type_Bool, false },
+    { offsetof(GlobalPrefs, toolbarForEachPanelNew), Type_Bool, false },
+    { offsetof(GlobalPrefs, sidebarForEachPanelNew), Type_Bool, false },
     { offsetof(GlobalPrefs, showToolbar), Type_Bool, true },
     { offsetof(GlobalPrefs, sidebarDx), Type_Int, 0 },
     { offsetof(GlobalPrefs, tocDy), Type_Int, 0 },
@@ -99,7 +99,7 @@ static FieldInfo gGlobalPrefsFieldsBenc[] = {
     { offsetof(GlobalPrefs, windowPos.x), Type_Int, 1 },
     { offsetof(GlobalPrefs, windowPos.y), Type_Int, 1 },
     { offsetof(GlobalPrefs, defaultZoomFloat), Type_Float, (intptr_t)"-1" },
-    { offsetof(GlobalPrefs, mainWindowBackground), Type_Color, 0xfff200 },
+    { offsetof(GlobalPrefs, mainWindowBackground), Type_Color, 0xffffd4 },
     { offsetof(GlobalPrefs, noDocBgColor), Type_Color, NO_DOC_BG_COLOR_DEFAULT },
     { offsetof(GlobalPrefs, docBgColor), Type_Color, DOC_BG_COLOR_DEFAULT },
     { offsetof(GlobalPrefs, docTextColor), Type_Color, DOC_TEXT_COLOR_DEFAULT },
@@ -265,8 +265,8 @@ bool LoadPrefs()
         DeserializeStruct(&gGlobalPrefsInfo, userPrefsData, gGlobalPrefs);
     }
 
-	gGlobalPrefs->toolbarForEachPanel = gGlobalPrefs->toolbarForEachPanelNew;
-	gGlobalPrefs->sidebarForEachPanel = gGlobalPrefs->sidebarForEachPanelNew;
+    gGlobalPrefs->toolbarForEachPanel = gGlobalPrefs->toolbarForEachPanelNew;
+    gGlobalPrefs->sidebarForEachPanel = gGlobalPrefs->sidebarForEachPanelNew;
 
     if (!gGlobalPrefs->uiLanguage || !trans::ValidateLangCode(gGlobalPrefs->uiLanguage)) {
         // guess the ui language on first start
