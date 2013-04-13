@@ -18,6 +18,7 @@ char *  Dup(const char *s);
 WCHAR * Dup(const WCHAR *s);
 
 void ReplacePtr(char **s, const char *snew);
+void ReplacePtr(const char **s, const char *snew);
 void ReplacePtr(WCHAR **s, const WCHAR *snew);
 
 char *  Join(const char *s1, const char *s2, const char *s3=NULL);
@@ -28,6 +29,7 @@ bool Eq(const char *s1, const char *s2);
 bool Eq(const WCHAR *s1, const WCHAR *s2);
 bool EqI(const char *s1, const char *s2);
 bool EqI(const WCHAR *s1, const WCHAR *s2);
+bool EqIS(const char *s1, const char *s2);
 bool EqIS(const WCHAR *s1, const WCHAR *s2);
 bool EqN(const char *s1, const char *s2, size_t len);
 bool EqN(const WCHAR *s1, const WCHAR *s2, size_t len);

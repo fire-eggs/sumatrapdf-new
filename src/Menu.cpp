@@ -23,7 +23,7 @@
 void MenuUpdateDisplayMode(WindowInfo* win)
 {
     bool enabled = win->IsDocLoaded();
-    DisplayMode displayMode = enabled ? win->dm->GetDisplayMode() : gGlobalPrefs.defaultDisplayMode;
+    DisplayMode displayMode = enabled ? win->dm->GetDisplayMode() : gGlobalPrefs->defaultDisplayModeEnum;
 
     for (int id = IDM_VIEW_LAYOUT_FIRST; id <= IDM_VIEW_LAYOUT_LAST; id++)
         win::menu::SetEnabled(win->menu(), id, enabled);
@@ -59,7 +59,7 @@ static MenuDef menuDefFile[] = {
     { _TRN("Open &in PDF-XChange"),         IDM_VIEW_WITH_PDF_XCHANGE,  MF_REQ_DISK_ACCESS | MF_NOT_FOR_EBOOK_UI },
     { _TRN("Open in &Microsoft XPS-Viewer"),IDM_VIEW_WITH_XPS_VIEWER,   MF_REQ_DISK_ACCESS | MF_NOT_FOR_EBOOK_UI },
     { _TRN("Open in &Microsoft HTML Help"), IDM_VIEW_WITH_HTML_HELP,    MF_REQ_DISK_ACCESS | MF_NOT_FOR_EBOOK_UI },
-    // further entries are added if specified in gUserPrefs.vecCommandLine
+    // further entries are added if specified in gGlobalPrefs.vecCommandLine
     { _TRN("Send by &E-mail..."),           IDM_SEND_BY_EMAIL,          MF_REQ_DISK_ACCESS | MF_NOT_FOR_EBOOK_UI },
     { SEP_ITEM,                             0,                          MF_REQ_DISK_ACCESS | MF_NOT_FOR_EBOOK_UI },
     { _TRN("P&roperties\tCtrl+D"),          IDM_PROPERTIES,             0 },
@@ -255,20 +255,25 @@ static void AppendRecentFilesToMenu(HMENU m)
 
 static void AppendExternalViewersToMenu(HMENU menuFile, const WCHAR *filePath, bool forEbookUI)
 {
-    if (!HasPermission(Perm_DiskAccess)) return;
+    if (0 == gGlobalPrefs->externalViewers->Count())
+        return;
+    if (!HasPermission(Perm_DiskAccess) || !file::Exists(filePath))
+        return;
 
     const int maxEntries = IDM_OPEN_WITH_EXTERNAL_LAST - IDM_OPEN_WITH_EXTERNAL_FIRST + 1;
     int count = 0;
-    for (size_t i = 0; i < gUserPrefs.vecCommandLine.Count() && count < maxEntries; i++) {
-        const WCHAR *filter = gUserPrefs.vecFilter.At(i);
-        if (filter && !str::Eq(filter, L"*") && !(filePath && path::Match(filePath, filter)))
+    for (size_t i = 0; i < gGlobalPrefs->externalViewers->Count() && count < maxEntries; i++) {
+        ExternalViewer *ev = gGlobalPrefs->externalViewers->At(i);
+        if (!ev->commandLine)
+            continue;
+        if (ev->filter && !str::Eq(ev->filter, L"*") && !(filePath && path::Match(filePath, ev->filter)))
             continue;
 
         ScopedMem<WCHAR> appName;
-        const WCHAR *name = gUserPrefs.vecName.At(i);
+        const WCHAR *name = ev->name;
         if (str::IsEmpty(name)) {
             WStrVec args;
-            ParseCmdLine(gUserPrefs.vecCommandLine.At(i), args, 2);
+            ParseCmdLine(ev->commandLine, args, 2);
             if (args.Count() == 0)
                 continue;
             appName.Set(str::Dup(path::GetBaseName(args.At(0))));
@@ -347,7 +352,7 @@ static void ZoomMenuItemCheck(HMENU m, UINT menuItemId, bool canZoom)
 
 void MenuUpdateZoom(WindowInfo* win)
 {
-    float zoomVirtual = gGlobalPrefs.defaultZoom;
+    float zoomVirtual = gGlobalPrefs->defaultZoomFloat;
     if (win->IsDocLoaded())
         zoomVirtual = win->dm->ZoomVirtual();
     UINT menuId = MenuIdFromVirtualZoom(zoomVirtual);
@@ -413,13 +418,13 @@ void MenuUpdateStateForWindow(WindowInfo* win) {
     win::menu::SetEnabled(win->menu(), IDM_VIEW_BOOKMARKS, enabled);
 
     bool documentSpecific = win->IsDocLoaded();
-    bool checked = documentSpecific ? win->tocVisible : gGlobalPrefs.tocVisible;
+    bool checked = documentSpecific ? win->tocVisible : gGlobalPrefs->showToc;
     win::menu::SetChecked(win->menu(), IDM_VIEW_BOOKMARKS, checked);
 
-    win::menu::SetChecked(win->menu(), IDM_FAV_TOGGLE, gGlobalPrefs.favVisible);
-    win::menu::SetChecked(win->menu(), IDM_VIEW_SHOW_HIDE_TOOLBAR, gGlobalPrefs.toolbarVisible);
-    win::menu::SetEnabled(win->menu(), IDM_VIEW_SHOW_HIDE_TAB, gGlobalPrefs.enableTab);
-    win::menu::SetChecked(win->menu(), IDM_VIEW_SHOW_HIDE_TAB, gGlobalPrefs.tabVisible);
+    win::menu::SetChecked(win->menu(), IDM_FAV_TOGGLE, gGlobalPrefs->showFavorites);
+    win::menu::SetChecked(win->menu(), IDM_VIEW_SHOW_HIDE_TOOLBAR, gGlobalPrefs->showToolbar);
+    win::menu::SetEnabled(win->menu(), IDM_VIEW_SHOW_HIDE_TAB, gGlobalPrefs->enableTab);
+    win::menu::SetChecked(win->menu(), IDM_VIEW_SHOW_HIDE_TAB, gGlobalPrefs->tabVisible);
     MenuUpdateDisplayMode(win);
     MenuUpdateZoom(win);
 
@@ -457,13 +462,13 @@ void MenuUpdateStateForWindow(WindowInfo* win) {
 #ifdef SHOW_DEBUG_MENU_ITEMS
     win::menu::SetChecked(win->menu(), IDM_DEBUG_SHOW_LINKS, gDebugShowLinks);
     win::menu::SetChecked(win->menu(), IDM_DEBUG_GDI_RENDERER, gUseGdiRenderer);
-    win::menu::SetChecked(win->menu(), IDM_DEBUG_EBOOK_UI, gUserPrefs.traditionalEbookUI);
+    win::menu::SetChecked(win->menu(), IDM_DEBUG_EBOOK_UI, gGlobalPrefs->ebookUI.useFixedPageUI);
 #endif
 }
 
 void OnAboutContextMenu(WindowInfo* win, int x, int y)
 {
-    if (!HasPermission(Perm_SavePreferences | Perm_DiskAccess) || !gGlobalPrefs.rememberOpenedFiles || !gGlobalPrefs.showStartPage)
+    if (!HasPermission(Perm_SavePreferences | Perm_DiskAccess) || !gGlobalPrefs->rememberOpenedFiles || !gGlobalPrefs->showStartPage)
         return;
 
     const WCHAR *filePath = GetStaticLink(win->staticLinks, x, y);
@@ -496,8 +501,14 @@ void OnAboutContextMenu(WindowInfo* win, int x, int y)
         break;
 
     case IDM_FORGET_SELECTED_DOCUMENT:
-        gFileHistory.Remove(state);
-        delete state;
+        if (state->favorites->Count() > 0) {
+            // just hide documents with favorites
+            gFileHistory.MarkFileInexistent(state->filePath, true);
+        }
+        else {
+            gFileHistory.Remove(state);
+            DeleteDisplayState(state);
+        }
         CleanUpThumbnailCache(gFileHistory);
         win->DeleteInfotip();
         win->RedrawAll(true);

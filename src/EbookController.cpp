@@ -197,8 +197,8 @@ EbookController::EbookController(EbookControls *ctrls) : ctrls(ctrls),
     startReparseIdx(-1)
 {
     EventMgr *em = ctrls->mainWnd->evtMgr;
-    em->EventsForControl(ctrls->next)->Clicked.connect(this, &EbookController::ClickedNext);
-    em->EventsForControl(ctrls->prev)->Clicked.connect(this, &EbookController::ClickedPrev);
+    em->EventsForName("next")->Clicked.connect(this, &EbookController::ClickedNext);
+    em->EventsForName("prev")->Clicked.connect(this, &EbookController::ClickedPrev);
     em->EventsForControl(ctrls->progress)->Clicked.connect(this, &EbookController::ClickedProgress);
     em->EventsForControl(ctrls->page)->SizeChanged.connect(this, &EbookController::SizeChangedPage);
     UpdateStatus();
@@ -208,10 +208,11 @@ EbookController::~EbookController()
 {
     StopFormattingThread();
     EventMgr *evtMgr = ctrls->mainWnd->evtMgr;
-    evtMgr->RemoveEventsForControl(ctrls->next);
-    evtMgr->RemoveEventsForControl(ctrls->prev);
-    evtMgr->RemoveEventsForControl(ctrls->progress);
-    evtMgr->RemoveEventsForControl(ctrls->page);
+    // we must manually disconnect all events becuase evtMgr is
+    // destroyed after EbookController, and EbookController destructor
+    // will disconnect slots without deleting them, causing leaks
+    // TODO: this seems fragile
+    evtMgr->DisconnectEvents(this);
     CloseCurrentDocument();
 }
 
@@ -520,13 +521,13 @@ void EbookController::SizeChangedPage(Control *c, int dx, int dy)
 
 void EbookController::ClickedNext(Control *c, int x, int y)
 {
-    CrashIf(c != ctrls->next);
+    //CrashIf(c != ctrls->next);
     AdvancePage(1);
 }
 
 void EbookController::ClickedPrev(Control *c, int x, int y)
 {
-    CrashIf(c != ctrls->prev);
+    //CrashIf(c != ctrls->prev);
     AdvancePage(-1);
 }
 

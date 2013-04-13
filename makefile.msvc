@@ -79,11 +79,12 @@ CFLAGS = $(CFLAGS) /wd6211
 CFLAGS = $(CFLAGS) /D "DEBUG" /D "_DEBUG"
 !endif
 
-SUMATRA_CFLAGS = $(CFLAGS) $(EXTCFLAGS) \
-	/I$(SRCDIR) /I$(SRCDIR)/utils /I$(SRCDIR)/mui /I$(MUPDF_DIR)\fitz /I$(MUPDF_DIR)\pdf \
-	/I$(MUPDF_DIR)\xps /I$(EXTDIR)/synctex /I$(ZLIB_DIR) \
-	/I$(ZLIB_DIR)/minizip /I$(EXTDIR)/libdjvu /I$(EXTDIR)/CHMLib/src \
-	/I$(EXTDIR)/lzma/C
+UTILS_CFLAGS = $(CFLAGS) \
+	/I$(SRCDIR)/utils /I$(SRCDIR)/mui /I$(ZLIB_DIR) /I$(ZLIB_DIR)/minizip /I$(EXTDIR)/lzma/C
+
+SUMATRA_CFLAGS = $(UTILS_CFLAGS) $(EXTCFLAGS) \
+	/I$(SRCDIR) /I$(MUPDF_DIR)\fitz /I$(MUPDF_DIR)\pdf \
+	/I$(MUPDF_DIR)\xps /I$(EXTDIR)/synctex /I$(EXTDIR)/libdjvu /I$(EXTDIR)/CHMLib/src
 
 INSTALLER_CFLAGS = $(CFLAGS) $(EXTCFLAGS) \
 	/I$(SRCDIR)/utils /I$(SRCDIR)/installer /I$(SRCDIR) /I$(ZLIB_DIR) /I$(EXTDIR)/lzma/C
@@ -162,8 +163,8 @@ UTILS_OBJS = \
 	$(OU)\HtmlParserLookup.obj $(OU)\ByteOrderDecoder.obj $(OU)\CmdLineParser.obj \
 	$(OU)\UITask.obj $(OU)\StrFormat.obj $(OU)\Dict.obj $(OU)\BaseUtil.obj \
 	$(OU)\CssParser.obj $(OU)\FileWatcher.obj $(OU)\IniParser.obj \
-	$(OU)\StrSlice.obj $(OU)\TxtParser.obj $(OU)\SquareTreeParser.obj \
-	$(OU)\SerializeTxt.obj
+	$(OU)\StrSlice.obj $(OU)\TxtParser.obj $(OU)\SerializeTxt.obj \
+	$(OU)\SquareTreeParser.obj $(OU)\SettingsUtil.obj
 
 !if "$(CFG)"=="dbg"
 UTILS_OBJS = $(UTILS_OBJS) $(OU)\Experiments.obj
@@ -177,9 +178,7 @@ MUI_OBJS = \
 	$(OMUI)\MuiBase.obj $(OMUI)\Mui.obj $(OMUI)\MuiCss.obj $(OMUI)\MuiLayout.obj \
 	$(OMUI)\MuiPainter.obj $(OMUI)\MuiControl.obj $(OMUI)\MuiButton.obj \
 	$(OMUI)\MuiScrollBar.obj $(OMUI)\MuiEventMgr.obj $(OMUI)\MuiHwndWrapper.obj \
-	$(OMUI)\MuiGrid.obj $(OMUI)\SvgPath.obj $(OMUI)\MuiButtonVectorDef.obj \
-	$(OMUI)\MuiButtonDef.obj $(OMUI)\MuiScrollBarDef.obj \
-	$(OMUI)\MuiFromText.obj
+	$(OMUI)\MuiGrid.obj $(OMUI)\SvgPath.obj $(OMUI)\MuiDefs.obj $(OMUI)\MuiFromText.obj
 
 EBOOK_OBJS = \
 	$(OS)\Doc.obj $(OS)\EbookDoc.obj $(OS)\MobiDoc.obj $(OU)\PalmDbReader.obj \
@@ -344,10 +343,10 @@ $(ENGINEDUMP_APP): $(ENGINEDUMP_OBJS)
 	$(LD) $(LDFLAGS) $** $(LIBS) /PDB:$*.pdb /OUT:$@ /SUBSYSTEM:CONSOLE
 
 {$(SRCDIR)\utils}.cpp{$(OU)}.obj::
-	$(CC) $(SUMATRA_CFLAGS) /Fo$(OU)\ /Fd$(O)\vc80.pdb $<
+	$(CC) $(UTILS_CFLAGS) /Fo$(OU)\ /Fd$(O)\vc80.pdb $<
 
 {$(SRCDIR)\mui}.cpp{$(OMUI)}.obj::
-	$(CC) $(SUMATRA_CFLAGS) /Fo$(OMUI)\ /Fd$(O)\vc80.pdb $<
+	$(CC) $(UTILS_CFLAGS) /Fo$(OMUI)\ /Fd$(O)\vc80.pdb $<
 
 {$(SRCDIR)}.cpp{$(OS)}.obj::
 	$(CC) $(SUMATRA_CFLAGS) /Fo$(OS)\ /Fd$(O)\vc80.pdb $<

@@ -84,7 +84,7 @@ static void RelayoutTocItem(LPNMTVCUSTOMDRAW ntvcd)
     // Clear the label
     RECT rcFullWidth = rcItem;
     rcFullWidth.right = ncd->rc.right;
-    HBRUSH hBrushTocBg = CreateSolidBrush(gGlobalPrefs.tocBgColor);
+    HBRUSH hBrushTocBg = CreateSolidBrush(gGlobalPrefs->tocBgColor);
     FillRect(ncd->hdc, &rcFullWidth, hBrushTocBg);
     DeleteObject(hBrushTocBg);
 
@@ -209,9 +209,9 @@ void ToggleTocBox(WindowInfo *win)
     if (!win->IsDocLoaded())
         return;
     if (win->tocVisible) {
-        SetSidebarVisibility(win, false, gGlobalPrefs.favVisible);
+        SetSidebarVisibility(win, false, gGlobalPrefs->showFavorites);
     } else {
-        SetSidebarVisibility(win, true,  gGlobalPrefs.favVisible);
+        SetSidebarVisibility(win, true,  gGlobalPrefs->showFavorites);
         SetFocus(win->sideBar()->hwndTocTree);
     }
 }
@@ -444,7 +444,7 @@ static LRESULT CALLBACK WndProcTocTree(HWND hwnd, UINT message, WPARAM wParam, L
         case WM_ERASEBKGND:
             return FALSE;
         case WM_CHAR:
-            if (VK_ESCAPE == wParam && gGlobalPrefs.escToExit)
+            if (VK_ESCAPE == wParam && gGlobalPrefs->escToExit)
                 DestroyWindow(win->hwndFrame);
             break;
         case WM_KEYDOWN:
@@ -515,7 +515,7 @@ void CreateToc(SidebarInfo *sideBar, HWND hwndParent)
         WS_CLIPCHILDREN,
         L"SUMATRA_PDF_TOCBOX", L"",
         WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE,
-        0, 0, gGlobalPrefs.sidebarDx, 0,
+        0, 0, gGlobalPrefs->sidebarDx, 0,
         hwndParent, (HMENU)0,
         ghinst, NULL);
     if (!sideBar->hwndTocBox)
@@ -530,7 +530,7 @@ void CreateToc(SidebarInfo *sideBar, HWND hwndParent)
     STATIC_ASSERT(IDC_TOC_BOX + 0 == IDC_TOC_BOX &&
         IDC_TOC_BOX + 3 == IDC_TOC_TREE, consecutive_toc_ids);
 
-    TreeView_SetBkColor(sideBar->hwndTocTree, gGlobalPrefs.tocBgColor);
+    TreeView_SetBkColor(sideBar->hwndTocTree, gGlobalPrefs->tocBgColor);
     TreeView_SetUnicodeFormat(sideBar->hwndTocTree, true);
 
     if (NULL == DefWndProcTocTree)

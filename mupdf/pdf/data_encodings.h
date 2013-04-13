@@ -2,6 +2,8 @@
 
 const unsigned short pdf_doc_encoding[256] =
 {
+	/* 0x0 to 0x17 except \t, \n and \r are really undefined */
+	/* SumatraPDF: continue mapping undefined characters to a space */
 	0x0, ' ', ' ', ' ', ' ', ' ', ' ', ' ',
 	' ', 0x9, 0xA, ' ', ' ', 0xD, ' ', ' ',
 	' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',

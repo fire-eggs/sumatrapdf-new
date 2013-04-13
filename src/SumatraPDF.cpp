@@ -33,7 +33,7 @@ using namespace Gdiplus;
 #include "Print.h"
 #include "PsEngine.h"
 #include "RenderCache.h"
-#include "Resource.h"
+#include "resource.h"
 #include "Search.h"
 #include "Selection.h"
 #include "Sidebar.h"
@@ -151,7 +151,7 @@ Vec<TopWindowInfo*>          gWIN; // Record all top windows. (Ebook windows are
 Vec<WindowInfo*>             gWindows;
 Vec<EbookWindow*>            gEbookWindows;
 FileHistory                  gFileHistory;
-Favorites *                  gFavorites;
+Favorites                    gFavorites;
 
 static HCURSOR                      gCursorDrag;
 static HCURSOR                      gCursorScroll;
@@ -209,7 +209,8 @@ bool HasPermission(int permission)
 static void SetCurrentLang(const char *langCode)
 {
     if (langCode) {
-        gGlobalPrefs.currLangCode = langCode;
+        if (langCode != gGlobalPrefs->uiLanguage)
+            str::ReplacePtr(&gGlobalPrefs->uiLanguage, langCode);
         trans::SetCurrentLangByCode(langCode);
     }
 }
@@ -529,8 +530,8 @@ WCHAR *HwndPasswordUI::GetPassword(const WCHAR *fileName, unsigned char *fileDig
     DisplayState *fileFromHistory = gFileHistory.Find(fileName);
     if (fileFromHistory && fileFromHistory->decryptionKey) {
         ScopedMem<char> fingerprint(str::MemToHex(fileDigest, 16));
-        *saveKey = str::StartsWith(fileFromHistory->decryptionKey.Get(), fingerprint.Get());
-        if (*saveKey && str::HexToMem(fileFromHistory->decryptionKey.Get() + 32, decryptionKeyOut, 32))
+        *saveKey = str::StartsWith(fileFromHistory->decryptionKey, fingerprint.Get());
+        if (*saveKey && str::HexToMem(fileFromHistory->decryptionKey + 32, decryptionKeyOut, 32))
             return NULL;
     }
 
@@ -553,7 +554,7 @@ WCHAR *HwndPasswordUI::GetPassword(const WCHAR *fileName, unsigned char *fileDig
     // closed by now
     if (!IsWindow(hwnd))
         hwnd = GetForegroundWindow();
-    bool *rememberPwd =  gGlobalPrefs.rememberOpenedFiles ? saveKey : NULL;
+    bool *rememberPwd =  gGlobalPrefs->rememberOpenedFiles ? saveKey : NULL;
     return Dialog_GetPassword(hwnd, fileName, rememberPwd);
 }
 
@@ -562,22 +563,22 @@ WCHAR *HwndPasswordUI::GetPassword(const WCHAR *fileName, unsigned char *fileDig
 static void RememberDefaultWindowPosition(WindowInfo& win)
 {
     if (win.presentation)
-        gGlobalPrefs.windowState = win.windowStateBeforePresentation;
+        gGlobalPrefs->windowState = win.windowStateBeforePresentation;
     else if (win.fullScreen)
-        gGlobalPrefs.windowState = WIN_STATE_FULLSCREEN;
+        gGlobalPrefs->windowState = WIN_STATE_FULLSCREEN;
     else if (IsZoomed(win.hwndFrame))
-        gGlobalPrefs.windowState = WIN_STATE_MAXIMIZED;
+        gGlobalPrefs->windowState = WIN_STATE_MAXIMIZED;
     else if (!IsIconic(win.hwndFrame))
-        gGlobalPrefs.windowState = WIN_STATE_NORMAL;
+        gGlobalPrefs->windowState = WIN_STATE_NORMAL;
 
-    gGlobalPrefs.sidebarDx = WindowRect(win.sideBar()->hwndTocBox).dx;
+    gGlobalPrefs->sidebarDx = WindowRect(win.sideBar()->hwndTocBox).dx;
 
     /* don't update the window's dimensions if it is maximized, mimimized or fullscreened */
-    if (WIN_STATE_NORMAL == gGlobalPrefs.windowState &&
+    if (WIN_STATE_NORMAL == gGlobalPrefs->windowState &&
         !IsIconic(win.hwndFrame) && !win.presentation) {
         // TODO: Use Get/SetWindowPlacement (otherwise we'd have to separately track
         //       the non-maximized dimensions for proper restoration)
-        gGlobalPrefs.windowPos = WindowRect(win.hwndFrame);
+        gGlobalPrefs->windowPos = WindowRect(win.hwndFrame);
     }
 }
 
@@ -586,17 +587,17 @@ static void RememberDefaultWindowPosition(WindowInfo& win)
 static void RememberDefaultWindowPosition(EbookWindow *win)
 {
     if (IsZoomed(win->hwndFrame))
-        gGlobalPrefs.windowState = WIN_STATE_MAXIMIZED;
+        gGlobalPrefs->windowState = WIN_STATE_MAXIMIZED;
     else if (!IsIconic(win->hwndFrame))
-        gGlobalPrefs.windowState = WIN_STATE_NORMAL;
+        gGlobalPrefs->windowState = WIN_STATE_NORMAL;
 
-    // don't touch gGlobalPrefs.sidebarDx as it's only relevant to non-mobi windows
+    // don't touch gGlobalPrefs->sidebarDx as it's only relevant to non-mobi windows
 
     /* don't update the window's dimensions if it is maximized, mimimized or fullscreened */
-    if (WIN_STATE_NORMAL == gGlobalPrefs.windowState && !IsIconic(win->hwndFrame)) {
+    if (WIN_STATE_NORMAL == gGlobalPrefs->windowState && !IsIconic(win->hwndFrame)) {
         // TODO: Use Get/SetWindowPlacement (otherwise we'd have to separately track
         //       the non-maximized dimensions for proper restoration)
-        gGlobalPrefs.windowPos = WindowRect(win->hwndFrame);
+        gGlobalPrefs->windowPos = WindowRect(win->hwndFrame);
     }
 }
 
@@ -605,14 +606,14 @@ static void UpdateDisplayStateWindowRect(WindowInfo& win, DisplayState& ds, bool
     if (updateGlobal)
         RememberDefaultWindowPosition(win);
 
-    ds.windowState = gGlobalPrefs.windowState;
-    ds.windowPos   = gGlobalPrefs.windowPos;
-    ds.sidebarDx   = gGlobalPrefs.sidebarDx;
+    ds.windowState = gGlobalPrefs->windowState;
+    ds.windowPos   = gGlobalPrefs->windowPos;
+    ds.sidebarDx   = gGlobalPrefs->sidebarDx;
 }
 
 static void UpdateSidebarDisplayState(WindowInfo *win, DisplayState *ds)
 {
-    ds->tocVisible = win->tocVisible;
+    ds->showToc = win->tocVisible;
 
     if (win->tocLoaded) {
         win->tocState.Reset();
@@ -621,6 +622,7 @@ static void UpdateSidebarDisplayState(WindowInfo *win, DisplayState *ds)
             UpdateTocExpansionState(win, hRoot);
     }
 
+    delete ds->tocState;
     ds->tocState = NULL;
     if (win->tocState.Count() > 0)
         ds->tocState = new Vec<int>(win->tocState);
@@ -628,14 +630,15 @@ static void UpdateSidebarDisplayState(WindowInfo *win, DisplayState *ds)
 
 static void UpdateSidebarDisplayState(EbookWindow *win, DisplayState *ds)
 {
-    ds->tocVisible = false;
+    ds->showToc = false;
+    delete ds->tocState;
     ds->tocState = NULL;
 }
 
 static void DisplayStateFromEbookWindow(EbookWindow* win, DisplayState* ds)
 {
     if (!ds->filePath || !str::EqI(ds->filePath, win->LoadedFilePath()))
-        ds->filePath.Set(str::Dup(win->LoadedFilePath()));
+        str::ReplacePtr(&ds->filePath, win->LoadedFilePath());
 
     // don't modify any of the other DisplayState values
     // as long as they're not used, so that the same
@@ -653,9 +656,9 @@ static void UpdateCurrentFileDisplayStateForWinMobi(EbookWindow* win)
     if (!ds)
         return;
     DisplayStateFromEbookWindow(win, ds);
-    ds->useGlobalValues = gGlobalPrefs.globalPrefsOnly;
-    ds->windowState = gGlobalPrefs.windowState;
-    ds->windowPos   = gGlobalPrefs.windowPos;
+    ds->useGlobalValues = !gGlobalPrefs->rememberStatePerDocument;
+    ds->windowState = gGlobalPrefs->windowState;
+    ds->windowPos   = gGlobalPrefs->windowPos;
     UpdateSidebarDisplayState(win, ds);
 }
 
@@ -668,7 +671,7 @@ static void UpdateCurrentFileDisplayStateForWinInfo(WindowInfo* win)
     if (!ds)
         return;
     win->dm->DisplayStateFromModel(ds);
-    ds->useGlobalValues = gGlobalPrefs.globalPrefsOnly;
+    ds->useGlobalValues = !gGlobalPrefs->rememberStatePerDocument;
     UpdateDisplayStateWindowRect(*win, *ds, false);
     UpdateSidebarDisplayState(win, ds);
 }
@@ -698,7 +701,7 @@ static void UpdateWindowRtlLayout(WindowInfo *win)
         return;
 
     bool tocVisible = win->tocVisible;
-    if (tocVisible || gGlobalPrefs.favVisible)
+    if (tocVisible || gGlobalPrefs->showFavorites)
         SetSidebarVisibility(win, false, false);
 
     // cf. http://www.microsoft.com/middleeast/msdn/mirror.aspx
@@ -725,11 +728,11 @@ static void UpdateWindowRtlLayout(WindowInfo *win)
 
     // ensure that the ToC sidebar is on the correct side and that its
     // title and close button are also correctly laid out
-    if (tocVisible || gGlobalPrefs.favVisible) {
-        SetSidebarVisibility(win, tocVisible, gGlobalPrefs.favVisible);
+    if (tocVisible || gGlobalPrefs->showFavorites) {
+        SetSidebarVisibility(win, tocVisible, gGlobalPrefs->showFavorites);
         if (tocVisible)
             SendMessage(win->sideBar()->hwndTocBox, WM_SIZE, 0, 0);
-        if (gGlobalPrefs.favVisible)
+        if (gGlobalPrefs->showFavorites)
             SendMessage(win->sideBar()->hwndFavBox, WM_SIZE, 0, 0);
     }
 }
@@ -1016,35 +1019,35 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
     ScopedMem<WCHAR> title;
     WindowInfo *win = args.win;
 
-    float zoomVirtual = gGlobalPrefs.defaultZoom;
+    float zoomVirtual = gGlobalPrefs->defaultZoomFloat;
     int rotation = 0;
 
     // TODO: remove time logging before release
     Timer t(true);
     // Never load settings from a preexisting state if the user doesn't wish to
     // (unless we're just refreshing the document, i.e. only if placeWindow == true)
-    if (placeWindow && (gGlobalPrefs.globalPrefsOnly || state && state->useGlobalValues)) {
+    if (placeWindow && (!gGlobalPrefs->rememberStatePerDocument || state && state->useGlobalValues)) {
         state = NULL;
     } else if (NULL == state) {
         state = gFileHistory.Find(args.fileName);
         if (state) {
             if (state->windowPos.IsEmpty())
-                state->windowPos = gGlobalPrefs.windowPos;
+                state->windowPos = gGlobalPrefs->windowPos;
             EnsureAreaVisibility(state->windowPos);
         }
     }
-    DisplayMode displayMode = gGlobalPrefs.defaultDisplayMode;
+    DisplayMode displayMode = gGlobalPrefs->defaultDisplayModeEnum;
     int startPage = 1;
     ScrollState ss(1, -1, -1);
-    bool showAsFullScreen = WIN_STATE_FULLSCREEN == gGlobalPrefs.windowState;
+    bool showAsFullScreen = WIN_STATE_FULLSCREEN == gGlobalPrefs->windowState;
     int showType = SW_NORMAL;
-    if (gGlobalPrefs.windowState == WIN_STATE_MAXIMIZED || showAsFullScreen)
+    if (gGlobalPrefs->windowState == WIN_STATE_MAXIMIZED || showAsFullScreen)
         showType = SW_MAXIMIZE;
 
-    bool tocVisible = gGlobalPrefs.tocVisible;
+    bool showToc = gGlobalPrefs->showToc;
     if (state) {
         startPage = state->pageNo;
-        displayMode = state->displayMode;
+        displayMode = state->displayModeEnum;
         showAsFullScreen = WIN_STATE_FULLSCREEN == state->windowState;
         if (state->windowState == WIN_STATE_NORMAL)
             showType = SW_NORMAL;
@@ -1052,7 +1055,7 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
             showType = SW_MAXIMIZE;
         else if (state->windowState == WIN_STATE_MINIMIZED)
             showType = SW_MINIMIZE;
-        tocVisible = state->tocVisible;
+        showToc = state->showToc;
     }
 
     DisplayModel *prevModel = win->dm;
@@ -1062,7 +1065,7 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
 
     str::ReplacePtr(&win->loadedFilePath, args.fileName);
     DocType engineType;
-    BaseEngine *engine = EngineManager::CreateEngine(args.fileName, pwdUI, &engineType, !gUserPrefs.traditionalEbookUI);
+    BaseEngine *engine = EngineManager::CreateEngine(args.fileName, pwdUI, &engineType, !gGlobalPrefs->ebookUI.useFixedPageUI);
 
     if (engine && Engine_Chm == engineType) {
         // make sure that MSHTML can't be used as a potential exploit
@@ -1111,7 +1114,7 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
     if (win->dm) {
         win->dm->SetInitialViewSettings(displayMode, startPage, win->GetViewPortSize(), win->panel->WIN->dpi);
         if (engineType == Engine_ComicBook)
-            win->dm->SetDisplayR2L(gGlobalPrefs.cbxR2L);
+            win->dm->SetDisplayR2L(gGlobalPrefs->cbxR2L);
         if (prevModel && str::Eq(win->dm->FilePath(), prevModel->FilePath())) {
             gRenderCache.KeepForDisplayModel(prevModel, win->dm);
             win->dm->CopyNavHistory(*prevModel);
@@ -1151,7 +1154,7 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
     if (state) {
         if (win->dm->ValidPageNo(startPage)) {
             ss.page = startPage;
-            if (ZOOM_FIT_CONTENT != state->zoomVirtual) {
+            if (ZOOM_FIT_CONTENT != state->zoomFloat) {
                 ss.x = state->scrollPos.x;
                 ss.y = state->scrollPos.y;
             }
@@ -1159,7 +1162,7 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
         } else if (startPage > win->dm->PageCount()) {
             ss.page = win->dm->PageCount();
         }
-        zoomVirtual = state->zoomVirtual;
+        zoomVirtual = state->zoomFloat;
         rotation = state->rotation;
 
         win->tocState.Reset();
@@ -1212,7 +1215,7 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
             static_cast<PdfEngine *>(win->dm->engine), &win->pdfsync);
         // expose SyncTeX in the UI
         if (PDFSYNCERR_SUCCESS == res)
-            gGlobalPrefs.enableTeXEnhancements = true;
+            gGlobalPrefs->enableTeXEnhancements = true;
     }
 
 Error:
@@ -1248,7 +1251,7 @@ Error:
             win->dm->Relayout(zoomVirtual, rotation);
     }
 
-    SetSidebarVisibility(win, tocVisible, gGlobalPrefs.favVisible);
+    SetSidebarVisibility(win, showToc, gGlobalPrefs->showFavorites);
     win->RedrawAll(true);
 
     UpdateToolbarAndScrollbarState(*win);
@@ -1270,8 +1273,6 @@ Error:
 
 void ReloadDocument(WindowInfo *win, bool autorefresh)
 {
-    DisplayState ds;
-    ds.useGlobalValues = gGlobalPrefs.globalPrefsOnly;
     if (!win->IsDocLoaded()) {
         if (!autorefresh && win->loadedFilePath) {
             LoadArgs args(win->loadedFilePath, win);
@@ -1279,11 +1280,13 @@ void ReloadDocument(WindowInfo *win, bool autorefresh)
         }
         return;
     }
-    win->dm->DisplayStateFromModel(&ds);
-    UpdateDisplayStateWindowRect(*win, ds);
-    UpdateSidebarDisplayState(win, &ds);
+    DisplayState *ds = NewDisplayState(win->loadedFilePath);;
+    ds->useGlobalValues = !gGlobalPrefs->rememberStatePerDocument;
+    win->dm->DisplayStateFromModel(ds);
+    UpdateDisplayStateWindowRect(*win, *ds);
+    UpdateSidebarDisplayState(win, ds);
     // Set the windows state based on the actual window's placement
-    ds.windowState =  win->fullScreen ? WIN_STATE_FULLSCREEN
+    ds->windowState = win->fullScreen ? WIN_STATE_FULLSCREEN
                     : IsZoomed(win->hwndFrame) ? WIN_STATE_MAXIMIZED
                     : IsIconic(win->hwndFrame) ? WIN_STATE_MINIMIZED
                     : WIN_STATE_NORMAL ;
@@ -1300,12 +1303,14 @@ void ReloadDocument(WindowInfo *win, bool autorefresh)
     HwndPasswordUI pwdUI(win->hwndFrame);
     LoadArgs args(path, win);
     args.showWin = showWin;
-    if (!LoadDocIntoWindow(args, &pwdUI, &ds, isNewWindow, allowFailure, placeWindow))
+    if (!LoadDocIntoWindow(args, &pwdUI, ds, isNewWindow, allowFailure, placeWindow)) {
+        DeleteDisplayState(ds);
         return;
+    }
 
-    if (gGlobalPrefs.showStartPage) {
+    if (gGlobalPrefs->showStartPage) {
         // refresh the thumbnail for this file
-        DisplayState *state = gFileHistory.Find(ds.filePath);
+        DisplayState *state = gFileHistory.Find(ds->filePath);
         if (state)
             CreateThumbnailForFile(*win, *state);
     }
@@ -1314,10 +1319,14 @@ void ReloadDocument(WindowInfo *win, bool autorefresh)
     // we don't ask again at the next refresh
     ScopedMem<char> decryptionKey(win->dm->engine->GetDecryptionKey());
     if (decryptionKey) {
-        DisplayState *state = gFileHistory.Find(ds.filePath);
-        if (state && !str::Eq(state->decryptionKey, decryptionKey))
-            state->decryptionKey.Set(decryptionKey.StealData());
+        DisplayState *state = gFileHistory.Find(ds->filePath);
+        if (state && !str::Eq(state->decryptionKey, decryptionKey)) {
+            free(state->decryptionKey);
+            state->decryptionKey = decryptionKey.StealData();
+        }
     }
+
+    DeleteDisplayState(ds);
 }
 
 static void UpdateToolbarAndScrollbarState(WindowInfo& win)
@@ -1332,7 +1341,7 @@ static void UpdateToolbarAndScrollbarState(WindowInfo& win)
 
 static void CreateSidebar(WinInfo& winInfo, bool sidebarForEachPanel=false)
 {
-    if (winInfo.AsPanel() && !sidebarForEachPanel && (sidebarForEachPanel == gGlobalPrefs.sidebarForEachPanel))
+    if (winInfo.AsPanel() && !sidebarForEachPanel && (sidebarForEachPanel == gGlobalPrefs->sidebarForEachPanel))
         return;
 
     CreateSidebarBox(winInfo);
@@ -1352,7 +1361,7 @@ static void CreateSidebar(WinInfo& winInfo, bool sidebarForEachPanel=false)
 
 static WindowInfo* CreateWindowInfo()
 {
-    RectI windowPos = gGlobalPrefs.windowPos;
+    RectI windowPos = gGlobalPrefs->windowPos;
     if (!windowPos.IsEmpty())
         EnsureAreaVisibility(windowPos);
     else
@@ -1454,11 +1463,11 @@ static WindowInfo* CreateWindowInfo()
         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
         win->hwndCanvas, NULL, ghinst, NULL);
 
-    // One needs to use gGlobalPrefs.ToolbarForEachPanel to determine WIN or panel.
+    // One needs to use gGlobalPrefs->toolbarForEachPanel to determine WIN or panel.
     // Here, it always creates a toolbar, either for WIN or for panel.
-    WinInfo winInfo = WinInfo::Make(gGlobalPrefs.toolbarForEachPanel, WIN, panel);
+    WinInfo winInfo = WinInfo::Make(gGlobalPrefs->toolbarForEachPanel, WIN, panel);
     CreateToolbar(winInfo);
-    winInfo = WinInfo::Make(gGlobalPrefs.sidebarForEachPanel, WIN, panel);
+    winInfo = WinInfo::Make(gGlobalPrefs->sidebarForEachPanel, WIN, panel);
     CreateSidebar(winInfo);
 
     CreateTabControl(panel);
@@ -1601,10 +1610,10 @@ static WindowInfo* CreatePanel(ContainerInfo *container)
         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
         win->hwndCanvas, NULL, ghinst, NULL);
     
-    // Here it doesn't create any toolbar if gGlobalPrefs.toolbarForEachPanel is false.
+    // Here it doesn't create any toolbar if gGlobalPrefs->toolbarForEachPanel is false.
     WinInfo winInfo = WinInfo::Make(panel);
-    CreateToolbar(winInfo, gGlobalPrefs.toolbarForEachPanel);
-    CreateSidebar(winInfo, gGlobalPrefs.sidebarForEachPanel);
+    CreateToolbar(winInfo, gGlobalPrefs->toolbarForEachPanel);
+    CreateSidebar(winInfo, gGlobalPrefs->sidebarForEachPanel);
 
     CreateTabControl(panel);
  
@@ -1664,7 +1673,7 @@ static WindowInfo* CreateCanvas(PanelInfo *panel)
     ShowWindow(win->hwndCanvas, SW_SHOW);
     // UpdateWindow(win->hwndCanvas);
 
-    if (gGlobalPrefs.sidebarForEachPanel) {
+    if (gGlobalPrefs->sidebarForEachPanel) {
         ShowWindow(win->sideBar()->hwndSidebar, SW_HIDE);
         ShowWindow(win->sideBar()->hwndSidebarSplitter, SW_HIDE);
     }
@@ -1699,13 +1708,13 @@ static WindowInfo* CreateCanvas(PanelInfo *panel)
 
 WindowInfo *CreateAndShowWindowInfo()
 {
-    bool enterFullscreen = (WIN_STATE_FULLSCREEN == gGlobalPrefs.windowState);
+    bool enterFullscreen = (WIN_STATE_FULLSCREEN == gGlobalPrefs->windowState);
     WindowInfo *win = CreateWindowInfo();
     if (!win)
         return NULL;
 
-    if (WIN_STATE_FULLSCREEN == gGlobalPrefs.windowState ||
-        WIN_STATE_MAXIMIZED == gGlobalPrefs.windowState)
+    if (WIN_STATE_FULLSCREEN == gGlobalPrefs->windowState ||
+        WIN_STATE_MAXIMIZED == gGlobalPrefs->windowState)
         ShowWindow(win->hwndFrame, SW_MAXIMIZE);
     else
         ShowWindow(win->hwndFrame, SW_SHOW);
@@ -1743,7 +1752,7 @@ static void DeleteWindowInfo(WindowInfo *win)
 
 static void DeletePanelInfo(PanelInfo *panel)
 {
-    if (gGlobalPrefs.toolbarForEachPanel)
+    if (gGlobalPrefs->toolbarForEachPanel)
         ImageList_Destroy((HIMAGELIST)SendMessage(panel->toolBar->hwndToolbar, TB_GETIMAGELIST, 0, 0));    
 
     size_t CountWinInPanel = panel->gWin.Count();
@@ -1761,7 +1770,7 @@ static void DeleteTopWindowInfo(TopWindowInfo *WIN)
 {
     gWIN.Remove(WIN);
 
-    if (!gGlobalPrefs.toolbarForEachPanel)
+    if (!gGlobalPrefs->toolbarForEachPanel)
         ImageList_Destroy((HIMAGELIST)SendMessage(WIN->toolBar->hwndToolbar, TB_GETIMAGELIST, 0, 0));   
 
     size_t CountPanelInWIN = WIN->gPanel.Count();
@@ -1805,27 +1814,21 @@ static void RenameFileInHistory(const WCHAR *oldPath, const WCHAR *newPath)
         oldIsPinned = ds->isPinned;
         oldOpenCount = ds->openCount;
         gFileHistory.Remove(ds);
-        delete ds;
+        // TODO: merge favorites as well?
+        if (ds->favorites->Count() > 0)
+            UpdateFavoritesTreeForAllWindows();
+        DeleteDisplayState(ds);
     }
     ds = gFileHistory.Find(oldPath);
     if (ds) {
-        ds->filePath.Set(str::Dup(newPath));
+        str::ReplacePtr(&ds->filePath, newPath);
         // merge Frequently Read data, so that a file
         // doesn't accidentally vanish from there
         ds->isPinned = ds->isPinned || oldIsPinned;
         ds->openCount += oldOpenCount;
         // the thumbnail is recreated by LoadDocument
+        delete ds->thumbnail;
         ds->thumbnail = NULL;
-    }
-
-    FileFavs *oldFav = gFavorites->GetFavByFilePath(oldPath);
-    if (oldFav) {
-        // move all favorites of the old file over the the new one
-        for (size_t i = 0; i < oldFav->favNames.Count(); i++) {
-            FavName *fn = oldFav->favNames.At(i);
-            gFavorites->AddOrReplace(newPath, fn->pageNo, fn->name);
-        }
-        gFavorites->RemoveAllForFile(oldPath);
     }
 }
 
@@ -1920,7 +1923,7 @@ static WindowInfo* LoadDocumentOld(LoadArgs& args)
         return NULL;
     }
 
-    if (!gUserPrefs.traditionalEbookUI && IsEbookFile(fullPath)) {
+    if (!gGlobalPrefs->ebookUI.useFixedPageUI && IsEbookFile(fullPath)) {
         if (!win) {
             if ((1 == gWindows.Count()) && gWindows.At(0)->IsAboutWindow())
                 win = gWindows.At(0);
@@ -1992,10 +1995,10 @@ static WindowInfo* LoadDocumentOld(LoadArgs& args)
         return win;
     }
 
-    if (gGlobalPrefs.rememberOpenedFiles) {
+    if (gGlobalPrefs->rememberOpenedFiles) {
         CrashIf(!str::Eq(fullPath, win->loadedFilePath));
         DisplayState *ds = gFileHistory.MarkFileLoaded(fullPath);
-        if (gGlobalPrefs.showStartPage)
+        if (gGlobalPrefs->showStartPage)
             CreateThumbnailForFile(*win, *ds);
         SavePrefs();
     }
@@ -2144,8 +2147,8 @@ void AssociateExeWithPdfExtension()
     SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST | SHCNF_FLUSHNOWAIT, 0, 0);
 
     // Remind the user, when a different application takes over
-    gGlobalPrefs.pdfAssociateShouldAssociate = true;
-    gGlobalPrefs.pdfAssociateDontAskAgain = false;
+    gGlobalPrefs->pdfAssociateShouldAssociate = true;
+    gGlobalPrefs->pdfAssociateDontAskAgain = false;
 }
 
 // Registering happens either through the Installer or the Options dialog;
@@ -2160,12 +2163,12 @@ static bool RegisterForPdfExtentions(HWND hwnd)
 
     /* Ask user for permission, unless he previously said he doesn't want to
        see this dialog */
-    if (!gGlobalPrefs.pdfAssociateDontAskAgain) {
-        INT_PTR result = Dialog_PdfAssociate(hwnd, &gGlobalPrefs.pdfAssociateDontAskAgain);
+    if (!gGlobalPrefs->pdfAssociateDontAskAgain) {
+        INT_PTR result = Dialog_PdfAssociate(hwnd, &gGlobalPrefs->pdfAssociateDontAskAgain);
         assert(IDYES == result || IDNO == result);
-        gGlobalPrefs.pdfAssociateShouldAssociate = (IDYES == result);
+        gGlobalPrefs->pdfAssociateShouldAssociate = (IDYES == result);
     }
-    if (!gGlobalPrefs.pdfAssociateShouldAssociate)
+    if (!gGlobalPrefs->pdfAssociateShouldAssociate)
         return false;
 
     AssociateExeWithPdfExtension();
@@ -2227,8 +2230,8 @@ static DWORD ShowAutoUpdateDialog(HWND hParent, HttpReq *ctx, bool silent)
         return 0;
     }
 
-    // if automated, respect gGlobalPrefs.versionToSkip
-    if (silent && str::EqI(gGlobalPrefs.versionToSkip, verTxt))
+    // if automated, respect gGlobalPrefs->versionToSkip
+    if (silent && str::EqI(gGlobalPrefs->versionToSkip, verTxt))
         return 0;
 
     // ask whether to download the new version and allow the user to
@@ -2236,8 +2239,10 @@ static DWORD ShowAutoUpdateDialog(HWND hParent, HttpReq *ctx, bool silent)
     // this update ever again
     bool skipThisVersion = false;
     INT_PTR res = Dialog_NewVersionAvailable(hParent, UPDATE_CHECK_VER, verTxt, &skipThisVersion);
-    if (skipThisVersion)
-        gGlobalPrefs.versionToSkip.Set(verTxt.StealData());
+    if (skipThisVersion) {
+        free(gGlobalPrefs->versionToSkip);
+        gGlobalPrefs->versionToSkip = verTxt.StealData();
+    }
     if (IDYES == res) {
 #ifdef SUPPORTS_AUTO_UPDATE
         if (str::EndsWith(SVN_UPDATE_LINK, L".exe")) {
@@ -2352,17 +2357,17 @@ void AutoUpdateCheckAsync(HWND hwnd, bool autoCheck)
 
     // don't check for updates at the first start, so that privacy
     // sensitive users can disable the update check in time
-    if (autoCheck && 0 == gGlobalPrefs.lastUpdateTime.dwLowDateTime &&
-                     0 == gGlobalPrefs.lastUpdateTime.dwHighDateTime) {
+    if (autoCheck && 0 == gGlobalPrefs->timeOfLastUpdateCheck.dwLowDateTime &&
+                     0 == gGlobalPrefs->timeOfLastUpdateCheck.dwHighDateTime) {
         return;
     }
 
     /* For auto-check, only check if at least a day passed since last check */
-    if (autoCheck && (gGlobalPrefs.lastUpdateTime.dwLowDateTime != 0 ||
-                      gGlobalPrefs.lastUpdateTime.dwHighDateTime != 0)) {
+    if (autoCheck && (gGlobalPrefs->timeOfLastUpdateCheck.dwLowDateTime != 0 ||
+                      gGlobalPrefs->timeOfLastUpdateCheck.dwHighDateTime != 0)) {
         FILETIME currentTimeFt;
         GetSystemTimeAsFileTime(&currentTimeFt);
-        int secs = FileTimeDiffInSecs(currentTimeFt, gGlobalPrefs.lastUpdateTime);
+        int secs = FileTimeDiffInSecs(currentTimeFt, gGlobalPrefs->timeOfLastUpdateCheck);
         assert(secs >= 0);
         // if secs < 0 => somethings wrong, so ignore that case
         if ((secs > 0) && (secs < SECS_IN_DAY))
@@ -2372,7 +2377,7 @@ void AutoUpdateCheckAsync(HWND hwnd, bool autoCheck)
     const WCHAR *url = SUMATRA_UPDATE_INFO_URL L"?v=" UPDATE_CHECK_VER;
     new HttpReq(url, new UpdateDownloadTask(hwnd, autoCheck));
 
-    GetSystemTimeAsFileTime(&gGlobalPrefs.lastUpdateTime);
+    GetSystemTimeAsFileTime(&gGlobalPrefs->timeOfLastUpdateCheck);
 }
 
 class FileExistenceChecker : public ThreadBase, public UITask
@@ -2542,10 +2547,25 @@ static void DrawDocument(WindowInfo& win, HDC hdc, RECT *rcArea)
         ScopedGdiObj<HBRUSH> brush(CreateSolidBrush(gRenderCache.colorRange[0]));
         FillRect(hdc, rcArea, brush);
     }
-    else if (!gUserPrefs.enabled) {
+    else if (0 == gGlobalPrefs->fixedPageUI.gradientColors->Count()) {
         FillRect(hdc, rcArea, gBrushNoDocBg);
     }
     else {
+        COLORREF colors[3];
+        colors[0] = gGlobalPrefs->fixedPageUI.gradientColors->At(0);
+        if (gGlobalPrefs->fixedPageUI.gradientColors->Count() == 1) {
+            colors[1] = colors[2] = colors[0];
+        }
+        else if (gGlobalPrefs->fixedPageUI.gradientColors->Count() == 2) {
+            colors[2] = gGlobalPrefs->fixedPageUI.gradientColors->At(1);
+            colors[1] = RGB((GetRValue(colors[0]) + GetRValue(colors[2])) / 2,
+                            (GetGValue(colors[0]) + GetGValue(colors[2])) / 2,
+                            (GetBValue(colors[0]) + GetBValue(colors[2])) / 2);
+        }
+        else {
+            colors[1] = gGlobalPrefs->fixedPageUI.gradientColors->At(1);
+            colors[2] = gGlobalPrefs->fixedPageUI.gradientColors->At(2);
+        }
         SizeI size = win.dm->GetCanvasSize();
         float percTop = 1.0f * win.dm->viewPort.y / size.dy;
         float percBot = 1.0f * win.dm->viewPort.BR().y / size.dy;
@@ -2557,17 +2577,17 @@ static void DrawDocument(WindowInfo& win, HDC hdc, RECT *rcArea)
         TRIVERTEX tv[4] = { { 0, 0 }, { vp.dx, vp.dy / 2 }, { 0, vp.dy / 2 }, { vp.dx, vp.dy } };
         GRADIENT_RECT gr[2] = { { 0, 1 }, { 2, 3 } };
         if (percTop < 0.5f)
-            GetGradientColor(gUserPrefs.colorTop, gUserPrefs.colorMiddle, 2 * percTop, &tv[0]);
+            GetGradientColor(colors[0], colors[1], 2 * percTop, &tv[0]);
         else
-            GetGradientColor(gUserPrefs.colorMiddle, gUserPrefs.colorBottom, 2 * (percTop - 0.5f), &tv[0]);
+            GetGradientColor(colors[1], colors[2], 2 * (percTop - 0.5f), &tv[0]);
         if (percBot < 0.5f)
-            GetGradientColor(gUserPrefs.colorTop, gUserPrefs.colorMiddle, 2 * percBot, &tv[3]);
+            GetGradientColor(colors[0], colors[1], 2 * percBot, &tv[3]);
         else
-            GetGradientColor(gUserPrefs.colorMiddle, gUserPrefs.colorBottom, 2 * (percBot - 0.5f), &tv[3]);
+            GetGradientColor(colors[1], colors[2], 2 * (percBot - 0.5f), &tv[3]);
         bool needCenter = percTop < 0.5f && percBot > 0.5f;
         if (needCenter) {
-            GetGradientColor(gUserPrefs.colorMiddle, gUserPrefs.colorMiddle, 0, &tv[1]);
-            GetGradientColor(gUserPrefs.colorMiddle, gUserPrefs.colorMiddle, 0, &tv[2]);
+            GetGradientColor(colors[1], colors[1], 0, &tv[1]);
+            GetGradientColor(colors[1], colors[1], 0, &tv[2]);
             tv[1].y = tv[2].y = (LONG)((0.5f - percTop) / (percBot - percTop) * vp.dy);
         }
         else
@@ -2660,7 +2680,7 @@ void UpdateDocumentColors(COLORREF fore, COLORREF back)
 {
     //COLORREF fore = WIN_COL_BLACK;
     //COLORREF back = WIN_COL_WHITE;
-    if (gGlobalPrefs.useSysColors) {
+    if (gGlobalPrefs->useSysColors) {
         fore = GetSysColor(COLOR_WINDOWTEXT);
         back = GetSysColor(COLOR_WINDOW);
     }
@@ -2675,17 +2695,17 @@ void UpdateDocumentColors(COLORREF fore, COLORREF back)
     }
     // update document background
     DeleteObject(gBrushNoDocBg);
-    if (gGlobalPrefs.useSysColors && (fore != WIN_COL_BLACK || back != WIN_COL_WHITE))
+    if (gGlobalPrefs->useSysColors && (fore != WIN_COL_BLACK || back != WIN_COL_WHITE))
         gBrushNoDocBg = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
     else
-        gBrushNoDocBg = CreateSolidBrush(gGlobalPrefs.noDocBgColor);
+        gBrushNoDocBg = CreateSolidBrush(gGlobalPrefs->noDocBgColor);
 
     DeleteObject(gBrushLogoBg);
-    gBrushLogoBg = CreateSolidBrush(gGlobalPrefs.bgColor);
+    gBrushLogoBg = CreateSolidBrush(gGlobalPrefs->mainWindowBackground);
 
 #ifndef ABOUT_USE_LESS_COLORS
     DeleteObject(gBrushAboutBg);
-    gBrushAboutBg = CreateSolidBrush(gGlobalPrefs.bgColor);
+    gBrushAboutBg = CreateSolidBrush(gGlobalPrefs->mainWindowBackground);
 #else
     DeleteObject(gBrushAboutBg);
     gBrushAboutBg = CreateSolidBrush(ABOUT_BG_GRAY_COLOR);
@@ -2849,10 +2869,10 @@ static void OnMouseLeftButtonUp(WindowInfo& win, int x, int y, WPARAM key)
             if (str::Eq(url, SLINK_OPEN_FILE))
                 SendMessage(win.hwndFrame, WM_COMMAND, IDM_OPEN, 0);
             else if (str::Eq(url, SLINK_LIST_HIDE)) {
-                gGlobalPrefs.showStartPage = false;
+                gGlobalPrefs->showStartPage = false;
                 win.RedrawAll(true);
             } else if (str::Eq(url, SLINK_LIST_SHOW)) {
-                gGlobalPrefs.showStartPage = true;
+                gGlobalPrefs->showStartPage = true;
                 win.RedrawAll(true);
             } else if (!str::StartsWithI(url, L"http:") &&
                        !str::StartsWithI(url, L"https:") &&
@@ -2921,7 +2941,7 @@ static void OnMouseLeftButtonDblClk(WindowInfo& win, int x, int y, WPARAM key)
     }
 
     bool dontSelect = false;
-    if (gGlobalPrefs.enableTeXEnhancements && !(key & ~MK_LBUTTON))
+    if (gGlobalPrefs->enableTeXEnhancements && !(key & ~MK_LBUTTON))
         dontSelect = OnInverseSearch(&win, x, y);
     if (dontSelect || !win.IsDocLoaded())
         return;
@@ -3052,7 +3072,7 @@ static void OnPaint(WindowInfo& win)
     HDC hdc = BeginPaint(win.hwndCanvas, &ps);
 
     if (win.IsAboutWindow()) {
-        if (HasPermission(Perm_SavePreferences | Perm_DiskAccess) && gGlobalPrefs.rememberOpenedFiles && gGlobalPrefs.showStartPage)
+        if (HasPermission(Perm_SavePreferences | Perm_DiskAccess) && gGlobalPrefs->rememberOpenedFiles && gGlobalPrefs->showStartPage)
             DrawStartPage(win, win.buffer->GetDC(), gFileHistory, gRenderCache.colorRange);
         else
             DrawAboutPage(win, win.buffer->GetDC());
@@ -3163,7 +3183,7 @@ void CloseDocumentInWindow(WindowInfo *win)
         // Another may be: don't update hwndCanvas in SetSidebarVisibility.
         // This is similar to the fixed issue in rev. 164.
         ShowWindow(win->hwndCanvas, SW_HIDE);
-        SetSidebarVisibility(win, false, gGlobalPrefs.favVisible);
+        SetSidebarVisibility(win, false, gGlobalPrefs->showFavorites);
         ShowWindow(win->hwndCanvas, SW_SHOW); // We need to show it again, since it doesn't set hwndCanvas to be shown in the call to SetSidebarVisibility.
 
         ClearTocBox(win); // When load a doc, it will clear toc also. But we still to make sure everything is cleaned.
@@ -3730,8 +3750,8 @@ void OnMenuOpen(const SumatraWindow& win)
         { _TR("EPUB ebooks"),           L"*.epub",      true },
         { _TR("FictionBook documents"), L"*.fb2;*.fb2z;*.zfb2;*.fb2.zip", true },
         { NULL, /* multi-page images */ L"*.tif;*.tiff",true },
-        { NULL, /* further ebooks */    L"*.pdb;*.tcr", gUserPrefs.traditionalEbookUI },
-        { _TR("Text documents"),        L"*.txt;*.log;*.nfo;file_id.diz;read.me", gUserPrefs.traditionalEbookUI },
+        { NULL, /* further ebooks */    L"*.pdb;*.tcr", gGlobalPrefs->ebookUI.useFixedPageUI },
+        { _TR("Text documents"),        L"*.txt;*.log;*.nfo;file_id.diz;read.me", gGlobalPrefs->ebookUI.useFixedPageUI },
     };
     // Prepare the file filters (use \1 instead of \0 so that the
     // double-zero terminated string isn't cut by the string handling
@@ -4087,13 +4107,13 @@ static void FrameOnSize(WindowInfo* win, int dx, int dy)
     // FrameOnSize is called only when all childs are created and all infos are recorded.
 
     int rebBarDy = 0;
-    if (!gGlobalPrefs.toolbarForEachPanel && gGlobalPrefs.toolbarVisible && !(win->presentation || win->fullScreen)) {
+    if (!gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->showToolbar && !(win->presentation || win->fullScreen)) {
         SetWindowPos(win->toolBar()->hwndReBar, NULL, 0, 0, dx, 0, SWP_NOZORDER); // win->toolBar() is not null, see CreateWindowInfo.
         rebBarDy = WindowRect(win->toolBar()->hwndReBar).dy;
     }
 
     // If using only one sidebar, which is a child of hwndFrame,
-    if (!gGlobalPrefs.sidebarForEachPanel) {
+    if (!gGlobalPrefs->sidebarForEachPanel) {
 
         bool tocVisible = false;
 
@@ -4111,13 +4131,13 @@ static void FrameOnSize(WindowInfo* win, int dx, int dy)
             }
         }
 
-        if (tocVisible || gGlobalPrefs.favVisible) {
-            SetSidebarVisibility(win, tocVisible, gGlobalPrefs.favVisible);
+        if (tocVisible || gGlobalPrefs->favVisible) {
+            SetSidebarVisibility(win, tocVisible, gGlobalPrefs->favVisible);
             return;
         }
     }
 
-    if (gGlobalPrefs.toolbarForEachPanel) // The top container fills the client area of hwndFrame.
+    if (gGlobalPrefs->toolbarForEachPanel) // The top container fills the client area of hwndFrame.
         SetWindowPos(win->panel->WIN->container->hwndContainer, NULL, 0, rebBarDy, dx, dy - rebBarDy, SWP_NOZORDER); // SetWindowPos(win->panel->WIN->gContainer.At(0)->hwndContainer, NULL, 0, 0, dx, dy, SWP_NOZORDER);
     else // One should combine this with above, but now we separate them for clearness.
         SetWindowPos(win->panel->WIN->container->hwndContainer, NULL, 0, rebBarDy, dx, dy - rebBarDy, SWP_NOZORDER);
@@ -4152,13 +4172,13 @@ void OnMenuChangeLanguage(HWND hwnd)
 
 static void OnMenuViewShowHideToolbar()
 {
-    gGlobalPrefs.toolbarVisible = !gGlobalPrefs.toolbarVisible;
+    gGlobalPrefs->showToolbar = !gGlobalPrefs->showToolbar;
     ShowOrHideToolbarGlobally();
 }
 
 static void OnMenuViewShowHideTab()
 {
-    gGlobalPrefs.tabVisible = !gGlobalPrefs.tabVisible;
+    gGlobalPrefs->tabVisible = !gGlobalPrefs->tabVisible;
     ShowOrHideTabGlobally();
 }
 
@@ -4166,16 +4186,17 @@ void OnMenuPreference(HWND hwnd)
 {
     if (!HasPermission(Perm_SavePreferences)) return;
 
-    bool useSysColors = gGlobalPrefs.useSysColors;
+    bool useSysColors = gGlobalPrefs->useSysColors;
 
-    if (IDOK != Dialog_Preference(hwnd, &gGlobalPrefs))
+    if (IDOK != Dialog_Preference(hwnd, gGlobalPrefs))
         return;
 
-    if (!gGlobalPrefs.rememberOpenedFiles) {
-        gFileHistory.Clear();
+    if (!gGlobalPrefs->rememberOpenedFiles) {
+        // TODO: also remove all favorites?
+        gFileHistory.Clear(true);
         CleanUpThumbnailCache(gFileHistory);
     }
-    if (useSysColors != gGlobalPrefs.useSysColors)
+    if (useSysColors != gGlobalPrefs->useSysColors)
         UpdateDocumentColors();
 
     SavePrefs();
@@ -4261,7 +4282,7 @@ static void OnMenuGoToPage(WindowInfo& win)
         return;
 
     // Don't show a dialog if we don't have to - use the Toolbar instead
-    if (gGlobalPrefs.toolbarVisible && !win.fullScreen && !win.presentation) {
+    if (gGlobalPrefs->showToolbar && !win.fullScreen && !win.presentation) {
         FocusPageNoEdit(win.toolBar()->hwndPageBox);
         return;
     }
@@ -4307,10 +4328,10 @@ static void EnterFullscreen(WindowInfo& win, bool presentation)
     }
 
     // Remove TOC and favorites from full screen, add back later on exit fullscreen
-    bool favVisibleTmp = gGlobalPrefs.favVisible;
-    if (win.tocVisible || gGlobalPrefs.favVisible) {
+    bool showFavoritesTmp = gGlobalPrefs->showFavorites;
+    if (win.tocVisible || gGlobalPrefs->showFavorites) {
         SetSidebarVisibility(&win, false, false);
-        // restore gGlobalPrefs.favVisible changed by SetSidebarVisibility()
+        // restore gGlobalPrefs->showFavorites changed by SetSidebarVisibility()
     }
 
     long ws = GetWindowLong(win.hwndFrame, GWL_STYLE);
@@ -4334,7 +4355,7 @@ static void EnterFullscreen(WindowInfo& win, bool presentation)
 
     // Make sure that no toolbar/sidebar keeps the focus
     SetFocus(win.hwndFrame);
-    gGlobalPrefs.favVisible = favVisibleTmp;
+    gGlobalPrefs->showFavorites = showFavoritesTmp;
 }
 
 static void ExitFullscreen(WindowInfo& win)
@@ -4356,10 +4377,10 @@ static void ExitFullscreen(WindowInfo& win)
     }
 
     bool tocVisible = win.IsDocLoaded() && win.tocBeforeFullScreen;
-    if (tocVisible || gGlobalPrefs.favVisible)
-        SetSidebarVisibility(&win, tocVisible, gGlobalPrefs.favVisible);
+    if (tocVisible || gGlobalPrefs->showFavorites)
+        SetSidebarVisibility(&win, tocVisible, gGlobalPrefs->showFavorites);
 
-    if (gGlobalPrefs.toolbarVisible)
+    if (gGlobalPrefs->showToolbar)
         ShowWindow(win.toolBar()->hwndReBar, SW_SHOW);
     SetMenu(win.hwndFrame, win.menu());
 
@@ -4393,7 +4414,7 @@ void AdvanceFocus(WindowInfo* win)
     // Tab order: Frame -> Page -> Find -> ToC -> Favorites -> Frame -> ...
 
     bool hasToolbar = !win->fullScreen && !win->presentation &&
-                      gGlobalPrefs.toolbarVisible && win->IsDocLoaded();
+                      gGlobalPrefs->showToolbar && win->IsDocLoaded();
     int direction = IsShiftPressed() ? -1 : 1;
 
     struct {
@@ -4404,7 +4425,7 @@ void AdvanceFocus(WindowInfo* win)
         { win->toolBar()->hwndPageBox, hasToolbar                          },
         { win->toolBar()->hwndFindBox, hasToolbar && NeedsFindUI(win)      },
         { win->sideBar()->hwndTocTree, win->tocLoaded && win->tocVisible   },
-        { win->sideBar()->hwndFavTree, gGlobalPrefs.favVisible             },
+        { win->sideBar()->hwndFavTree, gGlobalPrefs->showFavorites         },
     };
 
     /* // make sure that at least one element is available
@@ -4590,7 +4611,7 @@ static void FrameOnChar(WindowInfo& win, WPARAM key)
             win.notifications->RemoveAllInGroup(NG_PAGE_INFO_HELPER);
         else if (win.presentation)
             OnMenuViewPresentation(win);
-        else if (gGlobalPrefs.escToExit)
+        else if (gGlobalPrefs->escToExit)
             CloseWindow(&win, true);
         else if (win.fullScreen)
             OnMenuViewFullscreen(win);
@@ -4693,7 +4714,7 @@ static void FrameOnChar(WindowInfo& win, WPARAM key)
     case 'i':
         // experimental "page info" tip: make figuring out current page and
         // total pages count a one-key action (unless they're already visible)
-        if (!gGlobalPrefs.toolbarVisible || win.fullScreen || PM_ENABLED == win.presentation) {
+        if (!gGlobalPrefs->showToolbar || win.fullScreen || PM_ENABLED == win.presentation) {
             int current = win.dm->CurrentPageNo(), total = win.dm->PageCount();
             ScopedMem<WCHAR> pageInfo(str::Format(L"%s %d / %d", _TR("Page:"), current, total));
             if (win.dm->engine && win.dm->engine->HasPageLabels()) {
@@ -4738,7 +4759,7 @@ static void UpdateSidebarTitles(WindowInfo& win)
 
     HWND favTitle = GetDlgItem(win.hwndFavBox, IDC_FAV_TITLE);
     win::SetText(favTitle, _TR("Favorites"));
-    if (gGlobalPrefs.favVisible) {
+    if (gGlobalPrefs->showFavorites) {
         InvalidateRect(win.hwndFavBox, NULL, TRUE);
         UpdateWindow(win.hwndFavBox);
     }
@@ -4829,7 +4850,7 @@ static void ResizeSidebar(WindowInfo *win)
 {
     HWND hwndParent = win->panel->WIN->hwndFrame;
     HWND hwnd = win->panel->WIN->gContainer.At(0)->hwndContainer;
-    if (gGlobalPrefs.sidebarForEachPanel) {
+    if (gGlobalPrefs->sidebarForEachPanel) {
         hwndParent = win->panel->hwndPanel;
         hwnd = win->hwndCanvas;
     }
@@ -4855,19 +4876,19 @@ static void ResizeSidebar(WindowInfo *win)
     int toolbarDy = -1;
     int tabControlDy = 0;
 
-    if (!gGlobalPrefs.toolbarForEachPanel && gGlobalPrefs.toolbarVisible && win->panel->container->isAtTop)
+    if (!gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->toolbarVisible && win->panel->container->isAtTop)
         toolbarDy = 0;
 
-    if (gGlobalPrefs.toolbarVisible && (gGlobalPrefs.toolbarForEachPanel == gGlobalPrefs.sidebarForEachPanel) && !win->fullScreen && !win->presentation)
+    if (gGlobalPrefs->toolbarVisible && (gGlobalPrefs->toolbarForEachPanel == gGlobalPrefs->sidebarForEachPanel) && !win->fullScreen && !win->presentation)
         toolbarDy = WindowRect(win->toolBar()->hwndReBar).dy;
 
-    if (gGlobalPrefs.sidebarForEachPanel && gGlobalPrefs.tabVisible)
+    if (gGlobalPrefs->sidebarForEachPanel && gGlobalPrefs->tabVisible)
         tabControlDy = TAB_CONTROL_DY;
 
     int sidebar_y = toolbarDy + tabControlDy;
 
     int y = 0;
-    y += gGlobalPrefs.sidebarForEachPanel ? sidebar_y + 1 : sidebar_y;
+    y += gGlobalPrefs->sidebarForEachPanel ? sidebar_y + 1 : sidebar_y;
     
     int sidebarDy = rParent.dy - sidebar_y;
     int Dy = rParent.dy - y;
@@ -4888,13 +4909,13 @@ static void ResizeSidebar(WindowInfo *win)
 
     // In XP, even hwndFrame is updated, we still need to update hwndSidebar.
     // Under Windows 7 or above, we don't need to update hwndSidebar if hwndFrame is updated.
-    if ( !(gOS.dwMajorVersion >= 6 && gOS.dwMinorVersion >= 1) || gGlobalPrefs.sidebarForEachPanel) {
+    if ( !(gOS.dwMajorVersion >= 6 && gOS.dwMinorVersion >= 1) || gGlobalPrefs->sidebarForEachPanel) {
         InvalidateRect(win->sideBar()->hwndSidebar, NULL, TRUE);
         UpdateWindow(win->sideBar()->hwndSidebar);
     }
 
     // If all the panels share the same sidebar, we need to update WIN.
-    if (!gGlobalPrefs.sidebarForEachPanel) {
+    if (!gGlobalPrefs->sidebarForEachPanel) {
         InvalidateRect(win->panel->WIN->hwndFrame, NULL, TRUE);
         UpdateWindow(win->panel->WIN->hwndFrame);
     } else {
@@ -4948,7 +4969,7 @@ static void ResizeFav(WindowInfo *win)
     //InvalidateRect(win->panel->WIN->hwndFrame, NULL, TRUE);
     //UpdateWindow(win->panel->WIN->hwndFrame);
 
-    gGlobalPrefs.tocDy = topDy;
+    gGlobalPrefs->tocDy = topDy;
 }
 
 static void FavSplitterOnPaint(HWND hwnd)
@@ -5048,7 +5069,7 @@ static void PanelSplitterOnPaint(HWND hwnd)
         rc.bottom = dy;
         FillRect(hdc, &rc, gBrushPanelSplitterEdgeBg);
 
-        if (!gGlobalPrefs.toolbarForEachPanel && gGlobalPrefs.toolbarVisible && container->isAtTop) {
+        if (!gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->toolbarVisible && container->isAtTop) {
             rc.left = 0;
             rc.right = dx;
             rc.top = 0;
@@ -5226,30 +5247,30 @@ LRESULT CALLBACK WndProcCloseButton(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible, bool switchDoc)
 {
     if (gPluginMode || !HasPermission(Perm_DiskAccess))
-        favVisible = false;
+        showFavorites = false;
 
     if (!win->IsDocLoaded() || !win->dm->HasTocTree())
         tocVisible = false;
 
     if (PM_BLACK_SCREEN == win->presentation || PM_WHITE_SCREEN == win->presentation) {
         tocVisible = false;
-        favVisible = false;
+        showFavorites = false;
     }
 
     if (tocVisible)
         LoadTocTree(win);
-    if (favVisible)
+    if (showFavorites)
         PopulateFavTreeIfNeeded(win);
 
     win->tocVisible = tocVisible;
-    gGlobalPrefs.favVisible = favVisible;
+    gGlobalPrefs->showFavorites = showFavorites;
 
     bool sidebarVisible = tocVisible || favVisible;
 
     TopWindowInfo *WIN = FindTopWindowInfoByHwnd(win->hwndCanvas);
 
     // If using only one sidebar, which is a child of hwndFrame.
-    if (!gGlobalPrefs.sidebarForEachPanel) {
+    if (!gGlobalPrefs->sidebarForEachPanel) {
         for (size_t i = 0; i < WIN->gPanel.Count(); i++) {
             PanelInfo *panel = WIN->gPanel.At(i);
             for (size_t j = 0; j < panel->gWin.Count(); j++) {
@@ -5264,25 +5285,25 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible, boo
     int toolbarDy = -1;
     int tabControlDy = 0;
 
-    if (!gGlobalPrefs.toolbarForEachPanel && gGlobalPrefs.toolbarVisible && win->panel->container->isAtTop)
+    if (!gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->toolbarVisible && win->panel->container->isAtTop)
         toolbarDy = 0;
 
-    if (gGlobalPrefs.toolbarVisible && (gGlobalPrefs.toolbarForEachPanel == gGlobalPrefs.sidebarForEachPanel) && !win->fullScreen && !win->presentation)
+    if (gGlobalPrefs->toolbarVisible && (gGlobalPrefs->toolbarForEachPanel == gGlobalPrefs->sidebarForEachPanel) && !win->fullScreen && !win->presentation)
         toolbarDy = WindowRect(win->toolBar()->hwndReBar).dy;
 
-    if (gGlobalPrefs.sidebarForEachPanel && gGlobalPrefs.tabVisible)
+    if (gGlobalPrefs->sidebarForEachPanel && gGlobalPrefs->tabVisible)
         tabControlDy = TAB_CONTROL_DY;
 
     HWND hwndParentForToolbar = win->panel->WIN->hwndFrame;
-    if (gGlobalPrefs.toolbarForEachPanel)
+    if (gGlobalPrefs->toolbarForEachPanel)
         hwndParentForToolbar = win->panel->hwndPanel;
 
     HWND hwndParentForSidebar = win->panel->WIN->hwndFrame;
-    if (gGlobalPrefs.sidebarForEachPanel)
+    if (gGlobalPrefs->sidebarForEachPanel)
         hwndParentForSidebar = win->panel->hwndPanel;
 
     HWND hwnd = WIN->container->hwndContainer;
-    if (switchDoc || gGlobalPrefs.sidebarForEachPanel)
+    if (switchDoc || gGlobalPrefs->sidebarForEachPanel)
         hwnd = win->hwndCanvas;
 
     ClientRect rParentForToolbar(hwndParentForToolbar);
@@ -5290,13 +5311,13 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible, boo
 
     int y;
     int sidebar_y = y = toolbarDy + tabControlDy;
-    if (gGlobalPrefs.sidebarForEachPanel)
+    if (gGlobalPrefs->sidebarForEachPanel)
         y++;
 
     int sidebar_Dy = rParentForToolbar.dy - sidebar_y;
     int Dy = rParentForToolbar.dy - y;
 
-    if (switchDoc && !gGlobalPrefs.sidebarForEachPanel) {
+    if (switchDoc && !gGlobalPrefs->sidebarForEachPanel) {
         ClientRect rPanel(win->panel->hwndPanel);
         SetWindowPos(hwnd, NULL, 0, TAB_CONTROL_DY + 1, rPanel.dx, rPanel.dy - 0 - TAB_CONTROL_DY - 1, SWP_NOZORDER);
         return;
@@ -5402,7 +5423,7 @@ void ShowDocument(PanelInfo *panel, WindowInfo *win,  WindowInfo *winNew, bool H
     
     // If sidebarForEachPanel, we need to use the original SetSidebarVisibility.
     // Only if not sidebarForEachPanel, we need to resize win->hwndCanvas manually.
-    SetSidebarVisibility(winNew, winNew->tocVisible, gGlobalPrefs.favVisible, !gGlobalPrefs.sidebarForEachPanel);
+    SetSidebarVisibility(winNew, winNew->tocVisible, gGlobalPrefs->favVisible, !gGlobalPrefs->sidebarForEachPanel);
     ShowWindow(winNew->hwndCanvas, SW_SHOW);
 
     // We have a document opened. Then press "Ctrl + T" to open a
@@ -5840,29 +5861,29 @@ static void PanelOnSize(PanelInfo* panel, int dx, int dy)
 {
     int rebBarDy = -1;
 
-    if (!gGlobalPrefs.toolbarForEachPanel && gGlobalPrefs.toolbarVisible && panel->container->isAtTop)
+    if (!gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->toolbarVisible && panel->container->isAtTop)
         rebBarDy = 0;
 
-    if (gGlobalPrefs.toolbarForEachPanel && gGlobalPrefs.toolbarVisible && !(panel->win->presentation || panel->win->fullScreen)) {
+    if (gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->toolbarVisible && !(panel->win->presentation || panel->win->fullScreen)) {
         SetWindowPos(panel->win->toolBar()->hwndReBar, NULL, 0, 0, dx, 0, SWP_NOZORDER);
         rebBarDy = WindowRect(panel->toolBar->hwndReBar).dy;
     }
 
     int tabDy = 0;
-    if (gGlobalPrefs.tabVisible)
+    if (gGlobalPrefs->tabVisible)
         tabDy = TAB_CONTROL_DY;
     SetWindowPos(panel->hwndTab, NULL, 0, rebBarDy, dx, tabDy, SWP_NOZORDER);
 
-    if (gGlobalPrefs.sidebarForEachPanel) {
+    if (gGlobalPrefs->sidebarForEachPanel) {
 
         bool tocVisible = panel->win->tocLoaded && panel->win->tocVisible;
-        if (tocVisible || gGlobalPrefs.favVisible) {
-            SetSidebarVisibility(panel->win, tocVisible, gGlobalPrefs.favVisible);
+        if (tocVisible || gGlobalPrefs->favVisible) {
+            SetSidebarVisibility(panel->win, tocVisible, gGlobalPrefs->favVisible);
             return;
         }
     }
 
-    if (gGlobalPrefs.toolbarForEachPanel)
+    if (gGlobalPrefs->toolbarForEachPanel)
         SetWindowPos(panel->win->hwndCanvas, NULL, 0, rebBarDy + tabDy + 1, dx, dy - rebBarDy - tabDy - 1, SWP_NOZORDER);
     else
         SetWindowPos(panel->win->hwndCanvas, NULL, 0, rebBarDy + tabDy + 1, dx, dy - rebBarDy - tabDy - 1, SWP_NOZORDER);
@@ -6105,14 +6126,14 @@ static void PanelOnPaint(PanelInfo& panel)
 {
     int rebBarDy = -1;
 
-    if (!gGlobalPrefs.toolbarForEachPanel && gGlobalPrefs.toolbarVisible && panel.container->isAtTop)
+    if (!gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->toolbarVisible && panel.container->isAtTop)
         rebBarDy = 0;
 
-    if (gGlobalPrefs.toolbarForEachPanel && gGlobalPrefs.toolbarVisible && !(panel.win->presentation || panel.win->fullScreen))
+    if (gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->toolbarVisible && !(panel.win->presentation || panel.win->fullScreen))
         rebBarDy = WindowRect(panel.toolBar->hwndReBar).dy;
 
     int tabDy = 0;
-    if (gGlobalPrefs.tabVisible)
+    if (gGlobalPrefs->tabVisible)
         tabDy = TAB_CONTROL_DY;
 
     int dx = ClientRect(panel.hwndPanel).dx;
@@ -6718,8 +6739,10 @@ static LRESULT FrameOnCommand(WindowInfo *win, HWND hwnd, UINT msg, WPARAM wPara
             break;
 
         case IDM_DEBUG_EBOOK_UI:
-            gUserPrefs.traditionalEbookUI = !gUserPrefs.traditionalEbookUI;
-            DebugAlternateChmEngine(gUserPrefs.traditionalEbookUI);
+            gGlobalPrefs->ebookUI.useFixedPageUI = !gGlobalPrefs->ebookUI.useFixedPageUI;
+            // use the same setting to also toggle the CHM UI
+            gGlobalPrefs->chmUI.useFixedPageUI = !gGlobalPrefs->chmUI.useFixedPageUI;
+            DebugAlternateChmEngine(gGlobalPrefs->chmUI.useFixedPageUI);
             break;
 
         case IDM_DEBUG_MUI:
@@ -6911,7 +6934,7 @@ InitMouseWheelInfo:
             return 0;
 
         case WM_SYSCOLORCHANGE:
-            if (gGlobalPrefs.useSysColors)
+            if (gGlobalPrefs->useSysColors)
                 UpdateDocumentColors();
             break;
 
