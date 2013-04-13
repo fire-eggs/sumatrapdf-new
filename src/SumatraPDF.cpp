@@ -4131,8 +4131,8 @@ static void FrameOnSize(WindowInfo* win, int dx, int dy)
             }
         }
 
-        if (tocVisible || gGlobalPrefs->favVisible) {
-            SetSidebarVisibility(win, tocVisible, gGlobalPrefs->favVisible);
+        if (tocVisible || gGlobalPrefs->showFavorites) {
+            SetSidebarVisibility(win, tocVisible, gGlobalPrefs->showFavorites);
             return;
         }
     }
@@ -4876,10 +4876,10 @@ static void ResizeSidebar(WindowInfo *win)
     int toolbarDy = -1;
     int tabControlDy = 0;
 
-    if (!gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->toolbarVisible && win->panel->container->isAtTop)
+    if (!gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->showToolbar && win->panel->container->isAtTop)
         toolbarDy = 0;
 
-    if (gGlobalPrefs->toolbarVisible && (gGlobalPrefs->toolbarForEachPanel == gGlobalPrefs->sidebarForEachPanel) && !win->fullScreen && !win->presentation)
+    if (gGlobalPrefs->showToolbar && (gGlobalPrefs->toolbarForEachPanel == gGlobalPrefs->sidebarForEachPanel) && !win->fullScreen && !win->presentation)
         toolbarDy = WindowRect(win->toolBar()->hwndReBar).dy;
 
     if (gGlobalPrefs->sidebarForEachPanel && gGlobalPrefs->tabVisible)
@@ -5069,7 +5069,7 @@ static void PanelSplitterOnPaint(HWND hwnd)
         rc.bottom = dy;
         FillRect(hdc, &rc, gBrushPanelSplitterEdgeBg);
 
-        if (!gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->toolbarVisible && container->isAtTop) {
+        if (!gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->showToolbar && container->isAtTop) {
             rc.left = 0;
             rc.right = dx;
             rc.top = 0;
@@ -5244,7 +5244,7 @@ LRESULT CALLBACK WndProcCloseButton(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
     return CallWindowProc(DefWndProcCloseButton, hwnd, msg, wParam, lParam);
 }
 
-void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible, bool switchDoc)
+void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool showFavorites, bool switchDoc)
 {
     if (gPluginMode || !HasPermission(Perm_DiskAccess))
         showFavorites = false;
@@ -5265,7 +5265,7 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible, boo
     win->tocVisible = tocVisible;
     gGlobalPrefs->showFavorites = showFavorites;
 
-    bool sidebarVisible = tocVisible || favVisible;
+    bool sidebarVisible = tocVisible || showFavorites;
 
     TopWindowInfo *WIN = FindTopWindowInfoByHwnd(win->hwndCanvas);
 
@@ -5285,10 +5285,10 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool favVisible, boo
     int toolbarDy = -1;
     int tabControlDy = 0;
 
-    if (!gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->toolbarVisible && win->panel->container->isAtTop)
+    if (!gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->showToolbar && win->panel->container->isAtTop)
         toolbarDy = 0;
 
-    if (gGlobalPrefs->toolbarVisible && (gGlobalPrefs->toolbarForEachPanel == gGlobalPrefs->sidebarForEachPanel) && !win->fullScreen && !win->presentation)
+    if (gGlobalPrefs->showToolbar && (gGlobalPrefs->toolbarForEachPanel == gGlobalPrefs->sidebarForEachPanel) && !win->fullScreen && !win->presentation)
         toolbarDy = WindowRect(win->toolBar()->hwndReBar).dy;
 
     if (gGlobalPrefs->sidebarForEachPanel && gGlobalPrefs->tabVisible)
@@ -5423,7 +5423,7 @@ void ShowDocument(PanelInfo *panel, WindowInfo *win,  WindowInfo *winNew, bool H
     
     // If sidebarForEachPanel, we need to use the original SetSidebarVisibility.
     // Only if not sidebarForEachPanel, we need to resize win->hwndCanvas manually.
-    SetSidebarVisibility(winNew, winNew->tocVisible, gGlobalPrefs->favVisible, !gGlobalPrefs->sidebarForEachPanel);
+    SetSidebarVisibility(winNew, winNew->tocVisible, gGlobalPrefs->showFavorites, !gGlobalPrefs->sidebarForEachPanel);
     ShowWindow(winNew->hwndCanvas, SW_SHOW);
 
     // We have a document opened. Then press "Ctrl + T" to open a
@@ -5861,10 +5861,10 @@ static void PanelOnSize(PanelInfo* panel, int dx, int dy)
 {
     int rebBarDy = -1;
 
-    if (!gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->toolbarVisible && panel->container->isAtTop)
+    if (!gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->showToolbar && panel->container->isAtTop)
         rebBarDy = 0;
 
-    if (gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->toolbarVisible && !(panel->win->presentation || panel->win->fullScreen)) {
+    if (gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->showToolbar && !(panel->win->presentation || panel->win->fullScreen)) {
         SetWindowPos(panel->win->toolBar()->hwndReBar, NULL, 0, 0, dx, 0, SWP_NOZORDER);
         rebBarDy = WindowRect(panel->toolBar->hwndReBar).dy;
     }
@@ -5877,8 +5877,8 @@ static void PanelOnSize(PanelInfo* panel, int dx, int dy)
     if (gGlobalPrefs->sidebarForEachPanel) {
 
         bool tocVisible = panel->win->tocLoaded && panel->win->tocVisible;
-        if (tocVisible || gGlobalPrefs->favVisible) {
-            SetSidebarVisibility(panel->win, tocVisible, gGlobalPrefs->favVisible);
+        if (tocVisible || gGlobalPrefs->showFavorites) {
+            SetSidebarVisibility(panel->win, tocVisible, gGlobalPrefs->showFavorites);
             return;
         }
     }
@@ -6126,10 +6126,10 @@ static void PanelOnPaint(PanelInfo& panel)
 {
     int rebBarDy = -1;
 
-    if (!gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->toolbarVisible && panel.container->isAtTop)
+    if (!gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->showToolbar && panel.container->isAtTop)
         rebBarDy = 0;
 
-    if (gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->toolbarVisible && !(panel.win->presentation || panel.win->fullScreen))
+    if (gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->showToolbar && !(panel.win->presentation || panel.win->fullScreen))
         rebBarDy = WindowRect(panel.toolBar->hwndReBar).dy;
 
     int tabDy = 0;

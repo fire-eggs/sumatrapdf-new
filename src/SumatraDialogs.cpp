@@ -827,7 +827,7 @@ static INT_PTR CALLBACK Dialog_View_Proc(HWND hDlg, UINT msg, WPARAM wParam, LPA
     switch (msg)
     {
     case WM_INITDIALOG:
-        prefs = (SerializableGlobalPrefs *)lParam;
+        prefs = (GlobalPrefs *)lParam;
         assert(prefs);
         SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)prefs);
 
@@ -843,7 +843,7 @@ static INT_PTR CALLBACK Dialog_View_Proc(HWND hDlg, UINT msg, WPARAM wParam, LPA
         switch (LOWORD(wParam))
         {
         case IDOK:
-            prefs = (SerializableGlobalPrefs *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+            prefs = (GlobalPrefs *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
             assert(prefs);
             prefs->enableSplitWindow = (BST_CHECKED == IsDlgButtonChecked(hDlg, IDC_ENABLE_SPLIT_WINDOW));
             prefs->enableTab = (BST_CHECKED == IsDlgButtonChecked(hDlg, IDC_ENABLE_TAB));
@@ -884,8 +884,8 @@ static INT_PTR CALLBACK Dialog_View_Proc(HWND hDlg, UINT msg, WPARAM wParam, LPA
 struct buttonInColorDlg {
     int textID;
     int buttonID;
-    int *color;
-    int colorOld;
+    COLORREF *color;
+    COLORREF colorOld;
     HWND hButton;
     HBITMAP hMemBmp;
 };
@@ -1190,7 +1190,7 @@ static UINT_PTR CALLBACK CCHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM l
 static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     LONG_PTR *data;
-    SerializableGlobalPrefs *prefs;
+    GlobalPrefs *prefs;
     struct buttonInColorDlg *buttons;
 
     switch (msg)
@@ -1201,7 +1201,7 @@ static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LP
 
             data = (LONG_PTR *)lParam;
             assert(data);
-            prefs = (SerializableGlobalPrefs *)data[0];
+            prefs = (GlobalPrefs *)data[0];
             assert(prefs);
             buttons = (struct buttonInColorDlg *)data[1];
             assert(buttons);
@@ -1217,7 +1217,7 @@ static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LP
         case WM_COMMAND:
             data = (LONG_PTR *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
             assert(data);
-            prefs = (SerializableGlobalPrefs *)data[0];
+            prefs = (GlobalPrefs *)data[0];
             assert(prefs);
             buttons = (buttonInColorDlg *)data[1];
             assert(buttons);
@@ -1293,14 +1293,14 @@ static INT_PTR CALLBACK Dialog_Preference_Proc(HWND hDlg, UINT msg, WPARAM wPara
 {
     // We could put these into WM_INITDIALOG
     LONG_PTR *data;
-    SerializableGlobalPrefs *prefs;
+    GlobalPrefs *prefs;
 
     switch (msg)
     {
     case WM_INITDIALOG:
         data = (LONG_PTR *)lParam;
         assert(data);
-        prefs = (SerializableGlobalPrefs *)data[0];
+        prefs = (GlobalPrefs *)data[0];
         assert(prefs);
         SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)prefs);
 
@@ -1400,7 +1400,7 @@ static INT_PTR CALLBACK Dialog_Preference_Proc(HWND hDlg, UINT msg, WPARAM wPara
     return FALSE;
 }
 
-INT_PTR Dialog_Preference(HWND hwnd, SerializableGlobalPrefs *prefs)
+INT_PTR Dialog_Preference(HWND hwnd, GlobalPrefs *prefs)
 {
     STATIC_ASSERT(
             IDC_START_PAGE_BG + 1 == IDC_WINDOW_BG &&
@@ -1419,12 +1419,12 @@ INT_PTR Dialog_Preference(HWND hwnd, SerializableGlobalPrefs *prefs)
         consecutive_Button_ids);
 
     struct buttonInColorDlg buttons[6] = {
-        {IDC_START_PAGE_BG, IDC_SET_START_PAGE_BG,  &prefs->bgColor,      prefs->bgColor},
-        {IDC_WINDOW_BG,     IDC_SET_WINDOW_BG,      &prefs->noDocBgColor, prefs->noDocBgColor},
-        {IDC_DOC_BG,        IDC_SET_DOC_BG,         &prefs->docBgColor,   prefs->docBgColor},
-        {IDC_DOC_TEXT,      IDC_SET_DOC_TEXT_COLOR, &prefs->docTextColor, prefs->docTextColor},
-        {IDC_TOC_BG,        IDC_SET_TOC_BG_COLOR,   &prefs->tocBgColor,   prefs->tocBgColor},
-        {IDC_FAV_BG,        IDC_SET_FAV_BG_COLOR,   &prefs->favBgColor,   prefs->favBgColor},
+        {IDC_START_PAGE_BG, IDC_SET_START_PAGE_BG,  &prefs->mainWindowBackground, prefs->mainWindowBackground},
+        {IDC_WINDOW_BG,     IDC_SET_WINDOW_BG,      &prefs->noDocBgColor,         prefs->noDocBgColor},
+        {IDC_DOC_BG,        IDC_SET_DOC_BG,         &prefs->docBgColor,           prefs->docBgColor},
+        {IDC_DOC_TEXT,      IDC_SET_DOC_TEXT_COLOR, &prefs->docTextColor,         prefs->docTextColor},
+        {IDC_TOC_BG,        IDC_SET_TOC_BG_COLOR,   &prefs->tocBgColor,           prefs->tocBgColor},
+        {IDC_FAV_BG,        IDC_SET_FAV_BG_COLOR,   &prefs->favBgColor,           prefs->favBgColor},
     };
 
     LONG_PTR data[2] = { (LONG_PTR)prefs, (LONG_PTR)buttons };
