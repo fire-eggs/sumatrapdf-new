@@ -172,12 +172,14 @@ void ToolbarUpdateStateForWindow(WindowInfo *win, bool showHide)
 void ShowOrHideToolbarGlobally()
 {
     for (size_t i = 0; i < gWIN.Count(); i++) {
+
         TopWindowInfo *WIN = gWIN.At(i);
+
         for (size_t j = 0; j < WIN->gPanel.Count(); j++) {
 
             PanelInfo *panel = WIN->gPanel.At(j);
 
-            if (gGlobalPrefs.toolbarVisible)
+            if (gGlobalPrefs->showToolbar)
                 ShowWindow(panel->win->toolBar()->hwndReBar, SW_SHOW);
             else {
                 if (panel->win->toolBar()->hwndFindBox == GetFocus() || panel->win->toolBar()->hwndPageBox == GetFocus())
@@ -185,16 +187,17 @@ void ShowOrHideToolbarGlobally()
                 ShowWindow(panel->win->toolBar()->hwndReBar, SW_HIDE);
             }
 
-            if (!gGlobalPrefs.toolbarForEachPanel) {
+            if (!gGlobalPrefs->toolbarForEachPanel) {
                 ClientRect rect(panel->WIN->hwndFrame);
                 SendMessage(panel->WIN->hwndFrame, WM_SIZE, 0, MAKELONG(rect.dx, rect.dy));
             }
 
-            if (gGlobalPrefs.toolbarForEachPanel || panel->container->isAtTop) {
+            if (gGlobalPrefs->toolbarForEachPanel || panel->container->isAtTop) {
                 ClientRect rect(panel->hwndPanel);
                 SendMessage(panel->hwndPanel, WM_SIZE, 0, MAKELONG(rect.dx, rect.dy));
             }
         }
+
     }
 }
 
@@ -255,7 +258,7 @@ static LRESULT CALLBACK WndProcToolbar(HWND hwnd, UINT message, WPARAM wParam, L
         HWND hEdit = (HWND)lParam;
         WindowInfo *win = FindWindowInfoByHwnd(hEdit);
         // "find as you type"
-        if (EN_UPDATE == HIWORD(wParam) && hEdit == win->toolBar()->hwndFindBox && gGlobalPrefs.toolbarVisible)
+        if (EN_UPDATE == HIWORD(wParam) && hEdit == win->toolBar()->hwndFindBox && gGlobalPrefs->showToolbar)
             FindTextOnThread(win, FIND_FORWARD, true);
     }
     return CallWindowProc(DefWndProcToolbar, hwnd, message, wParam, lParam);
@@ -583,7 +586,7 @@ static void CreatePageBox(ToolbarInfo* toolBar)
 
 void CreateToolbar(WinInfo& winInfo, bool toolbarForEachPanel)
 {
-    if (winInfo.AsPanel() && !toolbarForEachPanel && (toolbarForEachPanel == gGlobalPrefs.toolbarForEachPanel))
+    if (winInfo.AsPanel() && !toolbarForEachPanel && (toolbarForEachPanel == gGlobalPrefs->toolbarForEachPanel))
         return;
 
     TopWindowInfo *WIN = winInfo.WIN();

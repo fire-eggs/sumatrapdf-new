@@ -247,7 +247,7 @@ void CreateSidebarBox(WinInfo& winInfo)
         WS_CLIPCHILDREN,
         SIDEBAR_CLASS_NAME, NULL,
         WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
-        0, 0, gGlobalPrefs.sidebarDx, 0,
+        0, 0, gGlobalPrefs->sidebarDx, 0,
         winInfo.Hwnd(), NULL,
         ghinst, NULL);
     if (!hwndSidebar)

@@ -8,7 +8,7 @@
 #include "Notifications.h"
 #include "PdfSync.h"
 #include "Print.h"
-#include "Resource.h"
+#include "resource.h"
 #include "Selection.h"
 #include "StressTesting.h"
 #include "SumatraPDF.h"
@@ -110,7 +110,7 @@ WindowInfo::~WindowInfo()
 
 ToolbarInfo * WindowInfo::toolBar() const
 {
-    // One can improve this after introducing gGlobalPrefs.ToolbarForEachPanel.
+    // One can improve this after introducing gGlobalPrefs->toolbarForEachPanel.
     ToolbarInfo * toolBar = this->panel->WIN->toolBar;
     if (toolBar == NULL)
         toolBar = this->panel->toolBar;
@@ -119,7 +119,7 @@ ToolbarInfo * WindowInfo::toolBar() const
 
 SidebarInfo * WindowInfo::sideBar() const
 {
-    // One can improve this after introducing gGlobalPrefs.ToolbarForEachPanel.
+    // One can improve this after introducing gGlobalPrefs->toolbarForEachPanel.
     SidebarInfo * sideBar = this->panel->WIN->sideBar;
     if (sideBar == NULL)
         sideBar = this->panel->sideBar;
@@ -382,7 +382,7 @@ void LinkHandler::ScrollTo(PageDestination *dest)
             scroll.x = -1;
         if (DEST_USE_DEFAULT == rect.y) {
             PageInfo *pageInfo = dm->GetPageInfo(dm->CurrentPageNo());
-            scroll.y = -(pageInfo->pageOnScreen.y - dm->GetPadding()->top);
+            scroll.y = -(pageInfo->pageOnScreen.y - dm->GetPadding()->margin.top);
             scroll.y = max(scroll.y, 0); // Adobe Reader never shows the previous page
         }
     }

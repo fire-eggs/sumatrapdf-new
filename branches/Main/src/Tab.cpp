@@ -604,7 +604,7 @@ void ShowOrHideTabGlobally()
 
             PanelInfo *panel = WIN->gPanel.At(j);
 
-            if (gGlobalPrefs.enableTab)
+            if (gGlobalPrefs->enableTab)
                 ShowWindow(panel->hwndTab, SW_SHOW);
             else
                 ShowWindow(panel->hwndTab, SW_HIDE);
