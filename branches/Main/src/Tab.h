@@ -7,13 +7,14 @@
 #include "Version.h"
 #include <CommCtrl.h>
 
-#define TAB_CONTROL_DY      27
+#define TAB_CONTROL_DY      26
 
 class PanelInfo;
 class WindowInfo;
 
 void AddTab(WindowInfo *win);
 void ShowOrHideTabGlobally();
+int GetTabIndex(PanelInfo *panel);
 void SetTabCloseButtonPos(WindowInfo *win);
 void SetTabTitle(WindowInfo *win);
 void SetTabToolTipText(WindowInfo *win);
