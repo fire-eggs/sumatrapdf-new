@@ -25,8 +25,9 @@ void MenuUpdateDisplayMode(WindowInfo* win)
     bool enabled = win->IsDocLoaded();
     DisplayMode displayMode = enabled ? win->dm->GetDisplayMode() : gGlobalPrefs->defaultDisplayModeEnum;
 
-    for (int id = IDM_VIEW_LAYOUT_FIRST; id <= IDM_VIEW_LAYOUT_LAST; id++)
+    for (int id = IDM_VIEW_LAYOUT_FIRST; id <= IDM_VIEW_LAYOUT_LAST; id++) {
         win::menu::SetEnabled(win->menu(), id, enabled);
+    }
 
     UINT id = 0;
     if (IsSingle(displayMode))
@@ -40,6 +41,11 @@ void MenuUpdateDisplayMode(WindowInfo* win)
 
     CheckMenuRadioItem(win->menu(), IDM_VIEW_LAYOUT_FIRST, IDM_VIEW_LAYOUT_LAST, id, MF_BYCOMMAND);
     win::menu::SetChecked(win->menu(), IDM_VIEW_CONTINUOUS, IsContinuous(displayMode));
+
+    if (win->IsCbx()) {
+        bool mangaMode = win->dm ? win->dm->GetDisplayR2L() : gGlobalPrefs->comicBookUI.cbxMangaMode;
+        win::menu::SetChecked(win->menu, IDM_VIEW_MANGA_MODE, mangaMode);
+    }
 }
 
 static MenuDef menuDefFile[] = {
@@ -72,7 +78,11 @@ static MenuDef menuDefView[] = {
     { _TRN("&Single Page\tCtrl+6"),         IDM_VIEW_SINGLE_PAGE,       MF_NOT_FOR_CHM },
     { _TRN("&Facing\tCtrl+7"),              IDM_VIEW_FACING,            MF_NOT_FOR_CHM },
     { _TRN("&Book View\tCtrl+8"),           IDM_VIEW_BOOK,              MF_NOT_FOR_CHM },
+    // TODO: this should be Show &Pages Continuously. Need to add rename/duplicate functionality
+    // to apptranslator to make such renames easy
     { _TRN("Show &pages continuously"),     IDM_VIEW_CONTINUOUS,        MF_NOT_FOR_CHM },
+    // TODO: "&Inverse Reading Direction" (since some Mangas might be read left-to-right)?
+    { _TRN("Man&ga Mode"),                  IDM_VIEW_MANGA_MODE,        MF_CBX_ONLY },
     { SEP_ITEM,                             0,                          MF_NOT_FOR_CHM },
     { _TRN("Rotate &Left\tCtrl+Shift+-"),   IDM_VIEW_ROTATE_LEFT,       MF_NOT_FOR_CHM },
     { _TRN("Rotate &Right\tCtrl+Shift++"),  IDM_VIEW_ROTATE_RIGHT,      MF_NOT_FOR_CHM },
@@ -130,7 +140,8 @@ static MenuDef menuDefSettings[] = {
     { _TRN("Contribute Translation"),       IDM_CONTRIBUTE_TRANSLATION, MF_REQ_DISK_ACCESS },
     { SEP_ITEM,                             0,                          MF_REQ_DISK_ACCESS },
 #endif
-    { _TRN("&Options..."),                  IDM_SETTINGS,               MF_REQ_PREF_ACCESS },
+    { _TRN("&Options..."),                  IDM_OPTIONS,                MF_REQ_PREF_ACCESS },
+    { _TRN("&Advanced Options..."),         IDM_ADVANCED_OPTIONS,       MF_REQ_PREF_ACCESS | MF_REQ_DISK_ACCESS },
     { "&Preference...",                     IDM_PREFERENCE,             MF_REQ_PREF_ACCESS | MF_NO_TRANSLATE },
 };
 
@@ -633,7 +644,12 @@ HMENU BuildMenu(WindowInfo *win)
     mii.fType = MFT_OWNERDRAW;
 
     HMENU mainMenu = CreateMenu();
-    int filter = win->IsChm() ? MF_NOT_FOR_CHM : 0;
+    int filter = 0;
+    if (win->IsChm())
+        filter |= MF_NOT_FOR_CHM;
+    if (!win->IsCbx())
+        filter |= MF_CBX_ONLY;
+
     HMENU m = CreateMenu();
     RebuildFileMenu(win, m);
     AppendMenu(mainMenu, MF_POPUP | MF_STRING, (UINT_PTR)m, _TR("&File"));

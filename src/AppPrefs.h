@@ -4,6 +4,11 @@
 #ifndef AppPrefs_h
 #define AppPrefs_h
 
+#define PREFS_FILE_NAME         L"SumatraPDF-settings.txt"
+#ifdef ENABLE_SUMATRAPDF_USER_INI
+#define USER_PREFS_FILE_NAME    L"SumatraPDF-user.ini"
+#endif
+
 /* enum from windowState */
 enum {
     WIN_STATE_NORMAL = 1, /* use remembered position and size */
@@ -18,15 +23,24 @@ extern GlobalPrefs *gGlobalPrefs;
 
 void DeleteGlobalPrefs(GlobalPrefs *globalPrefs);
 
-bool LoadPrefs();
-bool SavePrefs();
-bool ReloadPrefs();
+namespace prefs {
 
-namespace DisplayModeConv {
+bool Load();
+bool Save();
+bool Reload(bool forceReload=false);
 
-const WCHAR *   NameFromEnum(DisplayMode var);
-DisplayMode     EnumFromName(const WCHAR *txt, DisplayMode default);
+void RegisterForFileChanges();
+void UnregisterForFileChanges();
 
-}
+namespace conv {
+
+const WCHAR *   FromDisplayMode(DisplayMode mode);
+DisplayMode     ToDisplayMode(const WCHAR *s, DisplayMode default=DM_AUTOMATIC);
+void            FromZoom(char **dst, float zoom, DisplayState *stateForIssue2140=NULL);
+float           ToZoom(const char *s, float default=ZOOM_FIT_PAGE);
+
+};
+
+};
 
 #endif
