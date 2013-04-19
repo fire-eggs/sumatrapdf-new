@@ -2,6 +2,7 @@ AppTranslator strings
 %s of %s
 &About
 &Actual Size\tCtrl+1
+&Advanced Options...
 &All selected pages
 &Back\tAlt+Left Arrow
 &Book View\tCtrl+8
@@ -178,6 +179,7 @@ Loading file %s...
 MB
 Make SumatraPDF default application for PDF files?
 Make SumatraPDF my default PDF reader
+Man&ga Mode
 Match Case
 Mobi documents
 Modified:
