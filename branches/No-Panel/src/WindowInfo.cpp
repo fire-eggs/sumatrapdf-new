@@ -14,6 +14,7 @@
 #include "SumatraPDF.h"
 #include "Translations.h"
 #include "WinUtil.h"
+#include "uia/UIAutomationProvider.h"
 
 TopWindowInfo::TopWindowInfo(HWND hwnd) :
     hwndFrame(hwnd), win(NULL)
@@ -47,7 +48,8 @@ WindowInfo::WindowInfo(HWND hwnd) :
     delayedRepaintTimer(0), watcher(NULL),
     pdfsync(NULL), stressTest(NULL),
     hwndFavBox(NULL), hwndFavTree(NULL),
-    userAnnots(NULL), userAnnotsModified(false)
+    userAnnots(NULL), userAnnotsModified(false),
+    uia_provider(NULL)
 {
     dpi = win::GetHwndDpi(hwndFrame, &uiDPIFactor);
     touchState.panStarted = false;
@@ -61,6 +63,11 @@ WindowInfo::~WindowInfo()
 {
     FinishStressTest(this);
     CrashIf(watcher);
+
+    // release our copy of UIA provider
+    // the UI automation still might have a copy somewhere
+    if (uia_provider)
+        uia_provider->Release();
 
     delete pdfsync;
     delete linkHandler;
@@ -183,6 +190,23 @@ void WindowInfo::DeleteInfotip()
 
     SendMessage(hwndInfotip, TTM_DELTOOL, 0, (LPARAM)&ti);
     infotipVisible = false;
+}
+
+SumatraUIAutomationProvider* WindowInfo::GetUIAProvider()
+{
+    if (uia_provider) {
+        uia_provider->AddRef();
+        return uia_provider;
+    }
+
+    uia_provider = new SumatraUIAutomationProvider(this);
+    uia_provider->AddRef(); // prevent deletion by callers
+
+    // load data to provider
+    if (dm)
+        uia_provider->OnDocumentLoad();
+
+    return uia_provider;
 }
 
 void WindowInfo::LaunchBrowser(const WCHAR *url)
@@ -312,7 +336,7 @@ void LinkHandler::ScrollTo(PageDestination *dest)
             scroll.x = -1;
         if (DEST_USE_DEFAULT == rect.y) {
             PageInfo *pageInfo = dm->GetPageInfo(dm->CurrentPageNo());
-            scroll.y = -(pageInfo->pageOnScreen.y - dm->GetPadding()->margin.top);
+            scroll.y = -(pageInfo->pageOnScreen.y - dm->GetWindowMargin()->top);
             scroll.y = max(scroll.y, 0); // Adobe Reader never shows the previous page
         }
     }
