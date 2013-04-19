@@ -125,7 +125,9 @@ public:
     WindowInfo *    win; // Indicate which document (tab page) in a panel is currently viewed.
 
     ToolbarInfo *   toolBar;
-    SidebarInfo *   sideBar; 
+    SidebarInfo *   sideBar;
+
+    int tabIndexMouseOver;
 };
 
 /* Describes information related to one window with (optional) a document

@@ -5002,29 +5002,34 @@ static LRESULT CALLBACK WndProcFavSplitter(HWND hwnd, UINT message, WPARAM wPara
     if (!win)
         return DefWindowProc(hwnd, message, wParam, lParam);
 
-    switch (message)
-    {
+    switch (message) {
         case WM_MOUSEMOVE:
             if (hwnd == GetCapture()) {
                 ResizeFav(win);
                 return 0;
             }
             break;
+
         case WM_PAINT:
             FavSplitterOnPaint(hwnd);
-            return 0;
             break;
+
         case WM_LBUTTONDOWN:
             SetCapture(hwnd);
             break;
+
         case WM_LBUTTONUP:
             ReleaseCapture();
             break;
+
         case WM_ERASEBKGND:
             return 1;
-            break;
+
+        default:
+            return DefWindowProc(hwnd, message, wParam, lParam);
     }
-    return DefWindowProc(hwnd, message, wParam, lParam);
+
+    return 0;
 }
 
 static void PanelSplitterOnPaint(HWND hwnd)
@@ -5081,45 +5086,50 @@ static void PanelSplitterOnPaint(HWND hwnd)
     EndPaint(hwnd, &ps);
 }
 
-static LRESULT CALLBACK WndProcPanelSplitter(HWND hwnd, UINT message,
-    WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK WndProcPanelSplitter(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     ContainerInfo *container = FindContainerInfoByHwnd(hwnd);
     if (!container)
         return DefWindowProc(hwnd, message, wParam, lParam);
 
-    switch (message)
-    {
-    case WM_MOUSEMOVE:
-        if (container->isSplitVertical)
-            SetCursor(gCursorSizeWE);
-        else
-            SetCursor(gCursorSizeNS);
+    switch (message) {
+        case WM_MOUSEMOVE:
+            if (container->isSplitVertical)
+                SetCursor(gCursorSizeWE);
+            else
+                SetCursor(gCursorSizeNS);
 
-        if (hwnd == GetCapture()) {
-            ResizePanel(container);
-            return 0;
-        }
-        break;
-    case WM_PAINT:
-        PanelSplitterOnPaint(hwnd);
-        return 0;
-        break;
-    case WM_LBUTTONDOWN:
-        if (container->isSplitVertical)
-            SetCursor(gCursorSizeWE);
-        else
-            SetCursor(gCursorSizeNS);
-        SetCapture(hwnd);
-        break;
-    case WM_LBUTTONUP:
-        ReleaseCapture();
-        break;
-    case WM_ERASEBKGND:
-        return 1;
-        break;
+            if (hwnd == GetCapture()) {
+                ResizePanel(container);
+                return 0;
+            }
+            break;
+
+        case WM_PAINT:
+            PanelSplitterOnPaint(hwnd);
+            break;
+
+        case WM_LBUTTONDOWN:
+            if (container->isSplitVertical)
+                SetCursor(gCursorSizeWE);
+            else
+                SetCursor(gCursorSizeNS);
+
+            SetCapture(hwnd);
+            break;
+
+        case WM_LBUTTONUP:
+            ReleaseCapture();
+            break;
+
+        case WM_ERASEBKGND:
+            return 1;
+
+        default:
+            return DefWindowProc(hwnd, message, wParam, lParam);
     }
-    return DefWindowProc(hwnd, message, wParam, lParam);
+
+    return 0;
 }
 
 static void SidebarSplitterOnPaint(HWND hwnd)
@@ -5170,29 +5180,34 @@ static LRESULT CALLBACK WndProcSidebarSplitter(HWND hwnd, UINT message, WPARAM w
     if (!win)
         return DefWindowProc(hwnd, message, wParam, lParam);
 
-    switch (message)
-    {
+    switch (message) {
         case WM_MOUSEMOVE:
             if (hwnd == GetCapture()) {
                 ResizeSidebar(win);
                 return 0;
             }
             break;
+
         case WM_PAINT:
             SidebarSplitterOnPaint(hwnd);
-            return 0;
             break;
+
         case WM_LBUTTONDOWN:
             SetCapture(hwnd);
             break;
+
         case WM_LBUTTONUP:
             ReleaseCapture();
             break;
+
         case WM_ERASEBKGND:
             return 1;
-            break;
+
+        default:
+            return DefWindowProc(hwnd, message, wParam, lParam);
     }
-    return DefWindowProc(hwnd, message, wParam, lParam);
+
+    return 0;
 }
 
 // A tree container, used for toc and favorites, is a window with following children:
@@ -5911,8 +5926,7 @@ static LRESULT CustomDrawReBar(HWND hwnd, LPARAM lParam)
 {
     LPNMCUSTOMDRAW lpnmcustom = (LPNMCUSTOMDRAW)lParam;
 
-    switch(lpnmcustom->dwDrawStage) {
-
+    switch (lpnmcustom->dwDrawStage) {
         case CDDS_PREPAINT:
         {
             HDC hdc = lpnmcustom->hdc;
@@ -5947,9 +5961,6 @@ static LRESULT CustomDrawReBar(HWND hwnd, LPARAM lParam)
 
             return CDRF_NOTIFYITEMDRAW;
         }
-
-        default:
-            return CDRF_DODEFAULT;
     }
 
     return CDRF_DODEFAULT;
@@ -5959,8 +5970,7 @@ static LRESULT CustomDrawToolbar(HWND hwnd, LPARAM lParam)
 {
     LPNMTBCUSTOMDRAW lpnmtbcustom = (LPNMTBCUSTOMDRAW)lParam;
 
-    switch(lpnmtbcustom->nmcd.dwDrawStage) {
-
+    switch (lpnmtbcustom->nmcd.dwDrawStage) {
         case CDDS_PREPAINT:
         {
             HDC hdc = lpnmtbcustom->nmcd.hdc;
@@ -5995,9 +6005,6 @@ static LRESULT CustomDrawToolbar(HWND hwnd, LPARAM lParam)
 
             return CDRF_NOTIFYITEMDRAW;
         }
-
-        default:
-            return CDRF_DODEFAULT;
     }
 
     return CDRF_DODEFAULT;
@@ -6020,34 +6027,34 @@ static LRESULT PanelOnNotify(PanelInfo *panel, HWND hwnd, UINT msg, WPARAM wPara
 {
     LPNMHDR lpnmhdr = (LPNMHDR)lParam;
 
-    switch(lpnmhdr->code) {
-    case TCN_SELCHANGE:
-        if (IsCursorOverWindow(panel->hwndTab)) {
-            int tabIndex = SendMessage(panel->hwndTab, TCM_GETCURSEL, NULL, NULL); // tabIndex is the new index.
-            ShowDocument(panel, panel->win, panel->gWin.At(tabIndex), true); // panel->win is the current win before calling ShowDocument().
+    switch (lpnmhdr->code) {
+        case TCN_SELCHANGE:
+            if (IsCursorOverWindow(panel->hwndTab)) {
+                int tabIndex = SendMessage(panel->hwndTab, TCM_GETCURSEL, NULL, NULL); // tabIndex is the new index.
+                ShowDocument(panel, panel->win, panel->gWin.At(tabIndex), true); // panel->win is the current win before calling ShowDocument().
+                InvalidateRect(panel->hwndTab, NULL, FALSE); // In order to change from highlight color to selected item's color.
+                //RECT rc;
+                //SendMessage(panel->hwndTab, TCM_GETITEMRECT, tabIndex, (LPARAM)&rc); // For new selected tab item.
+                //SetWindowPos(panel->gWin.At(tabIndex)->hwndTabStatic, NULL, rc.right - 16, 7, 12, 12, SWP_NOZORDER);
+                //SendMessage(panel->hwndTab, TCM_GETITEMRECT, panel->gWin.Find(panel->win), (LPARAM)&rc); // For selected tab item before change.
+                //SetWindowPos(panel->win->hwndTabStatic, NULL, rc.right - 16, 8, 12, 12, SWP_NOZORDER);
+            }
+            break;
 
-            //RECT rc;
-            //SendMessage(panel->hwndTab, TCM_GETITEMRECT, tabIndex, (LPARAM)&rc); // For new selected tab item.
-            //SetWindowPos(panel->gWin.At(tabIndex)->hwndTabStatic, NULL, rc.right - 16, 7, 12, 12, SWP_NOZORDER);
-            //SendMessage(panel->hwndTab, TCM_GETITEMRECT, panel->gWin.Find(panel->win), (LPARAM)&rc); // For selected tab item before change.
-            //SetWindowPos(panel->win->hwndTabStatic, NULL, rc.right - 16, 8, 12, 12, SWP_NOZORDER);
-        }
-        break;
+        case TTN_GETDISPINFO:
+            int tabIndex;
+            tabIndex = (int)wParam;
+            if (IsCursorOverWindow(panel->hwndTab)) {
+                LPNMTTDISPINFO lpnmtdi = (LPNMTTDISPINFO)lParam;
+                lpnmtdi->lpszText = panel->gWin.At(tabIndex)->TabToolTipText;
+            }
+            break;
 
-    case TTN_GETDISPINFO:
-        int tabIndex;
-        tabIndex = (int) wParam;
-        if (IsCursorOverWindow(panel->hwndTab)) {
-            LPNMTTDISPINFO lpnmtdi = (LPNMTTDISPINFO)lParam;
-            lpnmtdi->lpszText = panel->gWin.At(tabIndex)->TabToolTipText;
-        }
-        break;
+        case NM_CUSTOMDRAW:
+            return CustomDrawInPanel(panel, hwnd, msg, wParam, lParam);
 
-    case NM_CUSTOMDRAW:
-        return CustomDrawInPanel(panel, hwnd, msg, wParam, lParam);
-
-    default:
-        return DefWindowProc(hwnd, msg, wParam, lParam);
+        default:
+            return DefWindowProc(hwnd, msg, wParam, lParam);
     }
 
     return 0;
@@ -6062,8 +6069,7 @@ static LRESULT PanelOnCommand(PanelInfo *panel, HWND hwnd, UINT msg, WPARAM wPar
     int wmId = LOWORD(wParam);
 
     // most of them require a win, the few exceptions are no-ops
-    switch (wmId)
-    {
+    switch (wmId) {
         case IDM_PRINT:
             OnMenuPrint(win);
             break;
@@ -6119,6 +6125,7 @@ static LRESULT PanelOnCommand(PanelInfo *panel, HWND hwnd, UINT msg, WPARAM wPar
         default:
             return DefWindowProc(hwnd, msg, wParam, lParam);
     }
+
     return 0;
 }
 
@@ -6153,6 +6160,98 @@ static void PanelOnPaint(PanelInfo& panel)
     EndPaint(panel.hwndPanel, &ps);
 }
 
+static LRESULT PanelOnDrawItem(PanelInfo *panel, WPARAM wParam, LPARAM lParam)
+{
+    LPDRAWITEMSTRUCT lpDis = (LPDRAWITEMSTRUCT)lParam;
+
+    // We want to draw only tab items manually,
+    // so return the default procedure if lpDis->hwndItem is not hwndTab.
+    if (lpDis->hwndItem != panel->hwndTab)
+        return DefWindowProc(panel->hwndPanel, WM_DRAWITEM, wParam, lParam);    
+
+    // Now, we are sure that the treatment is for tab items.
+
+    // We need to get the text of the tab item that is being drawn.
+    TCITEM tie;
+    tie.mask = TCIF_TEXT;
+
+    WCHAR itemText[1024];
+
+    tie.pszText = itemText;
+    tie.cchTextMax = 1024;
+    SendMessage(lpDis->hwndItem, TCM_GETITEM, lpDis->itemID, (LPARAM)&tie);
+
+    // Do we really need this?
+    int index = lpDis->itemID;
+    int indexHover = GetTabIndex(panel);
+    int itemState = lpDis->itemState;
+
+    // Change the item's state.
+    // Because an owner-draw tab control lose the hot track feature.
+    // We need to detect this situation manually.
+    if (index == indexHover && (panel->gWin.At(index) != panel->win))
+        itemState = lpDis->itemState = ODS_HOTLIGHT;
+
+    COLORREF itemColor_Selected = RGB(0xFF, 0xFF, 0xFF);
+
+    COLOR16 R_0 = 0xEA00;
+    COLOR16 G_0 = 0xF600;
+    COLOR16 B_0 = 0xFD00;
+
+    COLOR16 R_1 = 0xAC00;
+    COLOR16 G_1 = 0xDC00;
+    COLOR16 B_1 = 0xF700;
+
+    if (!(itemState & ODS_HOTLIGHT)) {
+        R_0 = G_0 = B_0 = 0xF200;
+        R_1 = G_1 = B_1 = 0xD200;
+    }
+
+    if (itemState & ODS_SELECTED) {
+        HBRUSH hBrush = CreateSolidBrush(itemColor_Selected);
+        FillRect(lpDis->hDC, &lpDis->rcItem, hBrush);
+        DeleteObject(hBrush);
+    } else {
+        TRIVERTEX        vert[2];
+        GRADIENT_RECT    gRect;
+
+        vert[0].x      = lpDis->rcItem.left;
+        vert[0].y      = lpDis->rcItem.top + 2;
+        vert[0].Red    = R_0;
+        vert[0].Green  = G_0;
+        vert[0].Blue   = B_0;
+        vert[0].Alpha  = 0x0000;
+
+        vert[1].x      = lpDis->rcItem.right;
+        vert[1].y      = lpDis->rcItem.bottom; 
+        vert[1].Red    = R_1;
+        vert[1].Green  = G_1;
+        vert[1].Blue   = B_1;
+        vert[1].Alpha  = 0x0000;
+
+        gRect.UpperLeft  = 0;
+        gRect.LowerRight = 1;
+
+        GradientFill(lpDis->hDC, vert, 2, &gRect, 1, GRADIENT_FILL_RECT_V);
+    }
+
+    RECT rc2;
+    SendMessage(lpDis->hwndItem, TCM_GETITEMRECT, lpDis->itemID, (LPARAM)&rc2);
+
+    RECT rc;
+
+    rc.left = rc2.left + 6;
+    rc.top  = rc2.top + (itemState & ODS_SELECTED ? 4 : 6);
+
+    rc.right = lpDis->rcItem.right;
+    rc.bottom = lpDis->rcItem.bottom;
+
+    SetBkMode(lpDis->hDC, TRANSPARENT);
+    DrawTextEx(lpDis->hDC, itemText, str::Len(itemText), &rc, 0, NULL);
+
+    return TRUE;
+}
+
 static LRESULT CALLBACK WndProcContainer(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     ContainerInfo *container = FindContainerInfoByHwnd(hwnd);
@@ -6175,6 +6274,7 @@ static LRESULT CALLBACK WndProcContainer(HWND hwnd, UINT msg, WPARAM wParam, LPA
         default:
             return DefWindowProc(hwnd, msg, wParam, lParam);
     }
+
     return 0;
 }
 
@@ -6209,9 +6309,13 @@ static LRESULT CALLBACK WndProcPanel(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
             return 1;
             break;
 
+        case WM_DRAWITEM:
+            return PanelOnDrawItem(panel, wParam, lParam);
+
         default:
             return DefWindowProc(hwnd, msg, wParam, lParam);
     }
+
     return 0;
 }
 
@@ -6316,6 +6420,7 @@ static LRESULT CALLBACK WndProcCanvas(HWND hwnd, UINT msg, WPARAM wParam, LPARAM
         default:
             return DefWindowProc(hwnd, msg, wParam, lParam);
     }
+
     return 0;
 }
 
@@ -6457,8 +6562,7 @@ static LRESULT FrameOnCommand(WindowInfo *win, HWND hwnd, UINT msg, WPARAM wPara
         return DefWindowProc(hwnd, msg, wParam, lParam);
 
     // most of them require a win, the few exceptions are no-ops
-    switch (wmId)
-    {
+    switch (wmId) {
         case IDM_OPEN:
         case IDT_FILE_OPEN:
             OnMenuOpen(SumatraWindow::Make(win));
@@ -6816,8 +6920,7 @@ static LRESULT CALLBACK WndProcFrame(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
     
     win = FindWindowInfoByHwnd(hwnd);
 
-    switch (msg)
-    {
+    switch (msg) {
         case WM_NCPAINT:
         case WM_ACTIVATEAPP:
         case WM_NCACTIVATE:
@@ -6996,6 +7099,7 @@ InitMouseWheelInfo:
         default:
             return DefWindowProc(hwnd, msg, wParam, lParam);
     }
+
     return 0;
 }
 

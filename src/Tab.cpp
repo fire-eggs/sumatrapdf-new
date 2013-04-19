@@ -17,21 +17,23 @@ using namespace Gdiplus;
 #include "WindowInfo.h"
 #include "WinUtil.h"
 
-//int GetTabIndex(PanelInfo *panel)
-//{
-//    POINT pt;
-//    GetCursorPos(&pt);
-//    ScreenToClient(panel->hwndTab, &pt);
-//
-//    TCHITTESTINFO hitInfo;
-//    hitInfo.pt = pt;
-//    hitInfo.flags = TCHT_ONITEM;
-//
-//    int tabIndex;
-//    tabIndex = SendMessage(panel->hwndTab, TCM_HITTEST, NULL, (LPARAM)&hitInfo);
-//
-//    return tabIndex;
-//}
+int GetTabIndex(PanelInfo *panel)
+{
+    POINT pt;
+    GetCursorPos(&pt);
+    ScreenToClient(panel->hwndTab, &pt);
+    if (pt.y == TAB_CONTROL_DY || pt.y == TAB_CONTROL_DY + 1)
+        pt.y += 2;
+
+    TCHITTESTINFO hitInfo;
+    hitInfo.pt = pt;
+    hitInfo.flags = TCHT_ONITEM;
+
+    int tabIndex;
+    tabIndex = SendMessage(panel->hwndTab, TCM_HITTEST, NULL, (LPARAM)&hitInfo);
+
+    return tabIndex;
+}
 //
 //void UpdateCloseButtonBitmap(PanelInfo *panel, int tabIndex, int bmpIndex)
 //{
@@ -257,8 +259,12 @@ static LRESULT CALLBACK WndProcTabTooltip(HWND hwnd, UINT message, WPARAM wParam
 //    SetTimer(panel->hwndTabPreview, 3, timer, timerProc);
 //}
 //
-//static bool TabControlOnMouseLeave(PanelInfo *panel)
-//{
+static bool TabControlOnMouseLeave(PanelInfo *panel)
+{
+    panel->tabIndexMouseOver = -1;
+    InvalidateRect(panel->hwndTab, NULL, TRUE);
+    return panel->tabIndexMouseOver = -1;
+}
 //    //POINT pt;
 //    //GetCursorPos(&pt);
 //    if (panel->tabIndexMouseOver > -1 && IsCursorOverWindow(panel->gWin.At(panel->tabIndexMouseOver)->hwndTabStatic))
@@ -287,16 +293,30 @@ static LRESULT CALLBACK WndProcTabTooltip(HWND hwnd, UINT message, WPARAM wParam
 //    return true;
 //}
 //
+
 //// We may put the command to timerProc to reduce the code. But we put it here to get the immediate response.
 //// The timer is mainly for mouse leave.
-//static void TabControlOnMouseMove(PanelInfo *panel)
-//{
-//    // Track Mouse Leave
-//    TRACKMOUSEEVENT tme = { 0 };
-//    tme.cbSize = sizeof(tme);
-//    tme.dwFlags = TME_LEAVE;
-//    tme.hwndTrack = panel->hwndTab;
-//    TrackMouseEvent(&tme);
+static void TabControlOnMouseMove(PanelInfo *panel)
+{
+    // Get tab index.
+    int tabIndex = GetTabIndex(panel);
+    
+    RECT rc;
+    SendMessage(panel->hwndTab, TCM_GETITEMRECT, tabIndex, (LPARAM)&rc);
+
+    if (tabIndex > -1 && tabIndex != panel->tabIndexMouseOver) {
+        InvalidateRect(panel->hwndTab, NULL, FALSE);
+    }
+
+    // Track Mouse Leave
+    TRACKMOUSEEVENT tme = { 0 };
+    tme.cbSize = sizeof(tme);
+    tme.dwFlags = TME_LEAVE;
+    tme.hwndTrack = panel->hwndTab;
+    TrackMouseEvent(&tme);
+
+    panel->tabIndexMouseOver = tabIndex;
+}
 //
 //    // Get tab index.
 //    int tabIndex = GetTabIndex(panel);
@@ -330,81 +350,187 @@ static LRESULT CALLBACK WndProcTabTooltip(HWND hwnd, UINT message, WPARAM wParam
 //    }
 //}
 
+static void ClipAndDrawRegion(HDC hdc, HRGN hRgn, HRGN hRgnInterior, int mode, COLORREF color)
+{
+    SelectClipRgn(hdc, hRgn);
+    ExtSelectClipRgn(hdc, hRgnInterior, mode);
+
+    HBRUSH hBrush = CreateSolidBrush(color);
+    FillRgn(hdc, hRgn, hBrush);
+    DeleteObject(hBrush);
+
+    SelectClipRgn(hdc, NULL);
+    DeleteObject(hRgn);
+    DeleteObject(hRgnInterior);
+}
+
+static void DrawTabItemBoundary(HWND hwnd, HDC hdc, int i, int indexHover, int selected, bool last)
+{
+    RECT rcItem;
+    SendMessage(hwnd, TCM_GETITEMRECT, i, (LPARAM)&rcItem);
+
+    int x1 = rcItem.left;
+    int y1 = rcItem.top;
+    int x2 = rcItem.right;
+    int y2 = rcItem.bottom;
+
+    // We need this adjustment when the last item is non-selected.
+    if (last)
+        x2 = rcItem.right - 2;
+
+    bool hovered = (i == indexHover);
+
+    if (i != selected) {
+
+        // The outermost region of the boundary.
+        HRGN hrgn = CreateRectRgn(x1, y1, x2 , y2);
+        HRGN rgnInterior = CreateRectRgn(x1 + 1, y1 + 1, x2 - 1, y2 - 1);
+        COLORREF color = hovered ? RGB(0x3C, 0x7F, 0xB1) : RGB(0x89, 0x8C, 0x95);
+        ClipAndDrawRegion(hdc, hrgn, rgnInterior, RGN_DIFF, color);
+    
+        // ? The second outer region of the boundary.
+        hrgn = CreateRectRgn(x1 + 1, y1 + 1, x2 - 1 , y2 - 1);
+        rgnInterior = CreateRectRgn(x1 + 2, y1 + 2, x2 - 2 , y2 - 2);
+        color = hovered ? RGB(0xFA, 0xFD, 0xFE) : RGB(0xFC, 0xFC, 0xFC);
+        ClipAndDrawRegion(hdc, hrgn, rgnInterior, RGN_DIFF, color);
+
+        // y = 1.
+        hrgn = CreateRectRgn(x1, y1 - 1, x2, y2);
+        rgnInterior = CreateRectRgn(x1, y1, x2, y2);
+        color = RGB(0xF0, 0xF0, 0xF0);
+        ClipAndDrawRegion(hdc, hrgn, rgnInterior, RGN_DIFF, color);
+
+        // x = 0 or 1.
+        if (i == 0) {
+            RECT rc;
+            rc.left = 0;
+            rc.top = rcItem.top - 1;
+            rc.right = 2;
+            rc.bottom = rcItem.bottom;
+
+            HBRUSH hBrush = CreateSolidBrush(RGB(0xF0, 0xF0, 0xF0));
+            FillRect(hdc, &rc, hBrush);
+            DeleteObject(hBrush);
+        }
+
+    } else    {
+        // The outermost region of the boundary.
+        HRGN hrgn = CreateRectRgn(x1 - 2 , y1 - 2, x2 + 2 , y2 + 2);
+        HRGN rgnInterior = CreateRectRgn(x1 - 1, y1 - 1, x2 + 1, y2 + 1);
+        COLORREF color = RGB(0x89, 0x8C, 0x95);
+        ClipAndDrawRegion(hdc, hrgn, rgnInterior, RGN_DIFF, color);
+
+        // ? The second outer region of the boundary.
+        hrgn = CreateRectRgn(x1 - 1, y1 - 1, x2 + 1, y2 + 1);
+        rgnInterior = CreateRectRgn(x1, y1, x2 , y2);
+        color = RGB(0xFF, 0xFF, 0xFF);
+        ClipAndDrawRegion(hdc, hrgn, rgnInterior, RGN_DIFF, color);
+    }
+}
+
+static void TabControlOnPaint(HWND hwnd)
+{
+    HDC hdc = GetDC(hwnd);
+
+    // PanelOnDrawItem only draws "the interior (but top)" of tab items.
+    // We need to draw the "boundary" of tab items.
+    // Also, there are some parts of a tab control (e.g. y = 0, y = 1, x = 0 and x = 1) to draw,
+    // but they are out of the region of tab items.
+
+    // Used to draw the boundary of tab items.
+    int count = SendMessage(hwnd, TCM_GETITEMCOUNT, 0, 0);
+
+    // Used to determine the color of a tab item, i.e highlight or normal color.
+    int indexHover = GetTabIndex(FindPanelInfoByHwnd(hwnd));
+
+    // Current selected tab item is fully drawn in PanelOnDrawItem.
+    // But we draw the boundary of other tab items here,
+    // so we need to redraw the selected tab item again here.
+    // This index is used to distinguish these 2 types of tab item.
+    int selected = SendMessage(hwnd, TCM_GETCURSEL, 0, 0);
+
+    // Draw the boundary of non-selected tab items.
+    for (int i = 0; i < count; i++) {
+        if (i != selected)
+            DrawTabItemBoundary(hwnd, hdc, i, indexHover, selected, i == count - 1);
+    }
+
+    // Draw the selected item last.
+    // Attention: When the selected item is the last item,
+    // we don't want to adjust rcItem.
+    // Hence we pass false to the parameter "bool last".
+    DrawTabItemBoundary(hwnd, hdc, selected, indexHover, selected, false);
+
+    // Draw the part where y = 0.
+    RECT rc;
+    GetClientRect(hwnd, &rc);
+
+    // Since we change rc.top and rc.bottom below, we need to get dy first,
+    // so do this together with dx.
+    int dx = rc.right - rc.left;
+    int dy = rc.bottom - rc.top;
+
+    rc.top = 0;
+    rc.bottom = 1;
+    FillRect(hdc, &rc, gBrushSepLineBg);
+
+    // Draw item-free region.
+    RECT rcLastItem;
+    SendMessage(hwnd, TCM_GETITEMRECT, count - 1, (LPARAM)&rcLastItem);
+    int start = rcLastItem.right + 2;
+    if (count - 1 != SendMessage(hwnd, TCM_GETCURSEL, 0, 0)) {
+        if (IsAppThemed())
+            start -= 4;
+        else
+            start -= 2;
+    }
+
+    TRIVERTEX        vert[2];
+    GRADIENT_RECT    gRect;
+
+    vert[0].x      = start;
+    vert[0].y      = 1;
+    vert[0].Red    = 0xEF00;
+    vert[0].Green  = 0xEF00;
+    vert[0].Blue   = 0xEF00;
+    vert[0].Alpha  = 0x0000;
+
+    vert[1].x      = dx;
+    vert[1].y      = dy; 
+    vert[1].Red    = 0xD900;
+    vert[1].Green  = 0xD900;
+    vert[1].Blue   = 0xD900;
+    vert[1].Alpha  = 0x0000;
+
+    gRect.UpperLeft  = 0;
+    gRect.LowerRight = 1;
+
+    GradientFill(hdc, vert, 2, &gRect, 1, GRADIENT_FILL_RECT_V);
+
+    ReleaseDC(hwnd, hdc);
+}
+
 static WNDPROC DefWndProcTabControl = NULL;
 static LRESULT CALLBACK WndProcTabControl(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {   
-    if (message == WM_PAINT) {
-
-        CallWindowProc(DefWndProcTabControl, hwnd, message, wParam, lParam);
-
-        HDC hdc = GetDC(hwnd);
-
-        RECT rc;
-        GetClientRect(hwnd, &rc);
-
-        int dx = rc.right - rc.left;
-        int dy = rc.bottom - rc.top;
-
-        rc.top = 0;
-        rc.bottom = 1;
-        FillRect(hdc, &rc, gBrushSepLineBg);
-
-        int tabItemCount = SendMessage(hwnd, TCM_GETITEMCOUNT, 0, 0);
-        RECT rcLastItem;
-        SendMessage(hwnd, TCM_GETITEMRECT, tabItemCount - 1, (LPARAM)&rcLastItem);
-        int start = rcLastItem.right + 2;
-        if (tabItemCount - 1 != SendMessage(hwnd, TCM_GETCURSEL, 0, 0)) {
-            if (IsAppThemed())
-                start -= 4;
-            else
-                start -= 2;
-        }
-
-        TRIVERTEX        vert[2];
-        GRADIENT_RECT    gRect;
-
-        vert[0].x      = start;
-        vert[0].y      = 1;
-        vert[0].Red    = 0xEF00;
-        vert[0].Green  = 0xEF00;
-        vert[0].Blue   = 0xEF00;
-        vert[0].Alpha  = 0x0000;
-
-        vert[1].x      = dx;
-        vert[1].y      = dy; 
-        vert[1].Red    = 0xD900;
-        vert[1].Green  = 0xD900;
-        vert[1].Blue   = 0xD900;
-        vert[1].Alpha  = 0x0000;
-
-        gRect.UpperLeft  = 0;
-        gRect.LowerRight = 1;
-
-        GradientFill(hdc, vert, 2, &gRect, 1, GRADIENT_FILL_RECT_V);
-
-        ReleaseDC(hwnd, hdc);
-
-        return 0;
-    }
-
     // hwnd is hwndTab;
-    //PanelInfo *panel = FindPanelInfoByHwnd(hwnd);
-    //
-    //if (!panel)
-    //    return DefWindowProc(hwnd, message, wParam, lParam);
+    PanelInfo *panel = FindPanelInfoByHwnd(hwnd);
+    
+    if (!panel)
+        return DefWindowProc(hwnd, message, wParam, lParam);
 
     //WindowInfo *win = panel->win;
 
-    //switch(message) {
+    switch (message) {
 
-    //    case WM_MOUSEMOVE:
-    //        TabControlOnMouseMove(panel);
-    //        break;
+        case WM_MOUSEMOVE:
+            TabControlOnMouseMove(panel);
+            break;
 
-    //    case WM_MOUSELEAVE:
-    //        if (!TabControlOnMouseLeave(panel))
-    //            return 0;
-    //        break;
+        case WM_MOUSELEAVE:
+            if (!TabControlOnMouseLeave(panel))
+                return 0;
+            break;
 
     //    case WM_INITMENUPOPUP:
     //        panel->hMenu = (HMENU) wParam;
@@ -416,9 +542,8 @@ static LRESULT CALLBACK WndProcTabControl(HWND hwnd, UINT message, WPARAM wParam
     //            PostMessage(panel->hwndTab, WM_MOUSELEAVE, 0, 0); // When cancel the tab contextmenu outside the panel, make the highlighted tab item non-highlighted.
     //        break;
 
-    //    case WM_ERASEBKGND:
-    //        return 1;
-    //        break;
+        case WM_ERASEBKGND:
+            return 1;
 
     //    case WM_ENTERMENULOOP:
     //        break;
@@ -429,6 +554,11 @@ static LRESULT CALLBACK WndProcTabControl(HWND hwnd, UINT message, WPARAM wParam
     //            CloseWindowFromTab(winToClose);
     //        }
     //        break;
+
+        case WM_PAINT:
+            CallWindowProc(DefWndProcTabControl, hwnd, message, wParam, lParam);
+            TabControlOnPaint(hwnd);
+            return 0;
 
     //    case WM_PAINT: // We need this to make the TabStatics' pos behaves well.
     //        for (int i = 0; i < (int) panel->gWin.Count(); i++) {
@@ -441,7 +571,8 @@ static LRESULT CALLBACK WndProcTabControl(HWND hwnd, UINT message, WPARAM wParam
     //        panel->tabIndexMouseOver = min(panel->tabIndexMouseOver, SendMessage(panel->hwndTab, TCM_GETITEMCOUNT, 0, 0) - 2);
     //        panel->closeButtonIndex = min(panel->closeButtonIndex, SendMessage(panel->hwndTab, TCM_GETITEMCOUNT, 0, 0) - 2);
     //        break;
-    //}
+    }
+
     return CallWindowProc(DefWndProcTabControl, hwnd, message, wParam, lParam);
 }
 
@@ -451,7 +582,7 @@ void CreateTabControl(PanelInfo *panel)
         NULL,
         WC_TABCONTROL,
         NULL,
-        WS_CLIPCHILDREN | WS_CHILD | TCS_FOCUSNEVER | TCS_HOTTRACK | TCS_TOOLTIPS, // Use WS_CLIPCHILDREN, otherwise, the close buttons will disappear when insert new items or delete an item.
+        WS_CLIPCHILDREN | WS_CHILD | TCS_FOCUSNEVER | TCS_HOTTRACK | TCS_TOOLTIPS | TCS_OWNERDRAWFIXED, // Use WS_CLIPCHILDREN, otherwise, the close buttons will disappear when insert new items or delete an item.
         0, 0, 0, 0, /* position and size determined in OnSize */
         panel->hwndPanel,
         NULL,

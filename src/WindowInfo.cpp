@@ -44,7 +44,7 @@ ContainerInfo::~ContainerInfo()
 }
 
 PanelInfo::PanelInfo(HWND hwnd) :
-    hwndPanel(hwnd), WIN(NULL), container(NULL), win(NULL), toolBar(NULL), sideBar(NULL)
+    hwndPanel(hwnd), WIN(NULL), container(NULL), win(NULL), toolBar(NULL), sideBar(NULL), tabIndexMouseOver(-1)
 {
 
 }
