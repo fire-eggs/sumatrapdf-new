@@ -197,7 +197,7 @@ static void OpenUsingDde(const WCHAR *filePath, CommandLineInfo& i, bool isFirst
     }
     if ((i.startView != DM_AUTOMATIC || i.startZoom != INVALID_ZOOM ||
             i.startScroll.x != -1 && i.startScroll.y != -1) && isFirstWin) {
-        const WCHAR *viewMode = DisplayModeConv::NameFromEnum(i.startView);
+        const WCHAR *viewMode = prefs::conv::FromDisplayMode(i.startView);
         cmd.Set(str::Format(L"[" DDECOMMAND_SETVIEW L"(\"%s\", \"%s\", %.2f, %d, %d)]",
                                     fullpath, viewMode, i.startZoom, i.startScroll.x, i.startScroll.y));
         DDEExecute(PDFSYNC_DDE_SERVICE, PDFSYNC_DDE_TOPIC, cmd);
@@ -325,7 +325,7 @@ static void GetCommandLineInfo(CommandLineInfo& i)
     i.colorRange[1] = gGlobalPrefs->docBgColor;
     i.forwardSearch = gGlobalPrefs->forwardSearch;
     i.escToExit = gGlobalPrefs->escToExit;
-    i.cbxR2L = gGlobalPrefs->cbxR2L;
+    i.cbxMangaMode = gGlobalPrefs->comicBookUI.cbxMangaMode;
     if (gGlobalPrefs->useSysColors) {
         i.colorRange[0] = GetSysColor(COLOR_WINDOWTEXT);
         i.colorRange[1] = GetSysColor(COLOR_WINDOW);
@@ -399,7 +399,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     mui::Initialize();
     uitask::Initialize();
 
-    LoadPrefs();
+    prefs::Load();
+    prefs::RegisterForFileChanges();
 
     CommandLineInfo i;
     GetCommandLineInfo(i);
@@ -430,12 +431,10 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     }
     gGlobalPrefs->forwardSearch = i.forwardSearch;
     gGlobalPrefs->escToExit = i.escToExit;
-    gGlobalPrefs->cbxR2L = i.cbxR2L;
+    gGlobalPrefs->comicBookUI.cbxMangaMode = i.cbxMangaMode;
     gPolicyRestrictions = GetPolicies(i.restrictedUse);
     gRenderCache.colorRange[0] = i.colorRange[0];
     gRenderCache.colorRange[1] = i.colorRange[1];
-    SetScreenPadding(gGlobalPrefs->fixedPageUI.windowMargin, gGlobalPrefs->fixedPageUI.pageSpacing, false);
-    SetScreenPadding(gGlobalPrefs->imageOnlyUI.windowMargin, gGlobalPrefs->imageOnlyUI.pageSpacing, true);
     DebugGdiPlusDevice(gUseGdiRenderer);
     DebugAlternateChmEngine(gGlobalPrefs->chmUI.useFixedPageUI);
 
@@ -513,7 +512,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
     // Make sure that we're still registered as default,
     // if the user has explicitly told us to be
-    if (gGlobalPrefs->pdfAssociateShouldAssociate && win)
+    if (gGlobalPrefs->associatedExtensions && win)
         RegisterForPdfExtentions(win->hwndFrame);
 
     if (gGlobalPrefs->checkForUpdates && gWindows.Count() > 0)
@@ -532,6 +531,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     CleanUpThumbnailCache(gFileHistory);
 
 Exit:
+    prefs::UnregisterForFileChanges();
+
     while (gWindows.Count() > 0) {
         DeleteWindowInfo(gWindows.At(0));
     }
@@ -547,13 +548,15 @@ Exit:
 
 #else
 
-    CrashIf(gFileExistenceChecker);
-
     DeleteObject(gBrushNoDocBg);
     DeleteObject(gBrushLogoBg);
     DeleteObject(gBrushAboutBg);
     DeleteObject(gDefaultGuiFont);
     DeleteBitmap(gBitmapReloadingCue);
+
+    // wait for FileExistenceChecker to terminate
+    // (which should be necessary only very rarely)
+    while (gFileExistenceChecker);
 
     gFileHistory.UpdateStatesSource(NULL);
     DeleteGlobalPrefs(gGlobalPrefs);

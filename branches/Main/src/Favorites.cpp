@@ -374,7 +374,7 @@ static void GoToFavorite(WindowInfo *win, DisplayState *f, Favorite *fn)
     // LoadDocument() and LoadDocumentInto()
     int pageNo = fn->pageNo;
     DisplayState *ds = gFileHistory.Find(f->filePath);
-    if (ds && !ds->useGlobalValues && gGlobalPrefs->rememberStatePerDocument) {
+    if (ds && !ds->useDefaultState && gGlobalPrefs->rememberStatePerDocument) {
         ds->pageNo = fn->pageNo;
         ds->scrollPos = PointI(-1, -1); // don't scroll the page
         pageNo = -1;
@@ -559,7 +559,7 @@ void AddFavorite(WindowInfo *win)
     if (fav && fav->favorites->Count() == 2)
         win->expandedFavorites.Append(fav);
     UpdateFavoritesTreeForAllWindows();
-    SavePrefs();
+    prefs::Save();
 }
 
 void DelFavorite(WindowInfo *win)
@@ -569,7 +569,7 @@ void DelFavorite(WindowInfo *win)
     RememberFavTreeExpansionStateForAllWindows();
     gFavorites.Remove(filePath, pageNo);
     UpdateFavoritesTreeForAllWindows();
-    SavePrefs();
+    prefs::Save();
 }
 
 void RememberFavTreeExpansionState(WindowInfo *win)
@@ -698,7 +698,7 @@ static void OnFavTreeContextMenu(WindowInfo *win, PointI pt)
             gFavorites.RemoveAllForFile(f->filePath);
         }
         UpdateFavoritesTreeForAllWindows();
-        SavePrefs();
+        prefs::Save();
 
         // TODO: it would be nice to have a system for undo-ing things, like in Gmail,
         // so that we can do destructive operations without asking for permission via
