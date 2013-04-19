@@ -33,23 +33,21 @@ static bool NeedsEscaping(const char *s)
            str::FindChar(s, '\n') || str::FindChar(s, '\r') || str::FindChar(s, '$');
 }
 
-static char *EscapeStr(const char *s)
+static void EscapeStr(str::Str<char>& out, const char *s)
 {
     CrashIf(!NeedsEscaping(s));
-    str::Str<char> ret;
-    if (str::IsWs(*s))
-        ret.Append("$");
+    if (str::IsWs(*s) && *s != '\n' && *s != '\r')
+        out.Append('$');
     for (const char *c = s; *c; c++) {
         switch (*c) {
-        case '$': ret.Append("$$"); break;
-        case '\n': ret.Append("$n"); break;
-        case '\r': ret.Append("$r"); break;
-        default: ret.Append(*c);
+        case '$': out.Append("$$"); break;
+        case '\n': out.Append("$n"); break;
+        case '\r': out.Append("$r"); break;
+        default: out.Append(*c);
         }
     }
     if (*s && str::IsWs(s[str::Len(s) - 1]))
-        ret.Append("$");
-    return ret.StealData();
+        out.Append('$');
 }
 
 static char *UnescapeStr(const char *s)
@@ -106,65 +104,74 @@ static bool IsCompactable(const StructInfo *info)
 
 STATIC_ASSERT(sizeof(float) == sizeof(int) && sizeof(COLORREF) == sizeof(int), can_simplify_compact_array_code);
 
-static char *SerializeField(const uint8_t *base, const FieldInfo& field)
+static bool SerializeField(str::Str<char>& out, const uint8_t *base, const FieldInfo& field)
 {
     const uint8_t *fieldPtr = base + field.offset;
     ScopedMem<char> value;
     COLORREF c;
 
     switch (field.type) {
-    // TODO: only write non-default values?
-    case Type_Bool: return str::Dup(*(bool *)fieldPtr ? "true" : "false");
-    case Type_Int: return str::Format("%d", *(int *)fieldPtr);
-    case Type_Float: return str::Format("%g", *(float *)fieldPtr);
+    case Type_Bool:
+        out.Append(*(bool *)fieldPtr ? "true" : "false");
+        return true;
+    case Type_Int:
+        out.AppendFmt("%d", *(int *)fieldPtr);
+        return true;
+    case Type_Float:
+        out.AppendFmt("%g", *(float *)fieldPtr);
+        return true;
     case Type_Color:
         c = *(COLORREF *)fieldPtr;
-        // TODO: COLORREF doesn't really have an alpha value
         if (((c >> 24) & 0xff))
-            return str::Format("#%02x%02x%02x%02x", (c >> 24) & 0xff, GetRValue(c), GetGValue(c), GetBValue(c));
-        return str::Format("#%02x%02x%02x", GetRValue(c), GetGValue(c), GetBValue(c));
+            out.AppendFmt("#%02x%02x%02x%02x", (c >> 24) & 0xff, GetRValue(c), GetGValue(c), GetBValue(c));
+        else
+            out.AppendFmt("#%02x%02x%02x", GetRValue(c), GetGValue(c), GetBValue(c));
+        return true;
     case Type_String:
-        if (!*(const WCHAR **)fieldPtr)
-            return NULL; // skip empty strings
+        if (!*(const WCHAR **)fieldPtr) {
+            CrashIf(field.value);
+            return false; // skip empty strings
+        }
         value.Set(str::conv::ToUtf8(*(const WCHAR **)fieldPtr));
-        if (NeedsEscaping(value))
-            return EscapeStr(value);
-        return value.StealData();
+        if (!NeedsEscaping(value))
+            out.Append(value);
+        else
+            EscapeStr(out, value);
+        return true;
     case Type_Utf8String:
-        if (!*(const char **)fieldPtr)
-            return NULL; // skip empty strings
+        if (!*(const char **)fieldPtr) {
+            CrashIf(field.value);
+            return false; // skip empty strings
+        }
         if (!NeedsEscaping(*(const char **)fieldPtr))
-            return str::Dup(*(const char **)fieldPtr);
-        return EscapeStr(*(const char **)fieldPtr);
+            out.Append(*(const char **)fieldPtr);
+        else
+            EscapeStr(out, *(const char **)fieldPtr);
+        return true;
     case Type_Compact:
         assert(IsCompactable(GetSubstruct(field)));
         for (size_t i = 0; i < GetSubstruct(field)->fieldCount; i++) {
-            ScopedMem<char> val(SerializeField(fieldPtr, GetSubstruct(field)->fields[i]));
-            if (!value)
-                value.Set(val.StealData());
-            else
-                value.Set(str::Format("%s %s", value, val));
+            if (i > 0)
+                out.Append(' ');
+            SerializeField(out, fieldPtr, GetSubstruct(field)->fields[i]);
         }
-        return value.StealData();
+        return true;
     case Type_ColorArray:
     case Type_FloatArray:
     case Type_IntArray:
-        if (!(*(Vec<int> **)fieldPtr))
-            return NULL; // skip missing arrays
         for (size_t i = 0; i < (*(Vec<int> **)fieldPtr)->Count(); i++) {
             FieldInfo info = { 0 };
             info.type = Type_IntArray == field.type ? Type_Int : Type_FloatArray == field.type ? Type_Float : Type_Color;
-            ScopedMem<char> val(SerializeField((const uint8_t *)&(*(Vec<int> **)fieldPtr)->At(i), info));
-            if (!value)
-                value.Set(val.StealData());
-            else
-                value.Set(str::Format("%s %s", value, val));
+            if (i > 0)
+                out.Append(' ');
+            SerializeField(out, (const uint8_t *)&(*(Vec<int> **)fieldPtr)->At(i), info);
         }
-        return value.StealData();
+        // prevent empty arrays from being replaced with the defaults
+        return (*(Vec<int> **)fieldPtr)->Count() > 0 || field.value != NULL;
     default:
         CrashIf(true);
+        return false;
     }
-    return NULL;
 }
 
 static void DeserializeField(const FieldInfo& field, uint8_t *base, const char *value)
@@ -243,7 +250,52 @@ static inline void Indent(str::Str<char>& out, int indent)
         out.Append('\t');
 }
 
-static void SerializeStructRec(str::Str<char>& out, const StructInfo *info, const void *data, int indent=0)
+static void MarkFieldKnown(SquareTreeNode *node, const char *fieldName, SettingType type)
+{
+    if (!node)
+        return;
+    size_t off = 0;
+    if (Type_Struct == type) {
+        if (node->GetChild(fieldName, &off)) {
+            delete node->data.At(off - 1).value.child;
+            node->data.RemoveAt(off - 1);
+        }
+    }
+    else if (Type_Array == type) {
+        while (node->GetChild(fieldName, &off)) {
+            delete node->data.At(off - 1).value.child;
+            node->data.RemoveAt(off - 1);
+            off--;
+        }
+    }
+    else if (node->GetValue(fieldName, &off)) {
+        node->data.RemoveAt(off - 1);
+    }
+}
+
+static void SerializeUnknownFields(str::Str<char>& out, SquareTreeNode *node, int indent)
+{
+    if (!node)
+        return;
+    for (size_t i = 0; i < node->data.Count(); i++) {
+        SquareTreeNode::DataItem& item = node->data.At(i);
+        Indent(out, indent);
+        out.Append(item.key);
+        if (item.isChild) {
+            out.Append(" [\r\n");
+            SerializeUnknownFields(out, item.value.child, indent + 1);
+            Indent(out, indent);
+            out.Append("]\r\n");
+        }
+        else {
+            out.Append(" = ");
+            out.Append(item.value.str);
+            out.Append("\r\n");
+        }
+    }
+}
+
+static void SerializeStructRec(str::Str<char>& out, const StructInfo *info, const void *data, SquareTreeNode *prevNode, int indent=0)
 {
     const uint8_t *base = (const uint8_t *)data;
     const char *fieldName = info->fieldNames;
@@ -257,7 +309,7 @@ static void SerializeStructRec(str::Str<char>& out, const StructInfo *info, cons
             Indent(out, indent);
             out.Append(fieldName);
             out.Append(" [\r\n");
-            SerializeStructRec(out, GetSubstruct(field), base + field.offset, indent + 1);
+            SerializeStructRec(out, GetSubstruct(field), base + field.offset, prevNode ? prevNode->GetChild(fieldName) : NULL, indent + 1);
             Indent(out, indent);
             out.Append("]\r\n");
         }
@@ -270,7 +322,7 @@ static void SerializeStructRec(str::Str<char>& out, const StructInfo *info, cons
                 for (size_t j = 0; j < array->Count(); j++) {
                     Indent(out, indent + 1);
                     out.Append("[\r\n");
-                    SerializeStructRec(out, GetSubstruct(field), array->At(j), indent + 2);
+                    SerializeStructRec(out, GetSubstruct(field), array->At(j), NULL, indent + 2);
                     Indent(out, indent + 1);
                     out.Append("]\r\n");
                 }
@@ -279,17 +331,20 @@ static void SerializeStructRec(str::Str<char>& out, const StructInfo *info, cons
             out.Append("]\r\n");
         }
         else {
-            ScopedMem<char> value(SerializeField(base, field));
-            if (value) {
-                Indent(out, indent);
-                out.Append(fieldName);
-                out.Append(" = ");
-                out.Append(value);
+            size_t offset = out.Size();
+            Indent(out, indent);
+            out.Append(fieldName);
+            out.Append(" = ");
+            bool keep = SerializeField(out, base, field);
+            if (keep)
                 out.Append("\r\n");
-            }
+            else
+                out.RemoveAt(offset, out.Size() - offset);
         }
+        MarkFieldKnown(prevNode, fieldName, field.type);
         fieldName += str::Len(fieldName) + 1;
     }
+    SerializeUnknownFields(out, prevNode, indent);
 }
 
 static void *DeserializeStructRec(const StructInfo *info, SquareTreeNode *node, uint8_t *base, bool useDefaults)
@@ -332,16 +387,16 @@ static void *DeserializeStructRec(const StructInfo *info, SquareTreeNode *node, 
     return base;
 }
 
-char *SerializeStruct(const StructInfo *info, const void *strct, const char *infoUrl, size_t *sizeOut)
+char *SerializeStruct(const StructInfo *info, const void *strct, const char *prevData,
+                      const char *infoUrl, size_t *sizeOut)
 {
     str::Str<char> out;
-    out.Append(UTF8_BOM "# This file will be overwritten - modify at your own risk!");
-    if (infoUrl) {
-        out.Append(" For further\r\n# information, see ");
-        out.Append(infoUrl);
-    }
-    out.Append("\r\n\r\n");
-    SerializeStructRec(out, info, strct);
+    if (infoUrl)
+        out.AppendFmt(UTF8_BOM "# For documentation, see %s\r\n\r\n", infoUrl);
+    else
+        out.Append(UTF8_BOM "# This file will be overwritten - modify at your own risk!\r\n\r\n");
+    SquareTree prevSqt(prevData);
+    SerializeStructRec(out, info, strct, prevSqt.root);
     if (sizeOut)
         *sizeOut = out.Size();
     return out.StealData();

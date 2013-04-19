@@ -5,6 +5,7 @@
 #include "SumatraPDF.h"
 #include <malloc.h>
 #include <wininet.h>
+#include <UIAutomation.h>
 
 #include "AppPrefs.h"
 #include "AppTools.h"
@@ -49,6 +50,7 @@ using namespace Gdiplus;
 #include "Toolbar.h"
 #include "Touch.h"
 #include "Translations.h"
+#include "uia/UIAutomationProvider.h"
 #include "UITask.h"
 #include "Version.h"
 #include "WindowInfo.h"
@@ -301,8 +303,8 @@ inline void MoveWindow(HWND hwnd, RectI rect)
 
 void SwitchToDisplayMode(WindowInfo *win, DisplayMode displayMode, bool keepContinuous)
 {
-    if (!win->IsDocLoaded())
-        return;
+    CrashIf(!win->IsDocLoaded());
+    if (!win->IsDocLoaded()) return;
 
     if (keepContinuous && IsContinuous(win->dm->GetDisplayMode())) {
         switch (displayMode) {
@@ -512,17 +514,13 @@ static void UpdateSidebarDisplayState(WindowInfo *win, DisplayState *ds)
             UpdateTocExpansionState(win, hRoot);
     }
 
-    delete ds->tocState;
-    ds->tocState = NULL;
-    if (win->tocState.Count() > 0)
-        ds->tocState = new Vec<int>(win->tocState);
+    *ds->tocState = win->tocState;
 }
 
 static void UpdateSidebarDisplayState(EbookWindow *win, DisplayState *ds)
 {
     ds->showToc = false;
-    delete ds->tocState;
-    ds->tocState = NULL;
+    ds->tocState->Reset();
 }
 
 static void DisplayStateFromEbookWindow(EbookWindow* win, DisplayState* ds)
@@ -546,7 +544,7 @@ static void UpdateCurrentFileDisplayStateForWinMobi(EbookWindow* win)
     if (!ds)
         return;
     DisplayStateFromEbookWindow(win, ds);
-    ds->useGlobalValues = !gGlobalPrefs->rememberStatePerDocument;
+    ds->useDefaultState = !gGlobalPrefs->rememberStatePerDocument;
     ds->windowState = gGlobalPrefs->windowState;
     ds->windowPos   = gGlobalPrefs->windowPos;
     UpdateSidebarDisplayState(win, ds);
@@ -561,7 +559,6 @@ static void UpdateCurrentFileDisplayStateForWinInfo(WindowInfo* win)
     if (!ds)
         return;
     win->dm->DisplayStateFromModel(ds);
-    ds->useGlobalValues = !gGlobalPrefs->rememberStatePerDocument;
     UpdateDisplayStateWindowRect(*win, *ds, false);
     UpdateSidebarDisplayState(win, ds);
 }
@@ -897,7 +894,7 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
     Timer t(true);
     // Never load settings from a preexisting state if the user doesn't wish to
     // (unless we're just refreshing the document, i.e. only if placeWindow == true)
-    if (placeWindow && (!gGlobalPrefs->rememberStatePerDocument || state && state->useGlobalValues)) {
+    if (placeWindow && (!gGlobalPrefs->rememberStatePerDocument || state && state->useDefaultState)) {
         state = NULL;
     } else if (NULL == state) {
         state = gFileHistory.Find(args.fileName);
@@ -918,7 +915,7 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
     bool showToc = gGlobalPrefs->showToc;
     if (state) {
         startPage = state->pageNo;
-        displayMode = state->displayModeEnum;
+        displayMode = prefs::conv::ToDisplayMode(state->displayMode);
         showAsFullScreen = WIN_STATE_FULLSCREEN == state->windowState;
         if (state->windowState == WIN_STATE_NORMAL)
             showType = SW_NORMAL;
@@ -984,13 +981,18 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
     */
     if (win->dm) {
         win->dm->SetInitialViewSettings(displayMode, startPage, win->GetViewPortSize(), win->dpi);
-        if (engineType == Engine_ComicBook)
-            win->dm->SetDisplayR2L(gGlobalPrefs->cbxR2L);
+        // TODO: also expose Manga Mode for image folders?
+        if (engineType == Engine_ComicBook || engineType == Engine_ImageDir)
+            win->dm->SetDisplayR2L(state ? state->displayR2L : gGlobalPrefs->comicBookUI.cbxMangaMode);
         if (prevModel && str::Eq(win->dm->FilePath(), prevModel->FilePath())) {
             gRenderCache.KeepForDisplayModel(prevModel, win->dm);
             win->dm->CopyNavHistory(*prevModel);
         }
         delete prevModel;
+
+        // tell UI Automation about content change
+        if (win->uia_provider)
+            win->uia_provider->OnDocumentLoad();
     } else if (allowFailure) {
         delete prevModel;
         ScopedMem<WCHAR> title2(str::Format(L"%s - %s", path::GetBaseName(args.fileName), SUMATRA_WINDOW_TITLE));
@@ -1023,9 +1025,10 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
     }
 
     if (state) {
+        zoomVirtual = prefs::conv::ToZoom(state->zoom);
         if (win->dm->ValidPageNo(startPage)) {
             ss.page = startPage;
-            if (ZOOM_FIT_CONTENT != state->zoomFloat) {
+            if (ZOOM_FIT_CONTENT != zoomVirtual) {
                 ss.x = state->scrollPos.x;
                 ss.y = state->scrollPos.y;
             }
@@ -1033,12 +1036,8 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
         } else if (startPage > win->dm->PageCount()) {
             ss.page = win->dm->PageCount();
         }
-        zoomVirtual = state->zoomFloat;
         rotation = state->rotation;
-
-        win->tocState.Reset();
-        if (state->tocState)
-            win->tocState = *state->tocState;
+        win->tocState = *state->tocState;
     }
 
     win->dm->Relayout(zoomVirtual, rotation);
@@ -1148,8 +1147,7 @@ void ReloadDocument(WindowInfo *win, bool autorefresh)
         }
         return;
     }
-    DisplayState *ds = NewDisplayState(win->loadedFilePath);;
-    ds->useGlobalValues = !gGlobalPrefs->rememberStatePerDocument;
+    DisplayState *ds = NewDisplayState(win->loadedFilePath);
     win->dm->DisplayStateFromModel(ds);
     UpdateDisplayStateWindowRect(*win, *ds);
     UpdateSidebarDisplayState(win, ds);
@@ -1519,11 +1517,11 @@ static WindowInfo* LoadDocumentOld(LoadArgs& args)
     if (failEarly) {
         ScopedMem<WCHAR> msg(str::Format(_TR("File %s not found"), fullPath));
         ShowNotification(win, msg, true /* autoDismiss */, true /* highlight */);
-        // display the notification ASAP (SavePrefs() can introduce a notable delay)
+        // display the notification ASAP (prefs::Save() can introduce a notable delay)
         win->RedrawAll(true);
 
         if (gFileHistory.MarkFileInexistent(fullPath)) {
-            SavePrefs();
+            prefs::Save();
             // update the Frequently Read list
             if (1 == gWindows.Count() && gWindows.At(0)->IsAboutWindow())
                 gWindows.At(0)->RedrawAll(true);
@@ -1588,7 +1586,7 @@ static WindowInfo* LoadDocumentOld(LoadArgs& args)
 
     if (!loaded) {
         if (gFileHistory.MarkFileInexistent(fullPath))
-            SavePrefs();
+            prefs::Save();
         return win;
     }
 
@@ -1605,7 +1603,7 @@ static WindowInfo* LoadDocumentOld(LoadArgs& args)
         DisplayState *ds = gFileHistory.MarkFileLoaded(fullPath);
         if (gGlobalPrefs->showStartPage)
             CreateThumbnailForFile(*win, *ds);
-        SavePrefs();
+        prefs::Save();
     }
 
     // Add the file also to Windows' recently used documents (this doesn't
@@ -1752,8 +1750,8 @@ void AssociateExeWithPdfExtension()
     SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST | SHCNF_FLUSHNOWAIT, 0, 0);
 
     // Remind the user, when a different application takes over
-    gGlobalPrefs->pdfAssociateShouldAssociate = true;
-    gGlobalPrefs->pdfAssociateDontAskAgain = false;
+    str::ReplacePtr(&gGlobalPrefs->associatedExtensions, L".pdf");
+    gGlobalPrefs->associateSilently = false;
 }
 
 // Registering happens either through the Installer or the Options dialog;
@@ -1768,12 +1766,13 @@ static bool RegisterForPdfExtentions(HWND hwnd)
 
     /* Ask user for permission, unless he previously said he doesn't want to
        see this dialog */
-    if (!gGlobalPrefs->pdfAssociateDontAskAgain) {
-        INT_PTR result = Dialog_PdfAssociate(hwnd, &gGlobalPrefs->pdfAssociateDontAskAgain);
+    if (!gGlobalPrefs->associateSilently) {
+        INT_PTR result = Dialog_PdfAssociate(hwnd, &gGlobalPrefs->associateSilently);
         assert(IDYES == result || IDNO == result);
-        gGlobalPrefs->pdfAssociateShouldAssociate = (IDYES == result);
+        str::ReplacePtr(&gGlobalPrefs->associatedExtensions, IDYES == result ? L".pdf" : NULL);
     }
-    if (!gGlobalPrefs->pdfAssociateShouldAssociate)
+    // for now, .pdf is the only choice
+    if (!str::EqI(gGlobalPrefs->associatedExtensions, L".pdf"))
         return false;
 
     AssociateExeWithPdfExtension();
@@ -1865,7 +1864,7 @@ static DWORD ShowAutoUpdateDialog(HWND hParent, HttpReq *ctx, bool silent)
 #endif
         LaunchBrowser(SVN_UPDATE_LINK);
     }
-    SavePrefs();
+    prefs::Save();
 
     return 0;
 }
@@ -1960,20 +1959,18 @@ void AutoUpdateCheckAsync(HWND hwnd, bool autoCheck)
     if (!HasPermission(Perm_InternetAccess) || gPluginMode)
         return;
 
-    // don't check for updates at the first start, so that privacy
-    // sensitive users can disable the update check in time
-    if (autoCheck && 0 == gGlobalPrefs->timeOfLastUpdateCheck.dwLowDateTime &&
-                     0 == gGlobalPrefs->timeOfLastUpdateCheck.dwHighDateTime) {
-        return;
-    }
+    // For auto-check, only check if at least a day passed since last check
+    if (autoCheck) {
+        // don't check for updates at the first start, so that privacy
+        // sensitive users can disable the update check in time
+        FILETIME never = { 0 };
+        if (FileTimeEq(gGlobalPrefs->timeOfLastUpdateCheck, never))
+            return;
 
-    /* For auto-check, only check if at least a day passed since last check */
-    if (autoCheck && (gGlobalPrefs->timeOfLastUpdateCheck.dwLowDateTime != 0 ||
-                      gGlobalPrefs->timeOfLastUpdateCheck.dwHighDateTime != 0)) {
         FILETIME currentTimeFt;
         GetSystemTimeAsFileTime(&currentTimeFt);
         int secs = FileTimeDiffInSecs(currentTimeFt, gGlobalPrefs->timeOfLastUpdateCheck);
-        assert(secs >= 0);
+        CrashIf(secs < 0);
         // if secs < 0 => somethings wrong, so ignore that case
         if ((secs > 0) && (secs < SECS_IN_DAY))
             return;
@@ -2697,7 +2694,7 @@ void OnMenuExit()
         AbortPrinting(win);
     }
 
-    SavePrefs();
+    prefs::Save();
     PostQuitMessage(0);
 }
 
@@ -2720,6 +2717,8 @@ void CloseDocumentInWindow(WindowInfo *win)
     SetSidebarVisibility(win, false, gGlobalPrefs->showFavorites);
     ClearTocBox(win);
     AbortFinding(win, true);
+    if (win->uia_provider)
+        win->uia_provider->OnDocumentUnload();
     delete win->dm;
     win->dm = NULL;
     str::ReplacePtr(&win->loadedFilePath, NULL);
@@ -2804,7 +2803,7 @@ void CloseWindow(WindowInfo *win, bool quitIfLast, bool forceClose)
     if (lastWindow && quitIfLast && !forceClose)
         ShowWindow(win->hwndFrame, SW_HIDE);
     if (lastWindow)
-        SavePrefs();
+        prefs::Save();
     else
         UpdateCurrentFileDisplayStateForWin(SumatraWindow::Make(win));
 
@@ -3143,7 +3142,7 @@ static void OnMenuSaveBookmark(WindowInfo& win)
         fileName.Set(str::Join(dstFileName, L".lnk"));
 
     ScrollState ss = win.dm->GetScrollState();
-    const WCHAR *viewMode = DisplayModeConv::NameFromEnum(win.dm->GetDisplayMode());
+    const WCHAR *viewMode = prefs::conv::FromDisplayMode(win.dm->GetDisplayMode());
     ScopedMem<WCHAR> ZoomVirtual(str::Format(L"%.2f", win.dm->ZoomVirtual()));
     if (ZOOM_FIT_PAGE == win.dm->ZoomVirtual())
         ZoomVirtual.Set(str::Dup(L"fitpage"));
@@ -3457,7 +3456,7 @@ void SetCurrentLanguageAndRefreshUi(const char *langCode)
     UpdateUITextForLanguage();
     if (gWindows.Count() > 0 && gWindows.At(0)->IsAboutWindow())
         gWindows.At(0)->RedrawAll(true);
-    SavePrefs();
+    prefs::Save();
 }
 
 void OnMenuChangeLanguage(HWND hwnd)
@@ -3472,7 +3471,25 @@ static void OnMenuViewShowHideToolbar()
     ShowOrHideToolbarGlobally();
 }
 
-void OnMenuSettings(HWND hwnd)
+void OnMenuAdvancedOptions()
+{
+    if (!HasPermission(Perm_DiskAccess) || !HasPermission(Perm_SavePreferences))
+        return;
+
+#ifdef ENABLE_SUMATRAPDF_USER_INI
+    ScopedMem<WCHAR> userPath(AppGenDataFilename(USER_PREFS_FILE_NAME));
+    if (file::Exists(userPath)) {
+        LaunchFile(userPath, NULL, L"open");
+        return;
+    }
+#endif
+
+    ScopedMem<WCHAR> path(AppGenDataFilename(PREFS_FILE_NAME));
+    CrashIf(!file::Exists(path));
+    LaunchFile(path, NULL, L"open");
+}
+
+void OnMenuOptions(HWND hwnd)
 {
     if (!HasPermission(Perm_SavePreferences)) return;
 
@@ -3489,12 +3506,12 @@ void OnMenuSettings(HWND hwnd)
     if (useSysColors != gGlobalPrefs->useSysColors)
         UpdateDocumentColors();
 
-    SavePrefs();
+    prefs::Save();
 }
 
-static void OnMenuSettings(WindowInfo& win)
+static void OnMenuOptions(WindowInfo& win)
 {
-    OnMenuSettings(win.hwndFrame);
+    OnMenuOptions(win.hwndFrame);
     if (gWindows.Count() > 0 && gWindows.At(0)->IsAboutWindow())
         gWindows.At(0)->RedrawAll(true);
 }
@@ -3521,6 +3538,15 @@ static void OnMenuViewContinuous(WindowInfo& win)
             break;
     }
     SwitchToDisplayMode(&win, newMode);
+}
+
+static void OnMenuViewMangaMode(WindowInfo *win)
+{
+    CrashIf(!win->IsDocLoaded() || !win->IsCbx());
+    win->dm->SetDisplayR2L(!win->dm->GetDisplayR2L());
+    ScrollState state = win->dm->GetScrollState();
+    win->dm->Relayout(win->dm->ZoomVirtual(), win->dm->Rotation());
+    win->dm->SetScrollState(state);
 }
 
 static void ChangeZoomLevel(WindowInfo *win, float newZoom, bool pagesContinuously)
@@ -4852,6 +4878,19 @@ static LRESULT CALLBACK WndProcCanvas(HWND hwnd, UINT msg, WPARAM wParam, LPARAM
         case WM_GESTURE:
             return OnGesture(*win, msg, wParam, lParam);
 
+        case WM_GETOBJECT:
+            if (gPluginMode) { 
+                // Don't expose UIA automation in plugin mode yet. UIA is still too experimental
+                return DefWindowProc(hwnd, msg, wParam, lParam);
+            } else {
+                SumatraUIAutomationProvider* provider = win->GetUIAProvider();
+                LRESULT res = UiaReturnRawElementProvider(hwnd, wParam, lParam,  provider);
+
+                provider->Release(); //Forget our copy
+
+                return res;
+            }
+
         default:
             return DefWindowProc(hwnd, msg, wParam, lParam);
     }
@@ -5068,6 +5107,10 @@ static LRESULT FrameOnCommand(WindowInfo *win, HWND hwnd, UINT msg, WPARAM wPara
             OnMenuViewContinuous(*win);
             break;
 
+        case IDM_VIEW_MANGA_MODE:
+            OnMenuViewMangaMode(win);
+            break;
+
         case IDM_VIEW_SHOW_HIDE_TOOLBAR:
             OnMenuViewShowHideToolbar();
             break;
@@ -5170,8 +5213,12 @@ static LRESULT FrameOnCommand(WindowInfo *win, HWND hwnd, UINT msg, WPARAM wPara
             AutoUpdateCheckAsync(win->hwndFrame, false);
             break;
 
-        case IDM_SETTINGS:
-            OnMenuSettings(*win);
+        case IDM_OPTIONS:
+            OnMenuOptions(*win);
+            break;
+
+        case IDM_ADVANCED_OPTIONS:
+            OnMenuAdvancedOptions();
             break;
 
         case IDM_VIEW_WITH_ACROBAT:
@@ -5435,7 +5482,7 @@ InitMouseWheelInfo:
 
         case WM_ENDSESSION:
             // TODO: check for unfinished print jobs in WM_QUERYENDSESSION?
-            SavePrefs();
+            prefs::Save();
             break;
 
         case WM_DDE_INITIATE:
@@ -5446,10 +5493,6 @@ InitMouseWheelInfo:
             return OnDDExecute(hwnd, wParam, lParam);
         case WM_DDE_TERMINATE:
             return OnDDETerminate(hwnd, wParam, lParam);
-
-        case UWM_PREFS_FILE_UPDATED:
-            ReloadPrefs();
-            break;
 
         case WM_TIMER:
             OnTimer(*win, hwnd, wParam);
