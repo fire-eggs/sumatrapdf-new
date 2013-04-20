@@ -273,8 +273,7 @@ public:
 
     ToolbarInfo * toolBar() const; // For functions like UpdateToolbarPageText(win), one needs "win to toolBar" to get hwnd.
     SidebarInfo * sideBar() const;
-    // don't access this directly in UIA API calls
-    // use GetUIAProvider() for correclty RefCounted copies
+
     SumatraUIAutomationProvider * uia_provider;
 
     void  UpdateCanvasSize();
@@ -299,7 +298,7 @@ public:
     void CreateInfotip(const WCHAR *text, RectI& rc, bool multiline=false);
     void DeleteInfotip();
 
-    SumatraUIAutomationProvider* GetUIAProvider();
+    bool CreateUIAProvider();
 
     // DisplayModelCallback implementation (incl. ChmNavigationCallback)
     virtual void PageNoChanged(int pageNo);
