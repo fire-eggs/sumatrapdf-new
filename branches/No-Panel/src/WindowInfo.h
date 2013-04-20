@@ -216,8 +216,6 @@ public:
     Vec<PageAnnotation> *userAnnots;
     bool            userAnnotsModified;
 
-    // don't access this directly in UIA API calls
-    // use GetUIAProvider() for correclty RefCounted copies
     SumatraUIAutomationProvider * uia_provider;
 
     void  UpdateCanvasSize();
@@ -242,7 +240,7 @@ public:
     void CreateInfotip(const WCHAR *text, RectI& rc, bool multiline=false);
     void DeleteInfotip();
 
-    SumatraUIAutomationProvider* GetUIAProvider();
+    bool CreateUIAProvider();
 
     // DisplayModelCallback implementation (incl. ChmNavigationCallback)
     virtual void PageNoChanged(int pageNo);
