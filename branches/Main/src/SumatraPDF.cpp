@@ -5,7 +5,6 @@
 #include "SumatraPDF.h"
 #include <malloc.h>
 #include <wininet.h>
-#include <UIAutomation.h>
 
 #include "AppPrefs.h"
 #include "AppTools.h"
@@ -1121,7 +1120,7 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
 
         // tell UI Automation about content change
         if (win->uia_provider)
-            win->uia_provider->OnDocumentLoad();
+            win->uia_provider->OnDocumentLoad(win->dm);
     } else if (allowFailure) {
         delete prevModel;
         ScopedMem<WCHAR> title2(str::Format(L"%s - %s", path::GetBaseName(args.fileName), SUMATRA_WINDOW_TITLE));
@@ -1741,6 +1740,11 @@ static void DeleteWindowInfo(WindowInfo *win)
 
     AbortFinding(win);
     AbortPrinting(win);
+
+    if (win->uia_provider) {
+        // tell UIA to release all objects cached in its store
+        uia::ReturnRawElementProvider(win->hwndCanvas, 0, 0, NULL);
+    }
 
     delete win;
 
@@ -6452,17 +6456,12 @@ static LRESULT CALLBACK WndProcCanvas(HWND hwnd, UINT msg, WPARAM wParam, LPARAM
             return OnGesture(*win, msg, wParam, lParam);
 
         case WM_GETOBJECT:
-            if (gPluginMode) { 
-                // Don't expose UIA automation in plugin mode yet. UIA is still too experimental
-                return DefWindowProc(hwnd, msg, wParam, lParam);
-            } else {
-                SumatraUIAutomationProvider* provider = win->GetUIAProvider();
-                LRESULT res = UiaReturnRawElementProvider(hwnd, wParam, lParam,  provider);
-
-                provider->Release(); //Forget our copy
-
-                return res;
+            // Don't expose UIA automation in plugin mode yet. UIA is still too experimental
+            if (!gPluginMode) { 
+                if (win->CreateUIAProvider())
+                    return uia::ReturnRawElementProvider(hwnd, wParam, lParam, win->uia_provider);
             }
+            return DefWindowProc(hwnd, msg, wParam, lParam);
 
         default:
             return DefWindowProc(hwnd, msg, wParam, lParam);
