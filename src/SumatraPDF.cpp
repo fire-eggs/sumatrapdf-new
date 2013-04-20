@@ -3141,7 +3141,7 @@ void OnMenuExit(TopWindowInfo *WIN, HWND hwnd)
                 AbortPrinting(win);
 
                 // Need to check this function.
-                SavePrefs();
+                prefs::Save();
             }
         }
         DeleteTopWindowInfo(WIN);
@@ -4203,7 +4203,7 @@ void OnMenuPreference(HWND hwnd)
     if (useSysColors != gGlobalPrefs->useSysColors)
         UpdateDocumentColors();
 
-    SavePrefs();
+    prefs::Save();
 }
 
 static void OnMenuPreference(WindowInfo& win)
@@ -4229,6 +4229,26 @@ void OnMenuAdvancedOptions()
     ScopedMem<WCHAR> path(AppGenDataFilename(PREFS_FILE_NAME));
     CrashIf(!file::Exists(path));
     LaunchFile(path, NULL, L"open");
+}
+
+void OnMenuOptions(HWND hwnd)
+{
+    if (!HasPermission(Perm_SavePreferences)) return;
+
+    bool useSysColors = gGlobalPrefs->useSysColors;
+
+    if (IDOK != Dialog_Preference(hwnd, gGlobalPrefs))
+        return;
+
+    if (!gGlobalPrefs->rememberOpenedFiles) {
+        // TODO: also remove all favorites?
+        gFileHistory.Clear(true);
+        CleanUpThumbnailCache(gFileHistory);
+    }
+    if (useSysColors != gGlobalPrefs->useSysColors)
+        UpdateDocumentColors();
+
+    prefs::Save();
 }
 
 static void OnMenuOptions(WindowInfo& win)
