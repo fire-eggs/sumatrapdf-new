@@ -259,12 +259,12 @@ static LRESULT CALLBACK WndProcTabTooltip(HWND hwnd, UINT message, WPARAM wParam
 //    SetTimer(panel->hwndTabPreview, 3, timer, timerProc);
 //}
 //
-static bool TabControlOnMouseLeave(PanelInfo *panel)
-{
-    panel->tabIndexMouseOver = -1;
-    InvalidateRect(panel->hwndTab, NULL, TRUE);
-    return panel->tabIndexMouseOver = -1;
-}
+//static bool TabControlOnMouseLeave(PanelInfo *panel)
+//{
+//    panel->tabIndexMouseOver = -1;
+//    InvalidateRect(panel->hwndTab, NULL, TRUE);
+//    return panel->tabIndexMouseOver = -1;
+//}
 //    //POINT pt;
 //    //GetCursorPos(&pt);
 //    if (panel->tabIndexMouseOver > -1 && IsCursorOverWindow(panel->gWin.At(panel->tabIndexMouseOver)->hwndTabStatic))
@@ -301,21 +301,18 @@ static void TabControlOnMouseMove(PanelInfo *panel)
     // Get tab index.
     int tabIndex = GetTabIndex(panel);
     
-    RECT rc;
-    SendMessage(panel->hwndTab, TCM_GETITEMRECT, tabIndex, (LPARAM)&rc);
-
     if (tabIndex > -1 && tabIndex != panel->tabIndexMouseOver) {
         InvalidateRect(panel->hwndTab, NULL, FALSE);
     }
 
     // Track Mouse Leave
-    TRACKMOUSEEVENT tme = { 0 };
-    tme.cbSize = sizeof(tme);
-    tme.dwFlags = TME_LEAVE;
-    tme.hwndTrack = panel->hwndTab;
-    TrackMouseEvent(&tme);
+    ////TRACKMOUSEEVENT tme = { 0 };
+    ////tme.cbSize = sizeof(tme);
+    ////tme.dwFlags = TME_LEAVE;
+    ////tme.hwndTrack = panel->hwndTab;
+    ////TrackMouseEvent(&tme);
 
-    panel->tabIndexMouseOver = tabIndex;
+    ////panel->tabIndexMouseOver = tabIndex;
 }
 //
 //    // Get tab index.
@@ -350,129 +347,84 @@ static void TabControlOnMouseMove(PanelInfo *panel)
 //    }
 //}
 
-static void ClipAndDrawRegion(HDC hdc, HRGN hRgn, HRGN hRgnInterior, int mode, COLORREF color)
-{
-    SelectClipRgn(hdc, hRgn);
-    ExtSelectClipRgn(hdc, hRgnInterior, mode);
-
-    HBRUSH hBrush = CreateSolidBrush(color);
-    FillRgn(hdc, hRgn, hBrush);
-    DeleteObject(hBrush);
-
-    SelectClipRgn(hdc, NULL);
-    DeleteObject(hRgn);
-    DeleteObject(hRgnInterior);
-}
-
-static void DrawTabItemBoundary(HWND hwnd, HDC hdc, int i, int indexHover, int selected, bool last)
+static void DrawCloseButton(HWND hwnd, HDC memDC, int i, int indexHover, int selected)
 {
     RECT rcItem;
     SendMessage(hwnd, TCM_GETITEMRECT, i, (LPARAM)&rcItem);
 
-    int x1 = rcItem.left;
-    int y1 = rcItem.top;
-    int x2 = rcItem.right;
-    int y2 = rcItem.bottom;
+    RECT rcClose;
+    rcClose.left = rcItem.right - 16;
+    rcClose.top = rcItem.top + (TAB_CONTROL_DY - rcItem.top - 12) / 2 + 1; // This is relative to y = 0;
+    if (i == selected)
+        rcClose.top -= 1;
+    rcClose.right = rcClose.left + 12;
+    rcClose.bottom = rcClose.top + 12;
 
-    // We need this adjustment when the last item is non-selected.
-    if (last)
-        x2 = rcItem.right - 2;
+    POINT pt;
+    GetCursorPosInHwnd(hwnd, pt);
 
-    bool hovered = (i == indexHover);
+    bool test = (rcClose.left <= pt.x && pt.x < rcClose.right) &&
+        (rcClose.top <= pt.y && pt.y < rcClose.bottom);
 
-    if (i != selected) {
+    if (test) {
+        HBRUSH hBrush = CreateSolidBrush(RGB(0xFF, 0x00, 0x00));
+        FillRect(memDC, &rcClose, hBrush);
+        DeleteObject(hBrush);
+    }
 
-        // The outermost region of the boundary.
-        HRGN hrgn = CreateRectRgn(x1, y1, x2 , y2);
-        HRGN rgnInterior = CreateRectRgn(x1 + 1, y1 + 1, x2 - 1, y2 - 1);
-        COLORREF color = hovered ? RGB(0x3C, 0x7F, 0xB1) : RGB(0x89, 0x8C, 0x95);
-        ClipAndDrawRegion(hdc, hrgn, rgnInterior, RGN_DIFF, color);
-    
-        // ? The second outer region of the boundary.
-        hrgn = CreateRectRgn(x1 + 1, y1 + 1, x2 - 1 , y2 - 1);
-        rgnInterior = CreateRectRgn(x1 + 2, y1 + 2, x2 - 2 , y2 - 2);
-        color = hovered ? RGB(0xFA, 0xFD, 0xFE) : RGB(0xFC, 0xFC, 0xFC);
-        ClipAndDrawRegion(hdc, hrgn, rgnInterior, RGN_DIFF, color);
+    RectI r(RectI::FromRECT(rcClose));
 
-        // y = 1.
-        hrgn = CreateRectRgn(x1, y1 - 1, x2, y2);
-        rgnInterior = CreateRectRgn(x1, y1, x2, y2);
-        color = RGB(0xF0, 0xF0, 0xF0);
-        ClipAndDrawRegion(hdc, hrgn, rgnInterior, RGN_DIFF, color);
+    Graphics g(memDC);
+    g.SetCompositingQuality(CompositingQualityHighQuality);
+    g.SetSmoothingMode(SmoothingModeAntiAlias);
+    g.SetPageUnit(UnitPixel);
 
-        // x = 0 or 1.
-        if (i == 0) {
-            RECT rc;
-            rc.left = 0;
-            rc.top = rcItem.top - 1;
-            rc.right = 2;
-            rc.bottom = rcItem.bottom;
+    Color c;
 
-            HBRUSH hBrush = CreateSolidBrush(RGB(0xF0, 0xF0, 0xF0));
-            FillRect(hdc, &rc, hBrush);
-            DeleteObject(hBrush);
-        }
+    c.SetFromCOLORREF(test ? RGB(0xFF, 0xFF, 0xFF) : RGB(0x9B, 0x9B, 0x9B));
+    Pen p(c, 2);
 
-    } else    {
-        // The outermost region of the boundary.
-        HRGN hrgn = CreateRectRgn(x1 - 2 , y1 - 2, x2 + 2 , y2 + 2);
-        HRGN rgnInterior = CreateRectRgn(x1 - 1, y1 - 1, x2 + 1, y2 + 1);
-        COLORREF color = RGB(0x89, 0x8C, 0x95);
-        ClipAndDrawRegion(hdc, hrgn, rgnInterior, RGN_DIFF, color);
-
-        // ? The second outer region of the boundary.
-        hrgn = CreateRectRgn(x1 - 1, y1 - 1, x2 + 1, y2 + 1);
-        rgnInterior = CreateRectRgn(x1, y1, x2 , y2);
-        color = RGB(0xFF, 0xFF, 0xFF);
-        ClipAndDrawRegion(hdc, hrgn, rgnInterior, RGN_DIFF, color);
+    if (1) {
+        g.DrawLine(&p, Point(r.x + 2,      r.y + 2), Point(r.x + r.dx - 3, r.y + r.dy - 3));
+        g.DrawLine(&p, Point(r.x + r.dx - 3, r.y + 2), Point(r.x + 2,      r.y + r.dy - 3));
+    } else {
+        g.DrawLine(&p, Point(4,      5), Point(r.dx-6, r.dy-5));
+        g.DrawLine(&p, Point(r.dx-6, 5), Point(4,      r.dy-5));
     }
 }
 
 static void TabControlOnPaint(HWND hwnd)
 {
-    HDC hdc = GetDC(hwnd);
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(hwnd, &ps);
 
-    // PanelOnDrawItem only draws "the interior (but top)" of tab items.
-    // We need to draw the "boundary" of tab items.
-    // Also, there are some parts of a tab control (e.g. y = 0, y = 1, x = 0 and x = 1) to draw,
-    // but they are out of the region of tab items.
+    HDC memDC = CreateCompatibleDC(hdc);
 
-    // Used to draw the boundary of tab items.
+    int dx = ClientRect(hwnd).dx;
+    int dy = ClientRect(hwnd).dx;
+    HBITMAP hMemBmp = CreateCompatibleBitmap(hdc, dx, dy);
+    HBITMAP hOldBmp = (HBITMAP)SelectObject(memDC, hMemBmp);
+
+    Rectangle(memDC, 0, 0, dx, dy);
+
+    // Do the default drawing in memDC.
+    SendMessage(hwnd, WM_PRINT, (WPARAM)memDC, PRF_CLIENT);
+
+    // Draw close buttons.
     int count = SendMessage(hwnd, TCM_GETITEMCOUNT, 0, 0);
-
-    // Used to determine the color of a tab item, i.e highlight or normal color.
     int indexHover = GetTabIndex(FindPanelInfoByHwnd(hwnd));
-
-    // Current selected tab item is fully drawn in PanelOnDrawItem.
-    // But we draw the boundary of other tab items here,
-    // so we need to redraw the selected tab item again here.
-    // This index is used to distinguish these 2 types of tab item.
     int selected = SendMessage(hwnd, TCM_GETCURSEL, 0, 0);
 
-    // Draw the boundary of non-selected tab items.
-    for (int i = 0; i < count; i++) {
-        if (i != selected)
-            DrawTabItemBoundary(hwnd, hdc, i, indexHover, selected, i == count - 1);
-    }
+    // Close Button.
+    for (int i = 0; i < count; i++)
+        DrawCloseButton(hwnd, memDC, i, indexHover, selected);
 
-    // Draw the selected item last.
-    // Attention: When the selected item is the last item,
-    // we don't want to adjust rcItem.
-    // Hence we pass false to the parameter "bool last".
-    DrawTabItemBoundary(hwnd, hdc, selected, indexHover, selected, false);
-
-    // Draw the part where y = 0.
+    // Draw y = 0;
     RECT rc;
     GetClientRect(hwnd, &rc);
-
-    // Since we change rc.top and rc.bottom below, we need to get dy first,
-    // so do this together with dx.
-    int dx = rc.right - rc.left;
-    int dy = rc.bottom - rc.top;
-
     rc.top = 0;
     rc.bottom = 1;
-    FillRect(hdc, &rc, gBrushSepLineBg);
+    FillRect(memDC, &rc, gBrushSepLineBg);
 
     // Draw item-free region.
     RECT rcLastItem;
@@ -505,9 +457,17 @@ static void TabControlOnPaint(HWND hwnd)
     gRect.UpperLeft  = 0;
     gRect.LowerRight = 1;
 
-    GradientFill(hdc, vert, 2, &gRect, 1, GRADIENT_FILL_RECT_V);
+    GradientFill(memDC, vert, 2, &gRect, 1, GRADIENT_FILL_RECT_V);
 
-    ReleaseDC(hwnd, hdc);
+    // Draw in hdc.
+    BitBlt(hdc, 0, 0, dx, dy, memDC, 0, 0, SRCCOPY);
+
+    // Clean up.
+    SelectObject(memDC, hOldBmp);
+    DeleteObject(hMemBmp);
+    DeleteObject(memDC);
+
+    EndPaint(hwnd, &ps);
 }
 
 static WNDPROC DefWndProcTabControl = NULL;
@@ -527,10 +487,10 @@ static LRESULT CALLBACK WndProcTabControl(HWND hwnd, UINT message, WPARAM wParam
             TabControlOnMouseMove(panel);
             break;
 
-        case WM_MOUSELEAVE:
-            if (!TabControlOnMouseLeave(panel))
-                return 0;
-            break;
+        //case WM_MOUSELEAVE:
+        //    if (!TabControlOnMouseLeave(panel))
+        //        return 0;
+        //    break;
 
     //    case WM_INITMENUPOPUP:
     //        panel->hMenu = (HMENU) wParam;
@@ -556,15 +516,8 @@ static LRESULT CALLBACK WndProcTabControl(HWND hwnd, UINT message, WPARAM wParam
     //        break;
 
         case WM_PAINT:
-            CallWindowProc(DefWndProcTabControl, hwnd, message, wParam, lParam);
             TabControlOnPaint(hwnd);
             return 0;
-
-    //    case WM_PAINT: // We need this to make the TabStatics' pos behaves well.
-    //        for (int i = 0; i < (int) panel->gWin.Count(); i++) {
-    //            SetTabCloseButtonPos(panel->gWin.At(i));
-    //        }
-    //        break;
 
     //     //We can't deal thie case here. We do the task in CloseDocumentInWindow.
     //    case TCM_DELETEITEM:
@@ -582,7 +535,7 @@ void CreateTabControl(PanelInfo *panel)
         NULL,
         WC_TABCONTROL,
         NULL,
-        WS_CLIPCHILDREN | WS_CHILD | TCS_FOCUSNEVER | TCS_HOTTRACK | TCS_TOOLTIPS | TCS_OWNERDRAWFIXED, // Use WS_CLIPCHILDREN, otherwise, the close buttons will disappear when insert new items or delete an item.
+        WS_CLIPCHILDREN | WS_CHILD | TCS_FOCUSNEVER | TCS_HOTTRACK | TCS_TOOLTIPS, // Use WS_CLIPCHILDREN, otherwise, the close buttons will disappear when insert new items or delete an item.
         0, 0, 0, 0, /* position and size determined in OnSize */
         panel->hwndPanel,
         NULL,
