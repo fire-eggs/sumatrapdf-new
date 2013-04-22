@@ -189,17 +189,17 @@ struct FileState {
 // Most values on this structure can be updated through the UI and are
 // persisted in SumatraPDF.dat (previously in sumatrapdfprefs.dat)
 struct GlobalPrefs {
-    // background color of the non-document windows, traditionally yellow
+    // background color of the non-document windows
     COLORREF mainWindowBackground;
-    //
+    // background color of the document windows
     COLORREF noDocBgColor;
-    //
+    // background color of the non-document windows
     COLORREF docBgColor;
-    //
+    // text color of the document
     COLORREF docTextColor;
-    //
+    // background color of the table of content
     COLORREF tocBgColor;
-    //
+    // background color of the favorite
     COLORREF favBgColor;
     // if true, Esc key closes SumatraPDF
     bool escToExit;
@@ -233,20 +233,19 @@ struct GlobalPrefs {
     bool rememberStatePerDocument;
     // [ISO code](langs.html) of the current UI language
     char * uiLanguage;
-    //
+    // if true, we allow to split the window
     bool enableSplitWindow;
-    //
+    // if true, we allow to use tab
     bool enableTab;
-    //
+    // if true, we show the tabs
     bool tabVisible;
-    // If yes, toolbar and sidebar are child windows of panel and each panel has its own toolbar and sidebar.
-    // Otherwise, toolbar and sidebar are child windows of WIN and each WIN has only one toolbar and sidebar.
+    // if true, assign a toolbar for each panel
     bool toolbarForEachPanel;
-    //
+    // if true, assing a sidebar for each panel
     bool sidebarForEachPanel;
-    //
+    // ...
     bool toolbarForEachPanelNew;
-    //
+    // ...
     bool sidebarForEachPanelNew;
     // if true, we show the toolbar at the top of the window
     bool showToolbar;
@@ -281,23 +280,23 @@ struct GlobalPrefs {
     // default zoom factor in % (negative values indicate virtual settings)
     char * defaultZoom;
     // default state of new windows (same as the last closed)
-    COLORREF windowState;
+    int windowState;
     // default position (can be on any monitor)
     RectI windowPos;
     // if true, we show table of contents (Bookmarks) sidebar if it's
     // presentin the document
     bool showToc;
     // width of favorites/bookmarks sidebar (if shown)
-    COLORREF sidebarDx;
+    int sidebarDx;
     // if both favorites and bookmarks parts of sidebar are visible, this
     // is the height of bookmarks (table of contents) part
-    COLORREF tocDy;
+    int tocDy;
     // if true, we show a list of frequently read documents in empty
     // window. Otherwise we show info about program
     bool showStartPage;
     // week count since 2011-01-01 needed to "age" openCount values in file
     // history
-    COLORREF openCountWeek;
+    int openCountWeek;
     // information about opened files
     Vec<FileState *> * fileStates;
     // modification time of the preferences file when it was last read
@@ -473,7 +472,7 @@ static const FieldInfo gGlobalPrefsFields[] = {
     { offsetof(GlobalPrefs, toolbarForEachPanel),      Type_Bool,       false                                                                                                                 },
     { offsetof(GlobalPrefs, sidebarForEachPanel),      Type_Bool,       false                                                                                                                 },
     { offsetof(GlobalPrefs, toolbarForEachPanelNew),   Type_Bool,       false                                                                                                                 },
-    { offsetof(GlobalPrefs, sidebarForEachPanel),      Type_Bool,       false                                                                                                                 },
+    { offsetof(GlobalPrefs, sidebarForEachPanelNew),   Type_Bool,       false                                                                                                                 },
     { offsetof(GlobalPrefs, showToolbar),              Type_Bool,       true                                                                                                                  },
     { offsetof(GlobalPrefs, showFavorites),            Type_Bool,       false                                                                                                                 },
     { offsetof(GlobalPrefs, associatedExtensions),     Type_String,     NULL                                                                                                                  },
@@ -496,7 +495,7 @@ static const FieldInfo gGlobalPrefsFields[] = {
     { offsetof(GlobalPrefs, openCountWeek),            Type_Int,        0                                                                                                                     },
     { offsetof(GlobalPrefs, fileStates),               Type_Array,      (intptr_t)&gFileStateInfo                                                                                             },
 };
-static const StructInfo gGlobalPrefsInfo = { sizeof(GlobalPrefs), 47, gGlobalPrefsFields, "MainWindowBackground\0NoDocBgColor\0DocBgColor\0DocTextColor\0TocBgColor\0FavBgColor\0EscToExit\0ReuseInstance\0FixedPageUI\0EbookUI\0ImageOnlyUI\0ChmUI\0ExternalViewers\0ZoomLevels\0ZoomIncrement\0PrinterDefaults\0ForwardSearch\0RememberStatePerDocument\0UiLanguage\0EnableSplitWindow\0EnableTab\0ShowTab\0ToolbarForEachPanel\0SidebarForEachPanel\0ToolbarForEachPanelNew\0SidebarForEachPanelNew\0ShowToolbar\0ShowFavorites\0PdfAssociateDontAskAgain\0PdfAssociateShouldAssociate\0CheckForUpdates\0TimeOfLastUpdateCheck\0VersionToSkip\0RememberOpenedFiles\0UseSysColors\0InverseSearchCmdLine\0EnableTeXEnhancements\0DefaultDisplayMode\0DefaultZoom\0WindowState\0WindowPos\0ShowToc\0SidebarDx\0TocDy\0ShowStartPage\0OpenCountWeek\0CbxR2L\0FileStates" };
+static const StructInfo gGlobalPrefsInfo = { sizeof(GlobalPrefs), 47, gGlobalPrefsFields, "MainWindowBackground\0NoDocBgColor\0DocBgColor\0DocTextColor\0TocBgColor\0FavBgColor\0EscToExit\0ReuseInstance\0FixedPageUI\0EbookUI\0ComicBookUI\0ChmUI\0ExternalViewers\0ZoomLevels\0ZoomIncrement\0PrinterDefaults\0ForwardSearch\0RememberStatePerDocument\0UiLanguage\0EnableSplitWindow\0EnableTab\0TabVisible\0ToolbarForEachPanel\0SidebarForEachPanel\0ToolbarForEachPanelNew\0SidebarForEachPanelNew\0ShowToolbar\0ShowFavorites\0AssociatedExtensions\0AssociateSilently\0CheckForUpdates\0TimeOfLastUpdateCheck\0VersionToSkip\0RememberOpenedFiles\0UseSysColors\0InverseSearchCmdLine\0EnableTeXEnhancements\0DefaultDisplayMode\0DefaultZoom\0WindowState\0WindowPos\0ShowToc\0SidebarDx\0TocDy\0ShowStartPage\0OpenCountWeek\0FileStates" };
 
 #endif
 
