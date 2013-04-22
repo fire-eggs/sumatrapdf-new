@@ -401,7 +401,7 @@ static void TabControlOnPaint(HWND hwnd)
     HDC memDC = CreateCompatibleDC(hdc);
 
     int dx = ClientRect(hwnd).dx;
-    int dy = ClientRect(hwnd).dx;
+    int dy = ClientRect(hwnd).dy;
     HBITMAP hMemBmp = CreateCompatibleBitmap(hdc, dx, dy);
     HBITMAP hOldBmp = (HBITMAP)SelectObject(memDC, hMemBmp);
 
