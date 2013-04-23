@@ -548,6 +548,15 @@ bool GetCursorPosInHwnd(HWND hwnd, POINT& posOut)
     return true;
 }
 
+bool IsCursorOverRectInWindow(HWND hwnd, RECT rc)
+{
+    POINT pt;
+    GetCursorPos(&pt);
+    RectI r(RectI::FromRECT(rc));
+    r = MapRectToWindow(r, hwnd, HWND_DESKTOP);
+    return r.Contains(PointI(pt.x, pt.y));
+};
+
 void CenterDialog(HWND hDlg, HWND hParent)
 {
     if (!hParent)

@@ -354,43 +354,70 @@ static void DrawCloseButton(HWND hwnd, HDC memDC, int i, int indexHover, int sel
 
     RECT rcClose;
     rcClose.left = rcItem.right - 16;
-    rcClose.top = rcItem.top + (TAB_CONTROL_DY - rcItem.top - 12) / 2 + 1; // This is relative to y = 0;
-    if (i == selected)
-        rcClose.top -= 1;
-    rcClose.right = rcClose.left + 12;
-    rcClose.bottom = rcClose.top + 12;
+
+    SizeI size = TextSizeInHwnd(hwnd, L"Text");
+
+    HFONT f = (HFONT)SendMessage(hwnd, WM_GETFONT, 0, 0);
+    HGDIOBJ prev = SelectObject(memDC, f);
+
+    TEXTMETRIC tm;
+    GetTextMetrics(memDC, &tm);
+    SelectObject(memDC, prev);
+
+    int d =    (TAB_CONTROL_DY - size.dy) / 2;
+    d++;
+    int s = d + (--tm.tmInternalLeading);
+    int h = tm.tmAscent - tm.tmInternalLeading;
+
+    s--;
+    h = h + 2;
+
+    rcClose.top = s;
+    if (i != selected)
+        rcClose.top += rcItem.top;
+
+    rcClose.right = rcClose.left + h;
+    rcClose.bottom = rcClose.top + h;
 
     POINT pt;
     GetCursorPosInHwnd(hwnd, pt);
+    bool hovered = IsCursorOverRectInWindow(hwnd, rcClose);
 
-    bool test = (rcClose.left <= pt.x && pt.x < rcClose.right) &&
-        (rcClose.top <= pt.y && pt.y < rcClose.bottom);
-
-    if (test) {
+    if (hovered) {
         HBRUSH hBrush = CreateSolidBrush(RGB(0xFF, 0x00, 0x00));
         FillRect(memDC, &rcClose, hBrush);
         DeleteObject(hBrush);
     }
 
-    RectI r(RectI::FromRECT(rcClose));
-
     Graphics g(memDC);
-    g.SetCompositingQuality(CompositingQualityHighQuality);
-    g.SetSmoothingMode(SmoothingModeAntiAlias);
     g.SetPageUnit(UnitPixel);
 
     Color c;
-
-    c.SetFromCOLORREF(test ? RGB(0xFF, 0xFF, 0xFF) : RGB(0x9B, 0x9B, 0x9B));
+    c.SetFromCOLORREF(hovered ? RGB(0xFF, 0xFF, 0xFF) : RGB(0x9B, 0x9B, 0x9B));
+    
     Pen p(c, 2);
+    g.DrawLine(&p, Point(rcClose.left + 1 , rcClose.top + 1), Point(rcClose.right - 2, rcClose.bottom - 2));
+    g.DrawLine(&p, Point(rcClose.right - 2, rcClose.top + 1), Point(rcClose.left + 1,  rcClose.bottom - 2));
 
-    if (1) {
-        g.DrawLine(&p, Point(r.x + 2,      r.y + 2), Point(r.x + r.dx - 3, r.y + r.dy - 3));
-        g.DrawLine(&p, Point(r.x + r.dx - 3, r.y + 2), Point(r.x + 2,      r.y + r.dy - 3));
-    } else {
-        g.DrawLine(&p, Point(4,      5), Point(r.dx-6, r.dy-5));
-        g.DrawLine(&p, Point(r.dx-6, 5), Point(4,      r.dy-5));
-    }
+    // Post treatment.
+    RECT rc;
+    rc.left = rcClose.left + 1;
+    rc.top = rcClose.bottom - 2;
+    rc.right = rc.left + 1;
+    rc.bottom = rc.top + 1;
+
+    HBRUSH hBrush = CreateSolidBrush(RGB(0xFF, 0x00, 0x00));
+    FillRect(memDC, &rc, hBrush);
+    DeleteObject(hBrush);
+
+    rc.left = rcClose.right - 2;
+    rc.top = rcClose.bottom - 2;
+    rc.right = rc.left + 1;
+    rc.bottom = rc.top + 1;
+
+    hBrush = CreateSolidBrush(RGB(0xFF, 0x00, 0x00));
+    FillRect(memDC, &rc, hBrush);
+    DeleteObject(hBrush);
 }
 
 static void TabControlOnPaint(HWND hwnd)
