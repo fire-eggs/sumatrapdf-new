@@ -20,10 +20,11 @@ String = Type("String", "WCHAR *")
 Utf8String = Type("Utf8String", "char *")
 
 class Field(object):
-	def __init__(self, name, type, default, comment, internal=False, expert=False):
+	def __init__(self, name, type, default, comment, internal=False, expert=False, doc=None):
 		self.name = name; self.type = type; self.default = default; self.comment = comment
 		self.internal = internal; self.cname = name[0].lower() + name[1:] if name else None
 		self.expert = expert # "expert" prefs are the ones not exposed by the UI
+		self.docComment = doc or comment
 
 	def cdefault(self, built):
 		if self.type == Bool:
@@ -71,9 +72,9 @@ class Field(object):
 		assert False
 
 class Struct(Field):
-	def __init__(self, name, fields, comment, structName=None, compact=False, internal=False, expert=False):
+	def __init__(self, name, fields, comment, structName=None, compact=False, internal=False, expert=False, doc=None):
 		self.structName = structName or name
-		super(Struct, self).__init__(name, Type("Struct", "%s" % self.structName), fields, comment, internal, expert)
+		super(Struct, self).__init__(name, Type("Struct", "%s" % self.structName), fields, comment, internal, expert, doc)
 		if compact: self.type.name = "Compact"
 
 class Array(Field):
@@ -85,8 +86,8 @@ class Array(Field):
 		super(Array, self).__init__(name, Type("Array", "Vec<%s *> *" % self.structName), fields, comment, internal, expert)
 
 class CompactArray(Field):
-	def __init__(self, name, type, default, comment, internal=False, expert=False):
-		super(CompactArray, self).__init__(name, Type("%sArray" % type.name, "Vec<%s> *" % type.ctype), default, comment, internal, expert)
+	def __init__(self, name, type, default, comment, internal=False, expert=False, doc=None):
+		super(CompactArray, self).__init__(name, Type("%sArray" % type.name, "Vec<%s> *" % type.ctype), default, comment, internal, expert, doc)
 
 # ##### setting definitions for SumatraPDF #####
 
@@ -118,12 +119,12 @@ ForwardSearch = [
 		"be changed to a rectangle at the left of the page (with the indicated " +
 		"amount of margin from the page margin)"),
 	Field("HighlightWidth", Int, 15,
-		"width of the highlight rectangle for when HighlightOffset is set"),
+		"width of the highlight rectangle (if HighlightOffset is > 0)"),
 	Field("HighlightColor", Color, 0x6581FF,
 		"color used for the forward search highlight"),
 	Field("HighlightPermanent", Bool, False,
-		"whether the forward search highlight will remain visible until the next " +
-		"mouse click instead of fading away instantly"),
+		"if true, highlight remains visible until the next " +
+		"mouse click (instead of fading away immediately)"),
 ]
 
 WindowMargin_FixedPageUI = [
@@ -187,7 +188,7 @@ EbookUI = [
 	# zeniko: "alternative" isn't that descriptive, if there's a FixedPageUI struct
 	# (and a ImageOnlyUI one), then UseFixedPageUI might be be clearer which alternative is meant
 	Field("UseFixedPageUI", Bool, False,
-		"if true, the UI used for PDF documents will be used for ebooks as well" +
+		"if true, the UI used for PDF documents will be used for ebooks as well " +
 		"(enables printing and searching, disables automatic reflow)"),
 	Field("TextColor", Color, 0x324b5f, "color for text"),
 	Field("BackgroundColor", Color, 0xd9f0fb, "color of the background (page)"),
@@ -195,13 +196,13 @@ EbookUI = [
 
 ImageOnlyUI = [
 	Struct("WindowMargin", WindowMargin_ImageOnlyUI,
-		"sizes of the top, right, bottom and left margin (in that order) between window and document",
+		"top, right, bottom and left margin (in that order) between window and document",
 		compact=True, expert=True),
 	Struct("PageSpacing", PageSpacing,
 		"horizontal and vertical distance between two pages in facing and book view modes",
 		structName="SizeI", compact=True),
 	Field("CbxMangaMode", Bool, False,
-		"default to displaying Comic Book files in manga mode (from right to left if showing 2 pages at a time)"),
+		"if true, default to displaying Comic Book files in manga mode (from right to left if showing 2 pages at a time)"),
 ]
 
 ChmUI = [
@@ -220,31 +221,40 @@ ExternalViewer = [
 ]
 
 Favorite = [
-	Field("Name", String, None, "name of this favorite as shown in the menu"),
-	Field("PageNo", Int, 0, "which page this favorite is about"),
-	Field("PageLabel", String, None, "optional label for this page (if logical and physical page numbers are not the same)"),
-	Field("MenuId", Int, 0, "id of this favorite in the menu (assigned by AppendFavMenuItems)", internal=True),
+	Field("Name", String, None,
+		"name of this favorite as shown in the menu"),
+	Field("PageNo", Int, 0,
+		"number of the bookmarked page"),
+	Field("PageLabel", String, None,
+		"label for this page (only present if logical and physical page numbers are not the same)"),
+	Field("MenuId", Int, 0,
+		"id of this favorite in the menu (assigned by AppendFavMenuItems)",
+		internal=True),
 ]
 
 FileSettings = [
 	Field("FilePath", String, None,
-		"file path of the document"),
+		"path of the document"),
 	Array("Favorites", Favorite,
 		"Values which are persisted for bookmarks/favorites"),
+	Field("IsPinned", Bool, False,
+		"a document can be \"pinned\" to the Frequently Read list so that it " +
+		"isn't displaced by recently opened documents"),
+	Field("IsMissing", Bool, False,
+		"if a document can no longer be found but we still remember valuable state, " +
+		"it's classified as missing so that it can be hidden instead of removed",
+		doc="if true, the file is considered missing and won't be shown in any list"),
 	Field("OpenCount", Int, 0,
 		"in order to prevent documents that haven't been opened for a while " +
 		"but used to be opened very frequently constantly remain in top positions, " +
 		"the openCount will be cut in half after every week, so that the " +
-		"Frequently Read list hopefully better reflects the currently relevant documents"),
-	Field("IsPinned", Bool, False,
-		"a document can be \"pinned\" to the Frequently Read list so that it " +
-		"isn't displaced by more frequently used ones"),
-	Field("IsMissing", Bool, False,
-		"if a document can no longer be found but we still remember valuable state, " +
-		"it's classified as missing so that it can be hidden instead of removed (internal)"),
+		"Frequently Read list hopefully better reflects the currently relevant documents",
+		doc="number of times this document has been opened recently"),
 	Field("DecryptionKey", Utf8String, None,
 		"Hex encoded MD5 fingerprint of file content (32 chars) followed by " +
-		"crypt key (64 chars) - only applies for PDF documents (internal)"),
+		"crypt key (64 chars) - only applies for PDF documents",
+		doc="data required to open a password protected document without having to " +
+		"ask for the password again"),
 	# kjk: I think this only applies to certain settings. Should those settings
 	# be grouped in a separate struct and the name reflect that? How does it
 	# interact with GlobalPrefsOnly?
@@ -255,40 +265,46 @@ FileSettings = [
 	Field("UseDefaultState", Bool, False,
 		"if true, we use global defaults when opening this file (instead of " +
 		"the values below)"),
-	# NOTE: only add fields below UseDefaultState which are either internal or
-	#       should not be serialized when UseDefaultState is true!
+	# NOTE: fields below UseDefaultState aren't serialized if UseDefaultState is true!
 	Field("DisplayMode", String, "automatic",
 		"how pages should be laid out for this document, needs to be synchronized with " +
-		"DefaultDisplayMode after deserialization and before serialization"),
+		"DefaultDisplayMode after deserialization and before serialization",
+		doc="layout of pages. valid values: automatic, single page, facing, book view, " +
+		"continuous, continuous facing, continuous book view"),
 	Struct("ScrollPos", ScrollPos,
-		"how far this document has been scrolled", structName="PointI", compact=True),
+		"how far this document has been scrolled (in x and y direction)",
+		structName="PointI", compact=True),
 	Field("PageNo", Int, 1,
-		"scrollPos values are relative to the top-left corner of this page"),
+		"number of the last read page"),
 	Field("Zoom", Utf8String, "fit page",
-		"current zoom factor in % (negative values indicate virtual settings)"),
+		"zoom (in %) or one of those values: fit page, fit width, fit content"),
 	Field("Rotation", Int, 0,
 		"how far pages have been rotated as a multiple of 90 degrees"),
 	Field("WindowState", Int, 0,
-		"default state of new SumatraPDF windows (same as the last closed)"),
+		"state of the window. 1 is normal, 2 is maximized, "+
+		"3 is fullscreen, 4 is minimized"),
 	Struct("WindowPos", WindowPos,
 		"default position (can be on any monitor)", structName="RectI", compact=True),
 	Field("ShowToc", Bool, True,
-		"whether the table of contents (Bookmarks) sidebar is shown for this document"),
+		"if true, we show table of contents (Bookmarks) sidebar if it's present " +
+		"in the document"),
 	Field("SidebarDx", Int, 0,
 		"width of the left sidebar panel containing the table of contents"),
 	Field("DisplayR2L", Bool, False,
 		"if true, the document is displayed right-to-left in facing and book view modes " +
 		"(only used for comic book documents)"),
 	Field("ReparseIdx", Int, 0,
-		"internal"),
+		"index into an ebook's HTML data from which reparsing has to happen " +
+		"in order to restore the last viewed page (i.e. the equivalent of PageNo for the ebook UI)",
+		doc="data required to restore the last read page in the ebook UI"),
 	CompactArray("TocState", Int, None,
 		"tocState is an array of ids for ToC items that have been toggled by " +
 		"the user (i.e. aren't in their default expansion state). - " +
 		"Note: We intentionally track toggle state as opposed to expansion state " +
 		"so that we only have to save a diff instead of all states for the whole " +
-		"tree (which can be quite large) (internal)"),
-	# NOTE: only add fields below UseDefaultState which are either internal or
-	#       should not be serialized when UseDefaultState is true!
+		"tree (which can be quite large) (internal)",
+		doc="data required to determine which parts of the table of contents have been expanded"),
+	# NOTE: fields below UseDefaultState aren't serialized if UseDefaultState is true!
 	Field("Thumbnail", Type(None, "RenderedBitmap *"), "NULL",
 		"thumbnails are saved as PNG files in sumatrapdfcache directory",
 		internal=True),
@@ -296,6 +312,9 @@ FileSettings = [
 		"temporary value needed for FileHistory::cmpOpenCount",
 		internal=True),
 ]
+
+# list of fields which aren't serialized when UseDefaultState is set
+rememberedFileSettings = ["DisplayMode", "ScrollPos", "PageNo", "Zoom", "Rotation", "WindowState", "WindowPos", "ShowToc", "SidebarDx", "DisplayR2L", "ReparseIdx", "TocState"]
 
 GlobalPrefs = [
 	Field("MainWindowBackground", Color, 0x80D4FFFF,
@@ -343,23 +362,25 @@ GlobalPrefs = [
 		expert=True),
 	# zeniko: the below prefs apply only to FixedPageUI and ImageOnlyUI (so far)
 	CompactArray("ZoomLevels", Float, "8.33 12.5 18 25 33.33 50 66.67 75 100 125 150 200 300 400 600 800 1000 1200 1600 2000 2400 3200 4800 6400",
-		"zoom levels which zooming steps through, excluding the virtual zoom levels " +
-		"fit page, fit content and fit width (minimal allowed value is 8.33 and maximum "
-		"allowed value is 6400)",
-		expert=True),
+		"zoom levels which zooming steps through in addition to Fit Page, Fit Width and " +
+		"the minimum and maximum allowed values (8.33 and 6400)",
+		expert=True,
+		doc="sequence of zoom levels when zooming in/out; all values must lie between 8.33 and 6400"),
 	Field("ZoomIncrement", Float, 0,
-		"zoom step size in percents relative to the current zoom level " +
-		"(if zero or negative, the values from ZoomLevels are used instead)",
+		"zoom step size in percents relative to the current zoom level. " +
+		"if zero or negative, the values from ZoomLevels are used instead",
 		expert=True),
 	Struct("PrinterDefaults", PrinterDefaults,
 		"these override the default settings in the Print dialog",
 		expert=True),
 	Struct("ForwardSearch", ForwardSearch,
-		"customization options for how we show forward search results",
+		"customization options for how we show forward search results (used from " +
+		"LaTeX editors)",
 		expert=True),
 
 	Field("RememberStatePerDocument", Bool, True,
-		"if true, we store display settings for each document"),
+		"if true, we store display settings for each document separately (i.e. everything " +
+		"after UseDefaultState in FileStates)"),
 	# kjk: we need an "auto" value, which means "auto-detect". We shouldn't serializee
 	# auto-detected language
 	# zeniko: one issue with "auto": since that setting isn't exposed in the UI, this
@@ -367,7 +388,8 @@ GlobalPrefs = [
 	# unexpectedly changes when using it abroad; or if a user ever closed the Choose Language
 	# dialog with OK, the language never again adapts to system changes
 	Field("UiLanguage", Utf8String, None, # TODO: "auto"
-		"[ISO code](langs.html) of the current UI language"),
+		"ISO code of the current UI language",
+		doc="[ISO code](langs.html) of the current UI language"),
 	Field("EnableSplitWindow", Bool, False,
 		"if true, we allow to split the window",
 		expert=True),
@@ -392,7 +414,7 @@ GlobalPrefs = [
 	Field("ShowToolbar", Bool, True,
 		"if true, we show the toolbar at the top of the window"),
 	Field("ShowFavorites", Bool, False,
-		"if true, we show favorites sidebar"),
+		"if true, we show the Favorites sidebar"),
 	# zeniko: replace these two with AssociatedExtensions (String, default: empty,
 	# might be e.g. ".pdf .xps") and CheckAssociationsAtStartup (Bool, default: true) ?
 	# the semantics are good but "association" is rather technical term. A better
@@ -404,13 +426,10 @@ GlobalPrefs = [
 		"whether file associations should be fixed silently or only after user feedback"),
 	Field("CheckForUpdates", Bool, True,
 		"if true, we check once a day if an update is available"),
-	Struct("TimeOfLastUpdateCheck", FileTime,
-		"internal",
-		structName="FILETIME", compact=True),
 	Field("VersionToSkip", String, None,
-		"we won't show UI to ask to update to this version)"),
+		"we won't ask again to update to this version"),
 	Field("RememberOpenedFiles", Bool, True,
-		"if true, we remember which files we opened and their settings"),
+		"if true, we remember which files we opened and their display settings"),
 	# kjk: probably should be removed as we'll provide a way to set colors explicitly
 	# zeniko: no, this is a UI exposed option for people who prefer changing their
 	# color scheme system wide
@@ -425,20 +444,25 @@ GlobalPrefs = [
 	Field("UseSysColors", Bool, False,
 		"if true, we use Windows system colors for background/text color. Over-rides other settings"),
 	Field("InverseSearchCmdLine", String, None,
-		"pattern used to launch the editor when doing inverse search"),
+		"pattern used to launch the LaTeX editor when doing inverse search"),
 	Field("EnableTeXEnhancements", Bool, False,
-		"if true, we expose SyncTeX enhancements via Settings/Options menu"),
+		"if true, we expose the SyncTeX inverse search command line in Settings -> Options"),
 	Field("DefaultDisplayMode", String, "automatic",
 		"how pages should be laid out by default, needs to be synchronized with " +
-		"DefaultDisplayMode after deserialization and before serialization"),
+		"DefaultDisplayMode after deserialization and before serialization",
+		doc="default layout of pages. valid values: automatic, single page, facing, " +
+		"book view, continuous, continuous facing, continuous book view"),
 	Field("DefaultZoom", Utf8String, "fit page",
-		"default zoom factor in % (negative values indicate virtual settings)"),
+		"default zoom (in %) or one of those values: fit page, fit width, fit content"),
 	Field("WindowState", Int, 1,
-		"default state of new windows (same as the last closed)"),
+		"default state of new windows (same as the last closed)",
+		doc="default state of the window. 1 is normal, 2 is maximized, "+
+		"3 is fullscreen, 4 is minimized"),
 	Struct("WindowPos", WindowPos,
-		"default position (can be on any monitor)", structName="RectI", compact=True),
+		"default position (can be on any monitor)", structName="RectI", compact=True,
+		doc="default position (x, y) and size (width, height) of the window"),
 	Field("ShowToc", Bool, True,
-		"if true, we show table of contents (Bookmarks) sidebar if it's present" +
+		"if true, we show table of contents (Bookmarks) sidebar if it's present " +
 		"in the document"),
 	Field("SidebarDx", Int, 0,
 		"width of favorites/bookmarks sidebar (if shown)"),
@@ -446,12 +470,17 @@ GlobalPrefs = [
 		"if both favorites and bookmarks parts of sidebar are visible, this is " +
 		"the height of bookmarks (table of contents) part"),
 	Field("ShowStartPage", Bool, True,
-		"if true, we show a list of frequently read documents in empty window. Otherwise we show info about program"),
-	Field("OpenCountWeek", Int, 0,
-		"week count since 2011-01-01 needed to \"age\" openCount values in file history"),
+		"if true, we show a list of frequently read documents when no document is loaded"),
 	# file history and favorites
 	Array("FileStates", FileSettings,
-		"information about opened files"),
+		"information about opened files (in most recently used order)"),
+	Struct("TimeOfLastUpdateCheck", FileTime,
+		"timestamp of the last update check",
+		structName="FILETIME", compact=True,
+		doc="data required to determine when SumatraPDF last checked for updates"),
+	Field("OpenCountWeek", Int, 0,
+		"week count since 2011-01-01 needed to \"age\" openCount values in file history",
+		doc="value required to determine recency for the OpenCount value in FileStates"),
 	# non-serialized fields
 	Struct("LastPrefUpdate", FileTime,
 		"modification time of the preferences file when it was last read",
@@ -466,7 +495,7 @@ GlobalPrefs = [
 
 GlobalPrefs = Struct("GlobalPrefs", GlobalPrefs,
 	"Most values on this structure can be updated through the UI and are persisted " +
-	"in SumatraPDF.dat (previously in sumatrapdfprefs.dat)")
+	"in SumatraPDF-settings.txt (previously in sumatrapdfprefs.dat)")
 
 # ##### end of setting definitions for SumatraPDF #####
 
@@ -537,9 +566,9 @@ def AssembleDefaults(struct, topLevelComment=None):
 			continue
 		if type(field) in [Struct, Array] and not field.type.name == "Compact":
 			assert topLevelComment
-			more.append("\n".join(FormatComment(field.comment, ";") + ["[%s]" % field.name, AssembleDefaults(field)]))
+			more.append("\n".join(FormatComment(field.docComment, ";") + ["[%s]" % field.name, AssembleDefaults(field)]))
 		else:
-			lines += FormatComment(field.comment, ";") + [field.inidefault()]
+			lines += FormatComment(field.docComment, ";") + [field.inidefault()]
 	if more:
 		lines += [""] + more
 	return "\n".join(lines) + "\n"
@@ -582,6 +611,15 @@ def main():
 		"They will overwrite the corresponding settings in SumatraPDF-settings.txt at every startup.")
 	content = "# Warning: This file only works for builds compiled with ENABLE_SUMATRAPDF_USER_INI !\n\n" + content
 	open("docs/SumatraPDF-user.ini", "wb").write(content.replace("\n", "\r\n").encode("utf-8-sig"))
+	
+	beforeUseDefaultState = True
+	for field in FileSettings:
+		if field.name == "UseDefaultState":
+			beforeUseDefaultState = False
+		elif beforeUseDefaultState:
+			assert field.name not in rememberedFileSettings, "%s shouldn't be serialized when UseDefaultState is true" % field.name
+		else:
+			assert field.name in rememberedFileSettings or field.internal, "%s won't be serialized when UseDefaultState is true" % field.name
 
 if __name__ == "__main__":
 	main()

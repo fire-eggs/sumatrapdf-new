@@ -515,8 +515,7 @@ class HwndPasswordUI : public PasswordUI
     HWND hwnd;
 
 public:
-    HwndPasswordUI(HWND hwnd) : hwnd(hwnd)
-    {}
+    HwndPasswordUI(HWND hwnd) : hwnd(hwnd) { }
 
     virtual WCHAR * GetPassword(const WCHAR *fileName, unsigned char *fileDigest,
                                 unsigned char decryptionKeyOut[32], bool *saveKey);
@@ -526,7 +525,7 @@ public:
    dialog box or if the encryption key has been filled in instead.
    Caller needs to free() the result. */
 WCHAR *HwndPasswordUI::GetPassword(const WCHAR *fileName, unsigned char *fileDigest,
-                               unsigned char decryptionKeyOut[32], bool *saveKey)
+                                   unsigned char decryptionKeyOut[32], bool *saveKey)
 {
     DisplayState *fileFromHistory = gFileHistory.Find(fileName);
     if (fileFromHistory && fileFromHistory->decryptionKey) {
@@ -555,7 +554,7 @@ WCHAR *HwndPasswordUI::GetPassword(const WCHAR *fileName, unsigned char *fileDig
     // closed by now
     if (!IsWindow(hwnd))
         hwnd = GetForegroundWindow();
-    bool *rememberPwd =  gGlobalPrefs->rememberOpenedFiles ? saveKey : NULL;
+    bool *rememberPwd = gGlobalPrefs->rememberOpenedFiles ? saveKey : NULL;
     return Dialog_GetPassword(hwnd, fileName, rememberPwd);
 }
 
@@ -1061,7 +1060,9 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
 
     str::ReplacePtr(&win->loadedFilePath, args.fileName);
     DocType engineType;
-    BaseEngine *engine = EngineManager::CreateEngine(args.fileName, pwdUI, &engineType, !gGlobalPrefs->ebookUI.useFixedPageUI);
+    BaseEngine *engine = EngineManager::CreateEngine(args.fileName, pwdUI, &engineType,
+                                                     gGlobalPrefs->chmUI.useFixedPageUI,
+                                                     gGlobalPrefs->ebookUI.useFixedPageUI);
 
     if (engine && Engine_Chm == engineType) {
         // make sure that MSHTML can't be used as a potential exploit
@@ -1076,9 +1077,7 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
         // if CLSID_WebBrowser isn't available, fall back on Chm2Engine
         else if (!static_cast<ChmEngine *>(engine)->SetParentHwnd(win->hwndCanvas)) {
             delete engine;
-            DebugAlternateChmEngine(true);
-            engine = EngineManager::CreateEngine(args.fileName, pwdUI, &engineType);
-            DebugAlternateChmEngine(false);
+            engine = EngineManager::CreateEngine(args.fileName, pwdUI, &engineType, true);
             CrashIf(engineType != (engine ? Engine_Chm2 : Engine_None));
         }
     }
@@ -1992,11 +1991,6 @@ static WindowInfo* LoadDocumentOld(LoadArgs& args)
     FileWatcherUnsubscribe(win->watcher);
     win->watcher = FileWatcherSubscribe(fullPath, new FileChangeCallback(win));
 
-    if (IsStressTesting()) {
-        // don't modify file history during stress testing
-        return win;
-    }
-
     if (gGlobalPrefs->rememberOpenedFiles) {
         CrashIf(!str::Eq(fullPath, win->loadedFilePath));
         DisplayState *ds = gFileHistory.MarkFileLoaded(fullPath);
@@ -2007,7 +2001,7 @@ static WindowInfo* LoadDocumentOld(LoadArgs& args)
 
     // Add the file also to Windows' recently used documents (this doesn't
     // happen automatically on drag&drop, reopening from history, etc.)
-    if (HasPermission(Perm_DiskAccess) && !gPluginMode)
+    if (HasPermission(Perm_DiskAccess) && !gPluginMode && !IsStressTesting())
         SHAddToRecentDocs(SHARD_PATH, fullPath);
 
     return win;
@@ -6381,10 +6375,14 @@ static LRESULT CALLBACK WndProcCanvas(HWND hwnd, UINT msg, WPARAM wParam, LPARAM
             return OnGesture(*win, msg, wParam, lParam);
 
         case WM_GETOBJECT:
+            // TODO: should we check for UiaRootObjectId, as in http://msdn.microsoft.com/en-us/library/windows/desktop/ff625912.aspx ???
             // Don't expose UIA automation in plugin mode yet. UIA is still too experimental
-            if (!gPluginMode) { 
-                if (win->CreateUIAProvider())
+            if (!gPluginMode) {
+                if (win->CreateUIAProvider()) {
+                    // TODO: should win->uia_provider->Release() as in http://msdn.microsoft.com/en-us/library/windows/desktop/gg712214.aspx
+                    // and http://www.code-magazine.com/articleprint.aspx?quickid=0810112&printmode=true ?
                     return uia::ReturnRawElementProvider(hwnd, wParam, lParam, win->uia_provider);
+                }
             }
             return DefWindowProc(hwnd, msg, wParam, lParam);
 
@@ -6829,7 +6827,6 @@ static LRESULT FrameOnCommand(WindowInfo *win, HWND hwnd, UINT msg, WPARAM wPara
             gGlobalPrefs->ebookUI.useFixedPageUI = !gGlobalPrefs->ebookUI.useFixedPageUI;
             // use the same setting to also toggle the CHM UI
             gGlobalPrefs->chmUI.useFixedPageUI = !gGlobalPrefs->chmUI.useFixedPageUI;
-            DebugAlternateChmEngine(gGlobalPrefs->chmUI.useFixedPageUI);
             break;
 
         case IDM_DEBUG_MUI:
