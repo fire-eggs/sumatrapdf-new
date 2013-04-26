@@ -44,7 +44,7 @@ struct FixedPageUI {
 // UseFixedPageUI is true, FixedPageUI settings apply instead
 struct EbookUI {
     // if true, the UI used for PDF documents will be used for ebooks as
-    // well(enables printing and searching, disables automatic reflow)
+    // well (enables printing and searching, disables automatic reflow)
     bool useFixedPageUI;
     // color for text
     COLORREF textColor;
@@ -54,14 +54,14 @@ struct EbookUI {
 
 // customization options for Comic Book and images UI
 struct ComicBookUI {
-    // sizes of the top, right, bottom and left margin (in that order)
-    // between window and document
+    // top, right, bottom and left margin (in that order) between window
+    // and document
     WindowMargin windowMargin;
     // horizontal and vertical distance between two pages in facing and
     // book view modes
     SizeI pageSpacing;
-    // default to displaying Comic Book files in manga mode (from right to
-    // left if showing 2 pages at a time)
+    // if true, default to displaying Comic Book files in manga mode (from
+    // right to left if showing 2 pages at a time)
     bool cbxMangaMode;
 };
 
@@ -95,18 +95,19 @@ struct PrinterDefaults {
     bool printAsImage;
 };
 
-// customization options for how we show forward search results
+// customization options for how we show forward search results (used
+// from LaTeX editors)
 struct ForwardSearch {
     // when set to a positive value, the forward search highlight style
     // will be changed to a rectangle at the left of the page (with the
     // indicated amount of margin from the page margin)
     int highlightOffset;
-    // width of the highlight rectangle for when HighlightOffset is set
+    // width of the highlight rectangle (if HighlightOffset is > 0)
     int highlightWidth;
     // color used for the forward search highlight
     COLORREF highlightColor;
-    // whether the forward search highlight will remain visible until the
-    // next mouse click instead of fading away instantly
+    // if true, highlight remains visible until the next mouse click
+    // (instead of fading away immediately)
     bool highlightPermanent;
 };
 
@@ -114,36 +115,36 @@ struct ForwardSearch {
 struct Favorite {
     // name of this favorite as shown in the menu
     WCHAR * name;
-    // which page this favorite is about
+    // number of the bookmarked page
     int pageNo;
-    // optional label for this page (if logical and physical page numbers
-    // are not the same)
+    // label for this page (only present if logical and physical page
+    // numbers are not the same)
     WCHAR * pageLabel;
     // id of this favorite in the menu (assigned by AppendFavMenuItems)
     int menuId;
 };
 
-// information about opened files
+// information about opened files (in most recently used order)
 struct FileState {
-    // file path of the document
+    // path of the document
     WCHAR * filePath;
     // Values which are persisted for bookmarks/favorites
     Vec<Favorite *> * favorites;
+    // a document can be "pinned" to the Frequently Read list so that it
+    // isn't displaced by recently opened documents
+    bool isPinned;
+    // if a document can no longer be found but we still remember valuable
+    // state, it's classified as missing so that it can be hidden instead
+    // of removed
+    bool isMissing;
     // in order to prevent documents that haven't been opened for a while
     // but used to be opened very frequently constantly remain in top
     // positions, the openCount will be cut in half after every week, so
     // that the Frequently Read list hopefully better reflects the
     // currently relevant documents
     int openCount;
-    // a document can be "pinned" to the Frequently Read list so that it
-    // isn't displaced by more frequently used ones
-    bool isPinned;
-    // if a document can no longer be found but we still remember valuable
-    // state, it's classified as missing so that it can be hidden instead
-    // of removed (internal)
-    bool isMissing;
     // Hex encoded MD5 fingerprint of file content (32 chars) followed by
-    // crypt key (64 chars) - only applies for PDF documents (internal)
+    // crypt key (64 chars) - only applies for PDF documents
     char * decryptionKey;
     // if true, we use global defaults when opening this file (instead of
     // the values below)
@@ -152,27 +153,30 @@ struct FileState {
     // synchronized with DefaultDisplayMode after deserialization and
     // before serialization
     WCHAR * displayMode;
-    // how far this document has been scrolled
+    // how far this document has been scrolled (in x and y direction)
     PointI scrollPos;
-    // scrollPos values are relative to the top-left corner of this page
+    // number of the last read page
     int pageNo;
-    // current zoom factor in % (negative values indicate virtual settings)
+    // zoom (in %) or one of those values: fit page, fit width, fit content
     char * zoom;
     // how far pages have been rotated as a multiple of 90 degrees
     int rotation;
-    // default state of new SumatraPDF windows (same as the last closed)
+    // state of the window. 1 is normal, 2 is maximized, 3 is fullscreen, 4
+    // is minimized
     int windowState;
     // default position (can be on any monitor)
     RectI windowPos;
-    // whether the table of contents (Bookmarks) sidebar is shown for this
-    // document
+    // if true, we show table of contents (Bookmarks) sidebar if it's
+    // present in the document
     bool showToc;
     // width of the left sidebar panel containing the table of contents
     int sidebarDx;
     // if true, the document is displayed right-to-left in facing and book
     // view modes (only used for comic book documents)
     bool displayR2L;
-    // internal
+    // index into an ebook's HTML data from which reparsing has to happen
+    // in order to restore the last viewed page (i.e. the equivalent of
+    // PageNo for the ebook UI)
     int reparseIdx;
     // tocState is an array of ids for ToC items that have been toggled by
     // the user (i.e. aren't in their default expansion state). - Note: We
@@ -187,7 +191,8 @@ struct FileState {
 };
 
 // Most values on this structure can be updated through the UI and are
-// persisted in SumatraPDF.dat (previously in sumatrapdfprefs.dat)
+// persisted in SumatraPDF-settings.txt (previously in
+// sumatrapdfprefs.dat)
 struct GlobalPrefs {
     // background color of the non-document windows
     COLORREF mainWindowBackground;
@@ -218,20 +223,21 @@ struct GlobalPrefs {
     // list of additional external viewers for various file types (can have
     // multiple entries for the same format)
     Vec<ExternalViewer *> * externalViewers;
-    // zoom levels which zooming steps through, excluding the virtual zoom
-    // levels fit page, fit content and fit width (minimal allowed value is
-    // 8.33 and maximum allowed value is 6400)
+    // zoom levels which zooming steps through in addition to Fit Page, Fit
+    // Width and the minimum and maximum allowed values (8.33 and 6400)
     Vec<float> * zoomLevels;
-    // zoom step size in percents relative to the current zoom level (if
-    // zero or negative, the values from ZoomLevels are used instead)
+    // zoom step size in percents relative to the current zoom level. if
+    // zero or negative, the values from ZoomLevels are used instead
     float zoomIncrement;
     // these override the default settings in the Print dialog
     PrinterDefaults printerDefaults;
-    // customization options for how we show forward search results
+    // customization options for how we show forward search results (used
+    // from LaTeX editors)
     ForwardSearch forwardSearch;
-    // if true, we store display settings for each document
+    // if true, we store display settings for each document separately
+    // (i.e. everything after UseDefaultState in FileStates)
     bool rememberStatePerDocument;
-    // [ISO code](langs.html) of the current UI language
+    // ISO code of the current UI language
     char * uiLanguage;
     // if true, we allow to split the window
     bool enableSplitWindow;
@@ -249,7 +255,7 @@ struct GlobalPrefs {
     bool sidebarForEachPanelNew;
     // if true, we show the toolbar at the top of the window
     bool showToolbar;
-    // if true, we show favorites sidebar
+    // if true, we show the Favorites sidebar
     bool showFavorites;
     // a list of extensions that SumatraPDF has associated itself with and
     // will reassociate if a different application takes over (e.g. ".pdf
@@ -260,45 +266,48 @@ struct GlobalPrefs {
     bool associateSilently;
     // if true, we check once a day if an update is available
     bool checkForUpdates;
-    // internal
-    FILETIME timeOfLastUpdateCheck;
-    // we won't show UI to ask to update to this version)
+    // we won't ask again to update to this version
     WCHAR * versionToSkip;
-    // if true, we remember which files we opened and their settings
+    // if true, we remember which files we opened and their display
+    // settings
     bool rememberOpenedFiles;
     // if true, we use Windows system colors for background/text color.
     // Over-rides other settings
     bool useSysColors;
-    // pattern used to launch the editor when doing inverse search
+    // pattern used to launch the LaTeX editor when doing inverse search
     WCHAR * inverseSearchCmdLine;
-    // if true, we expose SyncTeX enhancements via Settings/Options menu
+    // if true, we expose the SyncTeX inverse search command line in
+    // Settings -> Options
     bool enableTeXEnhancements;
     // how pages should be laid out by default, needs to be synchronized
     // with DefaultDisplayMode after deserialization and before
     // serialization
     WCHAR * defaultDisplayMode;
-    // default zoom factor in % (negative values indicate virtual settings)
+    // default zoom (in %) or one of those values: fit page, fit width, fit
+    // content
     char * defaultZoom;
     // default state of new windows (same as the last closed)
     int windowState;
     // default position (can be on any monitor)
     RectI windowPos;
     // if true, we show table of contents (Bookmarks) sidebar if it's
-    // presentin the document
+    // present in the document
     bool showToc;
     // width of favorites/bookmarks sidebar (if shown)
     int sidebarDx;
     // if both favorites and bookmarks parts of sidebar are visible, this
     // is the height of bookmarks (table of contents) part
     int tocDy;
-    // if true, we show a list of frequently read documents in empty
-    // window. Otherwise we show info about program
+    // if true, we show a list of frequently read documents when no
+    // document is loaded
     bool showStartPage;
+    // information about opened files (in most recently used order)
+    Vec<FileState *> * fileStates;
+    // timestamp of the last update check
+    FILETIME timeOfLastUpdateCheck;
     // week count since 2011-01-01 needed to "age" openCount values in file
     // history
     int openCountWeek;
-    // information about opened files
-    Vec<FileState *> * fileStates;
     // modification time of the preferences file when it was last read
     FILETIME lastPrefUpdate;
     // value of DefaultDisplayMode for internal usage
@@ -388,12 +397,6 @@ static const FieldInfo gForwardSearchFields[] = {
 };
 static const StructInfo gForwardSearchInfo = { sizeof(ForwardSearch), 4, gForwardSearchFields, "HighlightOffset\0HighlightWidth\0HighlightColor\0HighlightPermanent" };
 
-static const FieldInfo gFILETIMEFields[] = {
-    { offsetof(FILETIME, dwHighDateTime), Type_Int, 0 },
-    { offsetof(FILETIME, dwLowDateTime),  Type_Int, 0 },
-};
-static const StructInfo gFILETIMEInfo = { sizeof(FILETIME), 2, gFILETIMEFields, "DwHighDateTime\0DwLowDateTime" };
-
 static const FieldInfo gRectIFields[] = {
     { offsetof(RectI, x),  Type_Int, 0 },
     { offsetof(RectI, y),  Type_Int, 0 },
@@ -426,9 +429,9 @@ static const StructInfo gRectI_1_Info = { sizeof(RectI), 4, gRectI_1_Fields, "X\
 static const FieldInfo gFileStateFields[] = {
     { offsetof(FileState, filePath),        Type_String,     NULL                     },
     { offsetof(FileState, favorites),       Type_Array,      (intptr_t)&gFavoriteInfo },
-    { offsetof(FileState, openCount),       Type_Int,        0                        },
     { offsetof(FileState, isPinned),        Type_Bool,       false                    },
     { offsetof(FileState, isMissing),       Type_Bool,       false                    },
+    { offsetof(FileState, openCount),       Type_Int,        0                        },
     { offsetof(FileState, decryptionKey),   Type_Utf8String, NULL                     },
     { offsetof(FileState, useDefaultState), Type_Bool,       false                    },
     { offsetof(FileState, displayMode),     Type_String,     (intptr_t)L"automatic"   },
@@ -444,7 +447,13 @@ static const FieldInfo gFileStateFields[] = {
     { offsetof(FileState, reparseIdx),      Type_Int,        0                        },
     { offsetof(FileState, tocState),        Type_IntArray,   NULL                     },
 };
-static StructInfo gFileStateInfo = { sizeof(FileState), 19, gFileStateFields, "FilePath\0Favorites\0OpenCount\0IsPinned\0IsMissing\0DecryptionKey\0UseDefaultState\0DisplayMode\0ScrollPos\0PageNo\0Zoom\0Rotation\0WindowState\0WindowPos\0ShowToc\0SidebarDx\0DisplayR2L\0ReparseIdx\0TocState" };
+static StructInfo gFileStateInfo = { sizeof(FileState), 19, gFileStateFields, "FilePath\0Favorites\0IsPinned\0IsMissing\0OpenCount\0DecryptionKey\0UseDefaultState\0DisplayMode\0ScrollPos\0PageNo\0Zoom\0Rotation\0WindowState\0WindowPos\0ShowToc\0SidebarDx\0DisplayR2L\0ReparseIdx\0TocState" };
+
+static const FieldInfo gFILETIMEFields[] = {
+    { offsetof(FILETIME, dwHighDateTime), Type_Int, 0 },
+    { offsetof(FILETIME, dwLowDateTime),  Type_Int, 0 },
+};
+static const StructInfo gFILETIMEInfo = { sizeof(FILETIME), 2, gFILETIMEFields, "DwHighDateTime\0DwLowDateTime" };
 
 static const FieldInfo gGlobalPrefsFields[] = {
     { offsetof(GlobalPrefs, mainWindowBackground),     Type_Color,      0x80d4ffff                                                                                                            },
@@ -478,7 +487,6 @@ static const FieldInfo gGlobalPrefsFields[] = {
     { offsetof(GlobalPrefs, associatedExtensions),     Type_String,     NULL                                                                                                                  },
     { offsetof(GlobalPrefs, associateSilently),        Type_Bool,       false                                                                                                                 },
     { offsetof(GlobalPrefs, checkForUpdates),          Type_Bool,       true                                                                                                                  },
-    { offsetof(GlobalPrefs, timeOfLastUpdateCheck),    Type_Compact,    (intptr_t)&gFILETIMEInfo                                                                                              },
     { offsetof(GlobalPrefs, versionToSkip),            Type_String,     NULL                                                                                                                  },
     { offsetof(GlobalPrefs, rememberOpenedFiles),      Type_Bool,       true                                                                                                                  },
     { offsetof(GlobalPrefs, useSysColors),             Type_Bool,       false                                                                                                                 },
@@ -492,10 +500,11 @@ static const FieldInfo gGlobalPrefsFields[] = {
     { offsetof(GlobalPrefs, sidebarDx),                Type_Int,        0                                                                                                                     },
     { offsetof(GlobalPrefs, tocDy),                    Type_Int,        0                                                                                                                     },
     { offsetof(GlobalPrefs, showStartPage),            Type_Bool,       true                                                                                                                  },
-    { offsetof(GlobalPrefs, openCountWeek),            Type_Int,        0                                                                                                                     },
     { offsetof(GlobalPrefs, fileStates),               Type_Array,      (intptr_t)&gFileStateInfo                                                                                             },
+    { offsetof(GlobalPrefs, timeOfLastUpdateCheck),    Type_Compact,    (intptr_t)&gFILETIMEInfo                                                                                              },
+    { offsetof(GlobalPrefs, openCountWeek),            Type_Int,        0                                                                                                                     },
 };
-static const StructInfo gGlobalPrefsInfo = { sizeof(GlobalPrefs), 47, gGlobalPrefsFields, "MainWindowBackground\0NoDocBgColor\0DocBgColor\0DocTextColor\0TocBgColor\0FavBgColor\0EscToExit\0ReuseInstance\0FixedPageUI\0EbookUI\0ComicBookUI\0ChmUI\0ExternalViewers\0ZoomLevels\0ZoomIncrement\0PrinterDefaults\0ForwardSearch\0RememberStatePerDocument\0UiLanguage\0EnableSplitWindow\0EnableTab\0TabVisible\0ToolbarForEachPanel\0SidebarForEachPanel\0ToolbarForEachPanelNew\0SidebarForEachPanelNew\0ShowToolbar\0ShowFavorites\0AssociatedExtensions\0AssociateSilently\0CheckForUpdates\0TimeOfLastUpdateCheck\0VersionToSkip\0RememberOpenedFiles\0UseSysColors\0InverseSearchCmdLine\0EnableTeXEnhancements\0DefaultDisplayMode\0DefaultZoom\0WindowState\0WindowPos\0ShowToc\0SidebarDx\0TocDy\0ShowStartPage\0OpenCountWeek\0FileStates" };
+static const StructInfo gGlobalPrefsInfo = { sizeof(GlobalPrefs), 47, gGlobalPrefsFields, "MainWindowBackground\0NoDocBgColor\0DocBgColor\0DocTextColor\0TocBgColor\0FavBgColor\0EscToExit\0ReuseInstance\0FixedPageUI\0EbookUI\0ComicBookUI\0ChmUI\0ExternalViewers\0ZoomLevels\0ZoomIncrement\0PrinterDefaults\0ForwardSearch\0RememberStatePerDocument\0UiLanguage\0EnableSplitWindow\0EnableTab\0TabVisible\0ToolbarForEachPanel\0SidebarForEachPanel\0ToolbarForEachPanelNew\0SidebarForEachPanelNew\0ShowToolbar\0ShowFavorites\0AssociatedExtensions\0AssociateSilently\0CheckForUpdates\0VersionToSkip\0RememberOpenedFiles\0UseSysColors\0InverseSearchCmdLine\0EnableTeXEnhancements\0DefaultDisplayMode\0DefaultZoom\0WindowState\0WindowPos\0ShowToc\0SidebarDx\0TocDy\0ShowStartPage\0FileStates\0TimeOfLastUpdateCheck\0OpenCountWeek" };
 
 #endif
 

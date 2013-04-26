@@ -10,7 +10,6 @@
 #include "UIAutomationProvider.h"
 #include "TextSelection.h"
 
-
 SumatraUIAutomationPageProvider::SumatraUIAutomationPageProvider(int pageNum,HWND canvasHwnd, DisplayModel*dm, SumatraUIAutomationDocumentProvider* root) :
     refCount(1), pageNum(pageNum),
     canvasHwnd(canvasHwnd), dm(dm),
@@ -19,17 +18,21 @@ SumatraUIAutomationPageProvider::SumatraUIAutomationPageProvider(int pageNum,HWN
 {
     //root->AddRef(); Don't add refs to our parent & owner. 
 }
+
 SumatraUIAutomationPageProvider::~SumatraUIAutomationPageProvider()
 {
 }
+
 int SumatraUIAutomationPageProvider::GetPageNum() const
 {
     return pageNum;
 }
+
 SumatraUIAutomationPageProvider* SumatraUIAutomationPageProvider::GetNextPage()
 {
     return sibling_next;
 }
+
 SumatraUIAutomationPageProvider* SumatraUIAutomationPageProvider::GetPreviousPage()
 {
     return sibling_prev;
@@ -40,6 +43,8 @@ HRESULT STDMETHODCALLTYPE SumatraUIAutomationPageProvider::QueryInterface(const 
     if (ppvObject == NULL)
         return E_POINTER;
 
+    // TODO: per http://blogs.msdn.com/b/oldnewthing/archive/2004/03/26/96777.aspx should
+    // respond to IUnknown
     if (iid == __uuidof(IRawElementProviderFragment)) {
         *ppvObject = static_cast<IRawElementProviderFragment*>(this);
         this->AddRef(); //New copy has entered the universe
@@ -57,10 +62,12 @@ HRESULT STDMETHODCALLTYPE SumatraUIAutomationPageProvider::QueryInterface(const 
     *ppvObject = NULL;
     return E_NOINTERFACE;
 }
+
 ULONG STDMETHODCALLTYPE SumatraUIAutomationPageProvider::AddRef(void)
 {
     return InterlockedIncrement(&refCount);
 }
+
 ULONG STDMETHODCALLTYPE SumatraUIAutomationPageProvider::Release(void)
 {
     LONG res = InterlockedDecrement(&refCount);
@@ -71,7 +78,6 @@ ULONG STDMETHODCALLTYPE SumatraUIAutomationPageProvider::Release(void)
     return res;
 }
 
-
 HRESULT STDMETHODCALLTYPE SumatraUIAutomationPageProvider::Navigate(enum NavigateDirection direction, IRawElementProviderFragment **pRetVal)
 {
     if (pRetVal == NULL)
@@ -81,28 +87,25 @@ HRESULT STDMETHODCALLTYPE SumatraUIAutomationPageProvider::Navigate(enum Navigat
     if (released)
         return E_FAIL;
     
+    *pRetVal =  NULL;
     if (direction == NavigateDirection_PreviousSibling) {
         *pRetVal = sibling_prev;
-        if (*pRetVal)
-            (*pRetVal)->AddRef();
-        return S_OK;
     } else if (direction == NavigateDirection_NextSibling) {
         *pRetVal = sibling_next;
-        if (*pRetVal)
-            (*pRetVal)->AddRef();
-        return S_OK;
     } else if (direction == NavigateDirection_FirstChild ||
              direction == NavigateDirection_LastChild) {
-        *pRetVal = NULL;
-        return S_OK;
+        // do nothing
     } else if (direction == NavigateDirection_Parent) {
         *pRetVal = root;
-        (*pRetVal)->AddRef();
-        return S_OK;
     } else {
         return E_INVALIDARG;
     }
+
+    if (*pRetVal)
+        (*pRetVal)->AddRef();
+    return S_OK;
 }
+
 HRESULT STDMETHODCALLTYPE SumatraUIAutomationPageProvider::GetRuntimeId(SAFEARRAY **pRetVal)
 {
     if (pRetVal == NULL)
@@ -112,7 +115,7 @@ HRESULT STDMETHODCALLTYPE SumatraUIAutomationPageProvider::GetRuntimeId(SAFEARRA
     if (!psa)
         return E_OUTOFMEMORY;
     
-    //RuntimeID magic, use hwnd to differentiate providers of different windows
+    // RuntimeID magic, use hwnd to differentiate providers of different windows
     int rId[] = { (int)canvasHwnd, SUMATRA_UIA_PAGE_RUNTIME_ID(pageNum) };
     for (LONG i = 0; i < 2; i++) {
         HRESULT hr = SafeArrayPutElement(psa, &i, (void*)&(rId[i]));
@@ -122,20 +125,22 @@ HRESULT STDMETHODCALLTYPE SumatraUIAutomationPageProvider::GetRuntimeId(SAFEARRA
     *pRetVal = psa;
     return S_OK;
 }
+
 HRESULT STDMETHODCALLTYPE SumatraUIAutomationPageProvider::GetEmbeddedFragmentRoots(SAFEARRAY **pRetVal)
 {
     if (pRetVal == NULL)
         return E_POINTER;
 
-    //No other roots => return NULL
+    // no other roots => return NULL
     *pRetVal = NULL;
     return S_OK;
 }
+
 HRESULT STDMETHODCALLTYPE SumatraUIAutomationPageProvider::SetFocus(void)
 {
-    //okay
     return S_OK;
 }
+
 HRESULT STDMETHODCALLTYPE SumatraUIAutomationPageProvider::get_BoundingRectangle(struct UiaRect *pRetVal)
 {
     if (pRetVal == NULL)
@@ -159,15 +164,15 @@ HRESULT STDMETHODCALLTYPE SumatraUIAutomationPageProvider::get_BoundingRectangle
 
     return S_OK;
 }
+
 HRESULT STDMETHODCALLTYPE SumatraUIAutomationPageProvider::get_FragmentRoot(IRawElementProviderFragmentRoot **pRetVal)
 {
     if (released)
         return E_FAIL;
 
-    //Let our parent to handle this
+    // let our parent to handle this
     return root->get_FragmentRoot(pRetVal);
 }
-
 
 HRESULT STDMETHODCALLTYPE SumatraUIAutomationPageProvider::GetPatternProvider(PATTERNID patternId,IUnknown **pRetVal)
 {
@@ -176,13 +181,14 @@ HRESULT STDMETHODCALLTYPE SumatraUIAutomationPageProvider::GetPatternProvider(PA
 
     if (patternId == UIA_ValuePatternId) {
         *pRetVal = static_cast<IValueProvider*>(this);
-        this->AddRef(); //New copy has entered the universe
+        this->AddRef();
         return S_OK;
     }
 
     *pRetVal = NULL;
     return S_OK;
 }
+
 HRESULT STDMETHODCALLTYPE SumatraUIAutomationPageProvider::GetPropertyValue(PROPERTYID propertyId,VARIANT *pRetVal)
 {
     if (pRetVal == NULL)
@@ -201,6 +207,7 @@ HRESULT STDMETHODCALLTYPE SumatraUIAutomationPageProvider::GetPropertyValue(PROP
     pRetVal->vt = VT_EMPTY;
     return S_OK;
 }
+
 HRESULT STDMETHODCALLTYPE SumatraUIAutomationPageProvider::get_HostRawElementProvider(IRawElementProviderSimple **pRetVal)
 {
     if (pRetVal == NULL)
@@ -208,6 +215,7 @@ HRESULT STDMETHODCALLTYPE SumatraUIAutomationPageProvider::get_HostRawElementPro
     *pRetVal = NULL;
     return S_OK;
 }
+
 HRESULT STDMETHODCALLTYPE SumatraUIAutomationPageProvider::get_ProviderOptions(ProviderOptions *pRetVal)
 {
     if (pRetVal == NULL)
@@ -220,6 +228,7 @@ HRESULT STDMETHODCALLTYPE SumatraUIAutomationPageProvider::SetValue(LPCWSTR val)
 {
     return E_ACCESSDENIED;
 }
+
 HRESULT STDMETHODCALLTYPE SumatraUIAutomationPageProvider::get_Value(BSTR *pRetVal)
 {
     if (pRetVal == NULL)
@@ -236,6 +245,7 @@ HRESULT STDMETHODCALLTYPE SumatraUIAutomationPageProvider::get_Value(BSTR *pRetV
     *pRetVal = SysAllocString(pageContent);
     return S_OK;
 }
+
 HRESULT STDMETHODCALLTYPE SumatraUIAutomationPageProvider::get_IsReadOnly(BOOL *pRetVal)
 {
     if (pRetVal == NULL)
