@@ -105,12 +105,13 @@ SumatraUIAutomationProvider::~SumatraUIAutomationProvider()
 
 void SumatraUIAutomationProvider::OnDocumentLoad(DisplayModel *dm)
 {
-    assert(!document);
+    AssertCrash(!document);
 
     document = new SumatraUIAutomationDocumentProvider(canvasHwnd, this);
     document->LoadDocument(dm);
     uia::RaiseStructureChangedEvent(this, StructureChangeType_ChildrenInvalidated, NULL, 0);
 }
+
 void SumatraUIAutomationProvider::OnDocumentUnload()
 {
     if (document) {
@@ -120,6 +121,7 @@ void SumatraUIAutomationProvider::OnDocumentUnload()
         uia::RaiseStructureChangedEvent(this, StructureChangeType_ChildrenInvalidated, NULL, 0);
     }
 }
+
 void SumatraUIAutomationProvider::OnSelectionChanged()
 {
     if (document)
@@ -131,6 +133,8 @@ HRESULT STDMETHODCALLTYPE SumatraUIAutomationProvider::QueryInterface(const IID 
     if (ppvObject == NULL)
         return E_POINTER;
 
+    // TODO: per http://blogs.msdn.com/b/oldnewthing/archive/2004/03/26/96777.aspx should
+    // respond to IUnknown
     if (iid == __uuidof(IRawElementProviderSimple)) {
         *ppvObject = static_cast<IRawElementProviderSimple*>(this);
         this->AddRef(); //New copy has entered the universe
@@ -148,10 +152,12 @@ HRESULT STDMETHODCALLTYPE SumatraUIAutomationProvider::QueryInterface(const IID 
     *ppvObject = NULL;
     return E_NOINTERFACE;
 }
+
 ULONG STDMETHODCALLTYPE SumatraUIAutomationProvider::AddRef(void)
 {
     return InterlockedIncrement(&refCount);
 }
+
 ULONG STDMETHODCALLTYPE SumatraUIAutomationProvider::Release(void)
 {
     LONG res = InterlockedDecrement(&refCount);
@@ -162,12 +168,12 @@ ULONG STDMETHODCALLTYPE SumatraUIAutomationProvider::Release(void)
     return res;
 }
 
-
 HRESULT STDMETHODCALLTYPE SumatraUIAutomationProvider::GetPatternProvider(PATTERNID patternId,IUnknown **pRetVal)
 {
     *pRetVal = NULL;
     return S_OK;
 }
+
 HRESULT STDMETHODCALLTYPE SumatraUIAutomationProvider::GetPropertyValue(PROPERTYID propertyId,VARIANT *pRetVal)
 {
     if (pRetVal == NULL)
@@ -190,15 +196,16 @@ HRESULT STDMETHODCALLTYPE SumatraUIAutomationProvider::GetPropertyValue(PROPERTY
         pRetVal->lVal = (LONG)canvasHwnd;
         return S_OK;
     }
-    
 
     pRetVal->vt = VT_EMPTY;
     return S_OK;
 }
+
 HRESULT STDMETHODCALLTYPE SumatraUIAutomationProvider::get_HostRawElementProvider(IRawElementProviderSimple **pRetVal)
 {
     return uia::HostProviderFromHwnd(canvasHwnd,pRetVal);
 }
+
 HRESULT STDMETHODCALLTYPE SumatraUIAutomationProvider::get_ProviderOptions(ProviderOptions *pRetVal)
 {
     if (pRetVal == NULL)
@@ -207,17 +214,16 @@ HRESULT STDMETHODCALLTYPE SumatraUIAutomationProvider::get_ProviderOptions(Provi
     return S_OK;
 }
 
-
 HRESULT STDMETHODCALLTYPE SumatraUIAutomationProvider::Navigate(enum NavigateDirection direction, IRawElementProviderFragment **pRetVal)
 {
     if (pRetVal == NULL)
         return E_POINTER;
-    
-    //No siblings, no parent
+
+    *pRetVal = NULL;
+    // no siblings, no parent
     if (direction == NavigateDirection_Parent ||
         direction == NavigateDirection_NextSibling ||
         direction == NavigateDirection_PreviousSibling) {
-        *pRetVal = NULL;
         return S_OK;
     } else if (direction == NavigateDirection_FirstChild ||
              direction == NavigateDirection_LastChild) {
@@ -234,35 +240,38 @@ HRESULT STDMETHODCALLTYPE SumatraUIAutomationProvider::Navigate(enum NavigateDir
         return E_INVALIDARG;
     }
 }
+
 HRESULT STDMETHODCALLTYPE SumatraUIAutomationProvider::GetRuntimeId(SAFEARRAY **pRetVal)
 {
     if (pRetVal == NULL)
         return E_POINTER;
 
-    //Top-level elements should return NULL
+    // top-level elements should return NULL
     *pRetVal = NULL;
     return S_OK;
 }
+
 HRESULT STDMETHODCALLTYPE SumatraUIAutomationProvider::GetEmbeddedFragmentRoots(SAFEARRAY **pRetVal)
 {
     if (pRetVal == NULL)
         return E_POINTER;
 
-    //No other roots => return NULL
+    // no other roots => return NULL
     *pRetVal = NULL;
     return S_OK;
 }
+
 HRESULT STDMETHODCALLTYPE SumatraUIAutomationProvider::SetFocus(void)
 {
-    //okay
     return S_OK;
 }
+
 HRESULT STDMETHODCALLTYPE SumatraUIAutomationProvider::get_BoundingRectangle(struct UiaRect *pRetVal)
 {
     if (pRetVal == NULL)
         return E_POINTER;
 
-    //Return Bounding Rect of the Canvas area
+    // return Bounding Rect of the Canvas area
     RECT canvas_rect;
     GetWindowRect(canvasHwnd, &canvas_rect);
 
@@ -273,6 +282,7 @@ HRESULT STDMETHODCALLTYPE SumatraUIAutomationProvider::get_BoundingRectangle(str
 
     return S_OK;
 }
+
 HRESULT STDMETHODCALLTYPE SumatraUIAutomationProvider::get_FragmentRoot(IRawElementProviderFragmentRoot **pRetVal)
 {
     if (pRetVal == NULL)
@@ -288,10 +298,10 @@ HRESULT STDMETHODCALLTYPE SumatraUIAutomationProvider::ElementProviderFromPoint(
     if (pRetVal == NULL)
         return E_POINTER;
 
-    // traverse the tree
     *pRetVal = this->GetElementFromPoint(x,y,this);
     return S_OK;
 }
+
 HRESULT STDMETHODCALLTYPE SumatraUIAutomationProvider::GetFocus(IRawElementProviderFragment **pRetVal)
 {
     if (pRetVal == NULL)
@@ -306,12 +316,13 @@ HRESULT STDMETHODCALLTYPE SumatraUIAutomationProvider::GetFocus(IRawElementProvi
         (*pRetVal)->AddRef();
     return S_OK;
 }
+
 IRawElementProviderFragment* SumatraUIAutomationProvider::GetElementFromPoint(double x,double y,IRawElementProviderFragment * root)
 {
     if (!root)
         return NULL;
 
-    //Check the children
+    // check the children
     IRawElementProviderFragment* it;
     root->Navigate(NavigateDirection_FirstChild,&it);
 
@@ -323,17 +334,17 @@ IRawElementProviderFragment* SumatraUIAutomationProvider::GetElementFromPoint(do
         if (rect.left <= x && x <= rect.left+rect.width &&
             rect.top <= y && y <= rect.top+rect.height) {
             IRawElementProviderFragment* leaf = GetElementFromPoint(x,y,it);
-            it->Release(); //release our copy
+            it->Release();
             return leaf;
         }
-        
+
         // go to next element, release old one
         IRawElementProviderFragment* old_it = it;
         old_it->Navigate(NavigateDirection_NextSibling,&it);
         old_it->Release();
     }
 
-    //No such child
+    // no such child
     root->AddRef();
     return root;
 }
