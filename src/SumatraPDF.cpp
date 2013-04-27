@@ -5358,8 +5358,11 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool showFavorites, 
     if (gGlobalPrefs->showToolbar && (gGlobalPrefs->toolbarForEachPanel == gGlobalPrefs->sidebarForEachPanel) && !win->fullScreen && !win->presentation)
         toolbarDy = WindowRect(win->toolBar()->hwndReBar).dy;
 
-    if (gGlobalPrefs->sidebarForEachPanel && gGlobalPrefs->tabVisible)
-        tabControlDy = TAB_CONTROL_DY;
+    if (gGlobalPrefs->sidebarForEachPanel && gGlobalPrefs->tabVisible) {
+        SizeI size = TextSizeInHwnd(win->panel->hwndTab, L"Test");
+        tabControlDy = max(TAB_CONTROL_DY, size.dy + 2 * 3);
+        SendMessage(win->panel->hwndTab, TCM_SETITEMSIZE, NULL, MAKELPARAM((0),(tabControlDy)));
+    }
 
     HWND hwndParentForToolbar = win->panel->WIN->hwndFrame;
     if (gGlobalPrefs->toolbarForEachPanel)
@@ -5385,8 +5388,13 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool showFavorites, 
     int Dy = rParentForToolbar.dy - y;
 
     if (switchDoc && !gGlobalPrefs->sidebarForEachPanel) {
+        SizeI size = TextSizeInHwnd(win->panel->hwndTab, L"Test");
+        tabControlDy = max(TAB_CONTROL_DY, size.dy + 2 * 3);
+        SendMessage(win->panel->hwndTab, TCM_SETITEMSIZE, NULL, MAKELPARAM((0),(tabControlDy)));
+
         ClientRect rPanel(win->panel->hwndPanel);
-        SetWindowPos(hwnd, NULL, 0, TAB_CONTROL_DY + 1, rPanel.dx, rPanel.dy - 0 - TAB_CONTROL_DY - 1, SWP_NOZORDER);
+
+        SetWindowPos(hwnd, NULL, 0, tabControlDy + 1, rPanel.dx, rPanel.dy - 0 - tabControlDy - 1, SWP_NOZORDER);
         return;
     }
 
@@ -5937,8 +5945,11 @@ static void PanelOnSize(PanelInfo* panel, int dx, int dy)
     }
 
     int tabDy = 0;
-    if (gGlobalPrefs->tabVisible)
-        tabDy = TAB_CONTROL_DY;
+    if (gGlobalPrefs->tabVisible) {
+        SizeI size = TextSizeInHwnd(panel->hwndTab, L"Test");
+        tabDy = max(TAB_CONTROL_DY, size.dy + 2 * 3);
+        SendMessage(panel->hwndTab, TCM_SETITEMSIZE, NULL, MAKELPARAM((0),(tabDy)));
+    }
     SetWindowPos(panel->hwndTab, NULL, 0, rebBarDy, dx, tabDy, SWP_NOZORDER);
 
     if (gGlobalPrefs->sidebarForEachPanel) {
@@ -6193,7 +6204,7 @@ static void PanelOnPaint(PanelInfo& panel)
 
     int tabDy = 0;
     if (gGlobalPrefs->tabVisible)
-        tabDy = TAB_CONTROL_DY;
+        tabDy = WindowRect(panel.hwndTab).dy;
 
     int dx = ClientRect(panel.hwndPanel).dx;
     int dy = ClientRect(panel.hwndPanel).dy;
