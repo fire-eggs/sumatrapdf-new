@@ -352,9 +352,6 @@ static void DrawCloseButton(HWND hwnd, HDC memDC, int i, int indexHover, int sel
     RECT rcItem;
     SendMessage(hwnd, TCM_GETITEMRECT, i, (LPARAM)&rcItem);
 
-    RECT rcClose;
-    rcClose.left = rcItem.right - 16;
-
     SizeI size = TextSizeInHwnd(hwnd, L"Text");
 
     HFONT f = (HFONT)SendMessage(hwnd, WM_GETFONT, 0, 0);
@@ -364,13 +361,16 @@ static void DrawCloseButton(HWND hwnd, HDC memDC, int i, int indexHover, int sel
     GetTextMetrics(memDC, &tm);
     SelectObject(memDC, prev);
 
-    int d =    (TAB_CONTROL_DY - size.dy) / 2;
+    int d = (WindowRect(hwnd).dy - size.dy) / 2;
     d++;
     int s = d + (--tm.tmInternalLeading);
     int h = tm.tmAscent - tm.tmInternalLeading;
 
     s--;
     h = h + 2;
+
+    RECT rcClose;
+    rcClose.left = rcItem.right - 4 - h;
 
     rcClose.top = s;
     if (i != selected)
