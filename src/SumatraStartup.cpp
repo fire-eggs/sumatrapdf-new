@@ -143,7 +143,7 @@ COLORREF GetNoDocBgColor()
     if (useSysColor)
         return GetSysColor(COLOR_BTNFACE);
 
-    return COL_WINDOW_BG;
+    return NO_DOC_BG_COLOR_DEFAULT != gGlobalPrefs->noDocBgColor ? gGlobalPrefs->noDocBgColor : COL_WINDOW_BG;
 }
 
 static bool InstanceInit(HINSTANCE hInstance, int nCmdShow)
@@ -164,27 +164,6 @@ static bool InstanceInit(HINSTANCE hInstance, int nCmdShow)
     gCursorSizeWE   = LoadCursor(NULL, IDC_SIZEWE);
     gCursorSizeNS   = LoadCursor(NULL, IDC_SIZENS);
     gCursorNo       = LoadCursor(NULL, IDC_NO);
-    // use the system background color if the user has non-default
-    // colors for text (not black-on-white) and also wants to use them
-    bool useSysColor = gGlobalPrefs->useSysColors &&
-                       (GetSysColor(COLOR_WINDOWTEXT) != WIN_COL_BLACK ||
-                        GetSysColor(COLOR_WINDOW) != WIN_COL_WHITE);
-    if (useSysColor) {
-        // not using GetSysColorBrush so that gBrushNoDocBg can be deleted
-        gBrushNoDocBg = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
-    }
-    else
-    {
-        COLORREF noDocBgColor = NO_DOC_BG_COLOR_DEFAULT != gGlobalPrefs->noDocBgColor ? gGlobalPrefs->noDocBgColor : COL_WINDOW_BG;
-        gBrushNoDocBg = CreateSolidBrush(noDocBgColor);
-    }
-    COLORREF bgColor = ABOUT_BG_COLOR_DEFAULT != gGlobalPrefs->mainWindowBackground ? gGlobalPrefs->mainWindowBackground : ABOUT_BG_LOGO_COLOR;
-    gBrushLogoBg = CreateSolidBrush(bgColor);
-#ifndef ABOUT_USE_LESS_COLORS
-    gBrushAboutBg = CreateSolidBrush(bgColor);
-#else
-    gBrushAboutBg = CreateSolidBrush(ABOUT_BG_GRAY_COLOR);
-#endif
 
     gBrushPanelSplitterBg = CreateSolidBrush(PANEL_SPLITTER_BG_COLOR);
     gBrushPanelSplitterEdgeBg = CreateSolidBrush(PANEL_SPLITTER_EDGE_BG_COLOR);

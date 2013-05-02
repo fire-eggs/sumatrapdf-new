@@ -2686,23 +2686,6 @@ void UpdateDocumentColors(COLORREF fore, COLORREF back)
         gRenderCache.colorRange[1] = back;
         RerenderEverything();
     }
-    // update document background
-    DeleteObject(gBrushNoDocBg);
-    if (gGlobalPrefs->useSysColors && (fore != WIN_COL_BLACK || back != WIN_COL_WHITE))
-        gBrushNoDocBg = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
-    else
-        gBrushNoDocBg = CreateSolidBrush(gGlobalPrefs->noDocBgColor);
-
-    DeleteObject(gBrushLogoBg);
-    gBrushLogoBg = CreateSolidBrush(gGlobalPrefs->mainWindowBackground);
-
-#ifndef ABOUT_USE_LESS_COLORS
-    DeleteObject(gBrushAboutBg);
-    gBrushAboutBg = CreateSolidBrush(gGlobalPrefs->mainWindowBackground);
-#else
-    DeleteObject(gBrushAboutBg);
-    gBrushAboutBg = CreateSolidBrush(ABOUT_BG_GRAY_COLOR);
-#endif
 }
 
 void UpdateColorAll(COLORREF docFore, COLORREF docBack, COLORREF tocBg, COLORREF favBg)
@@ -5981,7 +5964,9 @@ static void ContainerOnPaint(ContainerInfo& container)
     rc.right = dx;
     rc.top = 0 ;
     rc.bottom = dy;
-    FillRect(hdc, &rc, gBrushNoDocBg);
+
+    ScopedGdiObj<HBRUSH> brush(CreateSolidBrush(GetNoDocBgColor()));
+    FillRect(hdc, &rc, brush);
 
     EndPaint(container.hwndContainer, &ps);
 }
