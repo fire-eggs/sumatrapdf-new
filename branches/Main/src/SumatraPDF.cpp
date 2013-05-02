@@ -51,7 +51,7 @@ using namespace Gdiplus;
 #include "Toolbar.h"
 #include "Touch.h"
 #include "Translations.h"
-#include "uia/UIAutomationProvider.h"
+#include "uia/Provider.h"
 #include "UITask.h"
 #include "Version.h"
 #include "WindowInfo.h"
@@ -141,8 +141,6 @@ HINSTANCE                    ghinst = NULL;
 HCURSOR                      gCursorArrow;
 HCURSOR                      gCursorHand;
 HCURSOR                      gCursorIBeam;
-HBRUSH                       gBrushLogoBg;
-HBRUSH                       gBrushAboutBg;
 HBRUSH                       gBrushSepLineBg;
 HBRUSH                       gBrushStaticBg;
 HFONT                        gDefaultGuiFont;
@@ -159,7 +157,6 @@ static HCURSOR                      gCursorScroll;
 static HCURSOR                      gCursorSizeWE;
 static HCURSOR                      gCursorSizeNS;
 static HCURSOR                      gCursorNo;
-static HBRUSH                       gBrushNoDocBg;
 
 static HBRUSH                       gBrushPanelSplitterBg;
 static HBRUSH                       gBrushPanelSplitterEdgeBg;
@@ -2543,7 +2540,8 @@ static void DrawDocument(WindowInfo& win, HDC hdc, RECT *rcArea)
         FillRect(hdc, rcArea, brush);
     }
     else if (0 == gGlobalPrefs->fixedPageUI.gradientColors->Count()) {
-        FillRect(hdc, rcArea, gBrushNoDocBg);
+        ScopedGdiObj<HBRUSH> brush(CreateSolidBrush(GetNoDocBgColor()));
+        FillRect(hdc, rcArea, brush);
     }
     else {
         COLORREF colors[3];
@@ -2726,12 +2724,14 @@ void UpdateColorAll(COLORREF docFore, COLORREF docBack, COLORREF tocBg, COLORREF
     }
 }
 
+#if defined(SHOW_DEBUG_MENU_ITEMS) || defined(DEBUG)
 static void ToggleGdiDebugging()
 {
     gUseGdiRenderer = !gUseGdiRenderer;
     DebugGdiPlusDevice(gUseGdiRenderer);
     RerenderEverything();
 }
+#endif
 
 static void OnDraggingStart(WindowInfo& win, int x, int y, bool right=false)
 {
@@ -3080,7 +3080,8 @@ static void OnPaint(WindowInfo& win)
         // a notification would break this
         ScopedFont fontRightTxt(GetSimpleFont(hdc, L"MS Shell Dlg", 14));
         HGDIOBJ hPrevFont = SelectObject(hdc, fontRightTxt);
-        FillRect(hdc, &ps.rcPaint, gBrushNoDocBg);
+        ScopedGdiObj<HBRUSH> brush(CreateSolidBrush(GetNoDocBgColor()));
+        FillRect(hdc, &ps.rcPaint, brush);
         ScopedMem<WCHAR> msg(str::Format(_TR("Error loading %s"), win.loadedFilePath));
         DrawCenteredText(hdc, ClientRect(win.hwndCanvas), msg, IsUIRightToLeft());
         SelectObject(hdc, hPrevFont);
@@ -6387,13 +6388,24 @@ static LRESULT CALLBACK WndProcCanvas(HWND hwnd, UINT msg, WPARAM wParam, LPARAM
 
         case WM_GETOBJECT:
             // TODO: should we check for UiaRootObjectId, as in http://msdn.microsoft.com/en-us/library/windows/desktop/ff625912.aspx ???
+            // On the other hand http://code.msdn.microsoft.com/windowsdesktop/UI-Automation-Clean-94993ac6/sourcecode?fileId=42883&pathId=2071281652
+            // says that UiaReturnRawElementProvider() should be called regardless of lParam
             // Don't expose UIA automation in plugin mode yet. UIA is still too experimental
             if (!gPluginMode) {
+                // disable UIAutomation in release builds until concurrency issues and
+                // memory leaks have been figured out and fixed
+#ifdef DEBUG
                 if (win->CreateUIAProvider()) {
                     // TODO: should win->uia_provider->Release() as in http://msdn.microsoft.com/en-us/library/windows/desktop/gg712214.aspx
                     // and http://www.code-magazine.com/articleprint.aspx?quickid=0810112&printmode=true ?
+                    // Maybe instead of having a single provider per win, we should always create a new one
+                    // like in this sample: http://code.msdn.microsoft.com/windowsdesktop/UI-Automation-Clean-94993ac6/sourcecode?fileId=42883&pathId=2071281652
+                    // currently win->uia_provider refCount is really out of wack in WindowInfo::~WindowInfo
+                    // from logging it seems that UiaReturnRawElementProvider() increases refCount by 1
+                    // and since WM_GETOBJECT is called many times, it accumulates
                     return uia::ReturnRawElementProvider(hwnd, wParam, lParam, win->uia_provider);
                 }
+#endif
             }
             return DefWindowProc(hwnd, msg, wParam, lParam);
 

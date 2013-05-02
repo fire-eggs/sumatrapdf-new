@@ -272,10 +272,13 @@ void WriteMiniDump(const WCHAR *crashDumpFilePath, MINIDUMP_EXCEPTION_INFORMATIO
 static bool GetAddrInfo(void *addr, char *module, DWORD moduleLen, DWORD& sectionOut, DWORD& offsetOut)
 {
     MEMORY_BASIC_INFORMATION mbi;
-    if (!VirtualQuery(addr, &mbi, sizeof(mbi)))
+    if (0 == VirtualQuery(addr, &mbi, sizeof(mbi)))
         return false;
 
     DWORD hMod = (DWORD)mbi.AllocationBase;
+    if (0 == hMod)
+        return false;
+
     if (!GetModuleFileNameA((HMODULE)hMod, module, moduleLen))
         return false;
 
@@ -338,8 +341,11 @@ static void GetAddressInfo(str::Str<char>& s, DWORD64 addr)
         AppendAddress(s, offset);
         s.AppendFmt(" %s", moduleShort);
 
-        if (symName)
+        if (symName) {
             s.AppendFmt("!%s+0x%x", symName, (int)symDisp);
+        } else if (symDisp != 0) {
+            s.AppendFmt("+0x%x", (int)symDisp);
+        }
         IMAGEHLP_LINE64 line;
         line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
         DWORD disp;
@@ -472,11 +478,38 @@ __declspec(noinline) bool GetCurrentThreadCallstack(str::Str<char>& s)
 }
 #pragma optimize("", off )
 
+str::Str<char> *gCallstackLogs = NULL;
+
+// start remembering callstack logs done with LogCallstack()
+void RememberCallstackLogs()
+{
+    CrashIf(gCallstackLogs);
+    gCallstackLogs = new str::Str<char>();
+}
+
+void FreeCallstackLogs()
+{
+    delete gCallstackLogs;
+    gCallstackLogs = NULL;
+}
+
+char *GetCallstacks()
+{
+    if (!gCallstackLogs)
+        return NULL;
+    return str::Dup(gCallstackLogs->Get());
+}
+
 void LogCallstack()
 {
     str::Str<char> s(2048);
-    if (GetCurrentThreadCallstack(s))
-        plog(s.Get());
+    if (!GetCurrentThreadCallstack(s))
+        return;
+
+    s.Append("\n");
+    plog(s.Get());
+    if (gCallstackLogs)
+        gCallstackLogs->Append(s.Get());
 }
 
 void GetAllThreadsCallstacks(str::Str<char>& s)

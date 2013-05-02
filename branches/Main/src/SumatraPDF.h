@@ -95,8 +95,6 @@ extern bool                     gUseGdiRenderer;
 extern HCURSOR                  gCursorHand;
 extern HCURSOR                  gCursorArrow;
 extern HCURSOR                  gCursorIBeam;
-extern HBRUSH                   gBrushLogoBg;
-extern HBRUSH                   gBrushAboutBg;
 extern HBRUSH                   gBrushSepLineBg;
 extern HBRUSH                   gBrushStaticBg;
 extern HFONT                    gDefaultGuiFont;
@@ -146,6 +144,10 @@ void  OnMenuAbout();
 void  QuitIfNoMoreWindows();
 bool  ShouldSaveThumbnail(DisplayState& ds);
 void  SaveThumbnailForFile(const WCHAR *filePath, RenderedBitmap *bmp);
+
+COLORREF GetLogoBgColor();
+COLORREF GetAboutBgColor();
+COLORREF GetNoDocBgColor();
 
 void ShowDocument(PanelInfo *panel, WindowInfo *win, WindowInfo *winNew, bool HideOldDocument);
 void ShowPreviousDocument(PanelInfo *panel);
