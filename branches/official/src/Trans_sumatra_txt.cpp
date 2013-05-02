@@ -1242,7 +1242,7 @@ const char * gTranslations_az =
 const char * gTranslations_eu = 
   "&Honi buruz...\0"\
   "&Oraingo Neurria\tKtrl+1\0"\
-  "\0"\
+  "A&ukera Aurreratuak...\0"\
   "&Hautatutako orrialde guztiak\0"\
   "A&tzera\tAlt+Ezker Gezia\0"\
   "&Liburu Ikuspegia\tKtrl+8\0"\
@@ -1388,7 +1388,7 @@ const char * gTranslations_eu =
   "\0"\
   "Egin SumatraPFD berezko aplikazioa PDF agirientzat?\0"\
   "Egin SumatraPDF nire berezko PDF irakurlea\0"\
-  "\0"\
+  "Ma&nga Modua\0"\
   "Hizki Larriak-xeheak Bereizi\0"\
   "Mobi agiriak\0"\
   "Aldatuta:\0"\
@@ -4182,7 +4182,7 @@ const char * gTranslations_et =
 const char * gTranslations_fi = 
   "&Tietoja\0"\
   "&Todellinen koko\tCtrl+1\0"\
-  "\0"\
+  "&Lis\303\244asetukset...\0"\
   "K&aikki valitut sivut\0"\
   "&Takaisin\tAlt+Vasen nuoli\0"\
   "&Kirjan\303\244kym\303\244\tCtrl+8\0"\
@@ -4282,7 +4282,7 @@ const char * gTranslations_fi =
   "DjVu-asiakirjat\0"\
   "Asiakirjan ominaisuudet\0"\
   "Lataa\0"\
-  "&Poistu\tCtrl+Q\0"\
+  "&Lopeta\tCtrl+Q\0"\
   "EPUB-asiakirjat\0"\
   "Kirjoita salasana\0"\
   "Kirjoita tiedoston %s salasana\0"\
@@ -4292,11 +4292,11 @@ const char * gTranslations_fi =
   "Se&uraava\tAlt+Oikea nuoli\0"\
   "Koko &n\303\244ytt\303\266\tCtrl+Shift+L\0"\
   "Rinnakkain\0"\
-  "\0"\
+  "Tiedoston uudelleennime\303\244minen ep\303\244onnistui!\0"\
   "Tiedoston tallennus ep\303\244onnistui\0"\
   "\0"\
   "suosikit\0"\
-  "\0"\
+  "FictionBook-asiakirjat\0"\
   "Tiedosto %s ei l\303\266ydy\0"\
   "Tiedoston koko:\0"\
   "Tiedosto:\0"\
@@ -4328,7 +4328,7 @@ const char * gTranslations_fi =
   "Mt\0"\
   "Tee SumatraPDF:st\303\244 PDF-tiedostojen oletuslukuohjelma?\0"\
   "Tee SumatraPDF:st\303\244 PDF-tiedostojen oletuslukuohjelma\0"\
-  "\0"\
+  "Man&ga-moodi\0"\
   "Sama kirjainkoko\0"\
   "Mobi-asiakirjat\0"\
   "Muuttanut:\0"\
@@ -4351,7 +4351,7 @@ const char * gTranslations_fi =
   "Ominaisuudet\0"\
   "O&minaisuudet\tCtrl+D\0"\
   "PDF-asiakirja\0"\
-  "\0"\
+  "PDF-optimoinnit:\0"\
   "PDF-tuottaja:\0"\
   "PDF-versio:\0"\
   "PDF-asiakirjat\0"\
@@ -4369,17 +4369,17 @@ const char * gTranslations_fi =
   "Tulosta &kuvana (kuluttaa enemm\303\244n muistia)\0"\
   "Tulostusalue\0"\
   "Annetun nimist\303\244 tulostinta ei ole\0"\
-  "\0"\
-  "\0"\
+  "Tulostaminen k\303\244ynniss\303\244.\0"\
+  "Tulostaminen on edelleen k\303\244ynniss\303\244. Keskeyt\303\244 ja lopeta?\0"\
   "Tulostaminen on viel\303\244 k\303\244ynniss\303\244. Keskeytet\303\244\303\244nk\303\266 ja aloitetaan uudelleen?\0"\
   "Tulostetaan sivua %d/%d...\0"\
   "Tulostusongelma\0"\
-  "\0"\
+  "&Uudelleennime\303\244...\tF2\0"\
   "Muista &avatut tiedostot\0"\
   "Poista suosikeista\0"\
   "Poista sivu %s suosikeista\0"\
-  "\0"\
-  "\0"\
+  "Uudelleennime\303\244\0"\
+  "Korvaa asiakirjan &v\303\244rit Windowsin v\303\244riteemalla\0"\
   "K\303\244\303\244nn\303\244 &vasemmalle\tCtrl+Shift+-\0"\
   "K\303\244\303\244nn\303\244 &oikealle\tCtrl+Shift++\0"\
   "Tallenna nimell\303\244\0"\
@@ -12267,7 +12267,7 @@ const char * gTranslations_tr =
 const char * gTranslations_uk = 
   "\320\237&\321\200\320\276 \320\277\321\200\320\276\320\263\321\200\320\260\320\274\321\203...\0"\
   "\320\241\320\277\321\200\320\260\320\262\320\266\320\275\321\226\320\271 \321\200\320\276\320\267\320\274\321\226\321\200\tCtrl+1\0"\
-  "\0"\
+  "\320\240\320\276\320\267\321\210\320\270\321\200\320\265\320\275\321\226 \320\275\320\260\320\273\320\260\321\210\321\202\321\203\320\262\320\260\320\275\320\275\321\217...\0"\
   "\320\236\320\261\321\200\320\260\320\275\320\276 \320\262\321\201\321\226 \321\201\321\202\320\276\321\200\321\226\320\275\320\272\320\270\0"\
   "\320\235\320\260\320\267\320\260\320\264\tAlt+\320\233\321\226\320\262\320\260 \321\201\321\202\321\200\321\226\320\273\320\272\320\260\0"\
   "\320\232\320\275\320\270\320\266\320\275\320\260 \321\200\320\276\320\267\320\263\320\276\321\200\321\202\320\272\320\260\tCtrl+8\0"\
@@ -12413,7 +12413,7 @@ const char * gTranslations_uk =
   "\0"\
   "\320\227\321\200\320\276\320\261\320\270\321\202\320\270 SumatraPDF \321\202\320\270\320\277\320\276\320\262\320\276\321\216 \320\277\321\200\320\276\320\263\321\200\320\260\320\274\320\276\321\216 \320\264\320\273\321\217 PDF-\321\204\320\260\320\271\320\273\321\226\320\262?\0"\
   "\320\227\321\200\320\276\320\261\320\270\321\202\320\270 SumatraPDF \321\202\320\270\320\277\320\276\320\262\320\270\320\274 \320\277\320\265\321\200\320\265\320\263\320\273\321\217\320\264\320\260\321\207\320\265\320\274 PDF\0"\
-  "\0"\
+  "\320\240\320\265\320\266\320\270\320\274 \320\274\320\260\320\275\320\263\320\270\0"\
   "\320\240\320\276\320\267\321\200\321\226\320\267\320\275\321\217\321\202\320\270 \320\274\320\260\320\273\321\203 \320\271 \320\262\320\265\320\273\320\270\320\272\321\203 \320\273\321\226\321\202\320\265\321\200\320\270\0"\
   "\320\224\320\276\320\272\321\203\320\274\320\265\320\275\321\202\320\270 Mobi\0"\
   "\320\227\320\274\321\226\320\275\320\265\320\275\320\276:\0"\
