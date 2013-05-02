@@ -4,6 +4,8 @@
 // TODO: for the moment it needs to be included from SumatraPDF.cpp
 // and not compiled as stand-alone
 
+#include "DbgHelpDyn.h"
+
 #ifdef DEBUG
 static bool TryLoadMemTrace()
 {
@@ -73,6 +75,36 @@ static bool RegisterWinClass(HINSTANCE hinst)
     return true;
 }
 
+COLORREF GetLogoBgColor()
+{
+    COLORREF bgColor = ABOUT_BG_LOGO_COLOR;
+    if (ABOUT_BG_COLOR_DEFAULT != gGlobalPrefs->mainWindowBackground)
+        bgColor = gGlobalPrefs->mainWindowBackground;
+    return bgColor;
+}
+
+COLORREF GetAboutBgColor()
+{
+#ifdef ABOUT_USE_LESS_COLORS
+    return ABOUT_BG_GRAY_COLOR;
+#else
+    return GetLogoBgColor();
+#endif
+}
+
+COLORREF GetNoDocBgColor()
+{
+    // use the system background color if the user has non-default
+    // colors for text (not black-on-white) and also wants to use them
+    bool useSysColor = gGlobalPrefs->useSysColors &&
+                       (GetSysColor(COLOR_WINDOWTEXT) != WIN_COL_BLACK ||
+                        GetSysColor(COLOR_WINDOW) != WIN_COL_WHITE);
+    if (useSysColor)
+        return GetSysColor(COLOR_BTNFACE);
+
+    return COL_WINDOW_BG;
+}
+
 static bool InstanceInit(HINSTANCE hInstance, int nCmdShow)
 {
     ghinst = hInstance;
@@ -88,24 +120,6 @@ static bool InstanceInit(HINSTANCE hInstance, int nCmdShow)
     gCursorSizeWE   = LoadCursor(NULL, IDC_SIZEWE);
     gCursorSizeNS   = LoadCursor(NULL, IDC_SIZENS);
     gCursorNo       = LoadCursor(NULL, IDC_NO);
-    // use the system background color if the user has non-default
-    // colors for text (not black-on-white) and also wants to use them
-    bool useSysColor = gGlobalPrefs->useSysColors &&
-                       (GetSysColor(COLOR_WINDOWTEXT) != WIN_COL_BLACK ||
-                        GetSysColor(COLOR_WINDOW) != WIN_COL_WHITE);
-    if (useSysColor) {
-        // not using GetSysColorBrush so that gBrushNoDocBg can be deleted
-        gBrushNoDocBg = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
-    }
-    else
-        gBrushNoDocBg = CreateSolidBrush(COL_WINDOW_BG);
-    COLORREF bgColor = ABOUT_BG_COLOR_DEFAULT != gGlobalPrefs->mainWindowBackground ? gGlobalPrefs->mainWindowBackground : ABOUT_BG_LOGO_COLOR;
-    gBrushLogoBg = CreateSolidBrush(bgColor);
-#ifndef ABOUT_USE_LESS_COLORS
-    gBrushAboutBg = CreateSolidBrush(bgColor);
-#else
-    gBrushAboutBg = CreateSolidBrush(ABOUT_BG_GRAY_COLOR);
-#endif
 
     NONCLIENTMETRICS ncm = { 0 };
     ncm.cbSize = sizeof(ncm);
@@ -275,6 +289,18 @@ static void GetCommandLineInfo(CommandLineInfo& i)
     i.ParseCommandLine(GetCommandLine());
 }
 
+static void SetupCrashHandler()
+{
+    ScopedMem<WCHAR> symDir;
+    ScopedMem<WCHAR> tmpDir(path::GetTempPath());
+    if (tmpDir)
+        symDir.Set(path::Join(tmpDir, L"SumatraPDF-symbols"));
+    else
+        symDir.Set(AppGenDataFilename(L"SumatraPDF-symbols"));
+    ScopedMem<WCHAR> crashDumpPath(AppGenDataFilename(CRASH_DUMP_FILE_NAME));
+    InstallCrashHandler(crashDumpPath, symDir);
+}
+
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     int retCode = 1;    // by default it's error
@@ -320,16 +346,14 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
     srand((unsigned int)time(NULL));
 
-    {
-        ScopedMem<WCHAR> symDir;
-        ScopedMem<WCHAR> tmpDir(path::GetTempPath());
-        if (tmpDir)
-            symDir.Set(path::Join(tmpDir, L"SumatraPDF-symbols"));
-        else
-            symDir.Set(AppGenDataFilename(L"SumatraPDF-symbols"));
-        ScopedMem<WCHAR> crashDumpPath(AppGenDataFilename(CRASH_DUMP_FILE_NAME));
-        InstallCrashHandler(crashDumpPath, symDir);
-    }
+    // load uiautomationcore.dll before installing crash handler (i.e. initializing
+    // dbghelp.dll), so that we get function names/offsets in GetCallstack()
+    uia::Initialize();
+#ifdef DEBUG
+    dbghelp::RememberCallstackLogs();
+#endif
+
+    SetupCrashHandler();
 
     ScopedOle ole;
     InitAllCommonControls();
@@ -487,15 +511,14 @@ Exit:
 
 #else
 
-    DeleteObject(gBrushNoDocBg);
-    DeleteObject(gBrushLogoBg);
-    DeleteObject(gBrushAboutBg);
     DeleteObject(gDefaultGuiFont);
     DeleteBitmap(gBitmapReloadingCue);
 
     // wait for FileExistenceChecker to terminate
     // (which should be necessary only very rarely)
-    while (gFileExistenceChecker);
+    while (gFileExistenceChecker) {
+        // do nothing
+    }
 
     gFileHistory.UpdateStatesSource(NULL);
     DeleteGlobalPrefs(gGlobalPrefs);
@@ -503,6 +526,9 @@ Exit:
     mui::Destroy();
     uitask::Destroy();
     trans::Destroy();
+
+    SaveCallstackLogs();
+    dbghelp::FreeCallstackLogs();
 
     // it's still possible to crash after this (destructors of static classes,
     // atexit() code etc.) point, but it's very unlikely

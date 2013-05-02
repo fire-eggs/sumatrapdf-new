@@ -2,11 +2,11 @@
    License: GPLv3 */
 
 #include "BaseUtil.h"
-#include "UIAutomationProvider.h"
+#include "uia/Provider.h"
 
-#include "UIAutomationConstants.h"
-#include "UIAutomationDocumentProvider.h"
-#include "UIAutomationStartPageProvider.h"
+#include "uia/Constants.h"
+#include "uia/DocumentProvider.h"
+#include "uia/StartPageProvider.h"
 #include "WinUtil.h"
 
 // not available under Win2000
@@ -25,7 +25,7 @@ static UiaRaiseAutomationEventProc _UiaRaiseAutomationEvent = NULL;
 static UiaRaiseStructureChangedEventProc _UiaRaiseStructureChangedEvent = NULL;
 static UiaGetReservedNotSupportedValueProc _UiaGetReservedNotSupportedValue = NULL;
 
-static void Initialize()
+void Initialize()
 {
     static bool funcsLoaded = false;
     if (funcsLoaded)
@@ -85,9 +85,12 @@ HRESULT GetReservedNotSupportedValue(IUnknown **punkNotSupportedValue)
 
 };
 
+#include "DbgHelpDyn.h"
+
 SumatraUIAutomationProvider::SumatraUIAutomationProvider(HWND hwnd) :
     refCount(1), canvasHwnd(hwnd), startpage(NULL), document(NULL)
 {
+    dbghelp::LogCallstack();
     startpage = new SumatraUIAutomationStartPageProvider(hwnd, this);
 }
 
@@ -155,11 +158,13 @@ HRESULT STDMETHODCALLTYPE SumatraUIAutomationProvider::QueryInterface(const IID 
 
 ULONG STDMETHODCALLTYPE SumatraUIAutomationProvider::AddRef(void)
 {
+    dbghelp::LogCallstack();
     return InterlockedIncrement(&refCount);
 }
 
 ULONG STDMETHODCALLTYPE SumatraUIAutomationProvider::Release(void)
 {
+    dbghelp::LogCallstack();
     LONG res = InterlockedDecrement(&refCount);
     CrashIf(res < 0);
     if (0 == res) {

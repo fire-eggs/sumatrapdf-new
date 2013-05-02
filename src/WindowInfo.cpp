@@ -13,8 +13,8 @@
 #include "StressTesting.h"
 #include "SumatraPDF.h"
 #include "Translations.h"
+#include "uia/Provider.h"
 #include "WinUtil.h"
-#include "uia/UIAutomationProvider.h"
 
 TopWindowInfo::TopWindowInfo(HWND hwnd) :
     hwndFrame(hwnd), win(NULL)
