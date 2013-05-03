@@ -2698,8 +2698,8 @@ void UpdateColorAll(COLORREF docFore, COLORREF docBack, COLORREF tocBg, COLORREF
             PanelInfo *panel = WIN->gPanel.At(j);
             for (size_t k = 0; k < panel->gWin.Count(); k++) {
                 WindowInfo *win = panel->gWin.At(k);
-                if (!win->dm)
-                    InvalidateRect(win->hwndCanvas, NULL, TRUE);
+                //if (win->dm)
+                InvalidateRect(win->hwndCanvas, NULL, TRUE);
                 TreeView_SetBkColor(win->sideBar()->hwndTocTree, tocBg);
                 TreeView_SetBkColor(win->sideBar()->hwndFavTree, favBg);
             }
