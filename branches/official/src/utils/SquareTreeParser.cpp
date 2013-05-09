@@ -52,6 +52,11 @@ Final note: Whitespace at the start and end of a line as well as around key-valu
 separators is always ignored.
 */
 
+static inline char *SkipWs(char *s, bool stopAtLineEnd=false)
+{
+    for (; str::IsWs(*s) && (!stopAtLineEnd || *s != '\n'); s++);
+    return s;
+}
 static inline char *SkipWsRev(char *begin, char *s)
 {
     for (; s > begin && str::IsWs(*(s - 1)); s--);
@@ -61,7 +66,7 @@ static inline char *SkipWsRev(char *begin, char *s)
 static char *SkipWsAndComments(char *s)
 {
     do {
-        for (; str::IsWs(*s); s++);
+        s = SkipWs(s);
         if ('#' == *s || ';' == *s) {
             // skip entire comment line
             for (; *s && *s != '\n'; s++);
@@ -70,10 +75,11 @@ static char *SkipWsAndComments(char *s)
     return s;
 }
 
-static inline bool IsBracketLine(char *s)
+static bool IsBracketLine(char *s)
 {
     if (*s != '[')
         return false;
+    // the line may only contain whitespace and a comment
     for (s++; *s && *s != '\n' && *s != '#' && *s != ';'; s++) {
         if (!str::IsWs(*s))
             return false;
@@ -133,7 +139,7 @@ static SquareTreeNode *ParseSquareTreeRec(char *& data, bool isTopLevel=false)
         char *separator = data;
         if (*data && *data != '\n') {
             // skip to the first non-whitespace character on the same line (value)
-            for (data++; str::IsWs(*data) && *data != '\n'; data++);
+            data = SkipWs(data + 1, true);
         }
         char *value = data;
         // skip to the end of the line
@@ -148,7 +154,7 @@ static SquareTreeNode *ParseSquareTreeRec(char *& data, bool isTopLevel=false)
             node->data.Append(SquareTreeNode::DataItem(key, ParseSquareTreeRec(data)));
             // arrays are created by either reusing the same key for a different child
             // or by concatenating multiple children ("[ \n ] [ \n ] [ \n ]")
-            while ('[' == *(data = SkipWsAndComments(data))) {
+            while (IsBracketLine((data = SkipWsAndComments(data)))) {
                 data++;
                 node->data.Append(SquareTreeNode::DataItem(key, ParseSquareTreeRec(data)));
             }
@@ -161,15 +167,17 @@ static SquareTreeNode *ParseSquareTreeRec(char *& data, bool isTopLevel=false)
             // ignore superfluous closing square brackets instead of
             // ignoring all content following them
         }
-        else if ('[' == *key && ']' == SkipWsRev(value, data)[-1] && '\n' == *data) {
+        else if ('[' == *key && ']' == SkipWsRev(value, data)[-1]) {
             // treat INI section headers as top-level node names
             // (else "[Section]" would be ignored)
             if (!isTopLevel) {
                 data = key;
                 return node;
             }
-            SkipWsRev(value, data)[-1] = '\0';
-            node->data.Append(SquareTreeNode::DataItem(key + 1, ParseSquareTreeRec(data)));
+            // trim whitespace around section name (for consistency with GetPrivateProfileString)
+            key = SkipWs(key + 1);
+            *SkipWsRev(key, SkipWsRev(value, data) - 1) = '\0';
+            node->data.Append(SquareTreeNode::DataItem(key, ParseSquareTreeRec(data)));
         }
         else if ('[' == *separator || ']' == *separator) {
             // invalid line (ignored)
