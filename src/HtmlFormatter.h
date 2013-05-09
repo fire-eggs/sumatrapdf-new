@@ -102,17 +102,27 @@ public:
 };
 
 // just to pack args to HtmlFormatter
-struct HtmlFormatterArgs {
+class HtmlFormatterArgs {
+public:
     HtmlFormatterArgs() :
       pageDx(0), pageDy(0), fontName(NULL), fontSize(0),
       textAllocator(NULL), htmlStr(0), htmlStrLen(0),
       reparseIdx(0), measureAlgo(NULL)
     { }
 
+    ~HtmlFormatterArgs() {
+        free(fontName);
+    }
+
     REAL            pageDx;
     REAL            pageDy;
 
-    const WCHAR *   fontName;
+    void SetFontName(const WCHAR *s) {
+        str::ReplacePtr(&fontName, s);
+    }
+
+    const WCHAR *GetFontName() { return fontName; }
+
     float           fontSize;
 
     /* Most of the time string DrawInstr point to original html text
@@ -130,6 +140,9 @@ struct HtmlFormatterArgs {
 
     // we start parsing from htmlStr + reparseIdx
     int             reparseIdx;
+
+private:
+    WCHAR *         fontName;
 };
 
 class HtmlPullParser;
@@ -194,6 +207,8 @@ protected:
     void  AppendInstr(DrawInstr di);
     bool  IsCurrLineEmpty();
     virtual bool IgnoreText();
+
+    void DumpLineDebugInfo();
 
     // constant during layout process
     float               pageDx;
