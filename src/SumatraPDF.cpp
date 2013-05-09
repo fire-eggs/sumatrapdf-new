@@ -869,6 +869,7 @@ static void UnsubclassCanvas(HWND hwnd)
     SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)0);
 }
 
+// meaning of the internal values of LoadArgs:
 // isNewWindow : if true then 'win' refers to a newly created window that needs
 //   to be resized and placed
 // allowFailure : if false then keep displaying the previously loaded document
@@ -876,8 +877,7 @@ static void UnsubclassCanvas(HWND hwnd)
 // placeWindow : if true then the Window will be moved/sized according
 //   to the 'state' information even if the window was already placed
 //   before (isNewWindow=false)
-static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
-    DisplayState *state, bool isNewWindow, bool allowFailure, bool placeWindow)
+static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI, DisplayState *state=NULL)
 {
     ScopedMem<WCHAR> title;
     WindowInfo *win = args.win;
@@ -888,8 +888,8 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
     // TODO: remove time logging before release
     Timer t(true);
     // Never load settings from a preexisting state if the user doesn't wish to
-    // (unless we're just refreshing the document, i.e. only if placeWindow == true)
-    if (placeWindow && (!gGlobalPrefs->rememberStatePerDocument || state && state->useDefaultState)) {
+    // (unless we're just refreshing the document, i.e. only if args.placeWindow == true)
+    if (args.placeWindow && (!gGlobalPrefs->rememberStatePerDocument || state && state->useDefaultState)) {
         state = NULL;
     } else if (NULL == state) {
         state = gFileHistory.Find(args.fileName);
@@ -959,7 +959,7 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
 
     // ToC items might hold a reference to an Engine, so make sure to
     // delete them before destroying the whole DisplayModel
-    if (win->dm || allowFailure)
+    if (win->dm || args.allowFailure)
         ClearTocBox(win);
 
     assert(!win->IsAboutWindow() && win->IsDocLoaded() == (win->dm != NULL));
@@ -988,7 +988,7 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
         // tell UI Automation about content change
         if (win->uia_provider)
             win->uia_provider->OnDocumentLoad(win->dm);
-    } else if (allowFailure) {
+    } else if (args.allowFailure) {
         delete prevModel;
         ScopedMem<WCHAR> title2(str::Format(L"%s - %s", path::GetBaseName(args.fileName), SUMATRA_WINDOW_TITLE));
         win::SetText(win->hwndFrame, title2);
@@ -1000,22 +1000,9 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
     }
 
     if (win->dm != prevModel) {
-        Vec<PageAnnotation> *userAnnots = LoadFileModifications(args.fileName);
+        delete win->userAnnots;
+        win->userAnnots = LoadFileModifications(args.fileName);
         win->userAnnotsModified = false;
-        if (!userAnnots)
-            userAnnots = win->userAnnots;
-        else if (win->userAnnots) {
-            // don't throw annotations away when reloading
-            for (PageAnnotation *annot = userAnnots->IterStart(); annot; annot = userAnnots->IterNext()) {
-                win->userAnnots->Remove(*annot);
-            }
-            win->userAnnotsModified = win->userAnnots->Count() > 0;
-            for (PageAnnotation *annot = win->userAnnots->IterStart(); annot; annot = win->userAnnots->IterNext()) {
-                userAnnots->Append(*annot);
-            }
-            delete win->userAnnots;
-        }
-        win->userAnnots = userAnnots;
         win->dm->engine->UpdateUserAnnotations(win->userAnnots);
     }
 
@@ -1037,7 +1024,7 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
 
     win->dm->Relayout(zoomVirtual, rotation);
 
-    if (!isNewWindow) {
+    if (!args.isNewWindow) {
         win->RedrawAll();
         OnMenuFindMatchCase(win);
     }
@@ -1081,8 +1068,8 @@ static bool LoadDocIntoWindow(LoadArgs& args, PasswordUI *pwdUI,
     }
 
 Error:
-    if (isNewWindow || placeWindow && state) {
-        if (isNewWindow && state && !state->windowPos.IsEmpty()) {
+    if (args.isNewWindow || args.placeWindow && state) {
+        if (args.isNewWindow && state && !state->windowPos.IsEmpty()) {
             // Make sure it doesn't have a position like outside of the screen etc.
             RectI rect = ShiftRectToWorkArea(state->windowPos);
             // This shouldn't happen until !win.IsAboutWindow(), so that we don't
@@ -1122,9 +1109,9 @@ Error:
         return false;
     }
     // This should only happen after everything else is ready
-    if ((isNewWindow || placeWindow) && args.showWin && showAsFullScreen)
+    if ((args.isNewWindow || args.placeWindow) && args.showWin && showAsFullScreen)
         EnterFullscreen(*win);
-    if (!isNewWindow && win->presentation && win->dm)
+    if (!args.isNewWindow && win->presentation && win->dm)
         win->dm->SetPresentationMode(true);
 
     t.Stop();
@@ -1138,6 +1125,7 @@ void ReloadDocument(WindowInfo *win, bool autorefresh)
     if (!win->IsDocLoaded()) {
         if (!autorefresh && win->loadedFilePath) {
             LoadArgs args(win->loadedFilePath, win);
+            args.forceReuse = true;
             LoadDocument(args);
         }
         return;
@@ -1152,19 +1140,17 @@ void ReloadDocument(WindowInfo *win, bool autorefresh)
                     : IsIconic(win->hwndFrame) ? WIN_STATE_MINIMIZED
                     : WIN_STATE_NORMAL ;
 
+    ScopedMem<WCHAR> path(str::Dup(win->loadedFilePath));
+    HwndPasswordUI pwdUI(win->hwndFrame);
+    LoadArgs args(path, win);
+    args.showWin = true;
     // We don't allow PDF-repair if it is an autorefresh because
     // a refresh event can occur before the file is finished being written,
     // in which case the repair could fail. Instead, if the file is broken,
     // we postpone the reload until the next autorefresh event
-    bool allowFailure = !autorefresh;
-    bool isNewWindow = false;
-    bool showWin = true;
-    bool placeWindow = false;
-    ScopedMem<WCHAR> path(str::Dup(win->loadedFilePath));
-    HwndPasswordUI pwdUI(win->hwndFrame);
-    LoadArgs args(path, win);
-    args.showWin = showWin;
-    if (!LoadDocIntoWindow(args, &pwdUI, ds, isNewWindow, allowFailure, placeWindow)) {
+    args.allowFailure = !autorefresh;
+    args.placeWindow = false;
+    if (!LoadDocIntoWindow(args, &pwdUI, ds)) {
         DeleteDisplayState(ds);
         return;
     }
@@ -1467,7 +1453,7 @@ void LoadDocument2(const WCHAR *fileName, const SumatraWindow& win)
     CrashIf(!win.AsEbookWindow());
     // TODO: LoadDocument() needs to handle EbookWindow, for now
     // we force opening in a new window
-    LoadArgs args(fileName, NULL);
+    LoadArgs args(fileName);
     LoadDocument(args);
 }
 
@@ -1551,32 +1537,40 @@ static WindowInfo* LoadDocumentOld(LoadArgs& args)
         return win;
     }
 
-    bool isNewWindow = false;
     if (!win && 1 == gWindows.Count() && gWindows.At(0)->IsAboutWindow()) {
         win = gWindows.At(0);
         args.win = win;
+        args.isNewWindow = false;
     } else if (!win || win->IsDocLoaded() && !args.forceReuse) {
         WindowInfo *currWin = win;
         win = CreateWindowInfo();
         if (!win)
             return NULL;
         args.win = win;
-        isNewWindow = true;
+        args.isNewWindow = true;
         if (currWin) {
             RememberFavTreeExpansionState(currWin);
             win->expandedFavorites = currWin->expandedFavorites;
         }
     }
 
-    DeleteOldSelectionInfo(win, true);
-    win->fwdSearchMark.show = false;
-    win->notifications->RemoveAllInGroup(NG_RESPONSE_TO_ACTION);
-    win->notifications->RemoveAllInGroup(NG_PAGE_INFO_HELPER);
+    if (!win->IsAboutWindow()) {
+        CrashIf(!args.forceReuse);
+        CloseDocumentInWindow(win);
+    }
+    // invalidate the links on the Frequently Read page
+    win->staticLinks.Reset();
 
     HwndPasswordUI pwdUI(win->hwndFrame);
     args.fileName = fullPath;
-    bool loaded = LoadDocIntoWindow(args, &pwdUI, NULL, isNewWindow,
-        true /* allowFailure */, true /* placeWindow */);
+    args.allowFailure = true;
+    args.placeWindow = true;
+    bool loaded = LoadDocIntoWindow(args, &pwdUI);
+    // don't fail if a user tries to load an SMX file instead
+    if (!loaded && IsModificationsFile(fullPath)) {
+        *(WCHAR *)path::GetExt(fullPath) = '\0';
+        loaded = LoadDocIntoWindow(args, &pwdUI);
+    }
 
     if (gPluginMode) {
         // hide the menu for embedded documents opened from the plugin
@@ -2715,6 +2709,8 @@ void CloseDocumentInWindow(WindowInfo *win)
     str::ReplacePtr(&win->loadedFilePath, NULL);
     delete win->pdfsync;
     win->pdfsync = NULL;
+    delete win->userAnnots;
+    win->userAnnots = NULL;
     win->notifications->RemoveAllInGroup(NG_RESPONSE_TO_ACTION);
     win->notifications->RemoveAllInGroup(NG_PAGE_INFO_HELPER);
 
@@ -3314,7 +3310,8 @@ static void BrowseFolder(WindowInfo& win, bool forward)
 
     // TODO: check for unsaved modifications
     UpdateCurrentFileDisplayStateForWin(SumatraWindow::Make(&win));
-    LoadArgs args(files.At(index), &win, true, true);
+    LoadArgs args(files.At(index), &win);
+    args.forceReuse = true;
     LoadDocument(args);
 }
 
@@ -4038,7 +4035,7 @@ static void FrameOnChar(WindowInfo& win, WPARAM key)
                 win.userAnnots = new Vec<PageAnnotation>();
             for (size_t i = 0; i < win.selectionOnPage->Count(); i++) {
                 SelectionOnPage& sel = win.selectionOnPage->At(i);
-                win.userAnnots->Append(PageAnnotation(Annot_Highlight, sel.pageNo, sel.rect, PageAnnotation::Color(0xE2, 0xC4, 0xE2, 0xCC)));
+                win.userAnnots->Append(PageAnnotation(Annot_Highlight, sel.pageNo, sel.rect, PageAnnotation::Color(gGlobalPrefs->annotationDefaults.highlightColor, 0xCC)));
                 gRenderCache.Invalidate(win.dm, sel.pageNo, sel.rect);
             }
             win.userAnnotsModified = true;
@@ -5446,6 +5443,16 @@ InitMouseWheelInfo:
                 gDeltaPerLine = WHEEL_DELTA / ulScrollLines;
             else
                 gDeltaPerLine = 0;
+
+            if (win) {
+                // in tablets it's possible to rotate the screen. if we're
+                // in full screen, resize our window to match new screen size
+                if (win->presentation)
+                    EnterFullscreen(*win, true);
+                else if (win->fullScreen)
+                    EnterFullscreen(*win, false);
+            }
+
             return 0;
 
         case WM_SYSCOLORCHANGE:
