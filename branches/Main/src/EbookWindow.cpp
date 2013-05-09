@@ -80,7 +80,7 @@ static void OnToggleBbox(EbookWindow *win)
 {
     gShowTextBoundingBoxes = !gShowTextBoundingBoxes;
     SetDebugPaint(gShowTextBoundingBoxes);
-    win->ebookControls->mainWnd->RequestRepaint();
+    RequestRepaint(win->ebookControls->mainWnd);
     InvalidateRect(win->hwndFrame, NULL, TRUE);
     win::menu::SetChecked(GetMenu(win->hwndFrame), IDM_DEBUG_SHOW_LINKS, gShowTextBoundingBoxes);
 }
@@ -476,7 +476,7 @@ static LRESULT CALLBACK MobiWndProcFrame(HWND hwnd, UINT msg, WPARAM wParam, LPA
 RenderedBitmap *RenderFirstDocPageToBitmap(Doc doc, SizeI pageSize, SizeI bmpSize, int border)
 {
     PoolAllocator textAllocator;
-    HtmlFormatterArgs *args = CreateFormatterArgsDoc(doc, pageSize.dx - 2 * border, pageSize.dy - 2 * border, &textAllocator);
+    HtmlFormatterArgs *args = CreateFormatterArgsDoc2(doc, pageSize.dx - 2 * border, pageSize.dy - 2 * border, &textAllocator);
     HtmlFormatter *formatter = CreateFormatter(doc, args);
     HtmlPage *pd = formatter->Next();
     delete formatter;
@@ -709,4 +709,16 @@ Doc GetDocForWindow(const SumatraWindow& win)
     }
     CrashIf(true);
     return Doc();
+}
+
+// TODO: also needs to update for font name/size changes, but it's more complicated
+// because requires re-layout
+void EbookWindowRefreshUI(EbookWindow *win)
+{
+    SetMainWndBgCol(win->ebookControls);
+    // changing background will repaint mainWnd control but changing
+    // of text color will not, so we request uncoditional repaint
+    // TODO: in PageControl::Paint() use a property for text color, instead of
+    // taking it directly from prefs
+    RequestRepaint(win->ebookControls->mainWnd);
 }

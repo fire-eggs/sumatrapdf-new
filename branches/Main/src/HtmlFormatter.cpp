@@ -180,7 +180,7 @@ HtmlFormatter::HtmlFormatter(HtmlFormatterArgs *args) :
     CrashIf(!ValidReparseIdx(currReparseIdx, htmlParser));
 
     gfx = mui::AllocGraphicsForMeasureText();
-    defaultFontName.Set(str::Dup(args->fontName));
+    defaultFontName.Set(str::Dup(args->GetFontName()));
     defaultFontSize = args->fontSize;
     DrawStyle style;
     style.font = mui::GetCachedFont(defaultFontName, defaultFontSize, FontStyleRegular);
@@ -371,10 +371,20 @@ static void SetYPos(Vec<DrawInstr>& instr, float y)
     }
 }
 
+void HtmlFormatter::DumpLineDebugInfo()
+{
+    // TODO: write me
+    // like CurrLineDx() but dumps info about draw instructions to dbg out
+}
+
 // Redistribute extra space in the line equally among the spaces
 void HtmlFormatter::JustifyLineBoth()
 {
-    REAL extraSpaceDxTotal = pageDx - CurrLineDx();
+    REAL extraSpaceDxTotal = pageDx - currX;
+#ifdef DEBUG
+    if (extraSpaceDxTotal < 0.f)
+        DumpLineDebugInfo();
+#endif
     CrashIf(extraSpaceDxTotal < 0.f);
 
     LayoutLeftStartingAt(0.f);
@@ -425,15 +435,18 @@ bool HtmlFormatter::IsCurrLineEmpty()
 
 void HtmlFormatter::JustifyCurrLine(AlignAttr align)
 {
+    // TODO: is CurrLineDx needed at all?
+    CrashIf(currX != CurrLineDx());
+
     switch (align) {
         case Align_Left:
             LayoutLeftStartingAt(0.f);
             break;
         case Align_Right:
-            LayoutLeftStartingAt(pageDx - CurrLineDx());
+            LayoutLeftStartingAt(pageDx - currX);
             break;
         case Align_Center:
-            LayoutLeftStartingAt((pageDx - CurrLineDx()) / 2.f);
+            LayoutLeftStartingAt((pageDx - currX) / 2.f);
             break;
         case Align_Justify:
             JustifyLineBoth();
@@ -497,9 +510,9 @@ bool HtmlFormatter::FlushCurrLine(bool isParagraphBreak)
         currLineTopPadding = 0;
         // remove all spaces (only keep SetFont, LinkStart and Anchor instructions)
         for (size_t k = currLineInstr.Count(); k > 0; k--) {
-            DrawInstr *i = &currLineInstr.At(k-1);
+            DrawInstr *i = &currLineInstr.At(k - 1);
             if (InstrFixedSpace == i->type || InstrElasticSpace == i->type)
-                currLineInstr.RemoveAt(k-1);
+                currLineInstr.RemoveAt(k - 1);
         }
         return false;
     }
@@ -558,6 +571,13 @@ void HtmlFormatter::EmitEmptyLine(float lineDy)
     currY += lineDy;
     if (currY <= pageDy) {
         currX = NewLineX();
+        // remove all spaces (only keep SetFont, LinkStart and Anchor instructions)
+        for (size_t k = currLineInstr.Count(); k > 0; k--) {
+            DrawInstr *i = &currLineInstr.At(k - 1);
+            if (InstrFixedSpace == i->type || InstrElasticSpace == i->type)
+                currLineInstr.RemoveAt(k - 1);
+
+        }
         return;
     }
     ForceNewPage();
@@ -638,7 +658,7 @@ void HtmlFormatter::EmitParagraph(float indent)
                        Align_Justify == CurrStyle()->align;
     if (indent > 0 && needsIndent && EnsureDx(indent)) {
         AppendInstr(DrawInstr::FixedSpace(indent));
-        currX = NewLineX() + indent;
+        currX += indent;
     }
 }
 
@@ -657,7 +677,7 @@ bool HtmlFormatter::EnsureDx(float dx)
 // at the beginning of the line
 static bool CanEmitElasticSpace(float currX, float NewLineX, float maxCurrX, Vec<DrawInstr>& currLineInstr)
 {
-    if (NewLineX == currX)
+    if (NewLineX == currX || 0 == currLineInstr.Count())
         return false;
     // prevent elastic spaces from being flushed to the
     // beginning of the next line
