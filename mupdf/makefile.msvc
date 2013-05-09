@@ -125,15 +125,9 @@ CFLAGS = $(CFLAGSB) /Od /RTCs /RTCu
 !endif
 
 ZLIB_CFLAGS = $(CFLAGSOPT) /TC /wd4131 /wd4244 /wd4996 /I$(ZLIB_DIR) /I$(ZLIB_DIR)/infback9
-<<<<<<< .working
 
 FREETYPE_CFLAGS = $(CFLAGSOPT) /TC /I$(FREETYPE_DIR)/config /I$(FREETYPE_DIR)/include \
-=======
-
-# 4703 - potentially uninitialized local variable (frequent with vs 2012)
-FREETYPE_CFLAGS = $(CFLAGSOPT) /TC /I$(FREETYPE_DIR)/config /I$(FREETYPE_DIR)/include \
->>>>>>> .merge-right.r323
-	/D "FT2_BUILD_LIBRARY" /D "FT_OPTION_AUTOFIT2" /wd4701 /wd4703 /wd4245 /wd4996
+	/D "FT2_BUILD_LIBRARY" /D "FT_OPTION_AUTOFIT2" /wd4701 /wd4245 /wd4996
 
 JBIG2_CFLAGS = $(CFLAGS) /TC /D "HAVE_STRING_H=1" /D "JBIG_NO_MEMENTO" /I$(JBIG2_DIR)
 JBIG2_CFLAGS = $(JBIG2_CFLAGS) /wd4018 /wd4244 /wd4701 /wd4996
@@ -149,12 +143,11 @@ JPEG_TURBO_NASM_FLAGS = -I $(JPEG_TURBO_DIR)\simd\ -I $(JPEG_TURBO_DIR)\win\ -f 
 JPEG_TURBO_NASM_FLAGS = -I $(JPEG_TURBO_DIR)\simd\ -I $(JPEG_TURBO_DIR)\win\ -f win32
 !endif
 
-# 4703 - potentially uninitialized local variable (frequent with vs 2012)
 MUPDF_CFLAGS = $(CFLAGS) /TC \
 	/I$(MUPDF_DIR)/fitz /I$(MUPDF_DIR)/pdf /I$(MUPDF_DIR)/xps /I$(MUPDF_DIR)/cbz /I$(MUPDF_DIR)/apps \
 	/I$(FREETYPE_DIR)/config /I$(FREETYPE_DIR)/include /I$(ZLIB_DIR) \
 	/I$(JBIG2_DIR) /I$(JPEG_TURBO_DIR) /I$(OPENJPEG_DIR)
-MUPDF_CFLAGS = $(MUPDF_CFLAGS) /wd4054 /wd4115 /wd4152 /wd4701 /wd4702 /wd4703 /wd4706
+MUPDF_CFLAGS = $(MUPDF_CFLAGS) /wd4054 /wd4115 /wd4152 /wd4701 /wd4702 /wd4706
 
 !if "$(CFG)"=="dbg"
 MUPDF_CFLAGS = $(MUPDF_CFLAGS) /D "DEBUG"
@@ -251,7 +244,7 @@ FITZ_OBJS = \
 	$(OFZ)\base_context.obj $(OFZ)\base_xml.obj $(OFZ)\crypt_aes.obj $(OFZ)\crypt_sha2.obj \
 	$(OFZ)\crypt_arc4.obj $(OFZ)\crypt_md5.obj $(OFZ)\dev_gdiplus.obj $(OFZ)\dev_bbox.obj \
 	$(OFZ)\dev_list.obj $(OFZ)\dev_null.obj $(OFZ)\dev_trace.obj \
-	$(OFZ)\doc_link.obj $(OFZ)\doc_outline.obj \
+	$(OFZ)\doc_document.obj $(OFZ)\doc_interactive.obj $(OFZ)\doc_link.obj $(OFZ)\doc_outline.obj \
 	$(OFZ)\filt_basic.obj $(OFZ)\filt_faxd.obj $(OFZ)\filt_flate.obj $(OFZ)\filt_jbig2d.obj \
 	$(OFZ)\filt_dctd.obj $(OFZ)\filt_lzwd.obj $(OFZ)\filt_predict.obj $(OFZ)\res_store.obj \
 	$(OFZ)\image_jpeg.obj $(OFZ)\image_jpx.obj $(OFZ)\image_png.obj $(OFZ)\image_tiff.obj \
@@ -274,7 +267,6 @@ MUPDF_OBJS = \
 	$(OP)\pdf_cmap_load.obj $(OP)\pdf_cmap_parse.obj $(OP)\pdf_cmap_table.obj \
 	$(OP)\pdf_write.obj $(OP)\pdf_form.obj $(OP)\pdf_event.obj $(OP)\pdf_js_none.obj \
 	$(OP)\pdf_device.obj $(OP)\pdf_field.obj $(OP)\pdf_ft_tools.obj
-<<<<<<< .working
 
 MUXPS_OBJS = \
 	$(OX)\xps_common.obj $(OX)\xps_doc.obj $(OX)\xps_glyphs.obj $(OX)\xps_gradient.obj \
@@ -317,49 +309,6 @@ clean: force
 	-rmdir /S /Q $(O) $(MUPDF_GEN_DIR)
 
 cleanall: force
-=======
-
-MUXPS_OBJS = \
-	$(OX)\xps_common.obj $(OX)\xps_doc.obj $(OX)\xps_glyphs.obj $(OX)\xps_gradient.obj \
-	$(OX)\xps_image.obj $(OX)\xps_path.obj $(OX)\xps_resource.obj $(OX)\xps_tile.obj \
-	$(OX)\xps_util.obj $(OX)\xps_zip.obj $(OX)\xps_outline.obj
-
-LIBS_OBJS = \
-	$(ZLIB_OBJS) \
-	$(FT_OBJS) \
-	$(JPEG_TURBO_OBJS) \
-	$(JBIG2_OBJS) \
-	$(OPENJPEG_OBJS) \
-	$(FITZ_DRAW_OBJS) \
-	$(FITZ_OBJS) \
-	$(MUPDF_OBJS) \
-	$(MUXPS_OBJS)
-
-MUDOC_OBJS = \
-	$(OFZ)\doc_document.obj $(OFZ)\doc_interactive.obj $(OX)\mucbz.obj $(OX)\muimage.obj
-
-MUAPPS_OBJS = \
-	$(OA)\win_main.obj $(OA)\pdfapp.obj $(OA)\mudraw.obj $(OA)\pdfshow.obj \
-	$(OA)\pdfclean.obj $(OA)\pdfinfo.obj $(OA)\pdfextract.obj $(OA)\pdfposter.obj
-
-PDFAPP_RES = $(OA)\pdfview.res
-PDFAPP_OBJS = $(LIBS_OBJS) $(MUDOC_OBJS) $(OA)\win_main.obj $(OA)\pdfapp.obj $(PDFAPP_RES)
-PDFAPP_APP = $(O)\pdfview.exe
-
-MUTOOL_OBJS = $(LIBS_OBJS) $(MUDOC_OBJS) $(OA)\mutool.obj $(OA)\pdfshow.obj \
-	$(OA)\pdfclean.obj $(OA)\pdfinfo.obj $(OA)\pdfextract.obj $(OA)\pdfposter.obj
-MUTOOL_APP = $(O)\mutool.exe
-
-MUDRAW_OBJS = $(LIBS_OBJS) $(MUDOC_OBJS) $(OA)\mudraw.obj
-MUDRAW_APP = $(O)\mudraw.exe
-
-all: $(O) $(MUDRAW_APP) $(MUTOOL_APP) $(PDFAPP_APP)
-
-clean: force
-	-rmdir /S /Q $(O) $(MUPDF_GEN_DIR)
-
-cleanall: force
->>>>>>> .merge-right.r323
 	-rmdir /S /Q obj-dbg-win obj-rel-win $(MUPDF_GEN_DIR)
 
 $(O): force
@@ -437,7 +386,6 @@ $(MUDRAW_APP): $(MUDRAW_OBJS)
 
 {$(JPEG_TURBO_DIR)\simd}.asm{$(OT)}.obj:
 	$(NASM) $(JPEG_TURBO_NASM_FLAGS) -o $@ $<
-<<<<<<< .working
 
 {$(OPENJPEG_DIR)}.c{$(OOJ)}.obj::
 	$(CC) $(OPENJPEG_CFLAGS) /Fo$(OOJ)\ /Fd$(O)\vc80.pdb $<
@@ -447,55 +395,18 @@ $(MUDRAW_APP): $(MUDRAW_OBJS)
 
 {$(MUPDF_DIR)\apps}.c{$(OA)}.obj::
 	$(CC) $(MUPDF_CFLAGS) /Fo$(OA)\ /Fd$(O)\vc80.pdb $<
-=======
-
-{$(OPENJPEG_DIR)}.c{$(OOJ)}.obj::
-	$(CC) $(OPENJPEG_CFLAGS) /Fo$(OOJ)\ /Fd$(O)\vc80.pdb $<
-
-{$(JBIG2_DIR)}.c{$(OJB)}.obj::
-	$(CC) $(JBIG2_CFLAGS) /Fo$(OJB)\ /Fd$(O)\vc80.pdb $<
-
-{$(MUPDF_DIR)\fitz}.c{$(OFZ)}.obj::
-	$(CC) $(MUPDF_CFLAGS) /Fo$(OFZ)\ /Fd$(O)\vc80.pdb $<
->>>>>>> .merge-right.r323
-<<<<<<< .working
 
 {$(MUPDF_DIR)\pdf}.c{$(OP)}.obj::
-=======
-
-{$(MUPDF_DIR)\fitz}.cpp{$(OFZ)}.obj::
-	$(CC) $(MUPDF_CFLAGS: /TC = ) /Fo$(OFZ)\ /Fd$(O)\vc80.pdb $<
-
-{$(MUPDF_DIR)\draw}.c{$(OFZ)}.obj::
-	$(CC) $(MUPDF_CFLAGS) /Fo$(OFZ)\ /Fd$(O)\vc80.pdb $<
-
-{$(MUPDF_DIR)\pdf}.c{$(OP)}.obj::
->>>>>>> .merge-right.r323
 	$(CC) $(MUPDF_CFLAGS) /Fo$(OP)\ /Fd$(O)\vc80.pdb $<
 
 {$(MUPDF_DIR)\xps}.c{$(OX)}.obj::
 	$(CC) $(MUPDF_CFLAGS) /Fo$(OX)\ /Fd$(O)\vc80.pdb $<
-<<<<<<< .working
 
 {$(MUPDF_DIR)\cbz}.c{$(OX)}.obj::
-=======
-
-{$(MUPDF_DIR)\apps}.c{$(OA)}.obj::
-	$(CC) $(MUPDF_CFLAGS) /Fo$(OA)\ /Fd$(O)\vc80.pdb $<
-
-{$(MUPDF_DIR)\cbz}.c{$(OX)}.obj::
->>>>>>> .merge-right.r323
 	$(CC) $(MUPDF_CFLAGS) /Fo$(OX)\ /Fd$(O)\vc80.pdb $<
-<<<<<<< .working
 
 {$(MUPDF_DIR)\draw}.c{$(OFZ)}.obj::
 	$(CC) $(MUPDF_CFLAGS) /Fo$(OFZ)\ /Fd$(O)\vc80.pdb $<
-=======
-
-{$(MUPDF_DIR)\image}.c{$(OX)}.obj::
-	$(CC) $(MUPDF_CFLAGS) /Fo$(OX)\ /Fd$(O)\vc80.pdb $<
->>>>>>> .merge-right.r323
-<<<<<<< .working
 
 {$(MUPDF_DIR)\fitz}.c{$(OFZ)}.obj::
 	$(CC) $(MUPDF_CFLAGS) /Fo$(OFZ)\ /Fd$(O)\vc80.pdb $<
@@ -509,15 +420,6 @@ MUPDF_CMAP_TABLES = $(MUPDF_GEN_DIR)\cmap_cns.h $(MUPDF_GEN_DIR)\cmap_gb.h \
 	$(MUPDF_GEN_DIR)\cmap_japan.h $(MUPDF_GEN_DIR)\cmap_korea.h
 
 MUPDF_FONT_FILES = $(MUPDF_GEN_DIR)\font_base14.h $(MUPDF_GEN_DIR)\font_droid.h \
-=======
-
-# files that might have to be generated first:
-
-MUPDF_CMAP_TABLES = $(MUPDF_GEN_DIR)\cmap_cns.h $(MUPDF_GEN_DIR)\cmap_gb.h \
-	$(MUPDF_GEN_DIR)\cmap_japan.h $(MUPDF_GEN_DIR)\cmap_korea.h
-
-MUPDF_FONT_FILES = $(MUPDF_GEN_DIR)\font_base14.h $(MUPDF_GEN_DIR)\font_droid.h \
->>>>>>> .merge-right.r323
 	$(MUPDF_GEN_DIR)\font_cjk.h $(MUPDF_GEN_DIR)\font_cjk_full.h
 
 MUPDF_GENERATED =  $(MUPDF_CMAP_TABLES) $(MUPDF_FONT_FILES) $(MUPDF_GEN_DIR)\js_util.h
@@ -526,7 +428,6 @@ $(MUPDF_GENERATED):
 	cd $(MUPDF_DIR) && win32\generate.bat
 
 $(OP)\pdf_cmap_table.obj: $(MUPDF_CMAP_TABLES)
-<<<<<<< .working
 $(OP)\pdf_fontfile.obj: $(MUPDF_FONT_FILES)
 $(OP)\pdf_js.obj: $(MUPDF_GEN_DIR)\js_util.h
 
@@ -538,30 +439,9 @@ MUXPS_H = $(MUPDF_DIR)\xps\muxps.h
 MUCBZ_H = $(MUPDF_DIR)\cbz\mucbz.h
 
 $(FITZ_OBJS) $(FITZ_DRAW_OBJS): $(FITZ_H)
-=======
-$(OP)\pdf_fontfile.obj: $(MUPDF_FONT_FILES)
-$(OP)\pdf_js.obj: $(MUPDF_GEN_DIR)\js_util.h
-
-# header dependencies
-
-FITZ_H  = $(MUPDF_DIR)\fitz\fitz.h $(MUPDF_DIR)\fitz\fitz-internal.h
-MUPDF_H = $(MUPDF_DIR)\pdf\mupdf.h $(MUPDF_DIR)\pdf\mupdf-internal.h
-MUXPS_H = $(MUPDF_DIR)\xps\muxps.h
-MUCBZ_H = $(MUPDF_DIR)\cbz\mucbz.h
-MUIMG_H = $(MUPDF_DIR)\image\muimage.h
-
-$(FITZ_OBJS) $(FITZ_DRAW_OBJS): $(FITZ_H)
->>>>>>> .merge-right.r323
 $(MUPDF_OBJS): $(FITZ_H) $(MUPDF_H)
-<<<<<<< .working
 $(MUXPS_OBJS): $(FITZ_H) $(MUXPS_H)
 $(MUCBZ_OBJS): $(FITZ_H) $(MUCBZ_H)
 $(MUAPPS_OBJS): $(FITZ_H) $(MUPDF_H) $(MUXPS_H) $(MUCBZ_H)
 
 force: ;
-=======
-$(MUXPS_OBJS): $(FITZ_H) $(MUXPS_H)
-$(MUAPPS_OBJS) $(MUDOC_OBJS): $(FITZ_H) $(MUPDF_H) $(MUXPS_H) $(MUCBZ_H) $(MUIMG_H)
-
-force: ;
->>>>>>> .merge-right.r323
