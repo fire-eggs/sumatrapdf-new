@@ -223,8 +223,8 @@ static void OpenUsingDde(const WCHAR *filePath, CommandLineInfo& i, bool isFirst
 
 static WindowInfo *LoadOnStartup(const WCHAR *filePath, CommandLineInfo& i, bool isFirstWin)
 {
-    bool showWin = !(i.printDialog && i.exitWhenDone) && !gPluginMode;
-    LoadArgs args(filePath, NULL, showWin);
+    LoadArgs args(filePath);
+    args.showWin = !(i.printDialog && i.exitWhenDone) && !gPluginMode;
     WindowInfo *win = LoadDocument(args);
     if (!win)
         return win;
@@ -581,7 +581,7 @@ Exit:
     // wait for FileExistenceChecker to terminate
     // (which should be necessary only very rarely)
     while (gFileExistenceChecker) {
-        // do nothing
+        Sleep(10);
     }
 
     gFileHistory.UpdateStatesSource(NULL);

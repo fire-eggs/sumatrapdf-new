@@ -9,6 +9,8 @@
 #include "AppTools.h"
 #include "BencUtil.h"
 #include "DebugLog.h"
+#include "EbookEngine.h"
+#include "EbookWindow.h"
 #include "Favorites.h"
 #include "FileHistory.h"
 #include "FileTransactions.h"
@@ -286,6 +288,7 @@ bool Load()
     }
 
     gFileHistory.UpdateStatesSource(gGlobalPrefs->fileStates);
+    SetDefaultEbookFont(gGlobalPrefs->ebookUI.fontName, gGlobalPrefs->ebookUI.fontSize);
 
     if (!file::Exists(path))
         Save();
@@ -384,12 +387,11 @@ bool Reload(bool forceReload)
     gGlobalPrefs = NULL;
 
     bool ok = Load();
-    if (!ok)
-        return false;
-    CrashIf(!gGlobalPrefs);
+    CrashAlwaysIf(!ok || !gGlobalPrefs);
 
     if (gWindows.Count() > 0 && gWindows.At(0)->IsAboutWindow()) {
         gWindows.At(0)->DeleteInfotip();
+        gWindows.At(0)->staticLinks.Reset();
         gWindows.At(0)->RedrawAll(true);
     }
 
@@ -401,6 +403,11 @@ bool Reload(bool forceReload)
     if (gGlobalPrefs->useSysColors != useSysColors)
         UpdateDocumentColors();
     UpdateFavoritesTreeForAllWindows();
+
+    int n = gEbookWindows.Count();
+    for (int i=0; i < n; i++) {
+        EbookWindowRefreshUI(gEbookWindows.At(i));
+    }
 
     return true;
 }
