@@ -254,7 +254,7 @@ static void AppendFavMenus(HMENU m, const WCHAR *currFilePath)
         // only show favorites for other files, if we're allowed to open them
         GetSortedFilePaths(filePathsSorted, currFileFav);
     }
-    if (currFileFav)
+    if (currFileFav && currFileFav->favorites->Count() > 0)
         filePathsSorted.InsertAt(0, currFileFav->filePath);
 
     if (filePathsSorted.Count() == 0)
@@ -555,7 +555,6 @@ void AddFavorite(WindowInfo *win)
     gFavorites.AddOrReplace(win->loadedFilePath, pageNo, name, needsLabel ? pageLabel.Get() : NULL);
     // expand newly added favorites by default
     DisplayState *fav = gFavorites.GetFavByFilePath(win->loadedFilePath);
-    CrashIf(!fav || win->expandedFavorites.Contains(fav));
     if (fav && fav->favorites->Count() == 2)
         win->expandedFavorites.Append(fav);
     UpdateFavoritesTreeForAllWindows();
