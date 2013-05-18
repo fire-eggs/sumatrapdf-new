@@ -571,6 +571,21 @@ bool IsUIRightToLeft()
     return trans::IsCurrLangRtl();
 }
 
+UINT MbRtlReadingMaybe()
+{
+    if (IsUIRightToLeft())
+        return MB_RTLREADING;
+    return 0;
+}
+
+void MessageBoxWarning(HWND hwnd, const WCHAR *msg, const WCHAR *title)
+{
+    UINT type =  MB_OK | MB_ICONEXCLAMATION | MbRtlReadingMaybe();
+    if (!title)
+        title = _TR("Warning");
+    MessageBox(hwnd, msg, title, type);
+}
+
 // updates the layout for a window to either left-to-right or right-to-left
 // depending on the currently used language (cf. IsUIRightToLeft)
 static void UpdateWindowRtlLayout(WindowInfo *win)
@@ -1785,14 +1800,6 @@ void OnDropFiles(HDROP hDrop, bool dragFinish)
         DragFinish(hDrop);
 }
 
-static void MessageBoxWarning(HWND hwnd, const WCHAR *msg, const WCHAR *title = NULL)
-{
-    UINT type =  MB_OK | MB_ICONEXCLAMATION | (IsUIRightToLeft() ? MB_RTLREADING : 0);
-    if (!title)
-        title = _TR("Warning");
-    MessageBox(hwnd, msg, title, type);
-}
-
 static DWORD ShowAutoUpdateDialog(HWND hParent, HttpReq *ctx, bool silent)
 {
     if (ctx->error)
@@ -2668,7 +2675,7 @@ void OnMenuExit()
     for (size_t i = 0; i < gWindows.Count(); i++) {
         WindowInfo *win = gWindows.At(i);
         if (win->printThread && !win->printCanceled) {
-            int res = MessageBox(win->hwndFrame, _TR("Printing is still in progress. Abort and quit?"), _TR("Printing in progress."), MB_ICONEXCLAMATION | MB_YESNO | (IsUIRightToLeft() ? MB_RTLREADING : 0));
+            int res = MessageBox(win->hwndFrame, _TR("Printing is still in progress. Abort and quit?"), _TR("Printing in progress."), MB_ICONEXCLAMATION | MB_YESNO | MbRtlReadingMaybe());
             if (IDNO == res)
                 return;
         }
@@ -2768,7 +2775,7 @@ void CloseWindow(WindowInfo *win, bool quitIfLast, bool forceClose)
         return;
 
     if (win->printThread && !win->printCanceled) {
-        int res = MessageBox(win->hwndFrame, _TR("Printing is still in progress. Abort and quit?"), _TR("Printing in progress."), MB_ICONEXCLAMATION | MB_YESNO | (IsUIRightToLeft() ? MB_RTLREADING : 0));
+        int res = MessageBox(win->hwndFrame, _TR("Printing is still in progress. Abort and quit?"), _TR("Printing in progress."), MB_ICONEXCLAMATION | MB_YESNO | MbRtlReadingMaybe());
         if (IDNO == res)
             return;
     }
@@ -2945,12 +2952,10 @@ static void OnMenuSaveAs(WindowInfo& win)
     else if (!file::Exists(srcFileName)) {
         ok = win.dm->engine->SaveFileAs(realDstFileName);
     }
-#ifdef DEBUG
     // ... as well as files containing annotations ...
     else if (win.dm->engine->SupportsAnnotation(true)) {
         ok = win.dm->engine->SaveFileAs(realDstFileName);
     }
-#endif
     // ... else just copy the file
     else if (!path::IsSame(srcFileName, realDstFileName)) {
         WCHAR *msgBuf;
@@ -2967,12 +2972,8 @@ static void OnMenuSaveAs(WindowInfo& win)
         }
     }
     if (ok && win.userAnnots && win.userAnnotsModified) {
-#ifdef DEBUG
         if (!win.dm->engine->SupportsAnnotation(true))
-#endif
-        {
             ok = SaveFileModifictions(realDstFileName, win.userAnnots);
-        }
         if (ok && path::IsSame(srcFileName, realDstFileName))
             win.userAnnotsModified = false;
     }
@@ -5557,7 +5558,7 @@ void CrashHandlerMessage()
     // to fix the unexpected behavior (of which for a restricted set of documents
     // there should be much less, anyway)
     if (HasPermission(Perm_DiskAccess)) {
-        int res = MessageBox(NULL, _TR("Sorry, that shouldn't have happened!\n\nPlease press 'Cancel', if you want to help us fix the cause of this crash."), _TR("SumatraPDF crashed"), MB_ICONERROR | MB_OKCANCEL | (IsUIRightToLeft() ? MB_RTLREADING : 0));
+        int res = MessageBox(NULL, _TR("Sorry, that shouldn't have happened!\n\nPlease press 'Cancel', if you want to help us fix the cause of this crash."), _TR("SumatraPDF crashed"), MB_ICONERROR | MB_OKCANCEL | MbRtlReadingMaybe());
         if (IDCANCEL == res)
             LaunchBrowser(CRASH_REPORT_URL);
     }
