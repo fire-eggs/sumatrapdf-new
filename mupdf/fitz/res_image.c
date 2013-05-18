@@ -143,7 +143,7 @@ fz_unblend_masked_tile(fz_context *ctx, fz_pixmap *tile, fz_image *image)
 		if (!*s)
 			continue;
 		for (k = 0; k < image->n; k++)
-			d[k] = image->colorkey[k] + (d[k] - image->colorkey[k]) * 255 / *s;
+			d[k] = fz_clampi(image->colorkey[k] + (d[k] - image->colorkey[k]) * 255 / *s, 0, 255);
 	}
 
 	fz_drop_pixmap(ctx, mask);
@@ -397,7 +397,7 @@ fz_image_get_pixmap(fz_context *ctx, fz_image *image, int w, int h)
 		tile = fz_decomp_image_from_stream(ctx, stm, image, 0, indexed, l2factor, native_l2factor);
 
 		/* cf. http://code.google.com/p/sumatrapdf/issues/detail?id=2250 */
-		if (image->from_xps && image->buffer->params.type == FZ_IMAGE_JPEG && image->colorspace == fz_device_cmyk && image->buffer->params.u.jpeg.color_transform)
+		if (image->from_xps && image->buffer->params.type == FZ_IMAGE_JPEG && image->colorspace == fz_device_cmyk(ctx) && image->buffer->params.u.jpeg.color_transform)
 			fz_invert_pixmap(ctx, tile);
 
 		break;
