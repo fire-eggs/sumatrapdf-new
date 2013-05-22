@@ -14,8 +14,6 @@
 using namespace Gdiplus;
 #include "GdiPlusUtil.h"
 
-#pragma comment(lib, "urlmon")
-
 // An important (to Sumatra) use case is displaying CHM documents. First we used
 // IE's built-in support form CHM documents (using its: protocol http://msdn.microsoft.com/en-us/library/aa164814(v=office.10).aspx).
 // However, that doesn't work for CHM documents from network drives (http://code.google.com/p/sumatrapdf/issues/detail?id=1706)
@@ -194,29 +192,6 @@ static void FreeWindowId(int windowId)
 // {F1EC293F-DBBD-4A4B-94F4-FA52BA0BA6EE}
 static const GUID CLSID_HW_IInternetProtocol = { 0xf1ec293f, 0xdbbd, 0x4a4b, { 0x94, 0xf4, 0xfa, 0x52, 0xba, 0xb, 0xa6, 0xee } };
 
-/* TODO: can I implement AddRef()/Release() in all classes below just by
-   inheriting this "mixin" ? */
-/*
-class ComRefCounted {
-    LONG refCount;
-    ComRefCounted() {
-        refCount = 1;
-    }
-    ULONG STDMETHODCALLTYPE AddRef() { return InterlockedIncrement(&refCount); }
-    ULONG STDMETHODCALLTYPE Release();
-};
-
-ULONG STDMETHODCALLTYPE ComRefCounted::Release()
-{
-    LONG res = InterlockedDecrement(&refCount);
-    CrashIf(res < 0);
-    if (0 == res) {
-        delete this;
-    }
-    return res;
-}
-*/
-
 class HW_IInternetProtocolInfo : public IInternetProtocolInfo
 {
 public:
@@ -256,23 +231,18 @@ ULONG STDMETHODCALLTYPE HW_IInternetProtocolInfo::Release()
 {
     LONG res = InterlockedDecrement(&refCount);
     CrashIf(res < 0);
-    if (0 == res) {
+    if (0 == res)
         delete this;
-    }
     return res;
 }
 
-STDMETHODIMP HW_IInternetProtocolInfo::QueryInterface(REFIID riid, void **ppvObject)
+STDMETHODIMP HW_IInternetProtocolInfo::QueryInterface(REFIID riid, void **ppv)
 {
-    *ppvObject = NULL;
-    if (riid == IID_IUnknown)
-        *ppvObject = this;
-    else if (riid == IID_IInternetProtocolInfo)
-        *ppvObject = this;
-    if (*ppvObject == NULL)
-        return E_NOINTERFACE;
-    AddRef();
-    return S_OK;
+    static const QITAB qit[] = {
+        QITABENT(HW_IInternetProtocolInfo, IInternetProtocolInfo),
+        { 0 }
+    };
+    return QISearch(this, qit, riid, ppv);
 }
 
 class HW_IInternetProtocol :public IInternetProtocol
@@ -319,23 +289,19 @@ ULONG STDMETHODCALLTYPE HW_IInternetProtocol::Release()
 {
     LONG res = InterlockedDecrement(&refCount);
     CrashIf(res < 0);
-    if (0 == res) {
+    if (0 == res)
         delete this;
-    }
     return res;
 }
 
-STDMETHODIMP HW_IInternetProtocol::QueryInterface(REFIID riid, void **ppvObject)
+STDMETHODIMP HW_IInternetProtocol::QueryInterface(REFIID riid, void **ppv)
 {
-    *ppvObject = NULL;
-    if (riid == IID_IUnknown)
-        *ppvObject = this;
-    else if (riid == IID_IInternetProtocol)
-        *ppvObject = this;
-    if (*ppvObject == NULL)
-        return E_NOINTERFACE;
-    AddRef();
-    return S_OK;
+    static const QITAB qit[] = {
+        QITABENT(HW_IInternetProtocol, IInternetProtocol),
+        QITABENT(HW_IInternetProtocol, IInternetProtocolRoot),
+        { 0 }
+    };
+    return QISearch(this, qit, riid, ppv);
 }
 
 // given url in the form "its://$htmlWindowId/$urlRest, parses
@@ -363,9 +329,9 @@ static WCHAR *MimeFromUrl(const WCHAR *url, const WCHAR *imgExt=NULL)
         return MimeFromUrl(newUrl, imgExt);
     }
 
-    static struct {
-        WCHAR *ext;
-        WCHAR *mimetype;
+    static const struct {
+        const WCHAR *ext;
+        const WCHAR *mimetype;
     } mimeTypes[] = {
         { L".html",  L"text/html" },
         { L".htm",   L"text/html" },
@@ -494,23 +460,18 @@ STDMETHODIMP_(ULONG) HW_IInternetProtocolFactory::Release()
 {
     LONG res = InterlockedDecrement(&refCount);
     CrashIf(res < 0);
-    if (0 == res) {
+    if (0 == res)
         delete this;
-    }
     return res;
 }
 
-STDMETHODIMP HW_IInternetProtocolFactory::QueryInterface(REFIID riid, void **ppvObject)
+STDMETHODIMP HW_IInternetProtocolFactory::QueryInterface(REFIID riid, void **ppv)
 {
-    *ppvObject = NULL;
-    if (riid == IID_IUnknown)
-        *ppvObject = this;
-    else if (riid == IID_IClassFactory)
-        *ppvObject = this;
-    if (*ppvObject == NULL)
-        return E_NOINTERFACE;
-    AddRef();
-    return S_OK;
+    static const QITAB qit[] = {
+        QITABENT(HW_IInternetProtocolFactory, IClassFactory),
+        { 0 }
+    };
+    return QISearch(this, qit, riid, ppv);
 }
 
 STDMETHODIMP HW_IInternetProtocolFactory::CreateInstance(IUnknown *pUnkOuter, REFIID riid, void **ppvObject)
@@ -973,17 +934,15 @@ STDMETHODIMP HtmlMoniker::ParseDisplayName(IBindCtx *pbc, IMoniker *pmkToLeft,
     return E_NOTIMPL;
 }
 
-STDMETHODIMP HtmlMoniker::QueryInterface(REFIID riid, void **ppvObject)
+STDMETHODIMP HtmlMoniker::QueryInterface(REFIID riid, void **ppv)
 {
-    *ppvObject = NULL;
-    if (riid == IID_IUnknown)
-        *ppvObject = this;
-    else if (riid == IID_IMoniker)
-        *ppvObject = this;
-    if (*ppvObject == NULL)
-        return E_NOINTERFACE;
-    AddRef();
-    return S_OK;
+    static const QITAB qit[] = {
+        QITABENT(HtmlMoniker, IMoniker),
+        QITABENT(HtmlMoniker, IPersistStream),
+        QITABENT(HtmlMoniker, IPersist),
+        { 0 }
+    };
+    return QISearch(this, qit, riid, ppv);
 }
 
 ULONG STDMETHODCALLTYPE HtmlMoniker::AddRef()
@@ -995,9 +954,8 @@ ULONG STDMETHODCALLTYPE HtmlMoniker::Release()
 {
     LONG res = InterlockedDecrement(&refCount);
     CrashIf(res < 0);
-    if (0 == res) {
+    if (0 == res)
         delete this;
-    }
     return res;
 }
 
@@ -1082,9 +1040,9 @@ bool HtmlWindow::CreateBrowser()
     HRESULT hr;
     ScopedComPtr<IUnknown> p;
     if (!p.Create(CLSID_WebBrowser)) return false;
-    hr = p->QueryInterface(IID_IViewObject, (void**)&viewObject);
+    hr = p->QueryInterface(&viewObject);
     if (FAILED(hr)) return false;
-    hr = p->QueryInterface(IID_IOleObject, (void**)&oleObject);
+    hr = p->QueryInterface(&oleObject);
     if (FAILED(hr)) return false;
 
     FrameSite *fs = new FrameSite(this);
@@ -1104,7 +1062,7 @@ bool HtmlWindow::CreateBrowser()
         assert(SUCCEEDED(hr));
     }
 
-    hr = p->QueryInterface(IID_IOleInPlaceObject, (void**)&oleInPlaceObject);
+    hr = p->QueryInterface(&oleInPlaceObject);
     if (FAILED(hr)) return false;
     hr = oleInPlaceObject->GetWindow(&oleObjectHwnd);
     if (FAILED(hr)) return false;
@@ -1125,7 +1083,7 @@ bool HtmlWindow::CreateBrowser()
     if (!setClientSiteFirst)
         oleObject->SetClientSite(fs->oleClientSite);
 
-    hr = p->QueryInterface(IID_IWebBrowser2, (void**)&webBrowser);
+    hr = p->QueryInterface(&webBrowser);
     if (FAILED(hr)) return false;
 
     ScopedComQIPtr<IConnectionPointContainer> cpContainer(p);
@@ -1532,9 +1490,10 @@ STDMETHODIMP FrameSite::QueryInterface(REFIID riid, void **ppv)
         *ppv = docHostUIHandler;
     else if (riid == IID_IDropTarget)
         *ppv = dropTarget;
-
-    if (*ppv == NULL)
+    else
         return E_NOINTERFACE;
+    if (!*ppv)
+        return E_OUTOFMEMORY;
     AddRef();
     return S_OK;
 }
@@ -1543,9 +1502,8 @@ ULONG STDMETHODCALLTYPE FrameSite::Release()
 {
     LONG res = InterlockedDecrement(&refCount);
     CrashIf(res < 0);
-    if (0 == res) {
+    if (0 == res)
         delete this;
-    }
     return res;
 }
 

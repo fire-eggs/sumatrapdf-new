@@ -96,33 +96,16 @@ SumatraUIAutomationPageProvider* SumatraUIAutomationDocumentProvider::GetLastPag
     return child_last;
 }
 
-HRESULT STDMETHODCALLTYPE SumatraUIAutomationDocumentProvider::QueryInterface(const IID &iid,void **ppvObject)
+HRESULT STDMETHODCALLTYPE SumatraUIAutomationDocumentProvider::QueryInterface(REFIID riid, void **ppv)
 {
-    if (ppvObject == NULL)
-        return E_POINTER;
-
-    // TODO: per http://blogs.msdn.com/b/oldnewthing/archive/2004/03/26/96777.aspx should
-    // respond to IUnknown
-    if (iid == __uuidof(IRawElementProviderFragment)) {
-        *ppvObject = static_cast<IRawElementProviderFragment*>(this);
-        this->AddRef(); //New copy has entered the universe
-        return S_OK;
-    } else if (iid == __uuidof(IRawElementProviderSimple)) {
-        *ppvObject = static_cast<IRawElementProviderSimple*>(this);
-        this->AddRef(); //New copy has entered the universe
-        return S_OK;
-    } else if (iid == __uuidof(ITextProvider)) {
-        *ppvObject = static_cast<ITextProvider*>(this);
-        this->AddRef(); //New copy has entered the universe
-        return S_OK;
-    } else if (iid == IID_IAccIdentity) {
-        *ppvObject = static_cast<IAccIdentity*>(this);
-        this->AddRef(); //New copy has entered the universe
-        return S_OK;
-    }
-    
-    *ppvObject = NULL;
-    return E_NOINTERFACE;
+    static const QITAB qit[] = {
+        QITABENT(SumatraUIAutomationDocumentProvider, IRawElementProviderSimple),
+        QITABENT(SumatraUIAutomationDocumentProvider, IRawElementProviderFragment),
+        QITABENT(SumatraUIAutomationDocumentProvider, ITextProvider),
+        QITABENT(SumatraUIAutomationDocumentProvider, IAccIdentity),
+        { 0 }
+    };
+    return QISearch(this, qit, riid, ppv);
 }
 
 ULONG STDMETHODCALLTYPE SumatraUIAutomationDocumentProvider::AddRef(void)
@@ -134,9 +117,8 @@ ULONG STDMETHODCALLTYPE SumatraUIAutomationDocumentProvider::Release(void)
 {
     LONG res = InterlockedDecrement(&refCount);
     CrashIf(res < 0);
-    if (0 == res) {
+    if (0 == res)
         delete this;
-    }
     return res;
 }
 
@@ -231,7 +213,7 @@ HRESULT STDMETHODCALLTYPE SumatraUIAutomationDocumentProvider::GetPatternProvide
 
     if (patternId == UIA_TextPatternId) {
         *pRetVal = static_cast<ITextProvider*>(this);
-        this->AddRef(); //New copy has entered the universe
+        AddRef();
         return S_OK;
     }
 

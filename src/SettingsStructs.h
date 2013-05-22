@@ -477,7 +477,7 @@ static const FieldInfo gFILETIMEFields[] = {
 static const StructInfo gFILETIMEInfo = { sizeof(FILETIME), 2, gFILETIMEFields, "DwHighDateTime\0DwLowDateTime" };
 
 static const FieldInfo gGlobalPrefsFields[] = {
-    { (size_t)-1,                                      Type_Comment,    (intptr_t)"For documentation, see http://blog.kowalczyk.info/software/sumatrapdf/settings2.3.html"                    },
+    { (size_t)-1,                                      Type_Comment,    (intptr_t)"For documentation, see http://blog.kowalczyk.info/software/sumatrapdf/settings2.4.html"                    },
     { (size_t)-1,                                      Type_Comment,    NULL                                                                                                                  },
     { offsetof(GlobalPrefs, mainWindowBackground),     Type_Color,      0x80d4ffff                                                                                                            },
     { offsetof(GlobalPrefs, noDocBgColor),             Type_Color,      0x80999999                                                                                                            },

@@ -88,7 +88,7 @@ def htmlize_error_lines(lines, ver):
 		if l.startswith("src\\"):     sumatra_errors.append(s)
 		elif l.startswith("mupdf\\"): mupdf_errors.append(s)
 		elif l.startswith("ext\\"):   ext_errors.append(s)
-		else: assert(False)
+		else: ext_errors.append(s) # everything else we don't recognize, like errors in system includes
 	return (sumatra_errors, mupdf_errors, ext_errors)
 
 def stats_for_previous_successful_build(ver, stats_for_ver):
@@ -212,8 +212,10 @@ def rebuild_trans_src_path_cache():
 # i.e. given "src\doc.h" we need to return "src\Doc.h"
 def trans_src_path(s):
 	if s not in g_src_trans_map:
-		print("%s not in g_src_trans_map" % s)
-		print(g_src_trans_map.keys())
+		#print("%s not in g_src_trans_map" % s)
+		#print(g_src_trans_map.keys())
+		# can happen for system includes e.g. objbase.h
+		return s
 	return g_src_trans_map[s]
 
 # Turn:
