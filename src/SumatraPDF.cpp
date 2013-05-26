@@ -2025,9 +2025,9 @@ static void DebugShowLinks(DisplayModel& dm, HDC hdc)
 // cf. http://forums.fofou.org/sumatrapdf/topic?id=3183580
 static void GetGradientColor(COLORREF a, COLORREF b, float perc, TRIVERTEX *tv)
 {
-    tv->Red = (COLOR16)((GetRValue(a) + perc * (GetRValue(b) - GetRValue(a))) * 256);
-    tv->Green = (COLOR16)((GetGValue(a) + perc * (GetGValue(b) - GetGValue(a))) * 256);
-    tv->Blue = (COLOR16)((GetBValue(a) + perc * (GetBValue(b) - GetBValue(a))) * 256);
+    tv->Red = (COLOR16)((GetRValueSafe(a) + perc * (GetRValueSafe(b) - GetRValueSafe(a))) * 256);
+    tv->Green = (COLOR16)((GetGValueSafe(a) + perc * (GetGValueSafe(b) - GetGValueSafe(a))) * 256);
+    tv->Blue = (COLOR16)((GetBValueSafe(a) + perc * (GetBValueSafe(b) - GetBValueSafe(a))) * 256);
 }
 
 static void DrawDocument(WindowInfo& win, HDC hdc, RECT *rcArea)
@@ -2055,9 +2055,9 @@ static void DrawDocument(WindowInfo& win, HDC hdc, RECT *rcArea)
         }
         else if (gGlobalPrefs->fixedPageUI.gradientColors->Count() == 2) {
             colors[2] = gGlobalPrefs->fixedPageUI.gradientColors->At(1);
-            colors[1] = RGB((GetRValue(colors[0]) + GetRValue(colors[2])) / 2,
-                            (GetGValue(colors[0]) + GetGValue(colors[2])) / 2,
-                            (GetBValue(colors[0]) + GetBValue(colors[2])) / 2);
+            colors[1] = RGB((GetRValueSafe(colors[0]) + GetRValueSafe(colors[2])) / 2,
+                            (GetGValueSafe(colors[0]) + GetGValueSafe(colors[2])) / 2,
+                            (GetBValueSafe(colors[0]) + GetBValueSafe(colors[2])) / 2);
         }
         else {
             colors[1] = gGlobalPrefs->fixedPageUI.gradientColors->At(1);
@@ -2758,8 +2758,11 @@ static void OnMenuSaveAs(WindowInfo& win)
     if (!srcFileName) return;
 
     // Can't save a document's content as plain text if text copying isn't allowed
-    bool hasCopyPerm = !win.dm->engine->IsImageCollection() &&
-                       win.dm->engine->AllowsCopyingText();
+    bool hasCopyPerm = !win.dm->engine->IsImageCollection();
+#ifndef DISABLE_DOCUMENT_RESTRICTIONS
+    if (!win.dm->engine->AllowsCopyingText())
+        hasCopyPerm = false;
+#endif
     bool canConvertToPDF = Engine_PS == win.dm->engineType;
 
     const WCHAR *defExt = win.dm->engine->GetDefaultFileExt();
@@ -3331,7 +3334,7 @@ static void FrameOnSize(WindowInfo* win, int dx, int dy)
 
 void SetCurrentLanguageAndRefreshUi(const char *langCode)
 {
-    if (!langCode || (str::Eq(langCode, trans::GetCurrentLangCode())))
+    if (!langCode || str::Eq(langCode, trans::GetCurrentLangCode()))
         return;
     SetCurrentLang(langCode);
     UpdateRtlLayoutForAllWindows();
