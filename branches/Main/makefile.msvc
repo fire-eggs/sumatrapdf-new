@@ -155,7 +155,7 @@ MAIN_UI_LIB = $(O)\sumatra.lib
 
 UTILS_OBJS = \
 	$(OU)\BencUtil.obj $(OU)\FileUtil.obj $(OU)\HttpUtil.obj \
-	$(OU)\StrUtil.obj $(OU)\UtilTests.obj $(OU)\WinUtil.obj \
+	$(OU)\StrUtil.obj $(OU)\WinUtil.obj \
 	$(OU)\DialogSizer.obj $(OU)\FileTransactions.obj $(OU)\Touch.obj \
 	$(OU)\TrivialHtmlParser.obj $(OU)\HtmlWindow.obj $(OU)\GdiPlusUtil.obj \
 	$(OU)\DirIter.obj $(OU)\BitReader.obj $(OU)\HtmlPullParser.obj \
@@ -203,7 +203,7 @@ MAIN_UI_OBJS = \
 	$(OS)\SumatraDialogs.obj $(OS)\SumatraProperties.obj \
 	$(OS)\PdfSync.obj $(OS)\RenderCache.obj $(OS)\TextSelection.obj \
 	$(OS)\WindowInfo.obj $(OS)\ParseCommandLine.obj $(OS)\StressTesting.obj \
-	$(OS)\UnitTests.obj $(OS)\AppTools.obj $(OS)\Tab.obj $(OS)\TableOfContents.obj \
+	$(OS)\AppTools.obj $(OS)\Tab.obj $(OS)\TableOfContents.obj \
 	$(OS)\Toolbar.obj $(OS)\Print.obj $(OS)\Notifications.obj $(OS)\Selection.obj \
 	$(OS)\Search.obj $(OS)\Menu.obj $(OS)\ExternalPdfViewer.obj \
 	$(OS)\Selection.obj $(OS)\FileModifications.obj $(OS)\Sidebar.obj \
@@ -212,7 +212,7 @@ MAIN_UI_OBJS = \
 	$(OS)\Tester.obj $(OS)\Regress.obj \
 	$(OS)\Translations.obj $(OS)\Trans_sumatra_txt.obj \
 	$(UIA_OBJS)
-	
+
 SUMATRA_OBJS = \
 	$(OS)\SumatraPDF.obj $(SUMATRA_RES) $(MAIN_UI_LIB) \
 	$(ENGINES_LIB) $(UTILS_LIB) $(MUI_LIB) $(SYNCTEX_OBJS) $(LZSA_OBJS)

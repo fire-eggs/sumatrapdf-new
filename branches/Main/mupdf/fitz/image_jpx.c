@@ -1,6 +1,13 @@
 #include "fitz-internal.h"
 
+/* Without the definition of OPJ_STATIC, compilation fails on windows
+ * due to the use of __stdcall. We believe it is required on some
+ * linux toolchains too. */
 #define OPJ_STATIC
+#ifndef _WIN32
+#define OPJ_HAVE_STDINT_H
+#endif
+
 #include <openjpeg.h>
 
 static void fz_opj_error_callback(const char *msg, void *client_data)
@@ -75,7 +82,7 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 	opj_stream_t *stream;
 	fz_colorspace *colorspace;
 	unsigned char *p;
-	int format;
+	OPJ_CODEC_FORMAT format;
 	int a, n, w, h, depth, sgnd;
 	int x, y, k, v;
 	stream_block sb;
@@ -99,6 +106,7 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 	opj_set_error_handler(codec, fz_opj_error_callback, ctx);
 	if (!opj_setup_decoder(codec, &params))
 	{
+		opj_destroy_codec(codec);
 		fz_throw(ctx, "j2k decode failed");
 	}
 
@@ -111,7 +119,8 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 	opj_stream_set_skip_function(stream, stream_skip);
 	opj_stream_set_seek_function(stream, stream_seek);
 	opj_stream_set_user_data(stream, &sb);
-	opj_stream_set_user_data_length(stream, size); // pointless!?!
+	/* Set the length to avoid an assert */
+	opj_stream_set_user_data_length(stream, size);
 
 	if (!opj_read_header(stream, codec, &jpx))
 	{
@@ -130,6 +139,10 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 
 	opj_stream_destroy(stream);
 	opj_destroy_codec(codec);
+
+	/* jpx should never be NULL here, but check anyway */
+	if (!jpx)
+		fz_throw(ctx, "opj_decode failed");
 
 	for (k = 1; k < (int)jpx->numcomps; k++)
 	{
