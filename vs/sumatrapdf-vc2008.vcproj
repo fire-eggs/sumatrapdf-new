@@ -119,10 +119,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\src\utils\CssParser_ut.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\src\utils\HtmlParserLookup.cpp"
 					>
 				</File>
@@ -147,19 +143,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\src\utils\HtmlPullParser_ut.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\src\utils\JsonParser.cpp"
 					>
 				</File>
 				<File
 					RelativePath="..\src\utils\JsonParser.h"
-					>
-				</File>
-				<File
-					RelativePath="..\src\utils\JsonParser_ut.cpp"
 					>
 				</File>
 				<File
@@ -192,10 +180,6 @@
 				</File>
 				<File
 					RelativePath="..\src\utils\TrivialHtmlParser.h"
-					>
-				</File>
-				<File
-					RelativePath="..\src\utils\TrivialHtmlParser_ut.cpp"
 					>
 				</File>
 				<File
@@ -335,10 +319,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\src\utils\StrFormat_ut.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\src\utils\StrHash.h"
 					>
 				</File>
@@ -348,10 +328,6 @@
 				</File>
 				<File
 					RelativePath="..\src\utils\VarintGob.h"
-					>
-				</File>
-				<File
-					RelativePath="..\src\utils\VarintGob_ut.cpp"
 					>
 				</File>
 			</Filter>
@@ -376,10 +352,6 @@
 				</File>
 				<File
 					RelativePath="..\src\utils\ByteOrderDecoder.h"
-					>
-				</File>
-				<File
-					RelativePath="..\src\utils\ByteOrderDecoder_ut.cpp"
 					>
 				</File>
 				<File
@@ -411,10 +383,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\src\utils\Dict_ut.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\src\utils\DirIter.cpp"
 					>
 				</File>
@@ -431,10 +399,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\src\utils\Sigslot_ut.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\src\utils\SimpleLog.h"
 					>
 				</File>
@@ -448,6 +412,14 @@
 				</File>
 				<File
 					RelativePath="..\src\utils\Timer.h"
+					>
+				</File>
+				<File
+					RelativePath="..\src\utils\UtAssert.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\src\utils\UtAssert.h"
 					>
 				</File>
 				<File
@@ -615,19 +587,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\src\utils\StrUtil_ut.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\src\utils\UtilTests.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\src\utils\Vec.h"
-					>
-				</File>
-				<File
-					RelativePath="..\src\utils\Vec_ut.cpp"
 					>
 				</File>
 			</Filter>
@@ -640,10 +600,6 @@
 				</File>
 				<File
 					RelativePath="..\src\utils\BencUtil.h"
-					>
-				</File>
-				<File
-					RelativePath="..\src\utils\BencUtil_ut.cpp"
 					>
 				</File>
 				<File
@@ -663,19 +619,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\src\utils\SettingsUtil_ut.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\src\utils\SquareTreeParser.cpp"
 					>
 				</File>
 				<File
 					RelativePath="..\src\utils\SquareTreeParser.h"
-					>
-				</File>
-				<File
-					RelativePath="..\src\utils\SquareTreeParser_ut.cpp"
 					>
 				</File>
 				<File
@@ -1283,6 +1231,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\mupdf\fitz\dev_svg.c"
+					>
+				</File>
+				<File
 					RelativePath="..\mupdf\fitz\dev_trace.c"
 					>
 				</File>
@@ -1399,6 +1351,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\mupdf\fitz\res_pwg.c"
+					>
+				</File>
+				<File
 					RelativePath="..\mupdf\fitz\res_shade.c"
 					>
 				</File>
@@ -1444,14 +1400,6 @@
 				</File>
 				<File
 					RelativePath="..\mupdf\fitz\text_search.c"
-					>
-				</File>
-				<File
-					RelativePath="..\mupdf\fitz\dev_svg.c"
-					>
-				</File>
-				<File
-					RelativePath="..\mupdf\fitz\res_pwg.c"
 					>
 				</File>
 			</Filter>
