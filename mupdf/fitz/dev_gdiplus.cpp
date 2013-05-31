@@ -787,7 +787,7 @@ protected:
 		}
 		
 		fz_color_converter cc;
-		fz_find_color_converter(&cc, ctx, fz_device_gray(ctx), fz_device_rgb(ctx));
+		fz_lookup_color_converter(&cc, ctx, fz_device_gray(ctx), fz_device_rgb(ctx));
 		for (int row = 0; row < bounds.Height; row++)
 		{
 			LPBYTE Scan0 = (LPBYTE)data.Scan0 + row * data.Stride;
@@ -1126,33 +1126,33 @@ gdiplus_get_font(fz_device *dev, fz_font *font, float height, float *out_ascent)
 		collection = new PrivateFontCollection();
 		assert(collection->GetFamilyCount() == 0);
 		
-		/* cf. https://code.google.com/p/sumatrapdf/issues/detail?id=2311 and 
-		   https://code.google.com/p/sumatrapdf/issues/detail?id=2212 */
-		Status res = GenericError; // anything but Ok
-		if (font->ft_data && false)
+		Status status = Ok;
+		// cf. https://code.google.com/p/sumatrapdf/issues/detail?id=2212
+		// and https://code.google.com/p/sumatrapdf/issues/detail?id=2311
+		if (font->ft_data && font->ft_size > 4 && memcmp(font->ft_data, "true", 4) != 0)
 		{
-			if (false) {
-				// TODO: memory fonts seem to get substituted in release builds
-				res = collection->AddMemoryFont(font->ft_data, font->ft_size);
-			} else {
-				user->tempFiles = new TempFile(font->ft_data, font->ft_size, user->tempFiles);
-				if (*user->tempFiles->path)
-					res = collection->AddFontFile(user->tempFiles->path);
-			}
+#if 0
+			// TODO: memory fonts seem to get substituted in release builds
+			status = collection->AddMemoryFont(font->ft_data, font->ft_size);
+#else
+			user->tempFiles = new TempFile(font->ft_data, font->ft_size, user->tempFiles);
+			if (*user->tempFiles->path)
+				status = collection->AddFontFile(user->tempFiles->path);
+#endif
 		}
 		else if (font->ft_file)
 		{
 			WCHAR fontPath[MAX_PATH];
 			MultiByteToWideChar(CP_UTF8, 0, font->ft_file, -1, fontPath, nelem(fontPath));
-			res = collection->AddFontFile(fontPath);
+			status = collection->AddFontFile(fontPath);
 		}
-
-		if (Ok != res)
+		assert(status == Ok || collection->GetFamilyCount() == 0);
+		// don't try to load the same font twice
+		if (status != Ok && collection->GetFamilyCount() > 0)
 		{
 			delete collection;
-			return NULL;
+			collection = new PrivateFontCollection();
 		}
-
 		fz_keep_font(dev->ctx, font);
 		fz_hash_insert(dev->ctx, user->fontCollections, &font, collection);
 	}
