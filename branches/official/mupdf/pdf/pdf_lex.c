@@ -370,7 +370,7 @@ lex_hex_string(fz_stream *f, pdf_lexbuf *lb)
 		case EOF:
 			goto end;
 		default:
-			fz_warn(f->ctx, "ignoring invalid character in hex string: '%c'", c);
+			fz_warn(f->ctx, "ignoring invalid character in hex string");
 		}
 	}
 end:
@@ -490,6 +490,7 @@ pdf_lex(fz_stream *f, pdf_lexbuf *buf)
 				return PDF_TOK_CLOSE_DICT;
 			}
 			fz_warn(f->ctx, "lexical error (unexpected '>')");
+			fz_unread_byte(f);
 			continue;
 		case '[':
 			return PDF_TOK_OPEN_ARRAY;
