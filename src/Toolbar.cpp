@@ -251,9 +251,10 @@ static LRESULT CALLBACK WndProcToolbar(HWND hwnd, UINT message, WPARAM wParam, L
         WindowInfo *win = FindWindowInfoByHwnd(hStatic);
         if ((win && win->toolBar()->hwndFindBg != hStatic && win->toolBar()->hwndPageBg != hStatic) || IsAppThemed())
         {
-            SetBkMode((HDC)wParam, TRANSPARENT);
-            SelectBrush((HDC)wParam, GetStockBrush(NULL_BRUSH));
-            return 0;
+            HDC hdc = (HDC)wParam;
+            SetTextColor(hdc, GetSysColor(COLOR_WINDOWTEXT));
+            SetBkMode(hdc, TRANSPARENT);
+            return (LRESULT)GetStockBrush(NULL_BRUSH);
         }
     }
     if (WM_COMMAND == message) {
