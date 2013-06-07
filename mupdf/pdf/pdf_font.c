@@ -513,10 +513,12 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 	char ebuffer[256][32];
 	int i, k, n;
 	int fterr;
+	int has_lock = 0;
 	fz_context *ctx = xref->ctx;
 
 	fz_var(fontdesc);
 	fz_var(etable);
+	fz_var(has_lock);
 
 	basefont = pdf_to_name(pdf_dict_gets(dict, "BaseFont"));
 
@@ -671,6 +673,7 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 			etable[i] = ft_char_index(face, i);
 
 		fz_lock(ctx, FZ_LOCK_FREETYPE);
+		has_lock = 1;
 
 		/* built-in and substitute fonts may be a different type than what the document expects */
 		subtype = pdf_to_name(pdf_dict_gets(dict, "Subtype"));
@@ -810,6 +813,7 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 		}
 
 		fz_unlock(ctx, FZ_LOCK_FREETYPE);
+		has_lock = 0;
 
 		fontdesc->encoding = pdf_new_identity_cmap(ctx, 0, 1);
 		fontdesc->size += pdf_cmap_size(ctx, fontdesc->encoding);
@@ -858,6 +862,7 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 		else
 		{
 			fz_lock(ctx, FZ_LOCK_FREETYPE);
+			has_lock = 1;
 			fterr = FT_Set_Char_Size(face, 1000, 1000, 72, 72);
 			if (fterr)
 				fz_warn(ctx, "freetype set character size: %s", ft_error_string(fterr));
@@ -866,12 +871,15 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 				pdf_add_hmtx(ctx, fontdesc, i, i, ft_width(ctx, fontdesc, i));
 			}
 			fz_unlock(ctx, FZ_LOCK_FREETYPE);
+			has_lock = 0;
 		}
 
 		pdf_end_hmtx(ctx, fontdesc);
 	}
 	fz_catch(ctx)
 	{
+		if (has_lock)
+			fz_unlock(ctx, FZ_LOCK_FREETYPE);
 		if (fontdesc && etable != fontdesc->cid_to_gid)
 			fz_free(ctx, etable);
 		pdf_drop_font(ctx, fontdesc);
@@ -1011,6 +1019,9 @@ load_cid_font(pdf_document *xref, pdf_obj *dict, pdf_obj *encoding, pdf_obj *to_
 					fontdesc->to_ttf_cmap = pdf_load_system_cmap(ctx, "Adobe-Japan2-UCS2");
 				else if (!strcmp(collection, "Adobe-Korea1"))
 					fontdesc->to_ttf_cmap = pdf_load_system_cmap(ctx, "Adobe-Korea1-UCS2");
+				/* cf. http://code.google.com/p/sumatrapdf/issues/detail?id=2318 */
+				else if (!strcmp(collection, "Adobe-Identity") && fontdesc->font->ft_file)
+					fontdesc->font->ft_substitute = 0;
 			}
 		}
 
