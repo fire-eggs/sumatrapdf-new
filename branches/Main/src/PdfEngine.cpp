@@ -2,7 +2,7 @@
    License: GPLv3 */
 
 extern "C" {
-#include <mupdf/fitz.h>
+#include <fitz-internal.h>
 }
 
 #include "BaseUtil.h"
@@ -220,7 +220,7 @@ unsigned char *fz_extract_stream_data(fz_stream *stream, size_t *cbCount)
     fz_drop_buffer(stream->ctx, buffer);
 
     if (!data)
-        fz_throw(stream->ctx, FZ_ERROR_GENERIC, "OOM in fz_extract_stream_data");
+        fz_throw(stream->ctx, "OOM in fz_extract_stream_data");
     return data;
 }
 
@@ -332,7 +332,7 @@ extern "C" static int read_istream(fz_stream *stm, unsigned char *buf, int len)
     ULONG cbRead = len;
     HRESULT res = ((IStream *)stm->state)->Read(buf, len, &cbRead);
     if (FAILED(res))
-        fz_throw(stm->ctx, FZ_ERROR_GENERIC, "IStream read error: %x", res);
+        fz_throw(stm->ctx, "IStream read error: %x", res);
     return (int)cbRead;
 }
 
@@ -343,9 +343,9 @@ extern "C" static void seek_istream(fz_stream *stm, int offset, int whence)
     off.QuadPart = offset;
     HRESULT res = ((IStream *)stm->state)->Seek(off, whence, &n);
     if (FAILED(res))
-        fz_throw(stm->ctx, FZ_ERROR_GENERIC, "IStream seek error: %x", res);
+        fz_throw(stm->ctx, "IStream seek error: %x", res);
     if (n.HighPart != 0 || n.LowPart > INT_MAX)
-        fz_throw(stm->ctx, FZ_ERROR_GENERIC, "documents beyond 2GB aren't supported");
+        fz_throw(stm->ctx, "documents beyond 2GB aren't supported");
     stm->pos = n.LowPart;
     stm->rp = stm->wp = stm->bp;
 }
@@ -362,9 +362,9 @@ extern "C" static fz_stream *reopen_istream(fz_context *ctx, fz_stream *stm)
     ScopedComPtr<IStream> stream2;
     HRESULT res = ((IStream *)stm->state)->Clone(&stream2);
     if (E_NOTIMPL == res)
-        fz_throw(ctx, FZ_ERROR_GENERIC, "IStream doesn't support cloning");
+        fz_throw(ctx, "IStream doesn't support cloning");
     if (FAILED(res))
-        fz_throw(ctx, FZ_ERROR_GENERIC, "IStream clone error: %x", res);
+        fz_throw(ctx, "IStream clone error: %x", res);
     return fz_open_istream(ctx, stream2);
 }
 
@@ -376,7 +376,7 @@ fz_stream *fz_open_istream(fz_context *ctx, IStream *stream)
     LARGE_INTEGER zero = { 0 };
     HRESULT res = stream->Seek(zero, STREAM_SEEK_SET, NULL);
     if (FAILED(res))
-        fz_throw(ctx, FZ_ERROR_GENERIC, "IStream seek error: %x", res);
+        fz_throw(ctx, "IStream seek error: %x", res);
     stream->AddRef();
 
     fz_stream *stm = fz_new_stream(ctx, stream, read_istream, close_istream);
@@ -888,7 +888,7 @@ static void fz_run_page_transparency(Vec<PageAnnotation>& pageAnnots, fz_device 
 ///// PDF-specific extensions to Fitz/MuPDF /////
 
 extern "C" {
-#include <mupdf/pdf.h>
+#include <mupdf-internal.h>
 }
 
 namespace str {
@@ -904,14 +904,14 @@ inline WCHAR *FromPdf(pdf_obj *obj)
     }
 }
 
-pdf_obj *pdf_copy_str_dict(pdf_document *doc, pdf_obj *dict)
+pdf_obj *pdf_copy_str_dict(fz_context *ctx, pdf_obj *dict)
 {
-    pdf_obj *copy = pdf_copy_dict(dict);
+    pdf_obj *copy = pdf_copy_dict(ctx, dict);
     for (int i = 0; i < pdf_dict_len(copy); i++) {
         pdf_obj *val = pdf_dict_get_val(copy, i);
         // resolve all indirect references
         if (pdf_is_indirect(val)) {
-            pdf_obj *val2 = pdf_new_string(doc, pdf_to_str_buf(val), pdf_to_str_len(val));
+            pdf_obj *val2 = pdf_new_string(ctx, pdf_to_str_buf(val), pdf_to_str_len(val));
             pdf_dict_put(copy, pdf_dict_get_key(copy, i), val2);
             pdf_drop_obj(val2);
         }
@@ -920,9 +920,9 @@ pdf_obj *pdf_copy_str_dict(pdf_document *doc, pdf_obj *dict)
 }
 
 // Note: make sure to only call with ctxAccess
-fz_outline *pdf_loadattachments(pdf_document *doc)
+fz_outline *pdf_loadattachments(pdf_document *xref)
 {
-    pdf_obj *dict = pdf_load_name_tree(doc, "EmbeddedFiles");
+    pdf_obj *dict = pdf_load_name_tree(xref, "EmbeddedFiles");
     if (!dict)
         return NULL;
 
@@ -934,10 +934,10 @@ fz_outline *pdf_loadattachments(pdf_document *doc)
         if (!embedded)
             continue;
 
-        node = node->next = (fz_outline *)fz_malloc_struct(doc->ctx, fz_outline);
-        node->title = fz_strdup(doc->ctx, pdf_to_name(name));
+        node = node->next = (fz_outline *)fz_malloc_struct(xref->ctx, fz_outline);
+        node->title = fz_strdup(xref->ctx, pdf_to_name(name));
         node->dest.kind = FZ_LINK_LAUNCH;
-        node->dest.ld.launch.file_spec = pdf_file_spec_to_str(doc, dest);
+        node->dest.ld.launch.file_spec = pdf_file_spec_to_str(xref, dest);
         node->dest.ld.launch.new_window = 1;
         node->dest.ld.launch.embedded_num = pdf_to_num(embedded);
         node->dest.ld.launch.embedded_gen = pdf_to_gen(embedded);
@@ -986,10 +986,10 @@ WCHAR *FormatPageLabel(const char *type, int pageNo, const WCHAR *prefix)
 void BuildPageLabelRec(pdf_obj *node, int pageCount, Vec<PageLabelInfo>& data)
 {
     pdf_obj *obj;
-    if ((obj = pdf_dict_gets(node, "Kids")) != NULL && !pdf_mark_obj(node)) {
+    if ((obj = pdf_dict_gets(node, "Kids")) != NULL && !pdf_obj_mark(node)) {
         for (int i = 0; i < pdf_array_len(obj); i++)
             BuildPageLabelRec(pdf_array_get(obj, i), pageCount, data);
-        pdf_unmark_obj(node);
+        pdf_obj_unmark(node);
     }
     else if ((obj = pdf_dict_gets(node, "Nums")) != NULL) {
         for (int i = 0; i < pdf_array_len(obj); i += 2) {
@@ -1344,20 +1344,20 @@ PdfEngineImpl::~PdfEngineImpl()
         free(imageRects);
     }
 
+    pdf_close_document(_doc);
+    _doc = NULL;
+
     while (runCache.Count() > 0) {
         assert(runCache.Last()->refs == 1);
         DropPageRun(runCache.Last(), true);
     }
 
-    pdf_close_document(_doc);
-    _doc = NULL;
-    fz_free_context(ctx);
-    ctx = NULL;
-
     free(_mediaboxes);
     delete _pagelabels;
     free(_fileName);
     free(_decryptionKey);
+
+    fz_free_context(ctx);
 
     LeaveCriticalSection(&ctxAccess);
     DeleteCriticalSection(&ctxAccess);
@@ -1575,7 +1575,7 @@ bool PdfEngineImpl::LoadFromStream(fz_stream *stm, PasswordUI *pwdUI)
 bool PdfEngineImpl::FinishLoading()
 {
     fz_try(ctx) {
-        // this calls pdf_load_page_tree(_doc) which may throw
+        // this calls pdf_load_page_tree(xref) which may throw
         pdf_count_pages(_doc);
     }
     fz_catch(ctx) {
@@ -1618,18 +1618,18 @@ bool PdfEngineImpl::FinishLoading()
         // displaying document properties
         _info = pdf_dict_gets(pdf_trailer(_doc), "Info");
         if (_info)
-            _info = pdf_copy_str_dict(_doc, _info);
+            _info = pdf_copy_str_dict(ctx, _info);
         if (!_info)
-            _info = pdf_new_dict(_doc, 4);
+            _info = pdf_new_dict(ctx, 4);
         // also remember linearization and tagged states at this point
         if (IsLinearizedFile())
-            pdf_dict_puts_drop(_info, "Linearized", pdf_new_bool(_doc, 1));
+            pdf_dict_puts_drop(_info, "Linearized", pdf_new_bool(ctx, 1));
         if (pdf_to_bool(pdf_dict_getp(pdf_trailer(_doc), "Root/MarkInfo/Marked")))
-            pdf_dict_puts_drop(_info, "Marked", pdf_new_bool(_doc, 1));
+            pdf_dict_puts_drop(_info, "Marked", pdf_new_bool(ctx, 1));
         // also remember known output intents (PDF/X, etc.)
         pdf_obj *intents = pdf_dict_getp(pdf_trailer(_doc), "Root/OutputIntents");
         if (pdf_is_array(intents)) {
-            pdf_obj *list = pdf_new_array(_doc, pdf_array_len(intents));
+            pdf_obj *list = pdf_new_array(ctx, pdf_array_len(intents));
             for (int i = 0; i < pdf_array_len(intents); i++) {
                 pdf_obj *intent = pdf_dict_gets(pdf_array_get(intents, i), "S");
                 if (pdf_is_name(intent) && !pdf_is_indirect(intent) && str::StartsWith(pdf_to_name(intent), "GTS_PDF"))
@@ -1703,7 +1703,7 @@ PageDestination *PdfEngineImpl::GetNamedDest(const WCHAR *name)
     ScopedMem<char> name_utf8(str::conv::ToUtf8(name));
     pdf_obj *dest = NULL;
     fz_try(ctx) {
-        pdf_obj *nameobj = pdf_new_string(_doc, name_utf8, (int)str::Len(name_utf8));
+        pdf_obj *nameobj = pdf_new_string(ctx, name_utf8, (int)str::Len(name_utf8));
         dest = pdf_lookup_dest(_doc, nameobj);
         pdf_drop_obj(nameobj);
     }
@@ -1833,7 +1833,7 @@ PdfPageRun *PdfEngineImpl::GetPageRun(pdf_page *page, bool tryOnly)
             pdf_run_page(_doc, page, dev, &fz_identity, NULL);
         }
         fz_catch(ctx) {
-            fz_drop_display_list(ctx, list);
+            fz_free_display_list(ctx, list);
             list = NULL;
         }
         fz_free_device(dev);
@@ -1863,13 +1863,10 @@ bool PdfEngineImpl::RunPage(pdf_page *page, fz_device *dev, const fz_matrix *ctm
         EnterCriticalSection(&ctxAccess);
         Vec<PageAnnotation> pageAnnots = fz_get_user_page_annots(userAnnots, GetPageNo(page));
         fz_try(ctx) {
-            fz_rect pagerect;
-            fz_begin_page(dev, pdf_bound_page(_doc, page, &pagerect), ctm);
             fz_run_page_transparency(pageAnnots, dev, cliprect, false, page->transparency);
             fz_run_display_list(run->list, dev, ctm, cliprect, cookie ? &cookie->cookie : NULL);
             fz_run_page_transparency(pageAnnots, dev, cliprect, true, page->transparency);
             fz_run_user_page_annots(pageAnnots, dev, ctm, cliprect, cookie ? &cookie->cookie : NULL);
-            fz_end_page(dev);
         }
         fz_catch(ctx) {
             ok = false;
@@ -1883,13 +1880,10 @@ bool PdfEngineImpl::RunPage(pdf_page *page, fz_device *dev, const fz_matrix *ctm
                            target == Target_Export ? "Export" : "View";
         Vec<PageAnnotation> pageAnnots = fz_get_user_page_annots(userAnnots, GetPageNo(page));
         fz_try(ctx) {
-            fz_rect pagerect;
-            fz_begin_page(dev, pdf_bound_page(_doc, page, &pagerect), ctm);
             fz_run_page_transparency(pageAnnots, dev, cliprect, false, page->transparency);
             pdf_run_page_with_usage(_doc, page, dev, ctm, targetName, cookie ? &cookie->cookie : NULL);
             fz_run_page_transparency(pageAnnots, dev, cliprect, true, page->transparency);
             fz_run_user_page_annots(pageAnnots, dev, ctm, cliprect, cookie ? &cookie->cookie : NULL);
-            fz_end_page(dev);
         }
         fz_catch(ctx) {
             ok = false;
@@ -1912,7 +1906,7 @@ void PdfEngineImpl::DropPageRun(PdfPageRun *run, bool forceRemove)
         runCache.Remove(run);
         if (0 == run->refs) {
             EnterCriticalSection(&ctxAccess);
-            fz_drop_display_list(ctx, run->list);
+            fz_free_display_list(ctx, run->list);
             LeaveCriticalSection(&ctxAccess);
             delete run;
         }
@@ -2361,7 +2355,7 @@ RenderedBitmap *PdfEngineImpl::GetPageImage(int pageNo, RectD rect, size_t image
     fz_pixmap *pixmap = NULL;
     fz_try(ctx) {
         fz_image *image = positions.At(imageIx).image;
-        pixmap = fz_new_pixmap_from_image(ctx, image, image->w, image->h);
+        pixmap = fz_image_to_pixmap(ctx, image, image->w, image->h);
     }
     fz_catch(ctx) {
         return NULL;
@@ -2385,8 +2379,9 @@ WCHAR *PdfEngineImpl::ExtractPageText(pdf_page *page, WCHAR *lineSep, RectI **co
 
     EnterCriticalSection(&ctxAccess);
     fz_try(ctx) {
+        fz_rect pagerect;
         sheet = fz_new_text_sheet(ctx);
-        text = fz_new_text_page(ctx);
+        text = fz_new_text_page(ctx, pdf_bound_page(_doc, page, &pagerect));
         dev = fz_new_text_device(ctx, sheet, text);
     }
     fz_catch(ctx) {
@@ -2490,9 +2485,9 @@ static void pdf_extract_fonts(pdf_obj *res, Vec<pdf_obj *>& fontList)
     for (int k = 0; k < pdf_dict_len(xobjs); k++) {
         pdf_obj *xobj = pdf_dict_get_val(xobjs, k);
         pdf_obj *xres = pdf_dict_gets(xobj, "Resources");
-        if (xobj && xres && !pdf_mark_obj(xobj)) {
+        if (xobj && xres && !pdf_obj_mark(xobj)) {
             pdf_extract_fonts(xres, fontList);
-            pdf_unmark_obj(xobj);
+            pdf_obj_unmark(xobj);
         }
     }
 }
@@ -2531,7 +2526,7 @@ WCHAR *PdfEngineImpl::ExtractFontList()
 
             name = pdf_to_name(pdf_dict_getsa(font2, "BaseFont", "Name"));
             if (str::IsEmpty(name))
-                fz_throw(ctx, FZ_ERROR_GENERIC, "ignoring font with empty name");
+                fz_throw(ctx, "ignoring font with empty name");
             embedded = false;
             pdf_obj *desc = pdf_dict_gets(font2, "FontDescriptor");
             if (desc && (pdf_dict_gets(desc, "FontFile") || pdf_dict_getsa(desc, "FontFile2", "FontFile3")))
@@ -2794,11 +2789,11 @@ static int pdf_file_update_add_annotation(pdf_document *doc, pdf_file_update_lis
         quad_tpl.Set(str::Format(obj_quad_tpl, r.x1, r.y1, r.x1, r.y0, r.x0, r.y1, r.x0, r.y0));
 
     fz_try(ctx) {
-        annot_obj = pdf_new_obj_from_str(doc, annot_tpl);
-        pdf_dict_puts_drop(annot_obj, "QuadPoints", pdf_new_obj_from_str(doc, quad_tpl));
+        annot_obj = pdf_new_obj_from_str(ctx, annot_tpl);
+        pdf_dict_puts_drop(annot_obj, "QuadPoints", pdf_new_obj_from_str(ctx, quad_tpl));
         if (!doc->crypt) {
             // create the appearance stream (unencrypted) and append it to the file
-            obj = pdf_new_obj_from_str(doc, annot_ap_dict);
+            obj = pdf_new_obj_from_str(ctx, annot_ap_dict);
             switch (annot.type) {
             case Annot_Highlight:
                 annot_ap_stream.Set(str::Format(ap_highlight, rgb[0], rgb[1], rgb[2], dx, dy));
@@ -2817,7 +2812,7 @@ static int pdf_file_update_add_annotation(pdf_document *doc, pdf_file_update_lis
                 pdf_dict_dels(pdf_dict_gets(obj, "Resources"), "ExtGState");
             if (rotation) {
                 fz_matrix rot;
-                pdf_dict_puts_drop(obj, "Matrix", pdf_new_matrix(doc, fz_rotate(&rot, rotation)));
+                pdf_dict_puts_drop(obj, "Matrix", pdf_new_matrix(ctx, fz_rotate(&rot, rotation)));
             }
             buf = fz_new_buffer(ctx, (int)str::Len(annot_ap_stream));
             memcpy(buf->data, annot_ap_stream, (buf->len = (int)str::Len(annot_ap_stream)));
@@ -2828,7 +2823,7 @@ static int pdf_file_update_add_annotation(pdf_document *doc, pdf_file_update_lis
             pdf_dict_dels(annot_obj, "AP");
         }
         // append a reference to the annotation to the page's /Annots entry
-        pdf_array_push_drop(annots, pdf_new_indirect(doc, next_num, 0));
+        pdf_array_push_drop(annots, pdf_new_indirect(ctx, next_num, 0, NULL));
         // append the annotation to the file
         pdf_file_update_append(list, annot_obj, next_num++, 0, NULL);
     }
@@ -2862,7 +2857,7 @@ bool PdfEngineImpl::SaveUserAnnots(const WCHAR *fileName)
     fz_var(list);
 
     fz_try(ctx) {
-        list = pdf_file_update_start_w(_doc, fileName, next_num + PageCount() * 2 + userAnnots.Count() * 2);
+        list = pdf_file_update_start_w(ctx, fileName, next_num + PageCount() * 2 + userAnnots.Count() * 2);
         for (int pageNo = 1; pageNo <= PageCount(); pageNo++) {
             // TODO: this will skip annotations for broken documents
             if (!GetPdfPage(pageNo) || !pdf_to_num(_doc->page_refs[pageNo-1])) {
@@ -2875,9 +2870,9 @@ bool PdfEngineImpl::SaveUserAnnots(const WCHAR *fileName)
             // get the page's /Annots array for appending
             pdf_obj *annots = pdf_dict_gets(_doc->page_objs[pageNo-1], "Annots");
             if (pdf_is_array(annots))
-                annots_new = pdf_copy_array(annots);
+                annots_new = pdf_copy_array(ctx, annots);
             else
-                annots_new = pdf_new_array(_doc, pageAnnots.Count());
+                annots_new = pdf_new_array(ctx, pageAnnots.Count());
             // append all annotations for the current page
             for (size_t i = 0; i < pageAnnots.Count(); i++) {
                 next_num = pdf_file_update_add_annotation(_doc, list,
@@ -2889,8 +2884,8 @@ bool PdfEngineImpl::SaveUserAnnots(const WCHAR *fileName)
             }
             else {
                 // make /Annots indirect for the current /Page
-                obj = pdf_copy_dict(_doc->page_objs[pageNo-1]);
-                pdf_dict_puts_drop(obj, "Annots", pdf_new_indirect(_doc, next_num, 0));
+                obj = pdf_copy_dict(ctx, _doc->page_objs[pageNo-1]);
+                pdf_dict_puts_drop(obj, "Annots", pdf_new_indirect(ctx, next_num, 0, NULL));
                 pdf_file_update_append(list, obj, pdf_to_num(_doc->page_refs[pageNo-1]), pdf_to_gen(_doc->page_refs[pageNo-1]), NULL);
                 pdf_drop_obj(obj);
                 obj = NULL;
@@ -3185,7 +3180,7 @@ PdfEngine *PdfEngine::CreateFromStream(IStream *stream, PasswordUI *pwdUI)
 ///// XpsEngine is also based on Fitz and shares quite some code with PdfEngine /////
 
 extern "C" {
-#include <mupdf/xps.h>
+#include <muxps-internal.h>
 }
 
 struct XpsPageRun {
@@ -3404,28 +3399,27 @@ XpsEngineImpl::~XpsEngineImpl()
         assert(_doc);
         free(_pages);
     }
-
     fz_free_outline(ctx, _outline);
-    xps_free_doc_props(ctx, _info);
-
+    free(_mediaboxes);
     if (imageRects) {
         for (int i = 0; i < PageCount(); i++)
             free(imageRects[i]);
         free(imageRects);
     }
 
+    xps_close_document(_doc);
+    _doc = NULL;
+
+    xps_free_doc_props(ctx, _info);
+
     while (runCache.Count() > 0) {
         assert(runCache.Last()->refs == 1);
         DropPageRun(runCache.Last(), true);
     }
 
-    xps_close_document(_doc);
-    _doc = NULL;
-    fz_free_context(ctx);
-    ctx = NULL;
-
-    free(_mediaboxes);
     free(_fileName);
+
+    fz_free_context(ctx);
 
     LeaveCriticalSection(&ctxAccess);
     DeleteCriticalSection(&ctxAccess);
@@ -3651,7 +3645,7 @@ XpsPageRun *XpsEngineImpl::GetPageRun(xps_page *page, bool tryOnly)
             xps_run_page(_doc, page, dev, &fz_identity, NULL);
         }
         fz_catch(ctx) {
-            fz_drop_display_list(ctx, list);
+            fz_free_display_list(ctx, list);
             list = NULL;
         }
         fz_free_device(dev);
@@ -3681,13 +3675,10 @@ bool XpsEngineImpl::RunPage(xps_page *page, fz_device *dev, const fz_matrix *ctm
         EnterCriticalSection(&ctxAccess);
         Vec<PageAnnotation> pageAnnots = fz_get_user_page_annots(userAnnots, GetPageNo(page));
         fz_try(ctx) {
-            fz_rect pagerect;
-            fz_begin_page(dev, xps_bound_page(_doc, page, &pagerect), ctm);
             fz_run_page_transparency(pageAnnots, dev, cliprect, false);
             fz_run_display_list(run->list, dev, ctm, cliprect, cookie ? &cookie->cookie : NULL);
             fz_run_page_transparency(pageAnnots, dev, cliprect, true);
             fz_run_user_page_annots(pageAnnots, dev, ctm, cliprect, cookie ? &cookie->cookie : NULL);
-            fz_end_page(dev);
         }
         fz_catch(ctx) {
             ok = false;
@@ -3699,13 +3690,10 @@ bool XpsEngineImpl::RunPage(xps_page *page, fz_device *dev, const fz_matrix *ctm
         ScopedCritSec scope(&ctxAccess);
         Vec<PageAnnotation> pageAnnots = fz_get_user_page_annots(userAnnots, GetPageNo(page));
         fz_try(ctx) {
-            fz_rect pagerect;
-            fz_begin_page(dev, xps_bound_page(_doc, page, &pagerect), ctm);
             fz_run_page_transparency(pageAnnots, dev, cliprect, false);
             xps_run_page(_doc, page, dev, ctm, cookie ? &cookie->cookie : NULL);
             fz_run_page_transparency(pageAnnots, dev, cliprect, true);
             fz_run_user_page_annots(pageAnnots, dev, ctm, cliprect, cookie ? &cookie->cookie : NULL);
-            fz_end_page(dev);
         }
         fz_catch(ctx) {
             ok = false;
@@ -3728,7 +3716,7 @@ void XpsEngineImpl::DropPageRun(XpsPageRun *run, bool forceRemove)
         runCache.Remove(run);
         if (0 == run->refs) {
             ScopedCritSec ctxScope(&ctxAccess);
-            fz_drop_display_list(ctx, run->list);
+            fz_free_display_list(ctx, run->list);
             delete run;
         }
     }
@@ -3957,8 +3945,9 @@ WCHAR *XpsEngineImpl::ExtractPageText(xps_page *page, WCHAR *lineSep, RectI **co
 
     EnterCriticalSection(&ctxAccess);
     fz_try(ctx) {
+        fz_rect pagerect;
         sheet = fz_new_text_sheet(ctx);
-        text = fz_new_text_page(ctx);
+        text = fz_new_text_page(ctx, xps_bound_page(_doc, page, &pagerect));
         dev = fz_new_text_device(ctx, sheet, text);
     }
     fz_catch(ctx) {
@@ -4181,7 +4170,7 @@ RenderedBitmap *XpsEngineImpl::GetPageImage(int pageNo, RectD rect, size_t image
     fz_pixmap *pixmap = NULL;
     fz_try(ctx) {
         fz_image *image = positions.At(imageIx).image;
-        pixmap = fz_new_pixmap_from_image(ctx, image, image->w, image->h);
+        pixmap = fz_image_to_pixmap(ctx, image, image->w, image->h);
     }
     fz_catch(ctx) {
         return NULL;
