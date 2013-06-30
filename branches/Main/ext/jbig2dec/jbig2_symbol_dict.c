@@ -780,7 +780,6 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
     int exflag = 0;
     int64_t limit = params->SDNUMINSYMS + params->SDNUMNEWSYMS;
     int32_t exrunlength;
-    /* SumatraPDF: prevent infinite loop */
     int zerolength = 0;
 
     while (i < limit) {
@@ -790,11 +789,10 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         code = jbig2_arith_int_decode(IAEX, as, &exrunlength);
       /* SumatraPDF: prevent infinite loop */
       zerolength = exrunlength > 0 ? 0 : zerolength + 1;
-      if (code || (exrunlength > limit - i) || (exrunlength < 0) || (zerolength > 4)) {
+      if (code || (exrunlength > limit - i) || exflag && (exrunlength > params->SDNUMEXSYMS - j) || (exrunlength < 0) || (zerolength > 4)) {
         if (code)
           jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
             "failed to decode exrunlength for exported symbols");
-        /* SumatraPDF: prevent infinite loop */
         else if (exrunlength <= 0)
           jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
             "runlength too small in export symbol table (%d <= 0)\n", exrunlength);
@@ -954,7 +952,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
         break;
       case 2:
       default:
-	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 	    "symbol dictionary specified invalid huffman table");
 	break;
     }
