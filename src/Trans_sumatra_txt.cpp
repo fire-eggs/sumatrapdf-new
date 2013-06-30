@@ -780,7 +780,7 @@ const char * gTranslations_am =
   "&\324\262\325\241\326\201\325\245\325\254 \325\247\325\273\325\250\0"\
   "\324\262\325\241\326\201\325\245\325\254...\tCtrl+O\0"\
   "&\324\270\325\266\325\277\326\200\325\241\325\266\326\204\325\266\325\245\326\200...\0"\
-  "&\324\263\325\241\325\262\325\277\325\266\325\241\325\242\325\241\325\274\325\250\0"\
+  "&\324\276\325\241\325\256\325\257\325\241\325\243\325\253\326\200\325\250\0"\
   "&\324\277\326\201\325\245\325\254 \325\247\325\273\325\250\0"\
   "\325\206\325\241\325\255\325\270\326\200\325\244 \325\247\325\273\325\250\t<-\0"\
   "&\325\217\325\272\325\245\325\254...\0"\
@@ -854,8 +854,8 @@ const char * gTranslations_am =
   "\324\262\325\245\325\274\325\266\325\245\325\254\0"\
   "\325\223\325\241&\325\257\325\245\325\254\tCtrl+Q\0"\
   "\0"\
-  "\324\263\326\200\325\245\326\204 \325\243\325\241\325\262\325\277\325\266\325\241\325\242\325\241\325\274\325\250\0"\
-  "\324\263\326\200\325\245\326\204 \325\243\325\241\325\262\325\277\325\266\325\241\325\242\325\241\325\274\325\250\325\235 %s-\325\253 \325\260\325\241\325\264\325\241\326\200\0"\
+  "\324\263\326\200\325\245\325\254 \325\256\325\241\325\256\325\257\325\241\325\243\325\253\326\200\325\250\0"\
+  "\324\263\326\200\325\245\325\254 \325\256\325\241\325\256\325\257\325\241\325\243\325\253\326\200\325\250\325\235 %s-\325\253 \325\260\325\241\325\264\325\241\326\200\0"\
   "\325\204\325\270\326\202\325\277\326\204\325\241\325\243\326\200\325\245\326\204 \325\260\326\200\325\241\325\264\325\241\325\266, \325\270\326\200\325\250 \325\257\325\257\325\241\325\277\325\241\326\200\325\276\325\253 PDF \326\206\325\241\325\265\325\254\325\270\326\202\325\264 \325\264\325\257\325\266\325\253\325\257\325\253 \325\257\326\200\325\257\325\266\325\241\325\257\325\253 \325\275\325\245\325\262\325\264\325\241\325\266 \325\252\325\241\325\264\325\241\325\266\325\241\325\257.\0"\
   "\324\262\325\241\326\201\325\264\325\241\325\266 \325\275\325\255\325\241\325\254 %s\0"\
   "\324\270&\325\266\325\277\326\200\325\265\325\241\325\254\325\266\325\245\326\200\0"\
@@ -1242,7 +1242,7 @@ const char * gTranslations_az =
 const char * gTranslations_eu = 
   "&Honi buruz...\0"\
   "&Oraingo Neurria\tKtrl+1\0"\
-  "Au&kera Aurreratuak...\0"\
+  "A&ukera Aurreratuak...\0"\
   "&Hautatutako orrialde guztiak\0"\
   "A&tzera\tAlt+Ezker Gezia\0"\
   "&Liburu Ikuspegia\tKtrl+8\0"\
@@ -2712,7 +2712,7 @@ const char * gTranslations_cn =
 const char * gTranslations_tw = 
   "\351\227\234\346\226\274(&A)\0"\
   "\345\257\246\351\232\233\345\244\247\345\260\217(&U)\tCtrl+1\0"\
-  "\351\200\262\351\232\216\351\201\270\351\240\205...\0"\
+  "\0"\
   "\346\211\200\346\234\211\345\267\262\351\201\270\345\217\226\347\232\204\351\240\201\351\235\242(&A)\0"\
   "\344\270\212\344\270\200\345\201\234\351\240\223\351\240\201\351\235\242\tAlt+<-\0"\
   "\346\233\270\346\234\254\346\250\241\345\274\217(&B)\tCtrl+8\0"\
@@ -3202,7 +3202,7 @@ const char * gTranslations_hr =
 const char * gTranslations_cz = 
   "&O programu\0"\
   "Skute\304\215n\303\241 &velikost\tCtrl+1\0"\
-  "&Pokro\304\215il\303\251 mo\305\276nosti...\0"\
+  "\0"\
   "V\305\241e&chny vybran\303\251 str\303\241nky\0"\
   "Z&p\304\233t\tAlt+\305\240ipka vlevo\0"\
   "K&niha\tCtrl+8\0"\
@@ -3221,7 +3221,7 @@ const char * gTranslations_cz =
   "N\303\241p&ov\304\233da\0"\
   "Pos&ledn\303\255 str\303\241nka\tEnd\0"\
   "&Zv\304\233t\305\241en\303\255:\0"\
-  "&Manu\303\241l\0"\
+  "&P\305\231\303\255ru\304\215ka\0"\
   "&Rozli\305\241ovat velikost p\303\255smen\0"\
   "Dal\305\241\303\255 str\303\241&nka\t\305\240ipka vpravo\0"\
   "&Ne\0"\
@@ -3276,7 +3276,7 @@ const char * gTranslations_cz =
   "Storno\0"\
   "Tento soubor nelze vytisknout\0"\
   "P\305\231\303\255kaz inverzn\303\255 hled\303\241n\303\255 nelze spustit. Zkontrolujte nastaven\303\255 p\305\231\303\255kazov\303\251ho \305\231\303\241dku.\0"\
-  "Zm\304\233nit jazyk... (Language)\0"\
+  "Zm\304\233nit jazyk... (Change Language)\0"\
   "&Zkontrolovat aktualizace\0"\
   "Komiksy\0"\
   "Kompatibilita\0"\
@@ -3348,7 +3348,7 @@ const char * gTranslations_cz =
   "\0"\
   "Nastavit SumatraPDF jako v\303\275choz\303\255 prohl\303\255\305\276e\304\215 PDF soubor\305\257?\0"\
   "Nastavit SumatraPDF jako v\303\275choz\303\255 PDF prohl\303\255\305\276e\304\215\0"\
-  "Man&ga m\303\263d\0"\
+  "\0"\
   "Rozli\305\241ovat velikost p\303\255smen\0"\
   "Mobi dokumenty\0"\
   "Zm\304\233n\304\233no:\0"\
@@ -3447,7 +3447,7 @@ const char * gTranslations_cz =
 const char * gTranslations_dk = 
   "&Om\0"\
   "&Faktisk st\303\270rrelse\tCtrl+1\0"\
-  "&Avancerede valgmuligheder\0"\
+  "\0"\
   "&Alle valgte sider\0"\
   "&Tilbage\tAlt+<-\0"\
   "&Bogvisning\tCtrl+8\0"\
@@ -3593,7 +3593,7 @@ const char * gTranslations_dk =
   "Mb\0"\
   "G\303\270r SumatraPDF standardprogram for PDF-filer\0"\
   "G\303\270r SumatraPDF til min standard PDF-l\303\246ser\0"\
-  "Man&ga tilstand\0"\
+  "\0"\
   "Versalf\303\270lsom s\303\270gning\0"\
   "Mobi documenter\0"\
   "\303\206ndret:\0"\
@@ -3608,7 +3608,7 @@ const char * gTranslations_dk =
   "\303\205bn\0"\
   "\303\205ben med PDF-XChange\0"\
   "\303\205bn et dokument...\0"\
-  "\303\205ben o %s\0"\
+  "\0"\
   "\303\205bn med &Adobe Reader\0"\
   "\303\205ben med &Foxit Reader\0"\
   "\303\205bn med Microsoft HTML Help\0"\
@@ -5308,7 +5308,7 @@ const char * gTranslations_de =
   "\0"\
   "SumatraPDF als Standardanwendung f\303\274r PDF-Dateien registrieren?\0"\
   "Standardm\303\244\303\237ig PDF-Dateien mit SumatraPDF \303\266ffnen\0"\
-  "Lese&richtung umkehren\0"\
+  "\0"\
   "Gro\303\237-/Kleinschreibung beachten\0"\
   "Kindle E-B\303\274cher\0"\
   "Ge\303\244ndert am:\0"\
@@ -6966,7 +6966,7 @@ const char * gTranslations_it =
   "\0"\
   "Impossibile ottenere info propriet\303\240 stampante\0"\
   "Impossibile inizializzare la stampante\0"\
-  "Impossibile presentare la pagina\0"\
+  "Impossibile renderizzare la pagina\0"\
   "Data creazione:\0"\
   "File attuale\0"\
   "Ingrandimento personali&zzato\t<Ctrl>+Y\0"\
@@ -7283,7 +7283,7 @@ const char * gTranslations_ja =
   "\351\226\213\343\201\217\0"\
   "PDF-XChange \343\201\247\351\226\213\343\201\217(&I)\0"\
   "\343\203\211\343\202\255\343\203\245\343\203\241\343\203\263\343\203\210\343\202\222\351\226\213\343\201\217...\0"\
-  "%s \343\201\247\351\226\213\343\201\217\0"\
+  "\0"\
   "Adobe Reader \343\201\247\351\226\213\343\201\217(&A)\0"\
   "Foxit Reader \343\201\247\351\226\213\343\201\217(&F)\0"\
   "Microsoft HTML \343\203\230\343\203\253\343\203\227\343\201\247\351\226\213\343\201\217(&M)\0"\
@@ -9817,7 +9817,7 @@ const char * gTranslations_pt =
 const char * gTranslations_ro = 
   "&Despre\0"\
   "M\304\203rime &efectiv\304\203\tCtrl+1\0"\
-  "Op\310\233iuni &avansate...\0"\
+  "\0"\
   "Toate paginile selectate\0"\
   "\303\216napoi\tAlt+<-\0"\
   "Format carte\tCtrl+8\0"\
@@ -9963,7 +9963,7 @@ const char * gTranslations_ro =
   "\0"\
   "Seta\310\233i SumatraPDF ca program implicit pentru fi\310\231ierele PDF?\0"\
   "Seta\310\233i SumatraPDF ca cititor implicit de PDF\0"\
-  "Mod man&ga\0"\
+  "\0"\
   "Potrivire literele mari \310\231i mici\0"\
   "Documente Mobi\0"\
   "Modificat:\0"\
@@ -10797,7 +10797,7 @@ const char * gTranslations_sp_rs =
 const char * gTranslations_sk = 
   "&O programe...\0"\
   "&Skuto\304\215n\303\241 ve\304\276kos\305\245\tCtrl+1\0"\
-  "&Roz\305\241\303\255ren\303\251 mo\305\276nosti...\0"\
+  "\0"\
   "&Tla\304\215i\305\245 v\305\241etky strany\0"\
   "&Nasp\303\244\305\245\tAlt+Left Arrow\0"\
   "&Kniha\tCtrl+8\0"\
@@ -10858,7 +10858,7 @@ const char * gTranslations_sk =
   "Asociova\305\245 s PDF s\303\272bormi?\0"\
   "Pr\303\255loha: %s\0"\
   "Tvorca:\0"\
-  "Automaticky\0"\
+  "Automatick\303\241\0"\
   "Automaticky kontrolova\305\245 &aktualiz\303\241cie\0"\
   "Zobrazi\305\245 ako knihu\0"\
   "Z\303\241lo\305\276ky\tF12\0"\
@@ -10874,7 +10874,7 @@ const char * gTranslations_sk =
   "Zmeni\305\245 jazyk (Change Language)\0"\
   "&Skontrolova\305\245 nov\303\272 verziu\0"\
   "Komiksy\0"\
-  "Kompatibilita\0"\
+  "\0"\
   "Priebe\305\276ne\0"\
   "Priebe\305\276n\303\275 kni\305\276n\303\275 poh\304\276ad\0"\
   "Dve strany priebe\305\276ne\0"\
@@ -10890,7 +10890,7 @@ const char * gTranslations_sk =
   "Vytvoren\303\275:\0"\
   "Aktu\303\241lny s\303\272bor\0"\
   "Vlastn\303\241 &zmena ve\304\276kosti...\tCtrl+Y\0"\
-  "Predvolen\303\251 &zobrazenie:\0"\
+  "Predvolen\303\251 &umiestnenie:\0"\
   "Predvolen\303\241 &ve\304\276kos\305\245\0"\
   "Predvolen\303\275 prehliada\304\215 PDF dokumentov nem\303\264\305\276e by\305\245 zmenen\303\275, pokia\304\276 nie je nain\305\241talovan\303\275\0"\
   "Odmietnut\303\251 povolenia:\0"\
@@ -10907,11 +10907,11 @@ const char * gTranslations_sk =
   "D&opredu\tAlt+Right Arrow\0"\
   "&Na cel\303\272 obrazovku\tCtrl+Shift+L\0"\
   "Dve strany\0"\
-  "Premenovanie s\303\272boru bolo ne\303\272spe\305\241n\303\251!\0"\
-  "Ulo\305\276enie s\303\272boru bolo ne\303\272spe\305\241n\303\251\0"\
-  "R\303\275chle zobrazovanie z internetu\0"\
+  "S\303\272bor se nepodarilo premenova\305\245!\0"\
+  "Zlyhanie pri ukladan\303\255 s\303\272boru\0"\
+  "\0"\
   "Ob\304\276\303\272ben\303\251 polo\305\276ky\0"\
-  "FictionBook dokumenty\0"\
+  "\0"\
   "S\303\272bor %s nen\303\241jden\303\275\0"\
   "Ve\304\276kos\305\245 s\303\272boru:\0"\
   "S\303\272bor:\0"\
@@ -10943,7 +10943,7 @@ const char * gTranslations_sk =
   "\0"\
   "Nastavi\305\245 SumatraPDF ako predvolen\303\275 prehliada\304\215 PDF s\303\272borov?\0"\
   "Nastavi\305\245 SumatraPDF ako predvolen\303\275 PDF prehliada\304\215\0"\
-  "Man&ga m\303\263d\0"\
+  "\0"\
   "Rozli\305\241ova\305\245 ve\304\276k\303\251/mal\303\251 p\303\255smen\303\241\0"\
   "Mobi dokumenty\0"\
   "Upraven\303\251:\0"\
@@ -10958,7 +10958,7 @@ const char * gTranslations_sk =
   "Otvori\305\245\0"\
   "Otvori\305\245 v programe PDF-XChange\0"\
   "Otvori\305\245 dokument...\0"\
-  "Otvori\305\245 v %s\0"\
+  "\0"\
   "Otvori\305\245 v programe &Adobe Reader\0"\
   "Otvori\305\245 v programe &Foxit Reader\0"\
   "Otvori\305\245 v programe Microsoft HTML Help\0"\
@@ -10966,7 +10966,7 @@ const char * gTranslations_sk =
   "&Vlastnosti\0"\
   "V&lastnosti...\tCtrl+D\0"\
   "PDF Dokument\0"\
-  "PDF Optimaliz\303\241cia:\0"\
+  "\0"\
   "Vytvoren\303\251 v:\0"\
   "PDF Verzia:\0"\
   "PDF dokumenty\0"\
@@ -10981,11 +10981,11 @@ const char * gTranslations_sk =
   "Pr&ezent\303\241cia\tCtrl+L\0"\
   "Predch\303\241dzaj\303\272ca strana\0"\
   "Tla\304\215\0"\
-  "Vytla\304\215 ako &obr\303\241zok (vy\305\276aduje viac pam\303\244te)\0"\
+  "\0"\
   "Rozsah tla\304\215e\0"\
   "Tla\304\215iare\305\210 s uveden\303\275m n\303\241zvom neexistuje.\0"\
-  "Prebieha tla\304\215...\0"\
-  "Prebieha tla\304\215. Preru\305\241i\305\245 a ukon\304\215i\305\245 tla\304\215?\0"\
+  "\0"\
+  "\0"\
   "Prebieha tla\304\215. Preru\305\241i\305\245 a za\304\215a\305\245 znova?\0"\
   "Tla\304\215 strany %d z %d...\0"\
   "Probl\303\251m pri tla\304\215i.\0"\
@@ -11005,7 +11005,7 @@ const char * gTranslations_sk =
   "Ozna\304\215i\305\245 obsah s \"Ctrl + \304\276av\303\251 tla\304\215idlo my\305\241i\"\0"\
   "Odosla\305\245 &e-mailom...\0"\
   "Nastavi\305\245 inverzn\303\251 vyh\304\276ad\303\241vanie\0"\
-  "Zobrazi\305\245 &Z\303\241lo\305\276ky\0"\
+  "\0"\
   "Zobrazi\305\245 &panel n\303\241strojov\0"\
   "Zobrazi\305\245 &strany priebe\305\276ne\0"\
   "Zobrazi\305\245 ob\304\276\303\272ben\303\251 polo\305\276ky\0"\
@@ -11021,7 +11021,7 @@ const char * gTranslations_sk =
   "SumatraPDF je v\303\241\305\241 predvolen\303\275 prehliada\304\215 PDF s\303\272borov\0"\
   "SumatraPDF by teraz mala by\305\245 va\305\241\303\255m predvolen\303\275m prehliada\304\215om PDF s\303\272borov\0"\
   "Synchroniza\304\215n\303\275 s\303\272bor nie je mo\305\276n\303\251 otvori\305\245\0"\
-  "Ozna\304\215en\303\275 PDF\0"\
+  "\0"\
   "Textov\303\251 dokumenty\0"\
   "N\303\241zov:\0"\
   "Nezn\303\241my zdrojov\303\275 s\303\272bor (%s)\0"\
