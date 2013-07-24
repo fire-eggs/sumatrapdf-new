@@ -7,7 +7,7 @@
 
 namespace trans {
 
-#define LANGS_COUNT   33
+#define LANGS_COUNT   36
 #define STRINGS_COUNT 43
 
 const char *gOriginalStrings[STRINGS_COUNT] = {
@@ -464,6 +464,51 @@ const char * gTranslations_hr =
   "Deinstaliranje...\0"\
   "Koristi SumatraPDF kao zadani PDF preglednik\0";
 
+const char * gTranslations_cz = 
+  "&Mo\305\276nosti\0"\
+  "Opravdu chcete odinstalovat SumatraPDF?\0"\
+  "Zav\305\231\303\255t\0"\
+  "Nepoda\305\231ilo se vytvo\305\231it do\304\215asn\303\275 adres\303\241\305\231\0"\
+  "Nepoda\305\231ilo se vytvo\305\231it adres\303\241\305\231 pro instalaci\0"\
+  "Nelze nainstalova PDF prohl\303\255\305\276e\304\215\0"\
+  "Nelze nainstalovat vyhled\303\241vac\303\255 PDF filtr\0"\
+  "Nepoda\305\231ilo se nainstalovat roz\305\241\303\255\305\231en\303\255 do prohl\303\255\305\276e\304\215e\0"\
+  "Do\304\215asn\303\241 slo\305\276ka nen\303\255 dostupn\303\241\0"\
+  "Nepoda\305\231ilo se odstranit adres\303\241\305\231 pro instalaci\0"\
+  "Nepoda\305\231ilo se odstranit z\303\241stupce\0"\
+  "Nelze odinstalovat PDF prohl\303\255\305\276e\304\215\0"\
+  "Nelze odinstalovavat vyhled\303\241vac\303\255 PDF filtr\0"\
+  "Nepoda\305\231ilo se odinstalovat roz\305\241\303\255\305\231en\303\255 z prohl\303\255\305\276e\304\215e\0"\
+  "Nelze zapsat %s na disk\0"\
+  "Nepoda\305\231ilo se zkop\303\255rovat odinstala\304\215n\303\255 program do do\304\215asn\303\251 slo\305\276ky\0"\
+  "Vytvo\305\231en\303\255 z\303\241stupce se nezda\305\231ilo\0"\
+  "Nepoda\305\231ilo se smazat odinsla\304\215n\303\255 z\303\241znamy z registru\0"\
+  "Nepoda\305\231ilo se zapsat informace o p\305\231\303\255pon\304\233 souboru do registru\0"\
+  "Nepoda\305\231ilo se zapsat odinsla\304\215n\303\255 z\303\241znamy do registru\0"\
+  "Skr\303\275t &mo\305\276nosti\0"\
+  "Instalovat PDF dopln\304\233k pro prohl\303\255\305\276e\304\215e Firefox, Chrome a Opera\0"\
+  "Nainstalovat SumatraPDF\0"\
+  "Nainstalovat SumatraPDF do &slo\305\276ky:\0"\
+  "Instalace selhala!\0"\
+  "Prob\303\255h\303\241 instalace...\0"\
+  "Nechte Windows Desktop Search &prohled\303\241vat PDF dokumenty\0"\
+  "Nechte Windows zobrazit &n\303\241hledy PDF dokument\305\257\0"\
+  "Pros\303\255m ukon\304\215ete %s pro pokra\304\215ov\303\241n\303\255!\0"\
+  "Vyberte adres\303\241\305\231, do kter\303\251ho chcete nainstalovat SumatraPDF:\0"\
+  "N\304\233kter\303\251 soubory pot\305\231ebn\303\251 pro instalaci jsou po\305\241kozen\303\251 nebo nebyly nalezeny\0"\
+  "Spustit SumatraPDF\0"\
+  "SumatraPDF %s instal\303\241tor\0"\
+  "SumatraPDF %s odinstal\303\241tor\0"\
+  "SumatraPDF byl odinstalov\303\241n.\0"\
+  "Instalace programu SumatraPDF nebyla nalezena.\0"\
+  "D\304\233kujeme, \305\276e jste si vybrali SumatraPDF!\0"\
+  "D\304\233kujeme! Program SumatraPDF byl nainstalov\303\241n.\0"\
+  "Instala\304\215n\303\255 program byl nejsp\303\255\305\241e po\305\241kozen. St\303\241hn\304\233te si jej pros\303\255m znovu. \nOmlouv\303\241me se za zp\305\257soben\303\251 nep\305\231\303\255jemnosti!\0"\
+  "Odinstalovat SumatraPDF\0"\
+  "Odinstalace programu selhala\0"\
+  "Prob\303\255h\303\241 odinstalace...\0"\
+  "Pou\305\276ij SumatraPDF jako &v\303\275choz\303\255 PDF prohl\303\255\305\276e\304\215\0";
+
 const char * gTranslations_dk = 
   "&Valgmuligheder\0"\
   "Er du sikker p\303\245 at du vil afinstallere SumatraPDF ?\0"\
@@ -778,6 +823,51 @@ const char * gTranslations_hu =
   "Elt\303\241vol\303\255t\303\241s sikertelen\0"\
   "Elt\303\241vol\303\255t\303\241s folyamatban...\0"\
   "SumatraPDF haszn\303\241lata alap\303\251rtelmezett PDF olvas\303\263k\303\251nt\0";
+
+const char * gTranslations_id = 
+  "Pilihan\0"\
+  "Anda yakin untuk menghapus instalasi SumatraPDF?\0"\
+  "Tutup\0"\
+  "Gagal membuat folder sementara\0"\
+  "Gagal membuat folder instalasi\0"\
+  "Gagal memasang penampil cepat PDF\0"\
+  "Gagal memasang filter pencari PDF\0"\
+  "Gagal memasang plugin untuk browser\0"\
+  "Gagal mendeteksi folder sementara\0"\
+  "Gagal menghapus folder instalasi\0"\
+  "Gagal menghapus shortcut\0"\
+  "Gagal menghapus penampil cepat PDF\0"\
+  "Gagal menghapus filter pencari PDF\0"\
+  "Gagal menghapus plugin browser\0"\
+  "Gagal menulis %s ke harddisk\0"\
+  "Gagal mengkopi uninstaller ke direktori temp\0"\
+  "Gagal membuat shortcut.\0"\
+  "Gagal menghapus kunci registry uninstaller\0"\
+  "Gagal menulis info ekstensi file lanjutan ke registry\0"\
+  "Gagal menulis info penghapusan program ke registry\0"\
+  "Sembunyikan &Opsi\0"\
+  "Install plugin untuk peram&bah Firefox, Chrome, dan Opera\0"\
+  "\0"\
+  "Install SumatraPDF ke &folder:\0"\
+  "Instalasi gagal!\0"\
+  "Instalasi sedang berlangsung...\0"\
+  "Izinkan Windows Desktop Search mencari dokumen PDF\0"\
+  "Izinkan Windows menampilkan dokumen PDF\0"\
+  "Silakan tutup %s untuk melanjutkan.\0"\
+  "Pilih folder instalasi SumatraPDF:\0"\
+  "Beberapa file yang di-install rusak atau terhapus.\0"\
+  "Jalankan SumatraPDF\0"\
+  "Pasang SumatraPDF %s\0"\
+  "Hapus SumatraPDF %s\0"\
+  "SumatraPDF telah di-uninstall.\0"\
+  "Instalasi SumatraPDF tidak ditemukan.\0"\
+  "Terima kasih telah memakai SumatraPDF!\0"\
+  "Terima kasih. SumatraPDF telah berhasil ter-install.\0"\
+  "Installer rusak. Harap unduh lagi.\nMaaf atas ketidaknyamanan ini!\0"\
+  "\0"\
+  "Proses uninstall gagal.\0"\
+  "Proses uninstall sedang berjalan...\0"\
+  "Gunakan SumatraPDF sebagai pembaca PDF standar.\0";
 
 const char * gTranslations_it = 
   "&Opzioni\0"\
@@ -1473,16 +1563,16 @@ const char * gTranslations_uz =
   "O'chirish dasturini vaqtinchalik direktoriyaga nusxa olish muvaffaqiyatsiz tugadi\0"\
   "Xatcho'pni yaratib bo'lmadi\0"\
   "O'chirish dasturining reyestr kalitlarini o'chirish muvaffaqiyatsiz tugadi\0"\
-  "\0"\
-  "\0"\
+  "Fayl turi haqida kengaytirilgan ma'lumotini reyestrga yozish muvaffaqiyatsiz tugadi\0"\
+  "Dasturni o'chirish ma'lumotini reyestrga yozish muvaffaqiyatsiz tugadi\0"\
   "&Parametrlarni yashirish\0"\
   "PDF &brauzer plaginini Firefox, Chrome va Opera uchun o'rnatish\0"\
   "SumatraPDF o'rnatish\0"\
   "SumatraPDF &jildga o'rnatish\0"\
   "O'rnatish muvaffaqiyatsiz tugadi!\0"\
   "O'rnatilmoqda...\0"\
-  "\0"\
-  "\0"\
+  "Windows Desktop Search yordamida PDF hujjatlarini &qidirish\0"\
+  "Windows yordamida PDF hujjatlarini oldindan &ko'rish\0"\
   "Davom etish uchun %s yoping!\0"\
   "SumatraPDF o'rnatish uchun jildni tanlang:\0"\
   "Ba'zi o'rnatilayotgan fayllar buzilgan yoki mavjud emas\0"\
@@ -1490,14 +1580,59 @@ const char * gTranslations_uz =
   "SumatraPDF %s o'rnatuvchisi\0"\
   "SumatraPDF %s o'chirish dasturi\0"\
   "SumatraPDF o'chirildi.\0"\
-  "\0"\
+  "SumatraPDF o'rnatilganligi topilmadi.\0"\
   "SumatraPDF tanlaganingiz uchun tashakkur!\0"\
   "Tashakkur! SumatraPDF o'rnatildi.\0"\
-  "\0"\
+  "O'rnatuvchi buzilgan. Qaytadan yuklab oling. \nNoqulayliklar uchun uzr so'raymiz!\0"\
   "SumatraPDFni o'chirish\0"\
   "O'chirish muvaffaqiyatsiz tugadi\0"\
   "O'chirilmoqda...\0"\
   "SumatraPDF &andoza PDF o'qish vositasi sifatida ishlatish\0";
+
+const char * gTranslations_cy = 
+  "&Dewisiadau\0"\
+  "Ydych chi'n si\305\265r eich bod am ddadosod SumatraPDF\0"\
+  "Cau\0"\
+  "Methu creu cyfeiriadur dros dro\0"\
+  "Merhu creu'r cyfeiriadur gosod\0"\
+  "Mehu gosod rhagolygwr PDF\0"\
+  "Methu gosod hidl chwilio PDF\0"\
+  "Methu gosod ategyn porwr\0"\
+  "Methu canfod cyfeiriadur dros dro\0"\
+  "Methu tynnu'r cyfeiriadur gosod\0"\
+  "Methu tynnu'r llwybr byr\0"\
+  "Methu dadosod rhagolygwr PDF\0"\
+  "Methu dadosod hidl chwilio PDF\0"\
+  "Methu dadosod ategyn porwr\0"\
+  "Methu ysgrifennu %s i ddisg\0"\
+  "Methwyd cop\303\257o'r dadosodwr i'r cyfeiriadur dros dro\0"\
+  "Methwyd creu llwybr byr\0"\
+  "Methwyd dileu allweddi cofrestrfa'r dadosodwr\0"\
+  "Methwyd ysgrifennu gwybodaeth estyniad ffeil estynedig i'r gofrestrfa\0"\
+  "Methwyd ysgrifennu gwybodaeth y dadosodwr i'r gofrestrfa\0"\
+  "Dewisiadau C&uddio\0"\
+  "Gosod ategyn &porwr PDF ar gyfer Firefox, Chrome ac Opera\0"\
+  "Gosod SumatraPDF\0"\
+  "Gosod SumatraPDF yn &ffolder:\0"\
+  "Methodd y gosod!\0"\
+  "Wrthi'n gosod\0"\
+  "Gadael i Chwilio Bwrdd Gwaith Windows c&hwilio'r dogfennau PDF\0"\
+  "Gadael i Windows ddangos &rhagolwg o ddogfennau PDF\0"\
+  "Cau %s i barhau!\0"\
+  "Dewis y ffolder lle ddylai SumatraPDF gael ei gosod:\0"\
+  "Mae rhai ffeiliau i'w gosod wedi eu difrodi neu ar goll\0"\
+  "Cychwyn SumatraPDF\0"\
+  "Gosodwr SumatraPDF %s\0"\
+  "Dadosodwr SumatraPDF %s\0"\
+  "Mae SumatraPDF wedi ei ddadosod.\0"\
+  "Heb ganfod gosodiad SumatraPDF.\0"\
+  "Diolch am ddefnyddio SumatraPDF!\0"\
+  "Diolch yn fawr! Mae SumatraPDF wedi ei gosod\0"\
+  "Mae'r gosodwr yn llwgr. Llwythwch y ffeil i lawr eto. \n Ymddiheuriadau am yr anghyfleuster!\0"\
+  "Dadosod SumatraPDF\0"\
+  "Methodd y gosod\0"\
+  "Wrthi'n dadosod...\0"\
+  "Defnyddio SumatraPDF fel y darllennydd PDF &rhagosodedig\0";
 
 
 static const char *gTranslations[LANGS_COUNT] = {
@@ -1511,6 +1646,7 @@ static const char *gTranslations[LANGS_COUNT] = {
   gTranslations_ca_xv, 
   gTranslations_cn, 
   gTranslations_hr, 
+  gTranslations_cz, 
   gTranslations_dk, 
   gTranslations_nl, 
   gTranslations_et, 
@@ -1518,6 +1654,7 @@ static const char *gTranslations[LANGS_COUNT] = {
   gTranslations_fr, 
   gTranslations_de, 
   gTranslations_hu, 
+  gTranslations_id, 
   gTranslations_it, 
   gTranslations_ja, 
   gTranslations_kr, 
@@ -1533,7 +1670,8 @@ static const char *gTranslations[LANGS_COUNT] = {
   gTranslations_sv, 
   gTranslations_ta, 
   gTranslations_uk, 
-  gTranslations_uz
+  gTranslations_uz, 
+  gTranslations_cy
 };
 
 const char *GetTranslationsForLang(int langIdx) { return gTranslations[langIdx]; }
@@ -1549,6 +1687,7 @@ const char *gLangCodes =   "en\0" \
   "ca-xv\0" \
   "cn\0" \
   "hr\0" \
+  "cz\0" \
   "dk\0" \
   "nl\0" \
   "et\0" \
@@ -1556,6 +1695,7 @@ const char *gLangCodes =   "en\0" \
   "fr\0" \
   "de\0" \
   "hu\0" \
+  "id\0" \
   "it\0" \
   "ja\0" \
   "kr\0" \
@@ -1571,7 +1711,8 @@ const char *gLangCodes =   "en\0" \
   "sv\0" \
   "ta\0" \
   "uk\0" \
-  "uz\0" "\0";
+  "uz\0" \
+  "cy\0" "\0";
 
 const char *gLangNames =   "English\0" \
   "Albanian (Shqip)\0" \
@@ -1583,6 +1724,7 @@ const char *gLangNames =   "English\0" \
   "Catalan-Valencian (Catal\303\240-Valenci\303\240)\0" \
   "Chinese Simplified (\347\256\200\344\275\223\344\270\255\346\226\207)\0" \
   "Croatian (Hrvatski)\0" \
+  "Czech (\304\214e\305\241tina)\0" \
   "Danish (Dansk)\0" \
   "Dutch (Nederlands)\0" \
   "Estonian (Eesti)\0" \
@@ -1590,6 +1732,7 @@ const char *gLangNames =   "English\0" \
   "French (Fran\303\247ais)\0" \
   "German (Deutsch)\0" \
   "Hungarian (Magyar)\0" \
+  "Indonesian (Bahasa Indonesia)\0" \
   "Italian (Italiano)\0" \
   "Japanese (\346\227\245\346\234\254\350\252\236)\0" \
   "Korean (\355\225\234\352\265\255\354\226\264)\0" \
@@ -1605,7 +1748,8 @@ const char *gLangNames =   "English\0" \
   "Swedish (Svenska)\0" \
   "Tamil (\340\256\244\340\256\256\340\256\277\340\256\264\340\257\215)\0" \
   "Ukrainian (\320\243\320\272\321\200\320\260\321\227\320\275\321\201\321\214\320\272\320\260)\0" \
-  "Uzbek (O'zbek)\0" "\0";
+  "Uzbek (O'zbek)\0" \
+  "Welsh (Cymraeg)\0" "\0";
 
 // from http://msdn.microsoft.com/en-us/library/windows/desktop/dd318693(v=vs.85).aspx
 // those definition are not present in 7.0A SDK my VS 2010 uses
@@ -1629,6 +1773,7 @@ const LANGID gLangIds[LANGS_COUNT] = {
   (LANGID)-1,
   MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED),
   _LANGID(LANG_CROATIAN),
+  _LANGID(LANG_CZECH),
   _LANGID(LANG_DANISH),
   _LANGID(LANG_DUTCH),
   _LANGID(LANG_ESTONIAN),
@@ -1636,6 +1781,7 @@ const LANGID gLangIds[LANGS_COUNT] = {
   _LANGID(LANG_FRENCH),
   _LANGID(LANG_GERMAN),
   _LANGID(LANG_HUNGARIAN),
+  _LANGID(LANG_INDONESIAN),
   _LANGID(LANG_ITALIAN),
   _LANGID(LANG_JAPANESE),
   _LANGID(LANG_KOREAN),
@@ -1651,13 +1797,14 @@ const LANGID gLangIds[LANGS_COUNT] = {
   _LANGID(LANG_SWEDISH),
   _LANGID(LANG_TAMIL),
   _LANGID(LANG_UKRAINIAN),
-  _LANGID(LANG_UZBEK)
+  _LANGID(LANG_UZBEK),
+  _LANGID(LANG_WELSH)
 };
 #undef _LANGID
 
 bool IsLangRtl(int idx)
 {
-  return (2 == idx) || (20 == idx);
+  return (2 == idx) || (22 == idx);
 }
 
 int gLangsCount = LANGS_COUNT;

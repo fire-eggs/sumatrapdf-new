@@ -154,21 +154,34 @@ pdf_xref_entry *pdf_get_xref_entry(pdf_document *doc, int i)
 static void ensure_incremental_xref(pdf_document *doc)
 {
 	fz_context *ctx = doc->ctx;
-	pdf_xref *xref, *pxref;
 
 	if (!doc->xref_altered)
 	{
-		pdf_xref_entry *new_table;
-		doc->xref_sections = fz_resize_array(ctx, doc->xref_sections, doc->num_xref_sections + 1, sizeof(pdf_xref));
-		xref = &doc->xref_sections[0];
-		pxref = &doc->xref_sections[1];
-		new_table = fz_calloc(ctx, xref->len, sizeof(pdf_xref_entry));
-		memmove(pxref, xref, doc->num_xref_sections * sizeof(pdf_xref));
-		doc->num_xref_sections++;
-		/* xref->len is already correct */
-		xref->table = new_table;
-		xref->trailer = pdf_keep_obj(pxref->trailer);
-		doc->xref_altered = 1;
+		pdf_xref *xref = &doc->xref_sections[0];
+		pdf_xref *pxref;
+		pdf_xref_entry *new_table = fz_calloc(ctx, xref->len, sizeof(pdf_xref_entry));
+		pdf_obj *trailer = NULL;
+
+		fz_var(trailer);
+		fz_try(ctx)
+		{
+			trailer = pdf_copy_dict(xref->trailer);
+			doc->xref_sections = fz_resize_array(ctx, doc->xref_sections, doc->num_xref_sections + 1, sizeof(pdf_xref));
+			xref = &doc->xref_sections[0];
+			pxref = &doc->xref_sections[1];
+			memmove(pxref, xref, doc->num_xref_sections * sizeof(pdf_xref));
+			/* xref->len is already correct */
+			xref->table = new_table;
+			xref->trailer = trailer;
+			doc->num_xref_sections++;
+			doc->xref_altered = 1;
+		}
+		fz_catch(ctx)
+		{
+			fz_free(ctx, new_table);
+			pdf_drop_obj(trailer);
+			fz_rethrow(ctx);
+		}
 	}
 }
 
@@ -186,6 +199,13 @@ static pdf_xref_entry *pdf_get_incremental_xref_entry(pdf_document *doc, int i)
 		pdf_resize_xref(ctx, xref, i + 1);
 
 	return &xref->table[i];
+}
+
+int pdf_xref_is_incremental(pdf_document *doc, int num)
+{
+	pdf_xref *xref = &doc->xref_sections[0];
+
+	return doc->xref_altered && num < xref->len && xref->table[num].type;
 }
 
 /* Ensure that an object has been cloned into the incremental xref section */
@@ -1077,8 +1097,8 @@ pdf_init_document(pdf_document *doc)
 void
 pdf_close_document(pdf_document *doc)
 {
-	int i;
 	fz_context *ctx;
+	int i;
 
 	if (!doc)
 		return;
@@ -1093,26 +1113,19 @@ pdf_close_document(pdf_document *doc)
 
 	pdf_free_xref_sections(doc);
 
-	if (doc->page_objs)
-	{
-		for (i = 0; i < doc->page_len; i++)
-			pdf_drop_obj(doc->page_objs[i]);
-		fz_free(ctx, doc->page_objs);
-	}
-
-	if (doc->page_refs)
-	{
-		for (i = 0; i < doc->page_len; i++)
-			pdf_drop_obj(doc->page_refs[i]);
-		fz_free(ctx, doc->page_refs);
-	}
-
 	if (doc->focus_obj)
 		pdf_drop_obj(doc->focus_obj);
 	if (doc->file)
 		fz_close(doc->file);
 	if (doc->crypt)
 		pdf_free_crypt(ctx, doc->crypt);
+
+	for (i=0; i < doc->num_type3_fonts; i++)
+	{
+		fz_decouple_type3_font(ctx, doc->type3_fonts[i], (void *)doc);
+		fz_drop_font(ctx, doc->type3_fonts[i]);
+	}
+	fz_free(ctx, doc->type3_fonts);
 
 	pdf_free_ocg(ctx, doc->ocg);
 
@@ -1314,7 +1327,7 @@ pdf_cache_object(pdf_document *doc, int num, int gen)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find object in xref (%d %d R)", num, gen);
 	}
 
-	pdf_set_objects_parent_num(x->obj, num);
+	pdf_set_obj_parent(x->obj, num);
 }
 
 pdf_obj *
@@ -1622,7 +1635,7 @@ pdf_open_document_no_run(fz_context *ctx, const char *filename)
 
 pdf_document *pdf_specifics(fz_document *doc)
 {
-	return (pdf_document *)(doc->close == (void *)pdf_close_document ? doc : NULL);
+	return (pdf_document *)((doc && doc->close == (void *)pdf_close_document) ? doc : NULL);
 }
 
 pdf_document *pdf_create_document(fz_context *ctx)
