@@ -81,7 +81,7 @@ static void decimatepages(pdf_document *doc)
 				fz_rect mb;
 				int num;
 
-				newpageobj = pdf_copy_dict(doc->page_objs[page]);
+				newpageobj = pdf_copy_dict(pdf_lookup_page_obj(doc, page));
 				num = pdf_create_object(doc);
 				pdf_update_object(doc, num, newpageobj);
 				newpageref = pdf_new_indirect(doc, num, 0);
@@ -133,6 +133,7 @@ int pdfposter_main(int argc, char **argv)
 	pdf_document *doc;
 	fz_context *ctx;
 
+	opts.do_incremental = 0;
 	opts.do_garbage = 0;
 	opts.do_expand = 0;
 	opts.do_ascii = 0;
