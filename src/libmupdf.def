@@ -62,7 +62,7 @@ EXPORTS
 	fz_push_try
 	fz_throw_imp
 	fz_rethrow
-	fz_rethrow_message
+	fz_rethrow_message_imp
 	fz_warn_imp
 	fz_caught_message
 	fz_caught
@@ -178,6 +178,7 @@ EXPORTS
 	fz_set_font_bbox
 	fz_bound_glyph
 	fz_glyph_cacheable
+	fz_decouple_type3_font
 	fz_eval_function
 	fz_keep_function
 	fz_drop_function
@@ -597,7 +598,7 @@ EXPORTS
 	pdf_dict_del
 	pdf_dict_dels
 	pdf_sort_dict
-	pdf_set_objects_parent_num
+	pdf_set_obj_parent
 	pdf_fprint_obj
 	pdf_to_utf8
 	pdf_to_ucs2
@@ -618,6 +619,8 @@ EXPORTS
 	pdf_file_update_end
 	pdf_lookup_page_number
 	pdf_count_pages
+	pdf_lookup_page_obj
+	pdf_lookup_inherited_page_item
 	pdf_load_page
 	pdf_load_links
 	pdf_bound_page
@@ -680,6 +683,7 @@ EXPORTS
 	pdf_get_xref_entry
 	pdf_replace_xref
 	pdf_xref_ensure_incremental_object
+	pdf_xref_is_incremental
 	pdf_repair_xref
 	pdf_repair_obj_stms
 	pdf_new_ref
