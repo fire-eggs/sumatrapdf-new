@@ -3,6 +3,7 @@
 
 #include "BaseUtil.h"
 #include <wincodec.h>
+#include <webp/decode.h>
 using namespace Gdiplus;
 #include "GdiPlusUtil.h"
 
@@ -246,7 +247,7 @@ void GetBaseTransform(Matrix& m, RectF pageRect, float zoom, int rotation)
     m.Rotate((REAL)rotation, MatrixOrderAppend);
 }
 
-Bitmap *WICDecodeImageFromStream(IStream *stream)
+static Bitmap *WICDecodeImageFromStream(IStream *stream)
 {
     ScopedCom com;
 
@@ -273,7 +274,7 @@ Bitmap *WICDecodeImageFromStream(IStream *stream)
     Status ok = bmp.LockBits(&bmpRect, ImageLockModeWrite, PixelFormat32bppARGB, &bmpData);
     if (ok != Ok)
         return NULL;
-    HR(pConverter->CopyPixels(NULL, bmpData.Stride, w * h * 4, (BYTE *)bmpData.Scan0));
+    HR(pConverter->CopyPixels(NULL, bmpData.Stride, bmpData.Stride * h, (BYTE *)bmpData.Scan0));
     bmp.UnlockBits(&bmpData);
     bmp.SetResolution((REAL)xres, (REAL)yres);
 #undef HR
@@ -282,9 +283,29 @@ Bitmap *WICDecodeImageFromStream(IStream *stream)
     return bmp.Clone(0, 0, w, h, PixelFormat32bppARGB);
 }
 
+static Bitmap *WebPDecodeImage(const char *data, size_t len)
+{
+    int w, h;
+    if (!WebPGetInfo((const uint8_t *)data, len, &w, &h))
+        return NULL;
+
+    Bitmap bmp(w, h, PixelFormat32bppARGB);
+    Rect bmpRect(0, 0, w, h);
+    BitmapData bmpData;
+    Status ok = bmp.LockBits(&bmpRect, ImageLockModeWrite, PixelFormat32bppARGB, &bmpData);
+    if (ok != Ok)
+        return NULL;
+    if (!WebPDecodeBGRAInto((const uint8_t *)data, len, (uint8_t *)bmpData.Scan0, bmpData.Stride * h, bmpData.Stride))
+        return NULL;
+    bmp.UnlockBits(&bmpData);
+
+    // hack to avoid the use of ::new (because there won't be a corresponding ::delete)
+    return bmp.Clone(0, 0, w, h, PixelFormat32bppARGB);
+}
+
 enum ImgFormat {
     Img_Unknown, Img_BMP, Img_GIF, Img_JPEG,
-    Img_JXR, Img_PNG, Img_TGA, Img_TIFF,
+    Img_JXR, Img_PNG, Img_TGA, Img_TIFF, Img_WebP,
 };
 
 static ImgFormat GfxFormatFromData(const char *data, size_t len)
@@ -306,6 +327,8 @@ static ImgFormat GfxFormatFromData(const char *data, size_t len)
         return Img_TGA;
     if (memeq(data, "II\xBC\x01", 4) || memeq(data, "II\xBC\x00", 4))
         return Img_JXR;
+    if (str::StartsWith(data, "RIFF") && len > 12 && str::StartsWith(data + 8, "WEBP"))
+        return Img_WebP;
     return Img_Unknown;
 }
 
@@ -319,6 +342,7 @@ const WCHAR *GfxFileExtFromData(const char *data, size_t len)
     case Img_PNG:  return L".png";
     case Img_TGA:  return L".tga";
     case Img_TIFF: return L".tif";
+    case Img_WebP: return L".webp";
     default:       return NULL;
     }
 }
@@ -337,6 +361,8 @@ Bitmap *BitmapFromData(const char *data, size_t len)
     ImgFormat format = GfxFormatFromData(data, len);
     if (Img_TGA == format)
         return tga::ImageFromData(data, len);
+    if (Img_WebP == format)
+        return WebPDecodeImage(data, len);
 
     ScopedComPtr<IStream> stream(CreateStreamFromData(data, len));
     if (!stream)
@@ -456,11 +482,20 @@ Size BitmapSizeFromData(const char *data, size_t len)
             result.Height = r.WordLE(14);
         }
         break;
+    case Img_WebP:
+        if (len >= 30 && str::StartsWith(data + 12, "VP8 ")) {
+            result.Width = r.WordLE(26) & 0x3fff;
+            result.Height = r.WordLE(28) & 0x3fff;
+        }
+        else {
+            WebPGetInfo((const uint8_t *)data, len, &result.Width, &result.Height);
+        }
+        break;
     }
 
     if (result.Empty()) {
         // let GDI+ extract the image size if we've failed
-        // (currently happens for animated GIFs)
+        // (currently happens for animated GIF)
         Bitmap *bmp = BitmapFromData(data, len);
         if (bmp)
             result = Size(bmp->GetWidth(), bmp->GetHeight());

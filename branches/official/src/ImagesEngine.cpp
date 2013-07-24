@@ -240,6 +240,10 @@ public:
 
     virtual WCHAR *GetProperty(DocumentProperty prop);
 
+    virtual float GetFileDPI() const {
+        return pages.At(0)->GetHorizontalResolution();
+    }
+
 protected:
     bool LoadSingleFile(const WCHAR *fileName);
     bool LoadFromStream(IStream *stream);
@@ -378,7 +382,7 @@ WCHAR *ImageEngineImpl::GetProperty(DocumentProperty prop)
 bool ImageEngine::IsSupportedFile(const WCHAR *fileName, bool sniff)
 {
     if (sniff) {
-        char header[9] = { 0 };
+        char header[13] = { 0 };
         file::ReadAll(fileName, header, sizeof(header));
         fileName = GfxFileExtFromData(header, sizeof(header));
     }
@@ -390,7 +394,8 @@ bool ImageEngine::IsSupportedFile(const WCHAR *fileName, bool sniff)
            str::EndsWithI(fileName, L".bmp") ||
            str::EndsWithI(fileName, L".tga") ||
            str::EndsWithI(fileName, L".jxr") || str::EndsWithI(fileName, L".hdp") ||
-                                                str::EndsWithI(fileName, L".wdp");
+                                                str::EndsWithI(fileName, L".wdp") ||
+           str::EndsWithI(fileName, L".webp");
 }
 
 ImageEngine *ImageEngine::CreateFromFile(const WCHAR *fileName)
@@ -603,6 +608,11 @@ public:
     virtual RectD PageMediabox(int pageNo);
 
     virtual WCHAR *GetProperty(DocumentProperty prop);
+
+    // not using the resolution of the contained images seems to be
+    // expected, cf. http://forums.fofou.org/sumatrapdf/topic?id=3183827
+    // TODO: return win::GetHwndDpi(HWND_DESKTOP) instead?
+    virtual float GetFileDPI() const { return 96.0f; }
 
     // json::ValueVisitor
     virtual bool Visit(const char *path, const char *value, json::DataType type);
