@@ -2389,9 +2389,9 @@ public:
         // be marked as inexistent in gFileHistory)
         for (size_t i = 0; i < paths.Count() && !WasCancelRequested(); i++) {
             WCHAR *path = paths.At(i);
-            if (!path::IsOnFixedDrive(path) || DocumentPathExists(path)) {
+            if (!path || !path::IsOnFixedDrive(path) || DocumentPathExists(path)) {
                 paths.RemoveAt(i--);
-                delete path;
+                free(path);
             }
         }
         if (!WasCancelRequested())
@@ -2442,7 +2442,7 @@ static void PaintPageFrameAndShadow(HDC hdc, RectI& bounds, RectI& pageRect, boo
 
     // Draw frame
     ScopedGdiObj<HPEN> pe(CreatePen(PS_SOLID, 1, presentation ? TRANSPARENT : COL_PAGE_FRAME));
-    ScopedGdiObj<HBRUSH> brush(CreateSolidBrush(gRenderCache.colorRange[1]));
+    ScopedGdiObj<HBRUSH> brush(CreateSolidBrush(gRenderCache.backgroundColor));
     SelectObject(hdc, pe);
     SelectObject(hdc, brush);
     Rectangle(hdc, frame.x, frame.y, frame.x + frame.dx, frame.y + frame.dy);
@@ -2451,7 +2451,7 @@ static void PaintPageFrameAndShadow(HDC hdc, RectI& bounds, RectI& pageRect, boo
 static void PaintPageFrameAndShadow(HDC hdc, RectI& bounds, RectI& pageRect, bool presentation)
 {
     ScopedGdiObj<HPEN> pe(CreatePen(PS_NULL, 0, 0));
-    ScopedGdiObj<HBRUSH> brush(CreateSolidBrush(gRenderCache.colorRange[1]));
+    ScopedGdiObj<HBRUSH> brush(CreateSolidBrush(gRenderCache.backgroundColor));
     SelectObject(hdc, pe);
     SelectObject(hdc, brush);
     Rectangle(hdc, bounds.x, bounds.y, bounds.x + bounds.dx + 1, bounds.y + bounds.dy + 1);
@@ -2607,7 +2607,7 @@ static void DrawDocument(WindowInfo& win, HDC hdc, RECT *rcArea)
         if (renderDelay) {
             ScopedFont fontRightTxt(GetSimpleFont(hdc, L"MS Shell Dlg", 14));
             HGDIOBJ hPrevFont = SelectObject(hdc, fontRightTxt);
-            SetTextColor(hdc, gRenderCache.colorRange[0]);
+            SetTextColor(hdc, gRenderCache.textColor);
             if (renderDelay != RENDER_DELAY_FAILED) {
                 if (renderDelay < REPAINT_MESSAGE_DELAY_IN_MS)
                     win.RepaintAsync(REPAINT_MESSAGE_DELAY_IN_MS / 4);
@@ -2659,6 +2659,20 @@ static void RerenderEverything()
     }
 }
 
+COLORREF GetFixedPageUiTextColor()
+{
+    if (gGlobalPrefs->useSysColors)
+        return GetSysColor(COLOR_WINDOWTEXT);
+    return gGlobalPrefs->fixedPageUI.textColor;
+}
+
+COLORREF GetFixedPageUiBgColor()
+{
+    if (gGlobalPrefs->useSysColors)
+        return GetSysColor(COLOR_WINDOW);
+    return gGlobalPrefs->fixedPageUI.backgroundColor;
+}
+
 void UpdateDocumentColors(COLORREF fore, COLORREF back)
 {
     //COLORREF fore = WIN_COL_BLACK;
@@ -2667,10 +2681,11 @@ void UpdateDocumentColors(COLORREF fore, COLORREF back)
         fore = GetSysColor(COLOR_WINDOWTEXT);
         back = GetSysColor(COLOR_WINDOW);
     }
+
     // update document color range
     if (
         fore != gRenderCache.colorRange[0] ||
-        back != gRenderCache.colorRange[1])
+        back != gRenderCache.colorRange[1]   )
     {
         gRenderCache.colorRange[0] = fore;
         gRenderCache.colorRange[1] = back;
@@ -3047,10 +3062,11 @@ static void OnPaint(WindowInfo& win)
     HDC hdc = BeginPaint(win.hwndCanvas, &ps);
 
     if (win.IsAboutWindow()) {
-        if (HasPermission(Perm_SavePreferences | Perm_DiskAccess) && gGlobalPrefs->rememberOpenedFiles && gGlobalPrefs->showStartPage)
-            DrawStartPage(win, win.buffer->GetDC(), gFileHistory, gRenderCache.colorRange);
-        else
+        if (HasPermission(Perm_SavePreferences | Perm_DiskAccess) && gGlobalPrefs->rememberOpenedFiles && gGlobalPrefs->showStartPage) {
+            DrawStartPage(win, win.buffer->GetDC(), gFileHistory, gRenderCache.textColor, gRenderCache.backgroundColor);
+        } else {
             DrawAboutPage(win, win.buffer->GetDC());
+        }
         win.buffer->Flush(hdc);
     } else if (!win.IsDocLoaded()) {
         // TODO: replace with notifications as far as reasonably possible
@@ -3813,7 +3829,9 @@ static void BrowseFolder(WindowInfo& win, bool forward)
     for (size_t i = files.Count(); i > 0; i--) {
         if (!EngineManager::IsSupportedFile(files.At(i - 1), false, gGlobalPrefs->ebookUI.useFixedPageUI) &&
             !gFileHistory.Find(files.At(i - 1))) {
+            WCHAR *path = files.At(i - 1);
             files.RemoveAt(i - 1);
+            free(path);
         }
     }
 
@@ -4210,8 +4228,6 @@ void OnMenuOptions(HWND hwnd)
 {
     if (!HasPermission(Perm_SavePreferences)) return;
 
-    bool useSysColors = gGlobalPrefs->useSysColors;
-
     if (IDOK != Dialog_Preference(hwnd, gGlobalPrefs))
         return;
 
@@ -4220,8 +4236,7 @@ void OnMenuOptions(HWND hwnd)
         gFileHistory.Clear(true);
         CleanUpThumbnailCache(gFileHistory);
     }
-    if (useSysColors != gGlobalPrefs->useSysColors)
-        UpdateDocumentColors();
+    UpdateDocumentColors();
 
     prefs::Save();
 }
