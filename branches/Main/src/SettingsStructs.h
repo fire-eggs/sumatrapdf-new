@@ -213,10 +213,6 @@ struct GlobalPrefs {
     COLORREF mainWindowBackground;
     // background color of the document windows
     COLORREF noDocBgColor;
-    // background color of the non-document windows
-    COLORREF docBgColor;
-    // text color of the document
-    COLORREF docTextColor;
     // background color of the table of content
     COLORREF tocBgColor;
     // background color of the favorite
@@ -485,8 +481,6 @@ static const FieldInfo gGlobalPrefsFields[] = {
     { (size_t)-1,                                      Type_Comment,    NULL                                                                                                                  },
     { offsetof(GlobalPrefs, mainWindowBackground),     Type_Color,      0x80d4ffff                                                                                                            },
     { offsetof(GlobalPrefs, noDocBgColor),             Type_Color,      0x80999999                                                                                                            },
-    { offsetof(GlobalPrefs, docBgColor),               Type_Color,      0x80ffffff                                                                                                            },
-    { offsetof(GlobalPrefs, docTextColor),             Type_Color,      0x80000000                                                                                                            },
     { offsetof(GlobalPrefs, tocBgColor),               Type_Color,      0x80ffffff                                                                                                            },
     { offsetof(GlobalPrefs, favBgColor),               Type_Color,      0x80ffffff                                                                                                            },
     { offsetof(GlobalPrefs, escToExit),                Type_Bool,       false                                                                                                                 },
@@ -534,7 +528,7 @@ static const FieldInfo gGlobalPrefsFields[] = {
     { offsetof(GlobalPrefs, timeOfLastUpdateCheck),    Type_Compact,    (intptr_t)&gFILETIMEInfo                                                                                              },
     { offsetof(GlobalPrefs, openCountWeek),            Type_Int,        0                                                                                                                     },
 };
-static const StructInfo gGlobalPrefsInfo = { sizeof(GlobalPrefs), 52, gGlobalPrefsFields, "\0\0MainWindowBackground\0NoDocBgColor\0DocBgColor\0DocTextColor\0TocBgColor\0FavBgColor\0EscToExit\0ReuseInstance\0FixedPageUI\0EbookUI\0ComicBookUI\0ChmUI\0ExternalViewers\0ZoomLevels\0ZoomIncrement\0PrinterDefaults\0ForwardSearch\0AnnotationDefaults\0\0RememberStatePerDocument\0UiLanguage\0EnableSplitWindow\0EnableTab\0TabVisible\0ToolbarForEachPanel\0SidebarForEachPanel\0ToolbarForEachPanelNew\0SidebarForEachPanelNew\0ShowToolbar\0ShowFavorites\0AssociatedExtensions\0AssociateSilently\0CheckForUpdates\0VersionToSkip\0RememberOpenedFiles\0UseSysColors\0InverseSearchCmdLine\0EnableTeXEnhancements\0DefaultDisplayMode\0DefaultZoom\0WindowState\0WindowPos\0ShowToc\0SidebarDx\0TocDy\0ShowStartPage\0\0FileStates\0TimeOfLastUpdateCheck\0OpenCountWeek" };
+static const StructInfo gGlobalPrefsInfo = { sizeof(GlobalPrefs), 50, gGlobalPrefsFields, "\0\0MainWindowBackground\0NoDocBgColor\0TocBgColor\0FavBgColor\0EscToExit\0ReuseInstance\0FixedPageUI\0EbookUI\0ComicBookUI\0ChmUI\0ExternalViewers\0ZoomLevels\0ZoomIncrement\0PrinterDefaults\0ForwardSearch\0AnnotationDefaults\0\0RememberStatePerDocument\0UiLanguage\0EnableSplitWindow\0EnableTab\0TabVisible\0ToolbarForEachPanel\0SidebarForEachPanel\0ToolbarForEachPanelNew\0SidebarForEachPanelNew\0ShowToolbar\0ShowFavorites\0AssociatedExtensions\0AssociateSilently\0CheckForUpdates\0VersionToSkip\0RememberOpenedFiles\0UseSysColors\0InverseSearchCmdLine\0EnableTeXEnhancements\0DefaultDisplayMode\0DefaultZoom\0WindowState\0WindowPos\0ShowToc\0SidebarDx\0TocDy\0ShowStartPage\0\0FileStates\0TimeOfLastUpdateCheck\0OpenCountWeek" };
 
 #endif
 

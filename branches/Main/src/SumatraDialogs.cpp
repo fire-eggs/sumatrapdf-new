@@ -1231,7 +1231,7 @@ static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LP
                     return TRUE;
 
                 case IDC_APPLY:
-                    UpdateColorAll(prefs->docTextColor, prefs->docBgColor, prefs->tocBgColor, prefs->favBgColor);
+                    UpdateColorAll(prefs->fixedPageUI.textColor, prefs->fixedPageUI.backgroundColor, prefs->tocBgColor, prefs->favBgColor);
 
                     return TRUE;
 
@@ -1242,7 +1242,7 @@ static INT_PTR CALLBACK Dialog_Color_Proc(HWND hDlg, UINT msg, WPARAM wParam, LP
                         // We don't have to update buttons' color.
                     }
 
-                    UpdateColorAll(prefs->docTextColor, prefs->docBgColor, prefs->tocBgColor, prefs->favBgColor);
+                    UpdateColorAll(prefs->fixedPageUI.textColor, prefs->fixedPageUI.backgroundColor, prefs->tocBgColor, prefs->favBgColor);
 
                     return TRUE;
 
@@ -1419,12 +1419,12 @@ INT_PTR Dialog_Preference(HWND hwnd, GlobalPrefs *prefs)
         consecutive_Button_ids);
 
     struct buttonInColorDlg buttons[6] = {
-        {IDC_START_PAGE_BG, IDC_SET_START_PAGE_BG,  &prefs->mainWindowBackground, prefs->mainWindowBackground},
-        {IDC_WINDOW_BG,     IDC_SET_WINDOW_BG,      &prefs->noDocBgColor,         prefs->noDocBgColor},
-        {IDC_DOC_BG,        IDC_SET_DOC_BG,         &prefs->docBgColor,           prefs->docBgColor},
-        {IDC_DOC_TEXT,      IDC_SET_DOC_TEXT_COLOR, &prefs->docTextColor,         prefs->docTextColor},
-        {IDC_TOC_BG,        IDC_SET_TOC_BG_COLOR,   &prefs->tocBgColor,           prefs->tocBgColor},
-        {IDC_FAV_BG,        IDC_SET_FAV_BG_COLOR,   &prefs->favBgColor,           prefs->favBgColor},
+        {IDC_START_PAGE_BG, IDC_SET_START_PAGE_BG,  &prefs->mainWindowBackground,        prefs->mainWindowBackground},
+        {IDC_WINDOW_BG,     IDC_SET_WINDOW_BG,      &prefs->noDocBgColor,                prefs->noDocBgColor},
+        {IDC_DOC_BG,        IDC_SET_DOC_BG,         &prefs->fixedPageUI.backgroundColor, prefs->fixedPageUI.backgroundColor},
+        {IDC_DOC_TEXT,      IDC_SET_DOC_TEXT_COLOR, &prefs->fixedPageUI.textColor,       prefs->fixedPageUI.textColor},
+        {IDC_TOC_BG,        IDC_SET_TOC_BG_COLOR,   &prefs->tocBgColor,                  prefs->tocBgColor},
+        {IDC_FAV_BG,        IDC_SET_FAV_BG_COLOR,   &prefs->favBgColor,                  prefs->favBgColor},
     };
 
     LONG_PTR data[2] = { (LONG_PTR)prefs, (LONG_PTR)buttons };
