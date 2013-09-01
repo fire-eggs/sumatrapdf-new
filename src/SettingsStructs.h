@@ -119,11 +119,15 @@ struct ForwardSearch {
 };
 
 // default values for user added annotations in FixedPageUI documents
+// (preliminary and still subject to change)
 struct AnnotationDefaults {
     // color used for the highlight tool (in prerelease builds, the current
     // selection can be converted into a highlight annotation by pressing
     // the 'h' key)
     COLORREF highlightColor;
+    // if true, annotations are appended to PDF documents, else they're
+    // always saved to an external .smx file
+    bool saveIntoDocument;
 };
 
 // Values which are persisted for bookmarks/favorites
@@ -246,7 +250,12 @@ struct GlobalPrefs {
     // from LaTeX editors)
     ForwardSearch forwardSearch;
     // default values for user added annotations in FixedPageUI documents
+    // (preliminary and still subject to change)
     AnnotationDefaults annotationDefaults;
+    // a whitespace separated list of passwords to try for opening a
+    // password protected document (passwords containing spaces must be
+    // quoted same as command line arguments)
+    WCHAR * defaultPasswords;
     // if true, we store display settings for each document separately
     // (i.e. everything after UseDefaultState in FileStates)
     bool rememberStatePerDocument;
@@ -414,9 +423,10 @@ static const FieldInfo gForwardSearchFields[] = {
 static const StructInfo gForwardSearchInfo = { sizeof(ForwardSearch), 4, gForwardSearchFields, "HighlightOffset\0HighlightWidth\0HighlightColor\0HighlightPermanent" };
 
 static const FieldInfo gAnnotationDefaultsFields[] = {
-    { offsetof(AnnotationDefaults, highlightColor), Type_Color, 0x60ffff },
+    { offsetof(AnnotationDefaults, highlightColor),   Type_Color, 0x60ffff },
+    { offsetof(AnnotationDefaults, saveIntoDocument), Type_Bool,  true     },
 };
-static const StructInfo gAnnotationDefaultsInfo = { sizeof(AnnotationDefaults), 1, gAnnotationDefaultsFields, "HighlightColor" };
+static const StructInfo gAnnotationDefaultsInfo = { sizeof(AnnotationDefaults), 2, gAnnotationDefaultsFields, "HighlightColor\0SaveIntoDocument" };
 
 static const FieldInfo gRectIFields[] = {
     { offsetof(RectI, x),  Type_Int, 0 },
@@ -495,6 +505,7 @@ static const FieldInfo gGlobalPrefsFields[] = {
     { offsetof(GlobalPrefs, printerDefaults),          Type_Struct,     (intptr_t)&gPrinterDefaultsInfo                                                                                       },
     { offsetof(GlobalPrefs, forwardSearch),            Type_Struct,     (intptr_t)&gForwardSearchInfo                                                                                         },
     { offsetof(GlobalPrefs, annotationDefaults),       Type_Struct,     (intptr_t)&gAnnotationDefaultsInfo                                                                                    },
+    { offsetof(GlobalPrefs, defaultPasswords),         Type_String,     NULL                                                                                                                  },
     { (size_t)-1,                                      Type_Comment,    NULL                                                                                                                  },
     { offsetof(GlobalPrefs, rememberStatePerDocument), Type_Bool,       true                                                                                                                  },
     { offsetof(GlobalPrefs, uiLanguage),               Type_Utf8String, NULL                                                                                                                  },
