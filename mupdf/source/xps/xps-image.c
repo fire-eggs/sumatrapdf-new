@@ -152,7 +152,7 @@ xps_parse_image_brush(xps_document *doc, const fz_matrix *ctm, const fz_rect *ar
 	}
 	fz_catch(doc->ctx)
 	{
-		/* FIXME: TryLater ? */
+		fz_rethrow_if(doc->ctx, FZ_ERROR_TRYLATER);
 		fz_warn(doc->ctx, "cannot find image source");
 		return;
 	}
@@ -165,8 +165,8 @@ xps_parse_image_brush(xps_document *doc, const fz_matrix *ctm, const fz_rect *ar
 		{
 
 		image = xps_load_image(doc->ctx, part);
+		image->invert_cmyk_jpeg = 1;
 
-			image->from_xps = 1; /* cf. http://code.google.com/p/sumatrapdf/issues/detail?id=2250 */
 			fz_store_item(doc->ctx, key, image, sizeof(fz_image) + part->size, &xps_image_store_type);
 		}
 	}
@@ -177,7 +177,7 @@ xps_parse_image_brush(xps_document *doc, const fz_matrix *ctm, const fz_rect *ar
 	}
 	fz_catch(doc->ctx)
 	{
-		/* FIXME: TryLater ? */
+		fz_rethrow_if(doc->ctx, FZ_ERROR_TRYLATER);
 		fz_warn(doc->ctx, "cannot decode image resource");
 		return;
 	}
