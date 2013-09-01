@@ -227,7 +227,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\scripts;..\..\include;..\..\ucdn;..\..\generated;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\src\lib\openjp2;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include"
+				AdditionalIncludeDirectories="..\..\scripts;..\..\include;..\..\ucdn;..\..\generated;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\src\lib\openjp2;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;..\..\thirdparty\openssl\include"
 				PreprocessorDefinitions="DEBUG=1;HAVE_OPENSSL"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -626,6 +626,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\stream-prog.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\stream-read.c"
 				>
 			</File>
@@ -683,6 +687,10 @@
 			>
 			<File
 				RelativePath="..\..\source\pdf\pdf-annot.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\source\pdf\pdf-appearance.c"
 				>
 			</File>
 			<File
@@ -866,6 +874,10 @@
 				>
 				<File
 					RelativePath="..\..\include\mupdf\pdf\annot.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\mupdf\pdf\appearance.h"
 					>
 				</File>
 				<File

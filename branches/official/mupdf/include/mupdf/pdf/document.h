@@ -168,6 +168,35 @@ void pdf_update_page(pdf_document *doc, pdf_page *page);
 */
 int pdf_has_unsaved_changes(pdf_document *doc);
 
+typedef struct pdf_obj_read_state_s pdf_obj_read_state;
+
+struct
+{
+	int offset;
+	int num;
+	int numofs;
+	int gen;
+	int genofs;
+}
+pdf_obj_read_state_s;
+
+typedef struct pdf_signer_s pdf_signer;
+
+/* Unsaved signature fields */
+typedef struct pdf_unsaved_sig_s pdf_unsaved_sig;
+
+struct pdf_unsaved_sig_s
+{
+	pdf_obj *field;
+	int byte_range_start;
+	int byte_range_end;
+	int contents_start;
+	int contents_end;
+	pdf_signer *signer;
+	pdf_unsaved_sig *next;
+};
+
+
 struct pdf_document_s
 {
 	fz_document super;
@@ -186,8 +215,55 @@ struct pdf_document_s
 	pdf_xref *xref_sections;
 	int xref_altered;
 	int freeze_updates;
+	int has_xref_streams;
 
 	int page_count;
+
+	/* State indicating which file parsing method we are using */
+	int file_reading_linearly;
+	int file_length;
+
+	pdf_obj *linear_obj; /* Linearized object (if used) */
+	pdf_obj **linear_page_refs; /* Page objects for linear loading */
+	int linear_page1_obj_num;
+
+	/* The state for the pdf_progressive_advance parser */
+	int linear_pos;
+	int linear_page_num;
+
+	int hint_object_offset;
+	int hint_object_length;
+	int hints_loaded; /* Set to 1 after the hints loading has completed,
+			   * whether successful or not! */
+	/* Page n references shared object references:
+	 *   hint_shared_ref[i]
+	 * where
+	 *      i = s to e-1
+	 *	s = hint_page[n]->index
+	 *	e = hint_page[n+1]->index
+	 * Shared object reference r accesses objects:
+	 *   rs to re-1
+	 * where
+	 *   rs = hint_shared[r]->number
+	 *   re = hint_shared[r]->count + rs
+	 * These are guaranteed to lie within the region starting at
+	 * hint_shared[r]->offset of length hint_shared[r]->length
+	 */
+	struct
+	{
+		int number; /* Page object number */
+		int offset; /* Offset of page object */
+		int index; /* Index into shared hint_shared_ref */
+	} *hint_page;
+	int *hint_shared_ref;
+	struct
+	{
+		int number; /* Object number of first object */
+		int offset; /* Offset of first object */
+	} *hint_shared;
+	int hint_obj_offsets_max;
+	int *hint_obj_offsets;
+
 	int resources_localised;
 
 	pdf_lexbuf_large lexbuf;
@@ -198,6 +274,8 @@ struct pdf_document_s
 	pdf_js *js;
 	int recalculating;
 	int dirty;
+	pdf_unsaved_sig *unsaved_sigs;
+
 	void (*update_appearance)(pdf_document *doc, pdf_annot *annot);
 
 	pdf_doc_event_cb *event_cb;

@@ -490,12 +490,16 @@ draw_glyph(unsigned char *colorbv, fz_pixmap *dst, fz_pixmap *msk,
 	int xorig, int yorig, const fz_irect *scissor)
 {
 	unsigned char *dp, *mp;
-	fz_irect bbox;
+	fz_irect bbox, bbox2;
 	int x, y, w, h;
 
 	fz_pixmap_bbox_no_ctx(msk, &bbox);
 	fz_translate_irect(&bbox, xorig, yorig);
 	fz_intersect_irect(&bbox, scissor); /* scissor < dst */
+
+	if (fz_is_empty_irect(fz_intersect_irect(&bbox, fz_pixmap_bbox_no_ctx(dst, &bbox2))))
+		return;
+
 	x = bbox.x0;
 	y = bbox.y0;
 	w = bbox.x1 - bbox.x0;
@@ -575,11 +579,7 @@ fz_draw_fill_text(fz_device *devp, fz_text *text, const fz_matrix *ctm,
 			}
 			else
 			{
-				/* SumatraPDF: prevent warning C4204 */
-				fz_matrix mat;
-				mat.a = glyph->w; mat.b = 0;
-				mat.c = 0; mat.d = glyph->h;
-				mat.e = x + glyph->x; mat.f = y + glyph->y;
+				fz_matrix mat = {glyph->w, 0.0, 0.0, glyph->h, x + glyph->x, y + glyph->y};
 				fz_paint_image(state->dest, &state->scissor, state->shape, glyph, &mat, alpha * 255);
 			}
 			fz_drop_pixmap(dev->ctx, glyph);

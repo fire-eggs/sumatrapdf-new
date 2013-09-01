@@ -415,13 +415,15 @@ static bool LinkifyCheckMultiline(const WCHAR *pageText, const WCHAR *pos, RectI
 {
     // multiline links end in a non-alphanumeric character and continue on a line
     // that starts left and only slightly below where the current line ended
-    // (and that doesn't start with http itself)
+    // (and that doesn't start with http or a footnote numeral)
     return
         '\n' == *pos && pos > pageText && *(pos + 1) &&
         !iswalnum(pos[-1]) && !str::IsWs(pos[1]) &&
         coords[pos - pageText + 1].BR().y > coords[pos - pageText - 1].y &&
         coords[pos - pageText + 1].y <= coords[pos - pageText - 1].BR().y &&
         coords[pos - pageText + 1].x < coords[pos - pageText - 1].BR().x &&
+        coords[pos - pageText + 1].dy >= coords[pos - pageText - 1].dy * 0.85 &&
+        coords[pos - pageText + 1].dy <= coords[pos - pageText - 1].dy * 1.2 &&
         !str::StartsWith(pos + 1, L"http");
 }
 
@@ -1531,7 +1533,7 @@ bool PdfEngineImpl::LoadFromStream(fz_stream *stm, PasswordUI *pwdUI)
     fz_stream_fingerprint(_doc->file, digest);
 
     bool ok = false, saveKey = false;
-    for (int i = 0; !ok && i < 3; i++) {
+    while (!ok) {
         ScopedMem<WCHAR> pwd(pwdUI->GetPassword(_fileName, digest, pdf_crypt_key(_doc), &saveKey));
         if (!pwd) {
             // password not given or encryption key has been remembered
@@ -1713,7 +1715,7 @@ PageDestination *PdfEngineImpl::GetNamedDest(const WCHAR *name)
     PageDestination *pageDest = NULL;
     fz_link_dest ld = { FZ_LINK_NONE, 0 };
     fz_try(ctx) {
-        ld = pdf_parse_link_dest(_doc, dest);
+        ld = pdf_parse_link_dest(_doc, FZ_LINK_GOTO, dest);
     }
     fz_catch(ctx) {
         return NULL;
@@ -3085,7 +3087,7 @@ int PdfLink::GetDestPageNo() const
 {
     if (link && FZ_LINK_GOTO == link->kind)
         return link->ld.gotor.page + 1;
-    if (link && FZ_LINK_GOTOR == link->kind && !link->ld.gotor.rname)
+    if (link && FZ_LINK_GOTOR == link->kind && !link->ld.gotor.dest)
         return link->ld.gotor.page + 1;
     return 0;
 }
@@ -3131,9 +3133,9 @@ RectD PdfLink::GetDestRect() const
 
 WCHAR *PdfLink::GetDestName() const
 {
-    if (!link || FZ_LINK_GOTOR != link->kind || !link->ld.gotor.rname)
+    if (!link || FZ_LINK_GOTOR != link->kind || !link->ld.gotor.dest)
         return NULL;
-    return str::conv::FromUtf8(link->ld.gotor.rname);
+    return str::conv::FromUtf8(link->ld.gotor.dest);
 }
 
 bool PdfLink::SaveEmbedded(LinkSaverUI& saveUI)
@@ -3342,9 +3344,9 @@ public:
         return link->ld.gotor.page + 1;
     }
     virtual RectD GetDestRect() const {
-        if (!engine || !link || link->kind != FZ_LINK_GOTO || !link->ld.gotor.rname)
+        if (!engine || !link || link->kind != FZ_LINK_GOTO || !link->ld.gotor.dest)
             return RectD(DEST_USE_DEFAULT, DEST_USE_DEFAULT, DEST_USE_DEFAULT, DEST_USE_DEFAULT);
-        return fz_rect_to_RectD(engine->FindDestRect(link->ld.gotor.rname));
+        return fz_rect_to_RectD(engine->FindDestRect(link->ld.gotor.dest));
     }
     virtual WCHAR *GetDestValue() const { return GetValue(); }
 };

@@ -381,6 +381,9 @@
     <ClCompile Include="..\src\utils\VarintGob.cpp">
       <Filter>utils</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\utils\WebpReader.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\utils\WinUtil.cpp">
       <Filter>utils</Filter>
     </ClCompile>
@@ -603,6 +606,9 @@
     <ClCompile Include="..\mupdf\source\fitz\stream-open.c">
       <Filter>ext\mupdf\fitz</Filter>
     </ClCompile>
+    <ClCompile Include="..\mupdf\source\fitz\stream-prog.c">
+      <Filter>ext\mupdf\fitz</Filter>
+    </ClCompile>
     <ClCompile Include="..\mupdf\source\fitz\stream-read.c">
       <Filter>ext\mupdf\fitz</Filter>
     </ClCompile>
@@ -631,6 +637,9 @@
       <Filter>ext\mupdf\fitz</Filter>
     </ClCompile>
     <ClCompile Include="..\mupdf\source\pdf\pdf-annot.c">
+      <Filter>ext\mupdf\pdf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mupdf\source\pdf\pdf-appearance.c">
       <Filter>ext\mupdf\pdf</Filter>
     </ClCompile>
     <ClCompile Include="..\mupdf\source\pdf\pdf-cmap-load.c">
@@ -1161,6 +1170,9 @@
       <Filter>utils</Filter>
     </ClInclude>
     <ClInclude Include="..\src\utils\VecSegmented.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\utils\WebpReader.h">
       <Filter>utils</Filter>
     </ClInclude>
     <ClInclude Include="..\src\utils\WinUtil.h">
