@@ -160,7 +160,7 @@ solution "muitest"
       "src/utils/BitManip.h",
       "src/utils/Dict*",
       "src/utils/DebugLog*",
-      "src/Utils/FileUtil*",
+      "src/utils/FileUtil*",
       "src/utils/GdiPlusUtil*",
       "src/utils/HtmlParserLookup*",
       "src/utils/SerializeTxt*",
@@ -168,6 +168,7 @@ solution "muitest"
       "src/utils/StrUtil*",
       "src/utils/TgaReader*",
       "src/utils/TxtParser*",
+      "src/utils/WebpReader.h", -- building without WebP support (for compilation speed)
       "src/utils/WinUtil*",
       "src/mui/*.h",
       "src/mui/*.cpp",
@@ -178,4 +179,4 @@ solution "muitest"
       "src/mui/MiniMui*",
     }
     includedirs { "src", "src/utils", "src/utils/msvc", "src/mui"}
-    links { "gdiplus", "comctl32", "shlwapi", "Version" }
+    links { "gdiplus", "comctl32", "shlwapi", "Version", "WindowsCodecs" }

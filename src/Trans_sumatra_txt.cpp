@@ -799,7 +799,7 @@ const char * gTranslations_am =
   "&\325\217\325\245\325\275\326\204\325\250\0"\
   "&\324\261\325\265\325\270\0"\
   "&\325\211\325\241\326\203\325\250\0"\
-  "(%d-\325\250)\0"\
+  "(%d-\325\253\326\201)\0"\
   "(\325\247\325\273 %s)\0"\
   "SumatraPDF-\325\253 \325\264\325\241\325\275\325\253\325\266\0"\
   "\324\261\325\276\325\245\325\254\325\241\326\201\325\266\325\245\325\254 \325\250\325\266\325\277\326\200\325\265\325\241\325\254\325\266\325\245\326\200\325\253\325\266\0"\
@@ -1301,7 +1301,7 @@ const char * gTranslations_eu =
   "Sostengatutako agiri guztiak\0"\
   "Aplikazioa:\0"\
   "Elkartu PDF agiriekin?\0"\
-  "Itsaspena: %s\0"\
+  "Eranspena: %s\0"\
   "Egilea:\0"\
   "Berezgaitasunez\0"\
   "&Berezgaitasunez egiaztatu eguneraketak\0"\
@@ -1333,7 +1333,7 @@ const char * gTranslations_eu =
   "Ezinezkoa irarkailua abiaraztea\0"\
   "Ezinezkoa orrialdea aurkeztea\0"\
   "Sortua:\0"\
-  "Uneko agiria\0"\
+  "Oraingo agiria\0"\
   "Egile Zoo&ma...\tKtrl+Y\0"\
   "Berezko &Egitura:\0"\
   "Berezko &Zooma:\0"\
@@ -1392,7 +1392,7 @@ const char * gTranslations_eu =
   "Hizki Larriak-xeheak Bereizi\0"\
   "Mobi agiriak\0"\
   "Aldatuta:\0"\
-  "%s bertsio berria eskuragarri dago. Bertsio berria jeitsi?\0"\
+  "%s bertsio berria eskuragarri dago. Jeitsi bertsio berria?\0"\
   "Hurrengo Orrialdea\0"\
   "Ez da emaitzik aurkitu\0"\
   "Ez da emaitzik aurkitu %u lerro inguran %s agirian\0"\
@@ -2712,9 +2712,9 @@ const char * gTranslations_cn =
 const char * gTranslations_tw = 
   "\351\227\234\346\226\274(&A)\0"\
   "\345\257\246\351\232\233\345\244\247\345\260\217(&U)\tCtrl+1\0"\
-  "\351\200\262\351\232\216\351\201\270\351\240\205...\0"\
+  "\351\200\262\351\232\216\351\201\270\351\240\205...(&A)\0"\
   "\346\211\200\346\234\211\345\267\262\351\201\270\345\217\226\347\232\204\351\240\201\351\235\242(&A)\0"\
-  "\344\270\212\344\270\200\345\201\234\351\240\223\351\240\201\351\235\242\tAlt+<-\0"\
+  "\344\270\212\344\270\200\345\201\234\351\240\223\351\240\201\351\235\242(&B)\tAlt+<-\0"\
   "\346\233\270\346\234\254\346\250\241\345\274\217(&B)\tCtrl+8\0"\
   "\351\227\234\351\226\211(&C)\tCtrl+W\0"\
   "\350\244\207\350\243\275\351\201\270\345\217\226\347\232\204\347\257\204\345\234\215(&C)\0"\
@@ -2858,7 +2858,7 @@ const char * gTranslations_tw =
   "\0"\
   "\346\212\212 SumatraPDF \344\275\234\347\202\272\351\240\220\350\250\255\347\232\204PDF\351\226\261\350\256\200\345\231\250?\0"\
   "\346\212\212 SumatraPDF \344\275\234\347\202\272\351\240\220\350\250\255\347\232\204PDF\351\226\261\350\256\200\345\267\245\345\205\267\0"\
-  "\0"\
+  "\346\274\253\347\225\253\346\250\241\345\274\217(&G)\0"\
   "\347\254\246\345\220\210\345\244\247\345\260\217\345\257\253\0"\
   "Mobi \346\226\207\344\273\266\0"\
   "\346\252\224\346\241\210\346\233\264\346\226\260\346\227\245\346\234\237\357\274\232\0"\
@@ -2873,7 +2873,7 @@ const char * gTranslations_tw =
   "\351\226\213\345\225\237\0"\
   "\344\273\245 PDF-XChange \351\226\213\345\225\237\0"\
   "\351\226\213\345\225\237\346\252\224\346\241\210...\0"\
-  "\0"\
+  "\344\273\245 %s \351\226\213\345\225\237\0"\
   "\344\273\245 Adobe Reader \351\226\213\345\225\237(&A)\0"\
   "\344\273\245 Foxit Reader \351\226\213\345\225\237(&F)\0"\
   "\344\273\245 Microsoft HTML Help \351\226\213\345\225\237\0"\
@@ -3692,7 +3692,7 @@ const char * gTranslations_dk =
 const char * gTranslations_nl = 
   "&Over\0"\
   "W&are grootte\tCtrl+1\0"\
-  "\0"\
+  "&geavanceerde opties\0"\
   "&Alle geselecteerde pagina's\0"\
   "Terug\tAlt+<-\0"\
   "&Boekweergave\tCtrl+8\0"\
@@ -6457,7 +6457,7 @@ const char * gTranslations_id =
   "Markah\0"\
   "\0"\
   "Dokumen CHM\0"\
-  "Tidak bisa menghubungi Internet (kesalahan %#x).\0"\
+  "Tidak bisa terhubung ke Internet (kesalahan %#x).\0"\
   "Batalkan\0"\
   "Tidak dapat mencetak berkas ini\0"\
   "Tidak dapat memulai perintah pencarian terbalik. Harap periksa baris perintah di bagian pengaturan.\0"\
@@ -6465,20 +6465,20 @@ const char * gTranslations_id =
   "&Periksa Versi Terbaru\0"\
   "Buku Komik\0"\
   "Kompabilitas\0"\
-  "Kontinu\0"\
-  "Tampilan Buku Secara Kontinu\0"\
-  "Dua Halaman Kontinu\0"\
+  "Bersambung\0"\
+  "Tampilan Buku Bersambung\0"\
+  "Halaman Berhadapan Tersambung\0"\
   "Bantu Alihbahasa\0"\
   "Salin &Gambar\0"\
   "Salin Alamat &Link\0"\
   "Salin &Komentar\0"\
   "Menyalin teks ditolak (menyalin sebagai gambar saja)\0"\
   "Hak Cipta\0"\
-  "Gagal mendapatkan properti printer\0"\
+  "Gagal mendapatkan piranti Printer\0"\
   "Gagal memulai printer\0"\
   "Gagal menampilkan halaman\0"\
   "Dibuat:\0"\
-  "Berkas sekarang\0"\
+  "Berkas ini\0"\
   "&Pembesaran Buatan\tCtrl+Y\0"\
   "Tampilan &Standar\0"\
   "Pembesaran &Standar\0"\
@@ -6536,7 +6536,7 @@ const char * gTranslations_id =
   "Mode komik\0"\
   "Cocokkan Ukuran Huruf\0"\
   "Dokumen Mobi\0"\
-  "Dimodifikasi:\0"\
+  "Termodifikasi:\0"\
   "Versi baru %s telah tersedia. Unduh versi baru ini?\0"\
   "Halaman Berikutnya\0"\
   "Tidak ditemukan kesamaan\0"\
@@ -6602,12 +6602,12 @@ const char * gTranslations_id =
   "Tampilkan Yang Sering Dibaca\0"\
   "Tampilkan kolom &markah jika tersedia\0"\
   "Halaman Tunggal\0"\
-  "Maaf, itu tidak boleh terjadi!\n\nHarap tekan 'Batalkan', jika Anda ingin membantu kami membetulkan penyebab crash ini.\0"\
+  "Maaf, ini seharusnya tidak terjadi!\n\nHarap tekan 'Batalkan', jika Anda ingin membantu kami membetulkan penyebab kegagalan ini.\0"\
   "Berkas asal %s tidak mempunyai titik sinkronisasi\0"\
   "Perihal:\0"\
   "Pengaturan SumatraPDF\0"\
   "Pembaruan SumatraPDF\0"\
-  "SumatraPDF berhenti berfungsi\0"\
+  "SumatraPDF gagal\0"\
   "SumatraPDF adalah pembaca berkas PDF utama Anda\0"\
   "SumatraPDF sekarang telah menjadi pembaca berkas PDF utama Anda\0"\
   "Berkas sinkronisasi tidak dapat dibuka\0"\
@@ -8837,7 +8837,7 @@ const char * gTranslations_no =
 const char * gTranslations_fa = 
   "&\330\257\330\261\330\250\330\247\330\261\331\207\0"\
   "&\330\247\330\250\330\271\330\247\330\257 \330\247\330\265\331\204\333\214\342\200\214\tCtrl+1\0"\
-  "\0"\
+  "\330\252\331\206\330\270\333\214\331\205\330\247\330\252 \331\276\333\214\330\264\330\261\331\201\330\252\331\207\0"\
   "&\331\207\331\205\331\207\342\200\214\333\214 \330\265\331\201\330\255\330\247\330\252 \330\247\331\206\330\252\330\256\330\247\330\250 \342\200\214\330\264\330\257\331\207\0"\
   "&\330\271\331\202\330\250\tAlt+\342\206\220\0"\
   "\331\206\331\205\330\247\333\214\330\264 &\332\251\330\252\330\247\330\250\333\214\0"\
@@ -8864,7 +8864,7 @@ const char * gTranslations_fa =
   "\331\201\331\202\330\267 \330\265\331\201\330\255\330\247\330\252 &\331\201\330\261\330\257\0"\
   "\330\250\330\247\330\262 \332\251\330\261\330\257\331\206 \330\263\331\206\330\257\0"\
   "&\330\250\330\247\330\262 \332\251\330\261\330\257\331\206...\tCtrl+O\0"\
-  "&\332\257\330\262\333\214\331\206\331\207\342\200\214\331\207\330\247\0"\
+  "&\330\252\331\206\330\270\333\214\331\205\330\247\330\252 ...\0"\
   "&\332\251\331\204\331\205\331\207\342\200\214\333\214 \330\271\330\250\331\210\330\261\0"\
   "&\330\263\331\206\330\254\330\247\331\202 \332\251\330\261\330\257\331\206 \330\263\331\206\330\257\0"\
   "\330\265\331\201\330\255\331\207\342\200\214\333\214 &\331\202\330\250\331\204\333\214\t\342\206\220\0"\
@@ -8998,7 +8998,7 @@ const char * gTranslations_fa =
   "\330\250\330\247\330\262 \332\251\330\261\330\257\331\206\0"\
   "\330\250\330\247\330\262 \332\251\330\261\330\257\331\206 \330\257\330\261 PDF-&XChange\0"\
   "\330\250\330\247\330\262 \332\251\330\261\330\257\331\206 \333\214\332\251 \330\263\331\206\330\257...\0"\
-  "\0"\
+  "%s \330\250\330\247\330\262\330\264\330\257\331\206 \330\257\330\261\0"\
   "\330\250\330\247\330\262 \332\251\330\261\330\257\331\206 \330\257\330\261 &Adobe Reader\0"\
   "\330\250\330\247\330\262 \332\251\330\261\330\257\331\206 \330\257\330\261 &Foxit Reader\0"\
   "\330\250\330\247\330\262 \332\251\330\261\330\257\331\206 \330\257\330\261 &Microsoft HTML Help\0"\
@@ -10552,7 +10552,7 @@ const char * gTranslations_sr_rs =
 const char * gTranslations_sp_rs = 
   "O programu\0"\
   "Stvarna veli\304\215ina\tCtrl+1\0"\
-  "\0"\
+  "Napredna pode\305\241avanja...\0"\
   "Sve izabrane stranice\0"\
   "Nazad\tAlt+<-\0"\
   "Izgled knjige\tCtrl+8\0"\
@@ -10739,8 +10739,8 @@ const char * gTranslations_sp_rs =
   "\305\240tampati kao sliku (zahteva vi\305\241e memorije)\0"\
   "Opseg \305\241tampanja\0"\
   "\305\240tampa\304\215 sa navedenim imenom ne postoji\0"\
-  "\0"\
-  "\0"\
+  "\305\240tampanje u toku.\0"\
+  "\305\240tampanje je i dalje u toku. Obustavi i iza\304\221i?\0"\
   "\305\240tampanje je jo\305\241 uvek u toku. \305\275elite li da prekinete \305\241tampanje i po\304\215nete ponovo?\0"\
   "\305\240tampanje %d. stramoce od ukupno %d...\0"\
   "Problem prilikom \305\241tampanja.\0"\
@@ -12022,7 +12022,7 @@ const char * gTranslations_ta =
 const char * gTranslations_tr = 
   "&Hakk\304\261nda\0"\
   "Ger\303\247ek &Boyut\tCtrl+1\0"\
-  "\0"\
+  "Geli\305\237mi\305\237 Ayarlar\0"\
   "T\303\274m se\303\247ilen &sayfalar\0"\
   "&Geri\tAlt+Sol Ok\0"\
   "&Kitap G\303\266r\303\274n\303\274m\303\274\0"\
@@ -12153,7 +12153,7 @@ const char * gTranslations_tr =
   "Geni\305\237li\304\237e s\304\261\304\237d\304\261r\0"\
   "Geni\305\237li\304\237e \303\266l\303\247ekle ve sayfalar\304\261 devaml\304\261 g\303\266ster\0"\
   "Tek sayfaya \303\266l\303\247ekle\0"\
-  "Yaz\304\261y\303\274zleri:\0"\
+  "Yaz\304\261 Tipleri:\0"\
   "Kitap bi\303\247imlendiriliyor... %d sayfa\0"\
   "Metin %s numaral\304\261 sayfada bulundu\0"\
   "Metin sayfa %s bulundu (tekrar)\0"\
@@ -12168,7 +12168,7 @@ const char * gTranslations_tr =
   "\0"\
   "SumatraPDF'i PDF dosyalar\304\261 i\303\247in varsay\304\261lan uygulama yapmak ister misiniz?\0"\
   "Varsay\304\261lan PDF okuyucusu yap\0"\
-  "\0"\
+  "Man&ga modu\0"\
   "B\303\274y\303\274k/K\303\274\303\247\303\274k harf e\305\237le\305\237tir\0"\
   "Mobi belgeleri\0"\
   "De\304\237i\305\237tirilme tarihi:\0"\
@@ -12183,7 +12183,7 @@ const char * gTranslations_tr =
   "&A\303\247\0"\
   "PDF-XChange ile a\303\247\0"\
   "Belge a\303\247...\0"\
-  "\0"\
+  "%s i\303\247inde a\303\247\0"\
   "&Adobe Reader ile a\303\247\0"\
   "&Adobe Foxit ile a\303\247\0"\
   "Microsoft HTML Help ile a\303\247\0"\
@@ -12251,7 +12251,7 @@ const char * gTranslations_tr =
   "Ba\305\237l\304\261k:\0"\
   "Bilinmeyen kaynak dosyas\304\261 (%s)\0"\
   "G\303\266r\303\274n\303\274m\0"\
-  "&Web sayfas\304\261\0"\
+  "&Website ziyaret et\0"\
   "Uyar\304\261\0"\
   "XPS belgeleri\0"\
   "G\303\274ncel s\303\274r\303\274m\303\274 kullan\304\261yorsunuz.\0"\
