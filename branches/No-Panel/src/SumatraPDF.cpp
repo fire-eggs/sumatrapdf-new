@@ -8,6 +8,7 @@
 
 #include "AppPrefs.h"
 #include "AppTools.h"
+#include "CmdLineParser.h"
 #include "CrashHandler.h"
 #include "DebugLog.h"
 #include "DirIter.h"
@@ -400,9 +401,12 @@ WindowInfo* FindWindowInfoBySyncFile(const WCHAR *file)
 class HwndPasswordUI : public PasswordUI
 {
     HWND hwnd;
+    WStrVec defaults;
 
 public:
-    HwndPasswordUI(HWND hwnd) : hwnd(hwnd) { }
+    HwndPasswordUI(HWND hwnd) : hwnd(hwnd) {
+        ParseCmdLine(gGlobalPrefs->defaultPasswords, defaults);
+    }
 
     virtual WCHAR * GetPassword(const WCHAR *fileName, unsigned char *fileDigest,
                                 unsigned char decryptionKeyOut[32], bool *saveKey);
@@ -424,6 +428,10 @@ WCHAR *HwndPasswordUI::GetPassword(const WCHAR *fileName, unsigned char *fileDig
 
     *saveKey = false;
 
+    // try the list of default passwords before asking the user
+    if (defaults.Count() > 0)
+        return defaults.Pop();
+
     if (IsStressTesting())
         return NULL;
 
@@ -437,8 +445,7 @@ WCHAR *HwndPasswordUI::GetPassword(const WCHAR *fileName, unsigned char *fileDig
     }
 
     fileName = path::GetBaseName(fileName);
-    // check if window is still validity as it might have been
-    // closed by now
+    // check if the window is still valid as it might have been closed by now
     if (!IsWindow(hwnd))
         hwnd = GetForegroundWindow();
     bool *rememberPwd = gGlobalPrefs->rememberOpenedFiles ? saveKey : NULL;
@@ -1856,8 +1863,6 @@ static DWORD ShowAutoUpdateDialog(HWND hParent, HttpReq *ctx, bool silent)
 }
 
 #ifdef SUPPORTS_AUTO_UPDATE
-#include "CmdLineParser.h"
-
 static bool AutoUpdateMain()
 {
     WStrVec argList;
@@ -1956,9 +1961,8 @@ void AutoUpdateCheckAsync(HWND hwnd, bool autoCheck)
         FILETIME currentTimeFt;
         GetSystemTimeAsFileTime(&currentTimeFt);
         int secs = FileTimeDiffInSecs(currentTimeFt, gGlobalPrefs->timeOfLastUpdateCheck);
-        CrashIf(secs < 0);
         // if secs < 0 => somethings wrong, so ignore that case
-        if ((secs > 0) && (secs < SECS_IN_DAY))
+        if ((secs >= 0) && (secs < SECS_IN_DAY))
             return;
     }
 
@@ -2964,7 +2968,8 @@ static void OnMenuSaveAs(WindowInfo& win)
         ok = win.dm->engine->SaveFileAs(realDstFileName);
     }
     // ... as well as files containing annotations ...
-    else if (win.dm->engine->SupportsAnnotation(true)) {
+    else if (gGlobalPrefs->annotationDefaults.saveIntoDocument &&
+             win.dm->engine->SupportsAnnotation(true)) {
         ok = win.dm->engine->SaveFileAs(realDstFileName);
     }
     // ... else just copy the file
@@ -2983,8 +2988,10 @@ static void OnMenuSaveAs(WindowInfo& win)
         }
     }
     if (ok && win.userAnnots && win.userAnnotsModified) {
-        if (!win.dm->engine->SupportsAnnotation(true))
+        if (!gGlobalPrefs->annotationDefaults.saveIntoDocument ||
+            !win.dm->engine->SupportsAnnotation(true)) {
             ok = SaveFileModifictions(realDstFileName, win.userAnnots);
+        }
         if (ok && path::IsSame(srcFileName, realDstFileName))
             win.userAnnotsModified = false;
     }
@@ -3488,7 +3495,8 @@ void OnMenuAdvancedOptions()
 #endif
 
     ScopedMem<WCHAR> path(AppGenDataFilename(PREFS_FILE_NAME));
-    CrashIf(!file::Exists(path));
+    // TODO: disable/hide the menu item when there's no prefs file
+    //       (happens e.g. when run in portable mode from a CD)?
     LaunchFile(path, NULL, L"open");
 }
 

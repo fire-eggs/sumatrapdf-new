@@ -183,19 +183,18 @@ pdf_is_hidden_ocg(pdf_obj *ocg, pdf_csi *csi, pdf_obj *rdb)
 	if (strcmp(type, "OCG") == 0)
 	{
 		/* An Optional Content Group */
+		int default_value = 0;
 		int num = pdf_to_num(ocg);
 		int gen = pdf_to_gen(ocg);
 		int len = desc->len;
 		int i;
-		/* cf. http://code.google.com/p/sumatrapdf/issues/detail?id=2066 */
-		int hidden_default = 0;
 
+		/* by default an OCG is visible, unless it's explicitly hidden */
 		for (i = 0; i < len; i++)
 		{
 			if (desc->ocgs[i].num == num && desc->ocgs[i].gen == gen)
 			{
-				/* cf. http://code.google.com/p/sumatrapdf/issues/detail?id=2066 */
-				hidden_default = desc->ocgs[i].state == 0;
+				default_value = desc->ocgs[i].state == 0;
 				break;
 			}
 		}
@@ -240,7 +239,7 @@ pdf_is_hidden_ocg(pdf_obj *ocg, pdf_csi *csi, pdf_obj *rdb)
 		 * dicts, this is not really a problem. */
 		obj = pdf_dict_gets(ocg, "Usage");
 		if (!pdf_is_dict(obj))
-			return hidden_default;
+			return default_value;
 		/* FIXME: Should look at Zoom (and return hidden if out of
 		 * max/min range) */
 		/* FIXME: Could provide hooks to the caller to check if
@@ -250,10 +249,11 @@ pdf_is_hidden_ocg(pdf_obj *ocg, pdf_csi *csi, pdf_obj *rdb)
 		{
 			return 1;
 		}
-		/* cf. http://code.google.com/p/sumatrapdf/issues/detail?id=2066 */
 		if (strcmp(pdf_to_name(pdf_dict_gets(obj2, event_state)), "ON") == 0)
+		{
 			return 0;
-		return hidden_default;
+		}
+		return default_value;
 	}
 	else if (strcmp(type, "OCMD") == 0)
 	{
@@ -444,7 +444,7 @@ begin_softmask(pdf_csi * csi, softmask_save *save, int for_group)
 	}
 	fz_catch(ctx)
 	{
-		/* FIXME: TryLater */
+		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		/* FIXME: Ignore error - nasty, but if we throw from
 		 * here the clip stack would be messed up. */
 		if (csi->cookie)
@@ -1181,26 +1181,21 @@ pdf_copy_gstate(fz_context *ctx, pdf_gstate *gs, pdf_gstate *old)
 static void
 pdf_copy_pattern_gstate(fz_context *ctx, pdf_gstate *gs, const pdf_gstate *old)
 {
-	/* SumatraPDF: fix memory leak */
-	pdf_drop_font(ctx, gs->font);
-	pdf_drop_xobject(ctx, gs->softmask);
-	fz_drop_transfer_function(ctx, gs->tr);
-	fz_drop_transfer_function(ctx, gs->softmask_tr);
-
 	gs->ctm = old->ctm;
-	gs->font = old->font;
-	gs->softmask = old->softmask;
+
+	pdf_drop_font(ctx, gs->font);
+	gs->font = pdf_keep_font(ctx, old->font);
+
+	pdf_drop_xobject(ctx, gs->softmask);
+	gs->softmask = pdf_keep_xobject(ctx, old->softmask);
 
 	fz_drop_stroke_state(ctx, gs->stroke_state);
 	gs->stroke_state = fz_keep_stroke_state(ctx, old->stroke_state);
 
-	if (gs->font)
-		pdf_keep_font(ctx, gs->font);
-	if (gs->softmask)
-		pdf_keep_xobject(ctx, gs->softmask);
-
 	/* SumatraPDF: support transfer functions */
+	fz_drop_transfer_function(ctx, gs->tr);
 	gs->tr = fz_keep_transfer_function(ctx, old->tr);
+	fz_drop_transfer_function(ctx, gs->softmask_tr);
 	gs->softmask_tr = fz_keep_transfer_function(ctx, old->softmask_tr);
 }
 
@@ -1321,7 +1316,7 @@ pdf_grestore(pdf_csi *csi)
 		}
 		fz_catch(ctx)
 		{
-			/* FIXME: TryLater */
+			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 			/* Silently swallow the problem */
 		}
 		clip_depth--;
@@ -1403,8 +1398,11 @@ pdf_set_color(pdf_csi *csi, int what, float *v)
 	case PDF_MAT_PATTERN:
 	case PDF_MAT_COLOR:
 		/* cf. http://code.google.com/p/sumatrapdf/issues/detail?id=1879 */
-		if (!strcmp(mat->colorspace->name, "Indexed"))
-			v[0] = v[0] / 255;
+		if (fz_colorspace_is_indexed(mat->colorspace))
+		{
+			mat->v[0] = v[0] / 255;
+			break;
+		}
 		for (i = 0; i < mat->colorspace->n; i++)
 			mat->v[i] = v[i];
 		break;
@@ -1722,6 +1720,31 @@ pdf_run_xobject(pdf_csi *csi, pdf_obj *resources, pdf_xobject *xobj, const fz_ma
 	}
 }
 
+static pdf_font_desc *
+load_font_or_hail_mary(pdf_csi *csi, pdf_obj *rdb, pdf_obj *font, int depth)
+{
+	pdf_document *doc = csi->doc;
+	fz_context *ctx = doc->ctx;
+	pdf_font_desc *desc;
+
+	fz_try(ctx)
+	{
+		desc = pdf_load_font(doc, rdb, font, depth);
+	}
+	fz_catch(ctx)
+	{
+		if (fz_caught(ctx) != FZ_ERROR_TRYLATER)
+			fz_rethrow(ctx);
+		if (!csi->cookie || !csi->cookie->incomplete_ok)
+			fz_rethrow(ctx);
+		desc = NULL;
+		csi->cookie->incomplete++;
+	}
+	if (desc == NULL)
+		desc = pdf_load_hail_mary_font(doc);
+	return desc;
+}
+
 static void
 pdf_run_extgstate(pdf_csi *csi, pdf_obj *rdb, pdf_obj *extgstate)
 {
@@ -1751,7 +1774,7 @@ pdf_run_extgstate(pdf_csi *csi, pdf_obj *rdb, pdf_obj *extgstate)
 					gstate->font = NULL;
 				}
 
-				gstate->font = pdf_load_font(csi->doc, rdb, font, csi->nested_depth);
+				gstate->font = load_font_or_hail_mary(csi, rdb, font, csi->nested_depth);
 				if (!gstate->font)
 					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find font in store");
 				gstate->size = pdf_to_real(pdf_array_get(val, 1));
@@ -2333,7 +2356,7 @@ static void pdf_run_Tf(pdf_csi *csi, pdf_obj *rdb)
 	if (!obj)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find font resource: '%s'", csi->name);
 
-	gstate->font = pdf_load_font(csi->doc, rdb, obj, csi->nested_depth);
+	gstate->font = load_font_or_hail_mary(csi, rdb, obj, csi->nested_depth);
 }
 
 static void pdf_run_Tr(pdf_csi *csi)
@@ -2998,10 +3021,21 @@ pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 		}
 		fz_catch(ctx)
 		{
-			/* FIXME: TryLater */
-			/* Swallow the error */
-			if (csi->cookie)
-				csi->cookie->errors++;
+			if (!csi->cookie)
+			{
+				fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+			}
+			else if (fz_caught(ctx) == FZ_ERROR_TRYLATER)
+			{
+				if (csi->cookie->incomplete_ok)
+					csi->cookie->incomplete++;
+				else
+					fz_rethrow(ctx);
+			}
+			else
+			{
+				 csi->cookie->errors++;
+			}
 			if (!ignoring_errors)
 			{
 				fz_warn(ctx, "Ignoring errors during rendering");
@@ -3046,7 +3080,7 @@ pdf_run_contents_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file)
 	}
 	fz_catch(ctx)
 	{
-		/* FIXME: TryLater */
+		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		fz_warn(ctx, "Content stream parsing error - rendering truncated");
 	}
 	while (csi->gtop > csi->gbot)
@@ -3145,6 +3179,8 @@ static void pdf_run_page_contents_with_usage(pdf_document *doc, pdf_page *page, 
 void pdf_run_page_contents(pdf_document *doc, pdf_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
 {
 	pdf_run_page_contents_with_usage(doc, page, dev, ctm, "View", cookie);
+	if (page->incomplete & PDF_PAGE_INCOMPLETE_CONTENTS)
+		fz_throw(doc->ctx, FZ_ERROR_TRYLATER, "incomplete rendering");
 }
 
 static void pdf_run_annot_with_usage(pdf_document *doc, pdf_page *page, pdf_annot *annot, fz_device *dev, const fz_matrix *ctm, char *event, fz_cookie *cookie)
@@ -3192,6 +3228,8 @@ static void pdf_run_annot_with_usage(pdf_document *doc, pdf_page *page, pdf_anno
 void pdf_run_annot(pdf_document *doc, pdf_page *page, pdf_annot *annot, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
 {
 	pdf_run_annot_with_usage(doc, page, annot, dev, ctm, "View", cookie);
+	if (page->incomplete & PDF_PAGE_INCOMPLETE_ANNOTS)
+		fz_throw(doc->ctx, FZ_ERROR_TRYLATER, "incomplete rendering");
 }
 
 static void pdf_run_page_annots_with_usage(pdf_document *doc, pdf_page *page, fz_device *dev, const fz_matrix *ctm, char *event, fz_cookie *cookie)
@@ -3225,6 +3263,8 @@ pdf_run_page_with_usage(pdf_document *doc, pdf_page *page, fz_device *dev, const
 {
 	pdf_run_page_contents_with_usage(doc, page, dev, ctm, event, cookie);
 	pdf_run_page_annots_with_usage(doc, page, dev, ctm, event, cookie);
+	if (page->incomplete)
+		fz_throw(doc->ctx, FZ_ERROR_TRYLATER, "incomplete rendering");
 }
 
 void

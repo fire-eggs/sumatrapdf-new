@@ -183,6 +183,14 @@
 					>
 				</File>
 				<File
+					RelativePath="..\src\utils\WebpReader.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\src\utils\WebpReader.h"
+					>
+				</File>
+				<File
 					RelativePath="..\src\utils\ZipUtil.cpp"
 					>
 				</File>
@@ -1399,6 +1407,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\mupdf\source\fitz\stream-prog.c"
+					>
+				</File>
+				<File
 					RelativePath="..\mupdf\source\fitz\stream-read.c"
 					>
 				</File>
@@ -1630,6 +1642,10 @@
 						>
 					</File>
 					<File
+						RelativePath="..\mupdf\include\mupdf\pdf\appearance.h"
+						>
+					</File>
+					<File
 						RelativePath="..\mupdf\include\mupdf\pdf\cmap.h"
 						>
 					</File>
@@ -1692,6 +1708,10 @@
 				>
 				<File
 					RelativePath="..\mupdf\source\pdf\pdf-annot.c"
+					>
+				</File>
+				<File
+					RelativePath="..\mupdf\source\pdf\pdf-appearance.c"
 					>
 				</File>
 				<File

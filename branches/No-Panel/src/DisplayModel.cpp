@@ -663,7 +663,13 @@ RestartLayout:
             ++pageInARow;
         }
         CrashIf(pageInARow >= dimof(columnMaxWidth));
-        pageInfo->pos.x = pageOffX + (columnMaxWidth[pageInARow] - pageInfo->pos.dx) / 2;
+        // center pages in a single column but right/left align them when using two columns
+        if (1 == columns)
+            pageInfo->pos.x = pageOffX + (columnMaxWidth[0] - pageInfo->pos.dx) / 2;
+        else if (0 == pageInARow)
+            pageInfo->pos.x = pageOffX + columnMaxWidth[0] - pageInfo->pos.dx;
+        else
+            pageInfo->pos.x = pageOffX;
         // center the cover page over the first two spots in non-continuous mode
         if (DisplayModeShowCover(GetDisplayMode()) && pageNo == 1 && !IsContinuous(GetDisplayMode())) {
             pageInfo->pos.x = offX + windowMargin.left + (columnMaxWidth[0] + pageSpacing.dx + columnMaxWidth[1] - pageInfo->pos.dx) / 2;
@@ -980,6 +986,7 @@ PointI DisplayModel::GetContentStart(int pageNo)
     return contentBox.TL().Convert<int>();
 }
 
+// TODO: what's GoToPage supposed to do for Facing at 400% zoom?
 void DisplayModel::GoToPage(int pageNo, int scrollY, bool addNavPt, int scrollX)
 {
     assert(ValidPageNo(pageNo));
@@ -1032,6 +1039,9 @@ void DisplayModel::GoToPage(int pageNo, int scrollY, bool addNavPt, int scrollX)
     // make sure to not display the blank space beside the first page in cover mode
     else if (-1 == scrollX && 1 == pageNo && DisplayModeShowCover(GetDisplayMode()))
         viewPort.x = pageInfo->pos.x - windowMargin.left;
+    // make sure that at least part of the page is visible
+    else if (viewPort.x >= pageInfo->pos.x + pageInfo->pos.dx)
+        viewPort.x = pageInfo->pos.x;
 
     /* Hack: if an image is smaller in Y axis than the draw area, then we center
        the image by setting pageInfo->currPos.y in RecalcPagesInfo. So we shouldn't

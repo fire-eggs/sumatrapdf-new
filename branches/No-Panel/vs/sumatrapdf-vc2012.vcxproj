@@ -171,6 +171,7 @@
     <ClCompile Include="..\src\utils\UITask.cpp" />
     <ClCompile Include="..\src\utils\UtAssert.cpp" />
     <ClCompile Include="..\src\utils\VarintGob.cpp" />
+    <ClCompile Include="..\src\utils\WebpReader.cpp" />
     <ClCompile Include="..\src\utils\WinUtil.cpp" />
     <ClCompile Include="..\src\utils\ZipUtil.cpp" />
     <ClCompile Include="..\src\browserplugin\npPdfViewer.cpp" />
@@ -245,6 +246,7 @@
     <ClCompile Include="..\mupdf\source\fitz\stext-search.c" />
     <ClCompile Include="..\mupdf\source\fitz\store.c" />
     <ClCompile Include="..\mupdf\source\fitz\stream-open.c" />
+    <ClCompile Include="..\mupdf\source\fitz\stream-prog.c" />
     <ClCompile Include="..\mupdf\source\fitz\stream-read.c" />
     <ClCompile Include="..\mupdf\source\fitz\string.c" />
     <ClCompile Include="..\mupdf\source\fitz\svg-device.c" />
@@ -255,6 +257,7 @@
     <ClCompile Include="..\mupdf\source\fitz\ucdn.c" />
     <ClCompile Include="..\mupdf\source\fitz\xml.c" />
     <ClCompile Include="..\mupdf\source\pdf\pdf-annot.c" />
+    <ClCompile Include="..\mupdf\source\pdf\pdf-appearance.c" />
     <ClCompile Include="..\mupdf\source\pdf\pdf-cmap-load.c" />
     <ClCompile Include="..\mupdf\source\pdf\pdf-cmap-parse.c" />
     <ClCompile Include="..\mupdf\source\pdf\pdf-cmap-table.c" />
@@ -433,6 +436,7 @@
     <ClInclude Include="..\src\utils\VarintGob.h" />
     <ClInclude Include="..\src\utils\Vec.h" />
     <ClInclude Include="..\src\utils\VecSegmented.h" />
+    <ClInclude Include="..\src\utils\WebpReader.h" />
     <ClInclude Include="..\src\utils\WinUtil.h" />
     <ClInclude Include="..\src\utils\ZipUtil.h" />
     <ClInclude Include="..\src\browserplugin\npapi\npapi.h" />
