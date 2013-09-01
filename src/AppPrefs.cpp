@@ -102,8 +102,6 @@ static FieldInfo gGlobalPrefsFieldsBenc[] = {
     { offsetof(GlobalPrefs, defaultZoom), Type_Utf8String, (intptr_t)"fit page" },
     { offsetof(GlobalPrefs, mainWindowBackground), Type_Color, ABOUT_BG_COLOR_DEFAULT },
     { offsetof(GlobalPrefs, noDocBgColor), Type_Color, NO_DOC_BG_COLOR_DEFAULT },
-    { offsetof(GlobalPrefs, docBgColor), Type_Color, DOC_BG_COLOR_DEFAULT },
-    { offsetof(GlobalPrefs, docTextColor), Type_Color, DOC_TEXT_COLOR_DEFAULT },
     { offsetof(GlobalPrefs, tocBgColor), Type_Color, TOC_BG_COLOR_DEFAULT },
     { offsetof(GlobalPrefs, favBgColor), Type_Color, FAV_BG_COLOR_DEFAULT },
     { offsetof(GlobalPrefs, escToExit), Type_Bool, false },

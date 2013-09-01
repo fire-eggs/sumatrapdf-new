@@ -2684,11 +2684,11 @@ void UpdateDocumentColors(COLORREF fore, COLORREF back)
 
     // update document color range
     if (
-        fore != gRenderCache.colorRange[0] ||
-        back != gRenderCache.colorRange[1]   )
+        fore != gRenderCache.textColor       ||
+        back != gRenderCache.backgroundColor   )
     {
-        gRenderCache.colorRange[0] = fore;
-        gRenderCache.colorRange[1] = back;
+        gRenderCache.textColor = fore;
+        gRenderCache.backgroundColor = back;
         RerenderEverything();
     }
 }

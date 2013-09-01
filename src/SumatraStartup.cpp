@@ -319,8 +319,6 @@ static bool SetupPluginMode(CommandLineInfo& i)
 static void GetCommandLineInfo(CommandLineInfo& i)
 {
     i.bgColor = gGlobalPrefs->mainWindowBackground;
-    i.colorRange[0] = gGlobalPrefs->docTextColor;
-    i.colorRange[1] = gGlobalPrefs->docBgColor;
     i.forwardSearch = gGlobalPrefs->forwardSearch;
     i.escToExit = gGlobalPrefs->escToExit;
     i.cbxMangaMode = gGlobalPrefs->comicBookUI.cbxMangaMode;
@@ -420,8 +418,6 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     gCrashOnOpen = i.crashOnOpen;
 
     gGlobalPrefs->mainWindowBackground = i.bgColor;
-    gGlobalPrefs->docTextColor = i.colorRange[0];
-    gGlobalPrefs->docBgColor = i.colorRange[1];
     if (gGlobalPrefs->forwardSearch.highlightColor != i.forwardSearch.highlightColor ||
         gGlobalPrefs->forwardSearch.highlightOffset != i.forwardSearch.highlightOffset ||
         gGlobalPrefs->forwardSearch.highlightPermanent != i.forwardSearch.highlightPermanent ||
