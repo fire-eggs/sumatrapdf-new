@@ -317,10 +317,11 @@ public:
 	TempFile *tempFiles;
 	float *t3color;
 	bool transparency, started;
+	int *devHints;
 
 	userData(fz_context *ctx, HDC hDC, const fz_rect *clip) : stack(new userDataStackItem()),
 		ctx(ctx), outlines(NULL), fontCollections(NULL), tempFiles(NULL), t3color(NULL),
-		transparency(false), started(false)
+		transparency(false), started(false), devHints(NULL)
 	{
 		assert(GetMapMode(hDC) == MM_TEXT);
 		graphics = _setup(new Graphics(hDC));
@@ -677,11 +678,12 @@ public:
 		};
 		
 		float scale = hypotf(hypotf(ctm->a, ctm->b), hypotf(ctm->c, ctm->d)) / hypotf(image->w, image->h);
-		// cf. fz_paint_image_imp in draw/imagedraw.c for when (not) to interpolate
+		// cf. fz_paint_image_imp in draw-affine.c for when (not) to interpolate
 		bool downscale = hypotf(ctm->a, ctm->b) < image->w && hypotf(ctm->c, ctm->d) < image->h;
 		bool alwaysInterpolate = downscale ||
 			hypotf(ctm->a, ctm->b) > image->w && hypotf(ctm->c, ctm->d) > image->h &&
-			hypotf(ctm->a, ctm->b) < 2 * image->w && hypotf(ctm->c, ctm->d) < 2 * image->h;
+			hypotf(ctm->a, ctm->b) < 2 * image->w && hypotf(ctm->c, ctm->d) < 2 * image->h &&
+			!(devHints && (*devHints & FZ_DONT_INTERPOLATE_IMAGES));
 		
 		if (!image->interpolate && !alwaysInterpolate && scale > 1.0 && fz_maxi(image->w, image->h) < 200 && fz_is_rectilinear(ctm))
 		{
@@ -1009,42 +1011,42 @@ gdiplus_get_brush(fz_device *dev, fz_colorspace *colorspace, float *color, float
 static GraphicsPath *
 gdiplus_get_path(fz_path *path, const fz_matrix *ctm, bool has_caps, int evenodd=1)
 {
-	PointF *points = new PointF[path->len / 2];
-	BYTE *types = new BYTE[path->len / 2];
+	PointF *points = new PointF[(path->coord_len + path->cmd_len) / 2];
+	BYTE *types = new BYTE[(path->coord_len + path->cmd_len) / 2];
 	PointF origin;
 	int len = 0;
 	
-	for (int i = 0; i < path->len; )
+	for (int i = 0, k = 0; i < path->cmd_len; i++)
 	{
-		switch (path->items[i++].k)
+		switch (path->cmds[i])
 		{
 		case FZ_MOVETO:
-			points[len].X = path->items[i++].v; points[len].Y = path->items[i++].v;
+			points[len].X = path->coords[k++]; points[len].Y = path->coords[k++];
 			origin = points[len];
 			// empty paths seem to confuse GDI+, so filter them out
-			if (i < path->len && path->items[i].k == FZ_CLOSE_PATH)
+			if (i + 1 < path->cmd_len && path->cmds[i + 1] == FZ_CLOSE_PATH)
 				i++;
-			else if (i < path->len && path->items[i].k != FZ_MOVETO)
+			else if (i + 1 < path->cmd_len && path->cmds[i + 1] != FZ_MOVETO)
 				types[len++] = PathPointTypeStart;
 			break;
 		case FZ_LINETO:
-			points[len].X = path->items[i++].v; points[len].Y = path->items[i++].v;
+			points[len].X = path->coords[k++]; points[len].Y = path->coords[k++];
 			// zero-length paths are omitted by GDI+ even if the have start/end caps
 			if (has_caps && points[len].Equals(points[len - 1]))
 				points[len].X += 0.01f / fz_matrix_expansion(ctm);
 			types[len++] = PathPointTypeLine;
 			break;
 		case FZ_CURVETO:
-			points[len].X = path->items[i++].v; points[len].Y = path->items[i++].v;
+			points[len].X = path->coords[k++]; points[len].Y = path->coords[k++];
 			types[len++] = PathPointTypeBezier;
-			points[len].X = path->items[i++].v; points[len].Y = path->items[i++].v;
+			points[len].X = path->coords[k++]; points[len].Y = path->coords[k++];
 			types[len++] = PathPointTypeBezier;
-			points[len].X = path->items[i++].v; points[len].Y = path->items[i++].v;
+			points[len].X = path->coords[k++]; points[len].Y = path->coords[k++];
 			types[len++] = PathPointTypeBezier;
 			break;
 		case FZ_CLOSE_PATH:
 			types[len - 1] = types[len - 1] | PathPointTypeCloseSubpath;
-			if (i < path->len && (path->items[i].k != FZ_MOVETO && path->items[i].k != FZ_CLOSE_PATH))
+			if (i + 1 < path->cmd_len && (path->cmds[i + 1] != FZ_MOVETO && path->cmds[i + 1] != FZ_CLOSE_PATH))
 			{
 				points[len] = origin;
 				types[len++] = PathPointTypeStart;
@@ -1052,9 +1054,9 @@ gdiplus_get_path(fz_path *path, const fz_matrix *ctm, bool has_caps, int evenodd
 			break;
 		}
 	}
-	assert(len <= path->len / 2);
+	assert(len <= (path->coord_len + path->cmd_len) / 2);
 	
-	// clipping intermittently fails for overly large regions (cf. pathscan.c::fz_insertgel)
+	// clipping intermittently fails for overly large regions (cf. fz_insert_gel in draw-edge.c)
 	fz_rect BBOX_BOUNDS = { -(1<<20), -(1<<20) , (1<<20), (1<<20) };
 	fz_matrix invctm;
 	fz_transform_rect(&BBOX_BOUNDS, fz_invert_matrix(&invctm, ctm));
@@ -1270,13 +1272,13 @@ extern "C" static int conic_to(const FT_Vector *ctrl, const FT_Vector *to, void 
 	PathContext *data = (PathContext *)user;
 	FT_Vector from, ctrl1, ctrl2;
 	
-	assert(data->path->len > 0);
-	if (data->path->len == 0)
+	assert(data->path->coord_len > 0);
+	if (data->path->coord_len == 0)
 		fz_moveto(data->ctx, data->path, 0, 0);
 	
 	// cf. http://fontforge.sourceforge.net/bezier.html
-	from.x = data->path->items[data->path->len - 2].v;
-	from.y = data->path->items[data->path->len - 1].v;
+	from.x = data->path->coords[data->path->coord_len - 2];
+	from.y = data->path->coords[data->path->coord_len - 1];
 	ctrl1.x = from.x + 2.0/3 * (ctrl->x - from.x);
 	ctrl1.y = from.y + 2.0/3 * (ctrl->y - from.y);
 	ctrl2.x = ctrl1.x + 1.0/3 * (to->x - from.x);
@@ -1748,6 +1750,7 @@ fz_new_gdiplus_device(fz_context *ctx, void *dc, const fz_rect *base_clip)
 	fz_synchronize_end();
 	
 	fz_device *dev = fz_new_device(ctx, new userData(ctx, (HDC)dc, base_clip));
+	((userData *)dev->user)->devHints = &dev->hints;
 	dev->free_user = fz_gdiplus_free_user;
 	
 	dev->fill_path = fz_gdiplus_fill_path;

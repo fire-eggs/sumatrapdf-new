@@ -19,7 +19,6 @@ pdf_repair_obj(pdf_document *doc, pdf_lexbuf *buf, int *stmofsp, int *stmlenp, p
 {
 	pdf_token tok;
 	int stm_len;
-	int n;
 	fz_stream *file = doc->file;
 	fz_context *ctx = file->ctx;
 
@@ -134,9 +133,7 @@ pdf_repair_obj(pdf_document *doc, pdf_lexbuf *buf, int *stmofsp, int *stmlenp, p
 			fz_seek(file, *stmofsp, 0);
 		}
 
-		n = fz_read(file, (unsigned char *) buf->scratch, 9);
-		if (n < 0)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot read from file");
+		(void)fz_read(file, (unsigned char *) buf->scratch, 9);
 
 		while (memcmp(buf->scratch, "endstream", 9) != 0)
 		{
@@ -257,7 +254,7 @@ pdf_repair_xref(pdf_document *doc, pdf_lexbuf *buf)
 	int num = 0;
 	int gen = 0;
 	int tmpofs, numofs = 0, genofs = 0;
-	int stm_len, stm_ofs = 0;
+	int stm_len, stm_ofs;
 	pdf_token tok;
 	int next;
 	int i, n, c;
@@ -285,8 +282,6 @@ pdf_repair_xref(pdf_document *doc, pdf_lexbuf *buf)
 
 		/* look for '%PDF' version marker within first kilobyte of file */
 		n = fz_read(doc->file, (unsigned char *)buf->scratch, fz_mini(buf->size, 1024));
-		if (n < 0)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot read from file");
 
 		fz_seek(doc->file, 0, 0);
 		for (i = 0; i < n - 4; i++)
@@ -339,6 +334,8 @@ pdf_repair_xref(pdf_document *doc, pdf_lexbuf *buf)
 			{
 				fz_try(ctx)
 				{
+					stm_len = 0;
+					stm_ofs = 0;
 					tok = pdf_repair_obj(doc, buf, &stm_ofs, &stm_len, &encrypt, &id, NULL, &tmpofs);
 				}
 				fz_catch(ctx)
@@ -591,7 +588,8 @@ pdf_repair_obj_stms(pdf_document *doc)
 			}
 			fz_catch(ctx)
 			{
-				fz_rethrow(ctx);
+				/* cf. http://code.google.com/p/sumatrapdf/issues/detail?id=2436 */
+				fz_warn(ctx, "ignoring broken object stream (%d 0 R)", i);
 			}
 		}
 	}

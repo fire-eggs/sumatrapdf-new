@@ -7,6 +7,7 @@
 #include "AppPrefs.h"
 #include "CmdLineParser.h"
 #include "DisplayModel.h"
+#include "EbookController.h"
 #include "EbookWindow.h"
 #include "ExternalPdfViewer.h"
 #include "Favorites.h"
@@ -19,6 +20,14 @@
 #include "Translations.h"
 #include "WindowInfo.h"
 #include "WinUtil.h"
+
+void MenuUpdateDisplayMode(EbookWindow *win)
+{
+    UINT id = IDM_VIEW_FACING;
+    if (win->ebookController->IsSinglePage())
+        id = IDM_VIEW_SINGLE_PAGE;
+    CheckMenuRadioItem(win->menu, IDM_VIEW_LAYOUT_FIRST, IDM_VIEW_LAYOUT_LAST, id, MF_BYCOMMAND);
+}
 
 void MenuUpdateDisplayMode(WindowInfo* win)
 {
@@ -95,6 +104,13 @@ static MenuDef menuDefView[] = {
     { SEP_ITEM,                             0,                          MF_REQ_ALLOW_COPY },
     { _TRN("Select &All\tCtrl+A"),          IDM_SELECT_ALL,             MF_REQ_ALLOW_COPY },
     { _TRN("&Copy Selection\tCtrl+C"),      IDM_COPY_SELECTION,         MF_REQ_ALLOW_COPY },
+};
+
+static MenuDef menuDefViewEbook[] = {
+    { _TRN("&Single Page\tCtrl+6"),         IDM_VIEW_SINGLE_PAGE,       0 },
+    { _TRN("&Facing\tCtrl+7"),              IDM_VIEW_FACING,            0 },
+    { SEP_ITEM,                             0,                          0 },
+    { _TRN("F&ullscreen\tCtrl+L"),          IDM_VIEW_FULLSCREEN,        0 },
 };
 
 static MenuDef menuDefGoTo[] = {
@@ -401,7 +417,8 @@ static bool IsFileCloseMenuEnabled()
     return false;
 }
 
-void MenuUpdateStateForWindow(WindowInfo* win) {
+void MenuUpdateStateForWindow(WindowInfo* win)
+{
     // those menu items will be disabled if no document is opened, enabled otherwise
     static UINT menusToDisableIfNoDocument[] = {
         IDM_VIEW_ROTATE_LEFT, IDM_VIEW_ROTATE_RIGHT, IDM_GOTO_NEXT_PAGE, IDM_GOTO_PREV_PAGE,
@@ -685,15 +702,23 @@ HMENU BuildMenu(EbookWindow *win)
 {
     HMENU mainMenu = CreateMenu();
     int filter = MF_NOT_FOR_EBOOK_UI;
+
     HMENU m = CreateMenu();
     RebuildFileMenuForEbookUI(m, win);
     AppendMenu(mainMenu, MF_POPUP | MF_STRING, (UINT_PTR)m, _TR("&File"));
+
+    m = BuildMenuFromMenuDef(menuDefViewEbook, dimof(menuDefViewEbook), CreateMenu(), filter);
+    AppendMenu(mainMenu, MF_POPUP | MF_STRING, (UINT_PTR)m, _TR("&View"));
+
     m = BuildMenuFromMenuDef(menuDefGoTo, dimof(menuDefGoTo), CreateMenu(), filter);
     AppendMenu(mainMenu, MF_POPUP | MF_STRING, (UINT_PTR)m, _TR("&Go To"));
+
     m = BuildMenuFromMenuDef(menuDefSettings, dimof(menuDefSettings), CreateMenu(), filter);
     AppendMenu(mainMenu, MF_POPUP | MF_STRING, (UINT_PTR)m, _TR("&Settings"));
+
     m = BuildMenuFromMenuDef(menuDefHelp, dimof(menuDefHelp), CreateMenu(), filter);
     AppendMenu(mainMenu, MF_POPUP | MF_STRING, (UINT_PTR)m, _TR("&Help"));
+
 #ifdef SHOW_DEBUG_MENU_ITEMS
     m = BuildMenuFromMenuDef(menuDefDebugEbooks, dimof(menuDefDebugEbooks), CreateMenu(), filter);
     AppendMenu(mainMenu, MF_POPUP | MF_STRING, (UINT_PTR)m, L"Debug");
@@ -703,6 +728,7 @@ HMENU BuildMenu(EbookWindow *win)
 
 void UpdateMenu(WindowInfo *win, HMENU m)
 {
+    CrashIf(!win);
     UINT id = GetMenuItemID(m, 0);
     if (id == menuDefFile[0].id)
         RebuildFileMenu(win, m);
@@ -711,8 +737,7 @@ void UpdateMenu(WindowInfo *win, HMENU m)
         BuildMenuFromMenuDef(menuDefFavorites, dimof(menuDefFavorites), m);
         RebuildFavMenu(win, m);
     }
-    if (win)
-        MenuUpdateStateForWindow(win);
+    MenuUpdateStateForWindow(win);
 }
 
 void UpdateMenu(EbookWindow *win, HMENU m)
@@ -720,4 +745,46 @@ void UpdateMenu(EbookWindow *win, HMENU m)
     UINT id = GetMenuItemID(m, 0);
     if (id == menuDefFile[0].id)
         RebuildFileMenuForEbookUI(m, win);
+    else if (id == menuDefViewEbook[0].id)
+        MenuUpdateDisplayMode(win);
+}
+
+// show/hide top-level menu bar. This doesn't persist across launches
+// so that accidental removal of the menu isn't catastrophic
+void ShowHideMenuBar(WindowInfo *win, bool showTemporarily)
+{
+    CrashIf(!win->menu);
+    if (win->presentation || win->isFullScreen)
+        return;
+
+    HWND hwnd = win->hwndFrame;
+
+    if (showTemporarily) {
+        SetMenu(hwnd, win->menu);
+        return;
+    }
+
+    bool hideMenu = !showTemporarily && GetMenu(hwnd) != NULL;
+    SetMenu(hwnd, hideMenu ? NULL : win->menu);
+    win->isMenuHidden = hideMenu;
+}
+
+// show/hide top-level menu bar. This doesn't persist across launches
+// so that accidental removal of the menu isn't catastrophic
+void ShowHideMenuBar(EbookWindow *win, bool showTemporarily)
+{
+    CrashIf(!win->menu);
+    if (win->isFullScreen)
+        return;
+
+    HWND hwnd = win->hwndFrame;
+
+    if (showTemporarily) {
+        SetMenu(hwnd, win->menu);
+        return;
+    }
+
+    bool hideMenu = !showTemporarily && GetMenu(hwnd) != NULL;
+    SetMenu(hwnd, hideMenu ? NULL : win->menu);
+    win->isMenuHidden = hideMenu;
 }

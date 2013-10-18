@@ -53,6 +53,10 @@ bool EndsWith(const WCHAR *txt, const WCHAR *end);
 bool EndsWithI(const char *txt, const char *end);
 bool EndsWithI(const WCHAR *txt, const WCHAR *end);
 
+static inline bool EqNIx(const char *s, size_t len, const char *s2) {
+    return str::Len(s2) == len && str::StartsWithI(s, s2);
+}
+
 char *  DupN(const char *s, size_t lenCch);
 WCHAR * DupN(const WCHAR *s, size_t lenCch);
 
@@ -100,8 +104,16 @@ WCHAR * Format(const WCHAR *fmt, ...);
 
 inline bool IsWs(char c) { return ' ' == c || '\t' <= c && c <= '\r'; }
 inline bool IsWs(WCHAR c) { return iswspace(c); }
-inline bool IsDigit(char c) { return '0' <= c && c <= '9'; }
-inline bool IsDigit(WCHAR c) { return '0' <= c && c <= '9'; }
+
+// Note: I tried an optimization: return (unsigned)(c - '0') < 10;
+// but it seems to mis-compile in release builds
+inline bool IsDigit(char c) {
+    return '0' <= c && c <= '9';
+}
+
+inline bool IsDigit(WCHAR c) {
+    return '0' <= c && c <= '9';
+}
 
 size_t  TrimWS(WCHAR *s, TrimOpt opt=TrimBoth);
 void    TrimWsEnd(char *s, char *&e);
@@ -171,11 +183,6 @@ int          StrToIdx(const char *strings, const WCHAR *toFind);
 const char * IdxToStr(const char *strings, int idx);
 
 } // namespace seqstrings
-
-// TODO: change to str::EqNIx
-static inline bool StrEqNIx(const char *s, size_t len, const char *s2) {
-    return str::Len(s2) == len && str::StartsWithI(s, s2);
-}
 
 #define _MemToHex(ptr) str::MemToHex((const unsigned char *)(ptr), sizeof(*ptr))
 #define _HexToMem(txt, ptr) str::HexToMem(txt, (unsigned char *)(ptr), sizeof(*ptr))
