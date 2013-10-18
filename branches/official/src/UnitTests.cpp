@@ -2,10 +2,8 @@
    License: GPLv3 */
 
 #include "BaseUtil.h"
-#include "AppTools.h"
+#include "AppUtil.h"
 #include "FileUtil.h"
-#include "ParseCommandLine.h"
-#include "StressTesting.h"
 #include "WinUtil.h"
 
 // must be last due to assert() over-write
@@ -15,6 +13,9 @@
 // either have to pull all the code in or make it more independent
 
 #if 0
+#include "ParseCommandLine.h"
+#include "StressTesting.h"
+
 static void ParseCommandLineTest()
 {
     {
@@ -113,24 +114,6 @@ static void ParseCommandLineTest()
     }
 }
 
-static void versioncheck_test()
-{
-    utassert(IsValidProgramVersion("1"));
-    utassert(IsValidProgramVersion("1.1"));
-    utassert(IsValidProgramVersion("1.1.1\r\n"));
-    utassert(IsValidProgramVersion("2662"));
-
-    utassert(!IsValidProgramVersion("1.1b"));
-    utassert(!IsValidProgramVersion("1..1"));
-    utassert(!IsValidProgramVersion("1.1\r\n.1"));
-
-    utassert(CompareVersion(L"0.9.3.900", L"0.9.3") > 0);
-    utassert(CompareVersion(L"1.09.300", L"1.09.3") > 0);
-    utassert(CompareVersion(L"1.9.1", L"1.09.3") < 0);
-    utassert(CompareVersion(L"1.2.0", L"1.2") == 0);
-    utassert(CompareVersion(L"1.3.0", L"2662") < 0);
-}
-
 static void BenchRangeTest()
 {
     utassert(IsBenchPagesInfo(L"1"));
@@ -147,6 +130,25 @@ static void BenchRangeTest()
     utassert(!IsBenchPagesInfo(L"4-2"));
     utassert(!IsBenchPagesInfo(L"1-3,loadonly"));
     utassert(!IsBenchPagesInfo(NULL));
+}
+#endif
+
+static void versioncheck_test()
+{
+    utassert(IsValidProgramVersion("1"));
+    utassert(IsValidProgramVersion("1.1"));
+    utassert(IsValidProgramVersion("1.1.1\r\n"));
+    utassert(IsValidProgramVersion("2662"));
+
+    utassert(!IsValidProgramVersion("1.1b"));
+    utassert(!IsValidProgramVersion("1..1"));
+    utassert(!IsValidProgramVersion("1.1\r\n.1"));
+
+    utassert(CompareVersion(L"0.9.3.900", L"0.9.3") > 0);
+    utassert(CompareVersion(L"1.09.300", L"1.09.3") > 0);
+    utassert(CompareVersion(L"1.9.1", L"1.09.3") < 0);
+    utassert(CompareVersion(L"1.2.0", L"1.2") == 0);
+    utassert(CompareVersion(L"1.3.0", L"2662") < 0);
 }
 
 static void UrlExtractTest()
@@ -166,14 +168,6 @@ static void UrlExtractTest()
     utassert(str::Eq((char *)fileName.Get(), "\xAC\x20"));
 }
 
-void SumatraPDF_UnitTests()
-{
-    ParseCommandLineTest();
-    versioncheck_test();
-    BenchRangeTest();
-    UrlExtractTest();
-}
-#else
 static void hexstrTest()
 {
     unsigned char buf[6] = { 1, 2, 33, 255, 0, 18 };
@@ -200,6 +194,11 @@ static void hexstrTest()
 
 void SumatraPDF_UnitTests()
 {
+#if 0
+    ParseCommandLineTest();
+    BenchRangeTest();
+#endif
+    versioncheck_test();
+    UrlExtractTest();
     hexstrTest();
 }
-#endif

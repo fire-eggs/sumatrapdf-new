@@ -86,6 +86,36 @@ static void OnToggleBbox(EbookWindow *win)
 }
 #endif
 
+static void EnterFullScreen(EbookWindow *win)
+{
+    CrashIf(win->isFullScreen);
+    win->isFullScreen = true;
+    long ws = GetWindowLong(win->hwndFrame, GWL_STYLE);
+    win->nonFullScreenWindowStyle = ws;
+    ws &= ~(WS_BORDER|WS_CAPTION|WS_THICKFRAME);
+    ws |= WS_MAXIMIZE;
+    win->nonFullScreenFrameRect = WindowRect(win->hwndFrame);
+    RectI rect = GetFullscreenRect(win->hwndFrame);
+    SetMenu(win->hwndFrame, NULL);
+    SetWindowLong(win->hwndFrame, GWL_STYLE, ws);
+    SetWindowPos(win->hwndFrame, NULL, rect.x, rect.y, rect.dx, rect.dy, SWP_FRAMECHANGED | SWP_NOZORDER);
+    SetFocus(win->hwndFrame);
+}
+
+static void ExitFullScreen(EbookWindow *win)
+{
+    CrashIf(!win->isFullScreen);
+    CrashIf(!win->menu);
+    win->isFullScreen = false;
+    if (!win->isMenuHidden)
+        SetMenu(win->hwndFrame, win->menu);
+    SetWindowLong(win->hwndFrame, GWL_STYLE, win->nonFullScreenWindowStyle);
+    UINT flags = SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOSIZE | SWP_NOMOVE;
+    SetWindowPos(win->hwndFrame, NULL, 0, 0, 0, 0, flags);
+    MoveWindow(win->hwndFrame, win->nonFullScreenFrameRect);
+    CrashIf(WindowRect(win->hwndFrame) != win->nonFullScreenFrameRect);
+}
+
 // closes a physical window, deletes the EbookWindow object and removes it
 // from the global list of windows
 void DeleteEbookWindow(EbookWindow *win, bool forceDelete)
@@ -111,6 +141,9 @@ void DeleteEbookWindow(EbookWindow *win, bool forceDelete)
 // we create an about window
 static void CloseEbookWindow(EbookWindow *win, bool quitIfLast, bool forceClose)
 {
+    bool hideMenu = win->isMenuHidden;
+    if (win->isFullScreen)
+        ExitFullScreen(win);
     DeleteEbookWindow(win, forceClose);
     if (TotalWindowsCount() > 0)
         return;
@@ -125,6 +158,8 @@ static void CloseEbookWindow(EbookWindow *win, bool quitIfLast, bool forceClose)
         PostQuitMessage(0);
         return;
     }
+    w->isMenuHidden = hideMenu;
+    SetMenu(w->hwndFrame, hideMenu ? NULL : w->menu);
 }
 
 static LRESULT OnMouseWheel(EbookWindow *win, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -171,6 +206,8 @@ static LRESULT OnKeyDown(EbookWindow *win, UINT msg, WPARAM key, LPARAM lParam)
     case VK_ESCAPE:
         if (gGlobalPrefs->escToExit)
             CloseEbookWindow(win, true, true);
+        else if (win->isFullScreen)
+            ExitFullScreen(win);
         break;
     default:
         return DefWindowProc(win->hwndFrame, msg, key, lParam);
@@ -180,13 +217,10 @@ static LRESULT OnKeyDown(EbookWindow *win, UINT msg, WPARAM key, LPARAM lParam)
 
 static void RebuildMenuBarForEbookWindow(EbookWindow *win)
 {
-    HMENU oldMenu = GetMenu(win->hwndFrame);
-    HMENU newMenu = BuildMenu(win);
-#if 0 // TODO: support fullscreen mode when we have it
-    if (!win->presentation && !win->fullScreen)
+    HMENU oldMenu = win->menu;
+    win->menu = BuildMenu(win);
+    if (!win->isFullScreen && !win->isMenuHidden)
         SetMenu(win->hwndFrame, win->menu);
-#endif
-    SetMenu(win->hwndFrame, newMenu);
     DestroyMenu(oldMenu);
 }
 
@@ -287,6 +321,26 @@ static void OnMenuGoToPage(EbookWindow *win)
         win->ebookController->GoToPage(newPageNo);
 }
 
+static void OnMenuViewFullscreen(EbookWindow* win)
+{
+    if (win->isFullScreen)
+        ExitFullScreen(win);
+    else
+        EnterFullScreen(win);
+}
+
+static void OnMenuViewSinglePage(EbookWindow *win)
+{
+    CrashIf(win->ebookController->IsSinglePage());
+    win->ebookController->SetSinglePage();
+}
+
+static void OnMenuViewFacing(EbookWindow *win)
+{
+    CrashIf(!win->ebookController->IsSinglePage());
+    win->ebookController->SetDoublePage();
+}
+
 static LRESULT OnCommand(EbookWindow *win, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     CrashIf(!win);
@@ -384,6 +438,26 @@ static LRESULT OnCommand(EbookWindow *win, UINT msg, WPARAM wParam, LPARAM lPara
             break;
 #endif
 
+        case IDM_VIEW_SHOW_HIDE_MENUBAR:
+            ShowHideMenuBar(win);
+            break;
+
+        case IDM_VIEW_SINGLE_PAGE:
+            OnMenuViewSinglePage(win);
+            break;
+
+        case IDM_VIEW_FACING:
+            OnMenuViewFacing(win);
+            break;
+
+            // unfortunate naming clash: in non-ebook window we have Ctrl-L named as
+        // presentation mode and Shift-Ctrl-L named as fullscreen mode
+        // in ebook mode there's only fullscreeen mode and I want the simpler
+        // Ctrl-L shortcut, which sends IDM_VIEW_PRESENTATION_MODE cmd
+        case IDM_VIEW_PRESENTATION_MODE:
+            OnMenuViewFullscreen(win);
+            break;
+
         case IDM_ABOUT:
             OnMenuAbout();
             break;
@@ -461,6 +535,18 @@ static LRESULT CALLBACK MobiWndProcFrame(HWND hwnd, UINT msg, WPARAM wParam, LPA
 
         case WM_GESTURE:
             return OnGesture(win, msg, wParam, lParam);
+
+        case WM_SYSCOMMAND:
+            // temporarily show the menu bar if it has been hidden
+            if (wParam == SC_KEYMENU && win->isMenuHidden)
+                ShowHideMenuBar(win, true);
+            return DefWindowProc(hwnd, msg, wParam, lParam);
+
+        case WM_EXITMENULOOP:
+            // hide the menu bar again if it was shown only temporarily
+            if (!wParam && win->isMenuHidden)
+                SetMenu(hwnd, NULL);
+            return DefWindowProc(hwnd, msg, wParam, lParam);
 
         case WM_TIMER:
             OnTimer(win, wParam);
@@ -668,7 +754,10 @@ void OpenMobiInWindow(Doc doc, SumatraWindow& winToReplace)
 
     gEbookWindows.Append(win);
     win::SetText(win->hwndFrame, winTitle);
-    SetMenu(hwnd, BuildMenu(win));
+    win->menu = BuildMenu(win);
+    win->isMenuHidden = winInfo ? winInfo->isMenuHidden : !gGlobalPrefs->showMenubar;
+    if (!win->isMenuHidden)
+        SetMenu(hwnd, win->menu);
 
     ShowWindow(hwnd, wasMaximized ? SW_SHOWMAXIMIZED : SW_SHOW);
     win->ebookController->SetDoc(doc, startReparseIdx);

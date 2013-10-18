@@ -232,6 +232,10 @@ struct GlobalPrefs {
     // list of additional external viewers for various file types (can have
     // multiple entries for the same format)
     Vec<ExternalViewer *> * externalViewers;
+    // if false, the menu bar will be hidden for all newly opened windows
+    // (use F9 to show it until the window closes or Alt to show it just
+    // briefly)
+    bool showMenubar;
     // zoom levels which zooming steps through in addition to Fit Page, Fit
     // Width and the minimum and maximum allowed values (8.33 and 6400)
     Vec<float> * zoomLevels;
@@ -243,13 +247,16 @@ struct GlobalPrefs {
     // customization options for how we show forward search results (used
     // from LaTeX editors)
     ForwardSearch forwardSearch;
-    // default values for user added annotations in FixedPageUI documents
-    // (preliminary and still subject to change)
-    AnnotationDefaults annotationDefaults;
     // a whitespace separated list of passwords to try for opening a
     // password protected document (passwords containing spaces must be
     // quoted same as command line arguments)
     WCHAR * defaultPasswords;
+    // if true, a document will be reloaded automatically whenever it's
+    // changed (currently doesn't work for documents shown in the ebook UI)
+    bool reloadModifiedDocuments;
+    // default values for user added annotations in FixedPageUI documents
+    // (preliminary and still subject to change)
+    AnnotationDefaults annotationDefaults;
     // if true, we store display settings for each document separately
     // (i.e. everything after UseDefaultState in FileStates)
     bool rememberStatePerDocument;
@@ -467,7 +474,7 @@ static const FieldInfo gFILETIMEFields[] = {
 static const StructInfo gFILETIMEInfo = { sizeof(FILETIME), 2, gFILETIMEFields, "DwHighDateTime\0DwLowDateTime" };
 
 static const FieldInfo gGlobalPrefsFields[] = {
-    { (size_t)-1,                                      Type_Comment,    (intptr_t)"For documentation, see http://blog.kowalczyk.info/software/sumatrapdf/settings2.4.html"                    },
+    { (size_t)-1,                                      Type_Comment,    (intptr_t)"For documentation, see http://blog.kowalczyk.info/software/sumatrapdf/settings2.5.html"                    },
     { (size_t)-1,                                      Type_Comment,    NULL                                                                                                                  },
     { offsetof(GlobalPrefs, mainWindowBackground),     Type_Color,      0x8000f2ff                                                                                                            },
     { offsetof(GlobalPrefs, escToExit),                Type_Bool,       false                                                                                                                 },
@@ -477,12 +484,14 @@ static const FieldInfo gGlobalPrefsFields[] = {
     { offsetof(GlobalPrefs, comicBookUI),              Type_Struct,     (intptr_t)&gComicBookUIInfo                                                                                           },
     { offsetof(GlobalPrefs, chmUI),                    Type_Struct,     (intptr_t)&gChmUIInfo                                                                                                 },
     { offsetof(GlobalPrefs, externalViewers),          Type_Array,      (intptr_t)&gExternalViewerInfo                                                                                        },
+    { offsetof(GlobalPrefs, showMenubar),              Type_Bool,       true                                                                                                                  },
     { offsetof(GlobalPrefs, zoomLevels),               Type_FloatArray, (intptr_t)"8.33 12.5 18 25 33.33 50 66.67 75 100 125 150 200 300 400 600 800 1000 1200 1600 2000 2400 3200 4800 6400" },
     { offsetof(GlobalPrefs, zoomIncrement),            Type_Float,      (intptr_t)"0"                                                                                                         },
     { offsetof(GlobalPrefs, printerDefaults),          Type_Struct,     (intptr_t)&gPrinterDefaultsInfo                                                                                       },
     { offsetof(GlobalPrefs, forwardSearch),            Type_Struct,     (intptr_t)&gForwardSearchInfo                                                                                         },
-    { offsetof(GlobalPrefs, annotationDefaults),       Type_Struct,     (intptr_t)&gAnnotationDefaultsInfo                                                                                    },
     { offsetof(GlobalPrefs, defaultPasswords),         Type_String,     NULL                                                                                                                  },
+    { offsetof(GlobalPrefs, reloadModifiedDocuments),  Type_Bool,       true                                                                                                                  },
+    { offsetof(GlobalPrefs, annotationDefaults),       Type_Prerelease, (intptr_t)&gAnnotationDefaultsInfo                                                                                    },
     { (size_t)-1,                                      Type_Comment,    NULL                                                                                                                  },
     { offsetof(GlobalPrefs, rememberStatePerDocument), Type_Bool,       true                                                                                                                  },
     { offsetof(GlobalPrefs, uiLanguage),               Type_Utf8String, NULL                                                                                                                  },
@@ -509,7 +518,7 @@ static const FieldInfo gGlobalPrefsFields[] = {
     { offsetof(GlobalPrefs, timeOfLastUpdateCheck),    Type_Compact,    (intptr_t)&gFILETIMEInfo                                                                                              },
     { offsetof(GlobalPrefs, openCountWeek),            Type_Int,        0                                                                                                                     },
 };
-static const StructInfo gGlobalPrefsInfo = { sizeof(GlobalPrefs), 41, gGlobalPrefsFields, "\0\0MainWindowBackground\0EscToExit\0ReuseInstance\0FixedPageUI\0EbookUI\0ComicBookUI\0ChmUI\0ExternalViewers\0ZoomLevels\0ZoomIncrement\0PrinterDefaults\0ForwardSearch\0AnnotationDefaults\0DefaultPasswords\0\0RememberStatePerDocument\0UiLanguage\0ShowToolbar\0ShowFavorites\0AssociatedExtensions\0AssociateSilently\0CheckForUpdates\0VersionToSkip\0RememberOpenedFiles\0UseSysColors\0InverseSearchCmdLine\0EnableTeXEnhancements\0DefaultDisplayMode\0DefaultZoom\0WindowState\0WindowPos\0ShowToc\0SidebarDx\0TocDy\0ShowStartPage\0\0FileStates\0TimeOfLastUpdateCheck\0OpenCountWeek" };
+static const StructInfo gGlobalPrefsInfo = { sizeof(GlobalPrefs), 43, gGlobalPrefsFields, "\0\0MainWindowBackground\0EscToExit\0ReuseInstance\0FixedPageUI\0EbookUI\0ComicBookUI\0ChmUI\0ExternalViewers\0ShowMenubar\0ZoomLevels\0ZoomIncrement\0PrinterDefaults\0ForwardSearch\0DefaultPasswords\0ReloadModifiedDocuments\0AnnotationDefaults\0\0RememberStatePerDocument\0UiLanguage\0ShowToolbar\0ShowFavorites\0AssociatedExtensions\0AssociateSilently\0CheckForUpdates\0VersionToSkip\0RememberOpenedFiles\0UseSysColors\0InverseSearchCmdLine\0EnableTeXEnhancements\0DefaultDisplayMode\0DefaultZoom\0WindowState\0WindowPos\0ShowToc\0SidebarDx\0TocDy\0ShowStartPage\0\0FileStates\0TimeOfLastUpdateCheck\0OpenCountWeek" };
 
 #endif
 

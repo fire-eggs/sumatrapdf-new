@@ -66,6 +66,9 @@
     <ClCompile Include="..\src\AppTools.cpp">
       <Filter>sumatra</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\AppUtil.cpp">
+      <Filter>sumatra</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\CrashHandler.cpp">
       <Filter>sumatra</Filter>
     </ClCompile>
@@ -94,6 +97,9 @@
       <Filter>sumatra</Filter>
     </ClCompile>
     <ClCompile Include="..\src\Notifications.cpp">
+      <Filter>sumatra</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\PagesLayoutDef.cpp">
       <Filter>sumatra</Filter>
     </ClCompile>
     <ClCompile Include="..\src\ParseCommandLine.cpp">
@@ -534,6 +540,9 @@
     <ClCompile Include="..\mupdf\source\fitz\getopt.c">
       <Filter>ext\mupdf\fitz</Filter>
     </ClCompile>
+    <ClCompile Include="..\mupdf\source\fitz\glyph.c">
+      <Filter>ext\mupdf\fitz</Filter>
+    </ClCompile>
     <ClCompile Include="..\mupdf\source\fitz\halftone.c">
       <Filter>ext\mupdf\fitz</Filter>
     </ClCompile>
@@ -812,6 +821,9 @@
     <ClInclude Include="..\src\AppTools.h">
       <Filter>sumatra</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\AppUtil.h">
+      <Filter>sumatra</Filter>
+    </ClInclude>
     <ClInclude Include="..\src\CrashHandler.h">
       <Filter>sumatra</Filter>
     </ClInclude>
@@ -843,6 +855,9 @@
       <Filter>sumatra</Filter>
     </ClInclude>
     <ClInclude Include="..\src\Notifications.h">
+      <Filter>sumatra</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\PagesLayoutDef.h">
       <Filter>sumatra</Filter>
     </ClInclude>
     <ClInclude Include="..\src\ParseCommandLine.h">
@@ -1245,6 +1260,9 @@
     <None Include="..\src\EbookWinDesc.txt">
       <Filter>sumatra</Filter>
     </None>
+    <None Include="..\src\sample_mobi.html">
+      <Filter>sumatra</Filter>
+    </None>
     <None Include="..\src\mui\mui-todo.txt">
       <Filter>mui</Filter>
     </None>
@@ -1260,10 +1278,13 @@
     <None Include="..\docs\releaseplan.txt">
       <Filter>docs</Filter>
     </None>
-    <None Include="..\docs\SumatraPDF-user.ini">
+    <None Include="..\docs\settings.html">
       <Filter>docs</Filter>
     </None>
     <None Include="..\docs\sumatrapdfrestrict.ini">
+      <Filter>docs</Filter>
+    </None>
+    <None Include="..\docs\wishlist-lua.txt">
       <Filter>docs</Filter>
     </None>
     <None Include="..\docs\wishlist.txt">

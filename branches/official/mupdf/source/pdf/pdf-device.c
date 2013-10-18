@@ -1,5 +1,11 @@
 #include "mupdf/pdf.h"
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_ADVANCES_H
+
+#define ALLOWED_TEXT_POS_ERROR (0.001f)
+
 typedef struct pdf_device_s pdf_device;
 
 typedef struct gstate_s gstate;
@@ -361,30 +367,30 @@ pdf_dev_path(pdf_device *pdev, fz_path *path)
 	fz_context *ctx = pdev->ctx;
 	gstate *gs = CURRENT_GSTATE(pdev);
 	float x, y;
-	int i = 0;
-	while (i < path->len)
+	int i = 0, k = 0;
+	while (i < path->cmd_len)
 	{
-		switch (path->items[i++].k)
+		switch (path->cmds[i++])
 		{
 		case FZ_MOVETO:
-			x = path->items[i++].v;
-			y = path->items[i++].v;
+			x = path->coords[k++];
+			y = path->coords[k++];
 			fz_buffer_printf(ctx, gs->buf, "%f %f m\n", x, y);
 			break;
 		case FZ_LINETO:
-			x = path->items[i++].v;
-			y = path->items[i++].v;
+			x = path->coords[k++];
+			y = path->coords[k++];
 			fz_buffer_printf(ctx, gs->buf, "%f %f l\n", x, y);
 			break;
 		case FZ_CURVETO:
-			x = path->items[i++].v;
-			y = path->items[i++].v;
+			x = path->coords[k++];
+			y = path->coords[k++];
 			fz_buffer_printf(ctx, gs->buf, "%f %f ", x, y);
-			x = path->items[i++].v;
-			y = path->items[i++].v;
+			x = path->coords[k++];
+			y = path->coords[k++];
 			fz_buffer_printf(ctx, gs->buf, "%f %f ", x, y);
-			x = path->items[i++].v;
-			y = path->items[i++].v;
+			x = path->coords[k++];
+			y = path->coords[k++];
 			fz_buffer_printf(ctx, gs->buf, "%f %f c\n", x, y);
 			break;
 		case FZ_CLOSE_PATH:
@@ -653,8 +659,9 @@ pdf_dev_pop(pdf_device *pdev)
 }
 
 static void
-pdf_dev_text(pdf_device *pdev, fz_text *text)
+pdf_dev_text(pdf_device *pdev, fz_text *text, float size)
 {
+	int mask = FT_LOAD_NO_SCALE | FT_LOAD_IGNORE_TRANSFORM;
 	int i;
 	fz_matrix trm;
 	fz_matrix inverse;
@@ -670,10 +677,14 @@ pdf_dev_text(pdf_device *pdev, fz_text *text)
 	trunc_trm.f = 0;
 	fz_invert_matrix(&inverse, &trunc_trm);
 
-	for (i=0; i < text->len; i++)
+	i = 0;
+	while (i < text->len)
 	{
 		fz_text_item *it = &text->items[i];
 		fz_point delta;
+		float x;
+		int j;
+
 		delta.x = it->x - trm.e;
 		delta.y = it->y - trm.f;
 		fz_transform_point(&delta, &inverse);
@@ -683,12 +694,32 @@ pdf_dev_text(pdf_device *pdev, fz_text *text)
 			trm.e = it->x;
 			trm.f = it->y;
 		}
-		/* FIXME: should use it->gid, rather than it->ucs, and convert
-		 * to the correct encoding */
-		fz_buffer_printf(pdev->ctx, gs->buf, "<%02x> Tj\n", it->ucs);
-		/* FIXME: Advance the text position - doesn't matter at the
-		 * moment as we absolutely position each glyph, but we should
-		 * use more efficient text outputting where possible. */
+
+		j = i+1;
+		if (text->font->ft_face)
+		{
+			/* Find prefix of text for which the advance of each character accounts
+			 * for the position offset */
+			x = it->x;
+			while (j < text->len)
+			{
+				FT_Fixed adv;
+				FT_Get_Advance(text->font->ft_face, text->items[j-1].gid, mask, &adv);
+				x += (float)adv * size /((FT_Face)text->font->ft_face)->units_per_EM;
+				if (fabs(x - text->items[j].x) > ALLOWED_TEXT_POS_ERROR || fabs(it->y - text->items[j].y) > ALLOWED_TEXT_POS_ERROR)
+					break;
+				j++;
+			}
+		}
+
+		fz_buffer_printf(pdev->ctx, gs->buf, "<");
+		for (i = i; i < j; i++)
+		{
+			/* FIXME: should use it->gid, rather than it->ucs, and convert
+			* to the correct encoding */
+			fz_buffer_printf(pdev->ctx, gs->buf, "%02x", text->items[i].ucs);
+		}
+		fz_buffer_printf(pdev->ctx, gs->buf, "> Tj\n");
 	}
 	gs->tm.e = trm.e;
 	gs->tm.f = trm.f;
@@ -913,7 +944,7 @@ pdf_dev_fill_text(fz_device *dev, fz_text *text, const fz_matrix *ctm,
 	pdf_dev_ctm(pdev, ctm);
 	pdf_dev_alpha(pdev, alpha, 0);
 	pdf_dev_color(pdev, colorspace, color, 0);
-	pdf_dev_text(pdev, text);
+	pdf_dev_text(pdev, text, size);
 }
 
 static void
@@ -921,46 +952,62 @@ pdf_dev_stroke_text(fz_device *dev, fz_text *text, fz_stroke_state *stroke, cons
 	fz_colorspace *colorspace, float *color, float alpha)
 {
 	pdf_device *pdev = dev->user;
+	fz_matrix trm = text->trm;
+	float size = fz_matrix_expansion(&trm);
+
+	fz_pre_scale(&trm, 1/size, 1/size);
 
 	pdf_dev_begin_text(pdev, &text->trm, 1);
 	pdf_dev_font(pdev, text->font, 1);
 	pdf_dev_ctm(pdev, ctm);
 	pdf_dev_alpha(pdev, alpha, 1);
 	pdf_dev_color(pdev, colorspace, color, 1);
-	pdf_dev_text(pdev, text);
+	pdf_dev_text(pdev, text, size);
 }
 
 static void
 pdf_dev_clip_text(fz_device *dev, fz_text *text, const fz_matrix *ctm, int accumulate)
 {
 	pdf_device *pdev = dev->user;
+	fz_matrix trm = text->trm;
+	float size = fz_matrix_expansion(&trm);
+
+	fz_pre_scale(&trm, 1/size, 1/size);
 
 	pdf_dev_begin_text(pdev, &text->trm, 0);
 	pdf_dev_ctm(pdev, ctm);
 	pdf_dev_font(pdev, text->font, 7);
-	pdf_dev_text(pdev, text);
+	pdf_dev_text(pdev, text, size);
 }
 
 static void
 pdf_dev_clip_stroke_text(fz_device *dev, fz_text *text, fz_stroke_state *stroke, const fz_matrix *ctm)
 {
 	pdf_device *pdev = dev->user;
+	fz_matrix trm = text->trm;
+	float size = fz_matrix_expansion(&trm);
+
+	fz_pre_scale(&trm, 1/size, 1/size);
 
 	pdf_dev_begin_text(pdev, &text->trm, 0);
 	pdf_dev_font(pdev, text->font, 5);
 	pdf_dev_ctm(pdev, ctm);
-	pdf_dev_text(pdev, text);
+	pdf_dev_text(pdev, text, size);
 }
 
 static void
 pdf_dev_ignore_text(fz_device *dev, fz_text *text, const fz_matrix *ctm)
 {
 	pdf_device *pdev = dev->user;
+	fz_matrix trm = text->trm;
+	float size = fz_matrix_expansion(&trm);
+
+	fz_pre_scale(&trm, 1/size, 1/size);
 
 	pdf_dev_begin_text(pdev, &text->trm, 0);
 	pdf_dev_ctm(pdev, ctm);
 	pdf_dev_font(pdev, text->font, 3);
-	pdf_dev_text(pdev, text);
+	pdf_dev_text(pdev, text, size);
 }
 
 static void
@@ -1286,13 +1333,33 @@ fz_device *pdf_new_pdf_device(pdf_document *doc, pdf_obj *contents, pdf_obj *res
 
 fz_device *pdf_page_write(pdf_document *doc, pdf_page *page)
 {
+	fz_context *ctx = doc->ctx;
 	pdf_obj *resources = pdf_dict_gets(page->me, "Resources");
 	fz_matrix ctm;
 	fz_pre_translate(fz_scale(&ctm, 1, -1), 0, page->mediabox.y0-page->mediabox.y1);
+
 	if (resources == NULL)
 	{
 		resources = pdf_new_dict(doc, 0);
 		pdf_dict_puts_drop(page->me, "Resources", resources);
+	}
+
+	if (page->contents == NULL)
+	{
+		pdf_obj *obj = pdf_new_dict(doc, 0);
+		fz_try(ctx)
+		{
+			page->contents = pdf_new_ref(doc, obj);
+			pdf_dict_puts(page->me, "Contents", obj);
+		}
+		fz_always(ctx)
+		{
+			pdf_drop_obj(obj);
+		}
+		fz_catch(ctx)
+		{
+			fz_rethrow(ctx);
+		}
 	}
 
 	return pdf_new_pdf_device(doc, page->contents, resources, &ctm);
