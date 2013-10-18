@@ -20,11 +20,13 @@ String = Type("String", "WCHAR *")
 Utf8String = Type("Utf8String", "char *")
 
 class Field(object):
-	def __init__(self, name, type, default, comment, internal=False, expert=False, doc=None):
+	def __init__(self, name, type, default, comment, internal=False, expert=False, doc=None, version=None, prerelease=False):
 		self.name = name; self.type = type; self.default = default; self.comment = comment
 		self.internal = internal; self.cname = name[0].lower() + name[1:] if name else None
 		self.expert = expert # "expert" prefs are the ones not exposed by the UI
 		self.docComment = doc or comment
+		self.version = version or "2.3" # version in which this setting was introduced
+		self.prerelease = prerelease # prefs which aren't written out in release builds
 
 	def cdefault(self, built):
 		if self.type is Bool:
@@ -39,7 +41,7 @@ class Field(object):
 			return '(intptr_t)L"%s"' % self.default if self.default is not None else "NULL"
 		if self.type is Utf8String:
 			return '(intptr_t)"%s"' % self.default.encode("utf-8") if self.default is not None else "NULL"
-		if self.type.name in ["Struct", "Array", "Compact"]:
+		if self.type.name in ["Struct", "Array", "Compact", "Prerelease"]:
 			id = built.count(self.structName)
 			return "(intptr_t)&g%sInfo" % (self.structName + ("" if not id else "_%d_" % id))
 		if self.type.name in ["ColorArray", "FloatArray", "IntArray"]:
@@ -74,26 +76,27 @@ class Field(object):
 		assert False
 
 class Struct(Field):
-	def __init__(self, name, fields, comment, structName=None, compact=False, internal=False, expert=False, doc=None):
+	def __init__(self, name, fields, comment, structName=None, compact=False, internal=False, expert=False, doc=None, version=None, prerelease=False):
 		self.structName = structName or name
-		super(Struct, self).__init__(name, Type("Struct", "%s" % self.structName), fields, comment, internal, expert, doc)
-		if compact: self.type.name = "Compact"
+		super(Struct, self).__init__(name, Type("Struct", "%s" % self.structName), fields, comment, internal, expert, doc, version, prerelease)
+		if prerelease: self.type.name = "Prerelease"
+		elif compact: self.type.name = "Compact"
 
 class Array(Field):
-	def __init__(self, name, fields, comment, structName=None, internal=False, expert=False):
+	def __init__(self, name, fields, comment, structName=None, internal=False, expert=False, version=None):
 		self.structName = structName or name
 		if not structName and name.endswith("s"):
 			# trim plural 's' from struct name
 			self.structName = name[:-1]
-		super(Array, self).__init__(name, Type("Array", "Vec<%s *> *" % self.structName), fields, comment, internal, expert)
+		super(Array, self).__init__(name, Type("Array", "Vec<%s *> *" % self.structName), fields, comment, internal, expert, None, version)
 
 class CompactArray(Field):
-	def __init__(self, name, type, default, comment, internal=False, expert=False, doc=None):
-		super(CompactArray, self).__init__(name, Type("%sArray" % type.name, "Vec<%s> *" % type.ctype), default, comment, internal, expert, doc)
+	def __init__(self, name, type, default, comment, internal=False, expert=False, doc=None, version=None):
+		super(CompactArray, self).__init__(name, Type("%sArray" % type.name, "Vec<%s> *" % type.ctype), default, comment, internal, expert, doc, version)
 
 class Comment(Field):
-	def __init__(self, comment, expert=False):
-		super(Comment, self).__init__("", Type("Comment", None), None, comment, False, expert, None)
+	def __init__(self, comment, expert=False, version=None):
+		super(Comment, self).__init__("", Type("Comment", None), None, comment, False, expert)
 
 def EmptyLine(expert=False):
 	return Comment(None, expert)
@@ -164,7 +167,7 @@ FixedPageUI = [
 	Field("BackgroundColor", Color, RGB(0xFF, 0xFF, 0xFF),
 		"color value with which white (background) will be substituted"),
 	Field("SelectionColor", Color, RGB(0xF5, 0xFC, 0x0C),
-		"color value for the text selection rectangle (also used to highlight found text)"),
+		"color value for the text selection rectangle (also used to highlight found text)", version="2.4"),
 	Struct("WindowMargin", WindowMargin_FixedPageUI,
 		"top, right, bottom and left margin (in that order) between window and document",
 		compact=True),
@@ -343,6 +346,10 @@ GlobalPrefs = [
 		"list of additional external viewers for various file types " +
 		"(can have multiple entries for the same format)",
 		expert=True),
+	Field("ShowMenubar", Bool, True,
+		"if false, the menu bar will be hidden for all newly opened windows " +
+		"(use F9 to show it until the window closes or Alt to show it just briefly)",
+		expert=True, version="2.5"),
 	# the below prefs apply only to FixedPageUI and ComicBookUI (so far)
 	CompactArray("ZoomLevels", Float, "8.33 12.5 18 25 33.33 50 66.67 75 100 125 150 200 300 400 600 800 1000 1200 1600 2000 2400 3200 4800 6400",
 		"zoom levels which zooming steps through in addition to Fit Page, Fit Width and " +
@@ -360,15 +367,18 @@ GlobalPrefs = [
 		"customization options for how we show forward search results (used from " +
 		"LaTeX editors)",
 		expert=True),
-	# TODO: remove this for release builds (until annotations are better exposed)?
-	Struct("AnnotationDefaults", AnnotationDefaults,
-		"default values for user added annotations in FixedPageUI documents " +
-		"(preliminary and still subject to change)",
-		expert=True),
 	Field("DefaultPasswords", String, None,
 		"a whitespace separated list of passwords to try for opening a password protected document " +
 		"(passwords containing spaces must be quoted same as command line arguments)",
-		expert=True),
+		expert=True, version="2.4"),
+	Field("ReloadModifiedDocuments", Bool, True,
+		"if true, a document will be reloaded automatically whenever it's changed " +
+		"(currently doesn't work for documents shown in the ebook UI)",
+		expert=True, version="2.5"),
+	Struct("AnnotationDefaults", AnnotationDefaults,
+		"default values for user added annotations in FixedPageUI documents " +
+		"(preliminary and still subject to change)",
+		expert=True, prerelease=True),
 	EmptyLine(),
 
 	Field("RememberStatePerDocument", Bool, True,
@@ -518,23 +528,9 @@ def BuildMetaData(struct, built=[]):
 	lines.append("static %sStructInfo g%sInfo = { sizeof(%s), %d, g%sFields, \"%s\" };" % ("const " if fullName != "FileState" else "", fullName, struct.structName, len(names), fullName, "\\0".join(names)))
 	return "\n".join(lines)
 
-def AssembleDefaults(struct, topLevelComment=None):
-	lines, more = [], []
-	if topLevelComment:
-		lines += FormatComment(topLevelComment, ";") + [""]
-	for field in struct.default:
-		if field.internal or type(field) is Comment:
-			continue
-		if topLevelComment and not field.expert:
-			continue
-		if type(field) in [Struct, Array] and not field.type.name == "Compact":
-			assert topLevelComment
-			more.append("\n".join(FormatComment(field.docComment, ";") + ["[%s]" % field.name, AssembleDefaults(field)]))
-		else:
-			lines += FormatComment(field.docComment, ";") + [field.inidefault()]
-	if more:
-		lines += [""] + more
-	return "\n".join(lines) + "\n"
+def GenerateSettingsHtml():
+	from gen_settings_html import html_tmpl, gen_struct, gen_settingsstructs
+	return html_tmpl.replace("%INSIDE%", gen_struct(gen_settingsstructs.GlobalPrefs, prerelease=True))
 
 SettingsStructs_Header = """\
 /* Copyright 2013 the SumatraPDF project authors (see AUTHORS file).
@@ -567,13 +563,8 @@ def main():
 	content = SettingsStructs_Header % locals()
 	open("src/SettingsStructs.h", "wb").write(content.replace("\n", "\r\n").replace("\t", "    "))
 
-	content = AssembleDefaults(GlobalPrefs,
-		"You can use this file to modify experimental and expert settings not changeable " +
-		"through the UI instead of modifying SumatraPDF-settings.txt directly. Just copy " +
-		"this file alongside SumatraPDF-settings.txt and change the values below. " +
-		"They will overwrite the corresponding settings in SumatraPDF-settings.txt at every startup.")
-	content = "# Warning: This file only works for builds compiled with ENABLE_SUMATRAPDF_USER_INI !\n\n" + content
-	open("docs/SumatraPDF-user.ini", "wb").write(content.replace("\n", "\r\n").encode("utf-8-sig"))
+	content = GenerateSettingsHtml()
+	open("docs/settings.html", "wb").write(content.replace("\n", "\r\n"))
 
 	beforeUseDefaultState = True
 	for field in FileSettings:

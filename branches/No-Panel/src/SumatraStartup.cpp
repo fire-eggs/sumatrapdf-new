@@ -180,8 +180,8 @@ static WindowInfo *LoadOnStartup(const WCHAR *filePath, CommandLineInfo& i, bool
     if (!win->IsDocLoaded() || !isFirstWin)
         return win;
 
-    if (i.enterPresentation || i.enterFullscreen)
-        EnterFullscreen(*win, i.enterPresentation);
+    if (i.enterPresentation || i.enterFullScreen)
+        EnterFullScreen(*win, i.enterPresentation);
     if (i.startView != DM_AUTOMATIC)
         SwitchToDisplayMode(win, i.startView);
     if (i.startZoom != INVALID_ZOOM)
@@ -399,7 +399,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
         goto Exit;
     }
 
-    if (i.fileNames.Count() == 0 && gGlobalPrefs->rememberOpenedFiles && gGlobalPrefs->showStartPage) {
+    bool showStartPage = i.fileNames.Count() == 0 && gGlobalPrefs->rememberOpenedFiles && gGlobalPrefs->showStartPage;
+    if (showStartPage) {
         // make the shell prepare the image list, so that it's ready when the first window's loaded
         SHFILEINFO sfi;
         SHGetFileInfo(L".pdf", 0, &sfi, sizeof(sfi), SHGFI_SYSICONINDEX | SHGFI_SMALLICON | SHGFI_USEFILEATTRIBUTES);
@@ -459,7 +460,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
         StartStressTest(&i, win, &gRenderCache);
     }
 
-    if (gFileHistory.Get(0)) {
+    // only hide newly missing files when showing the start page on startup
+    if (showStartPage && gFileHistory.Get(0)) {
         gFileExistenceChecker = new FileExistenceChecker();
         gFileExistenceChecker->Start();
     }
