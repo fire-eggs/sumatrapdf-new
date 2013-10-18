@@ -117,6 +117,7 @@ solution "all_tests"
       "src/utils/BencUtil*",
       "src/utils/BitManip*",
       "src/utils/ByteOrderDecoder*",
+      "src/utils/CmdLineParser*",
       "src/utils/CssParser*",
       "src/utils/Dict*",
       "src/utils/DebugLog*",
@@ -137,6 +138,7 @@ solution "all_tests"
       --"src/AppTools.*",
       --"src/ParseCommandLine.*",
       --"src/StressTesting.*",
+      "src/AppUtil*",
       "src/UnitTests.cpp",
       "src/mui/SvgPath*",
       "tools/tests/UnitMain.cpp"

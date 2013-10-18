@@ -8,6 +8,7 @@
 #include "BitManip.h"
 #include "HtmlFormatter.h"
 #include "MuiEbookPageDef.h"
+#include "PagesLayoutDef.h"
 #include "resource.h"
 #include "TxtParser.h"
 #include "WinUtil.h"
@@ -117,6 +118,21 @@ Control *CreatePageControl(TxtNode *structDef)
     return c;
 }
 
+ILayout *CreatePagesLayout(ParsedMui *parsedMui, TxtNode *structDef)
+{
+    CrashIf(!structDef->IsStructWithName("PagesLayout"));
+    PagesLayoutDef *def = DeserializePagesLayoutDef(structDef);
+    CrashIf(!def->page1 || !def->page2);
+    PageControl *page1 = static_cast<PageControl*>(FindControlNamed(*parsedMui, def->page1));
+    PageControl *page2 = static_cast<PageControl*>(FindControlNamed(*parsedMui, def->page2));
+    CrashIf(!page1 || !page2);
+    PagesLayout *layout = new PagesLayout(page1, page2, def->spaceDx);
+    if (def->name)
+        layout->SetName(def->name);
+    FreePagesLayoutDef(def);
+    return layout;
+}
+
 void SetMainWndBgCol(EbookControls *ctrls)
 {
     Style *styleMainWnd = StyleByName("styleMainWnd");
@@ -132,6 +148,7 @@ EbookControls *CreateEbookControls(HWND hwnd)
 {
     if (!gCursorHand) {
         RegisterControlCreatorFor("EbookPage", &CreatePageControl);
+        RegisterLayoutCreatorFor("PagesLayout", &CreatePagesLayout);
         gCursorHand  = LoadCursor(NULL, IDC_HAND);
     }
 
@@ -149,10 +166,11 @@ EbookControls *CreateEbookControls(HWND hwnd)
     ctrls->progress = FindScrollBarNamed(*muiDef, "progressScrollBar");
     CrashIf(!ctrls->progress);
     ctrls->progress->hCursor = gCursorHand;
-    ctrls->page = static_cast<PageControl *>(FindControlNamed(*muiDef, "page"));
-    CrashIf(!ctrls->page);
+
     ctrls->topPart = FindLayoutNamed(*muiDef, "top");
     CrashIf(!ctrls->topPart);
+    ctrls->pagesLayout = static_cast<PagesLayout*>(FindLayoutNamed(*muiDef, "pagesLayout"));
+    CrashIf(!ctrls->pagesLayout);
 
     ctrls->mainWnd = new HwndWrapper(hwnd);
     ctrls->mainWnd->SetMinSize(Size(320, 200));
@@ -172,6 +190,44 @@ void DestroyEbookControls(EbookControls* ctrls)
 {
     delete ctrls->mainWnd;
     delete ctrls->topPart;
+    delete ctrls->pagesLayout;
     delete ctrls->muiDef;
     delete ctrls;
 }
+
+Size PagesLayout::Measure(const Size availableSize)
+{
+    desiredSize = availableSize;
+    return desiredSize;
+}
+
+void PagesLayout::Arrange(const Rect finalRect)
+{
+    // only page2 can be hidden
+    CrashIf(!page1->IsVisible());
+
+    // if only page1 visible, give it the whole area
+    if (!page2->IsVisible()) {
+        page1->Arrange(finalRect);
+        return;
+    }
+
+    // when both visible, give them equally sized areas
+    // with spaceDx between them
+    int dx = desiredSize.Width;
+    if (page2->IsVisible()) {
+        dx = (dx / 2) - spaceDx;
+        // protect against excessive spaceDx values
+        if (dx <= 100) {
+            spaceDx = 0;
+            dx = dx /2;
+            CrashIf(dx < 10);
+        }
+    }
+    Rect r = finalRect;
+    r.Width = dx;
+    page1->Arrange(r);
+    r.X = r.X + dx + spaceDx;
+    page2->Arrange(r);
+}
+

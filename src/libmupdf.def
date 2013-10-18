@@ -68,7 +68,7 @@ EXPORTS
 	fz_caught
 	fz_rethrow_if
 	fz_flush_warnings
-	fz_new_context
+	fz_new_context_imp
 	fz_clone_context
 	fz_free_context
 	fz_aa_level
@@ -158,12 +158,10 @@ EXPORTS
 	fz_open_ahxd
 	fz_open_rld
 	fz_open_dctd
-	fz_open_resized_dctd
 	fz_open_faxd
 	fz_open_flated
 	fz_open_lzwd
 	fz_open_predict
-	fz_dctd_set_common_tables
 	fz_load_jbig2_globals
 	fz_free_jbig2_globals_imp
 	fz_open_jbig2d
@@ -179,6 +177,7 @@ EXPORTS
 	fz_set_font_bbox
 	fz_bound_glyph
 	fz_glyph_cacheable
+	fz_run_t3_glyph
 	fz_decouple_type3_font
 	fz_eval_function
 	fz_keep_function
@@ -192,13 +191,27 @@ EXPORTS
 	fz_outline_ft_glyph
 	fz_outline_glyph
 	fz_render_ft_glyph
+	fz_render_ft_glyph_pixmap
 	fz_render_t3_glyph
+	fz_render_t3_glyph_pixmap
 	fz_render_ft_stroked_glyph
+	fz_render_ft_stroked_glyph_pixmap
 	fz_render_glyph
+	fz_render_glyph_pixmap
 	fz_render_stroked_glyph
+	fz_render_stroked_glyph_pixmap
 	fz_render_t3_glyph_direct
 	fz_prepare_t3_glyph
 	fz_dump_glyph_cache_stats
+	fz_subpixel_adjust
+	fz_glyph_bbox
+	fz_glyph_width
+	fz_glyph_height
+	fz_new_glyph_from_pixmap
+	fz_new_glyph_from_8bpp_data
+	fz_keep_glyph
+	fz_drop_glyph
+	fz_glyph_bbox_no_ctx
 	fz_new_hash_table
 	fz_empty_hash
 	fz_free_hash
@@ -269,18 +282,28 @@ EXPORTS
 
 	fz_write_png
 	fz_output_png
-	fz_image_as_png
+	fz_new_png_from_image
+	fz_new_png_from_pixmap
+	fz_output_png_header
+	fz_output_png_band
+	fz_output_png_trailer
 	fz_write_pnm
+	fz_output_pnm_header
+	fz_output_pnm_band
 	fz_write_pam
+	fz_output_pam_header
+	fz_output_pam_band
 	fz_write_pbm
 
 
 	fz_write_tga
 	fz_new_output_with_file
+	fz_new_output_to_filename
 	fz_new_output_with_buffer
 	fz_printf
 	fz_puts
 	fz_write
+	fz_putc
 	fz_close_output
 	fz_new_path
 	fz_currentpoint
@@ -337,6 +360,8 @@ EXPORTS
 	fz_decode_indexed_tile
 	fz_unpack_tile
 	fz_md5_pixmap
+	fz_new_pixmap_from_8bpp_data
+	fz_new_pixmap_from_1bpp_data
 	fz_keep_shade
 	fz_drop_shade
 	fz_free_shade_imp
@@ -406,6 +431,7 @@ EXPORTS
 	fz_clone_text
 	fz_print_text
 	fz_generate_transition
+
 
 	fz_parse_xml
 	fz_xml_next
@@ -621,15 +647,12 @@ EXPORTS
 	pdf_new_pdf_device
 	pdf_write_document
 	pdf_localise_page_resources
-	pdf_file_update_start
-	pdf_file_update_start_w
-	pdf_file_update_append
-	pdf_file_update_end
 	pdf_lookup_page_number
 	pdf_count_pages
 	pdf_lookup_page_obj
 	pdf_lookup_inherited_page_item
 	pdf_load_page
+	pdf_load_page_by_obj
 	pdf_load_links
 	pdf_bound_page
 	pdf_free_page
@@ -651,6 +674,7 @@ EXPORTS
 	pdf_remove_item
 	pdf_load_function
 	pdf_load_colorspace
+	pdf_is_tint_colorspace
 	pdf_load_shading
 	pdf_load_inline_image
 	pdf_is_jpx_image
@@ -710,7 +734,6 @@ EXPORTS
 	xps_run_page
 	xps_load_links
 	xps_free_page
-	xps_bound_page_quick_and_dirty
 	xps_load_outline
 	xps_strcasecmp
 	xps_resolve_url
@@ -761,8 +784,6 @@ EXPORTS
 	xps_clip
 	xps_lookup_alternate_content
 	xps_extract_anchor_info
-	xps_extract_doc_props
-	xps_free_doc_props
 
 ; jpeg exports (required for libdjvu)
 

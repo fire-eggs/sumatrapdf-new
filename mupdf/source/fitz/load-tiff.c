@@ -186,11 +186,14 @@ fz_decode_tiff_fax(struct tiff *tiff, int comp, fz_stream *chain, unsigned char 
 static void
 fz_decode_tiff_jpeg(struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen)
 {
-	/* cf. https://code.google.com/p/sumatrapdf/issues/detail?id=2370 */
-	fz_stream *stm = fz_open_dctd(chain, tiff->photometric != 2 && tiff->photometric != 3 ? -1 : 0);
-	/* cf. https://code.google.com/p/sumatrapdf/issues/detail?id=2314 */
+	fz_stream *stm;
+	fz_stream *jpegtables = NULL;
+	int color_transform = -1; /* unset */
 	if (tiff->jpegtables && (int)tiff->jpegtableslen > 0)
-		fz_dctd_set_common_tables(stm, tiff->jpegtables, tiff->jpegtableslen);
+		jpegtables = fz_open_memory(tiff->ctx, tiff->jpegtables, (int)tiff->jpegtableslen);
+	if (tiff->photometric == 2 /* RGB */ || tiff->photometric == 3 /* RGBPal */)
+		color_transform = 0;
+	stm = fz_open_dctd(chain, color_transform, 0, jpegtables);
 	fz_read(stm, wp, wlen);
 	fz_close(stm);
 }
@@ -782,7 +785,7 @@ fz_pixmap *
 fz_load_tiff(fz_context *ctx, unsigned char *buf, int len)
 {
 	fz_pixmap *image;
-	struct tiff tiff;
+	struct tiff tiff = { 0 };
 
 	fz_try(ctx)
 	{
@@ -843,7 +846,7 @@ fz_load_tiff(fz_context *ctx, unsigned char *buf, int len)
 void
 fz_load_tiff_info(fz_context *ctx, unsigned char *buf, int len, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
 {
-	struct tiff tiff;
+	struct tiff tiff = { 0 };
 
 	fz_try(ctx)
 	{
