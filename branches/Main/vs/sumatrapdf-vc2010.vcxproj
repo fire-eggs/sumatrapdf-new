@@ -153,6 +153,7 @@
   <ItemGroup>
     <ClCompile Include="..\src\AppPrefs.cpp" />
     <ClCompile Include="..\src\AppTools.cpp" />
+    <ClCompile Include="..\src\AppUtil.cpp" />
     <ClCompile Include="..\src\CrashHandler.cpp" />
     <ClCompile Include="..\src\DisplayModel.cpp" />
     <ClCompile Include="..\src\Doc.cpp" />
@@ -163,6 +164,7 @@
     <ClCompile Include="..\src\Menu.cpp" />
     <ClCompile Include="..\src\MuPDF_Exports.cpp" />
     <ClCompile Include="..\src\Notifications.cpp" />
+    <ClCompile Include="..\src\PagesLayoutDef.cpp" />
     <ClCompile Include="..\src\ParseCommandLine.cpp" />
     <ClCompile Include="..\src\PdfSync.cpp" />
     <ClCompile Include="..\src\Print.cpp" />
@@ -311,6 +313,7 @@
     <ClCompile Include="..\mupdf\source\fitz\gdiplus-device.cpp" />
     <ClCompile Include="..\mupdf\source\fitz\geometry.c" />
     <ClCompile Include="..\mupdf\source\fitz\getopt.c" />
+    <ClCompile Include="..\mupdf\source\fitz\glyph.c" />
     <ClCompile Include="..\mupdf\source\fitz\halftone.c" />
     <ClCompile Include="..\mupdf\source\fitz\hash.c" />
     <ClCompile Include="..\mupdf\source\fitz\image.c" />
@@ -405,6 +408,7 @@
   <ItemGroup>
     <ClInclude Include="..\src\AppPrefs.h" />
     <ClInclude Include="..\src\AppTools.h" />
+    <ClInclude Include="..\src\AppUtil.h" />
     <ClInclude Include="..\src\CrashHandler.h" />
     <ClInclude Include="..\src\DisplayModel.h" />
     <ClInclude Include="..\src\DisplayState.h" />
@@ -416,6 +420,7 @@
     <ClInclude Include="..\src\HtmlFormatter.h" />
     <ClInclude Include="..\src\Menu.h" />
     <ClInclude Include="..\src\Notifications.h" />
+    <ClInclude Include="..\src\PagesLayoutDef.h" />
     <ClInclude Include="..\src\ParseCommandLine.h" />
     <ClInclude Include="..\src\PdfSync.h" />
     <ClInclude Include="..\src\Print.h" />
@@ -553,13 +558,15 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\EbookWinDesc.txt" />
+    <None Include="..\src\sample_mobi.html" />
     <None Include="..\src\mui\mui-todo.txt" />
     <None Include="..\docs\codingstyle.txt" />
     <None Include="..\docs\mui-html-fusion.txt" />
     <None Include="..\docs\releasenotes.txt" />
     <None Include="..\docs\releaseplan.txt" />
-    <None Include="..\docs\SumatraPDF-user.ini" />
+    <None Include="..\docs\settings.html" />
     <None Include="..\docs\sumatrapdfrestrict.ini" />
+    <None Include="..\docs\wishlist-lua.txt" />
     <None Include="..\docs\wishlist.txt" />
     <None Include="..\src\dragcursor.cur" />
     <None Include="..\src\PdfDoc.ico" />

@@ -64,7 +64,7 @@ void OnMenuFind(WindowInfo *win)
     }
 
     // Don't show a dialog if we don't have to - use the Toolbar instead
-    if (gGlobalPrefs->showToolbar && !win->fullScreen && !win->presentation) {
+    if (gGlobalPrefs->showToolbar && !win->isFullScreen && !win->presentation) {
         if (GetFocus() == toolBar->hwndFindBox)
             SendMessage(toolBar->hwndFindBox, WM_SETFOCUS, 0, 0);
         else
@@ -230,8 +230,10 @@ struct FindThreadData : public ProgressUpdateUI {
         else {
             ScopedMem<WCHAR> label(win->dm->engine->GetPageLabel(win->dm->textSearch->GetCurrentPageNo()));
             ScopedMem<WCHAR> buf(str::Format(_TR("Found text at page %s"), label));
-            if (loopedAround)
+            if (loopedAround) {
                 buf.Set(str::Format(_TR("Found text at page %s (again)"), label));
+                MessageBeep(MB_ICONINFORMATION);
+            }
             wnd->UpdateMessage(buf, 3000, loopedAround);
         }
     }
@@ -305,7 +307,6 @@ static DWORD WINAPI FindThread(LPVOID data)
         int startPage = (FIND_FORWARD == ftd->direction) ? 1 : win->dm->PageCount();
         if (!ftd->wasModified || win->dm->CurrentPageNo() != startPage) {
             loopedAround = true;
-            MessageBeep(MB_ICONINFORMATION);
             rect = win->dm->textSearch->FindFirst(startPage, ftd->text, ftd);
         }
     }

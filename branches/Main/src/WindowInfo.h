@@ -188,6 +188,7 @@ public:
     HWND            hwndInfotip;
 
     bool            infotipVisible;
+    bool            isMenuHidden; // not persisted at shutdown
 
     DoubleBuffer *  buffer;
 
@@ -222,14 +223,14 @@ public:
     // file change watcher
     WatchedFile *   watcher;
 
-    bool            fullScreen;
+    bool            isFullScreen;
     PresentationMode presentation;
     // were we showing toc before entering full screen or presentation mode
     bool            tocBeforeFullScreen;
     int             windowStateBeforePresentation;
 
-    long            prevStyle;
-    RectI           frameRc; // window position before entering presentation/fullscreen mode
+    long            nonFullScreenWindowStyle;
+    RectI           nonFullScreenFrameRect;
     float           prevZoomVirtual;
     DisplayMode     prevDisplayMode;
 

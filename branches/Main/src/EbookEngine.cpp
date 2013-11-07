@@ -41,18 +41,6 @@ void SetDefaultEbookFont(const WCHAR *name, float size)
 
 /* common classes for EPUB, FictionBook2, Mobi, PalmDOC, CHM, TCR, HTML and TXT engines */
 
-namespace str {
-    namespace conv {
-
-inline WCHAR *FromHtmlUtf8(const char *s, size_t len)
-{
-    ScopedMem<char> tmp(str::DupN(s, len));
-    return DecodeHtmlEntitites(tmp, CP_UTF8);
-}
-
-    }
-}
-
 inline bool IsExternalUrl(const WCHAR *url)
 {
     return str::FindChar(url, ':') != NULL;
@@ -1314,13 +1302,15 @@ void ChmFormatter::HandleTagImg(HtmlToken *t)
     CrashIf(!chmDoc);
     if (t->IsEndTag())
         return;
+    bool needAlt = true;
     AttrInfo *attr = t->GetAttrByName("src");
-    if (!attr)
-        return;
-    ScopedMem<char> src(str::DupN(attr->val, attr->valLen));
-    ImageData *img = chmDoc->GetImageData(src, pagePath);
-    if (img)
-        EmitImage(img);
+    if (attr) {
+        ScopedMem<char> src(str::DupN(attr->val, attr->valLen));
+        ImageData *img = chmDoc->GetImageData(src, pagePath);
+        needAlt = !img || !EmitImage(img);
+    }
+    if (needAlt && (attr = t->GetAttrByName("alt")) != NULL)
+        HandleText(attr->val, attr->valLen);
 }
 
 void ChmFormatter::HandleTagPagebreak(HtmlToken *t)

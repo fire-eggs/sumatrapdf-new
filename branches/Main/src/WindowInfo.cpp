@@ -58,11 +58,11 @@ PanelInfo::~PanelInfo()
 
 WindowInfo::WindowInfo(HWND hwnd) :
     panel(NULL),
-    dm(NULL), hwndFrame(NULL),
+    dm(NULL), hwndFrame(NULL), isMenuHidden(false),
     linkOnLastButtonDown(NULL), url(NULL), selectionOnPage(NULL),
     tocLoaded(false), tocVisible(false), tocRoot(NULL), tocKeepSelection(false),
-    fullScreen(false), presentation(PM_DISABLED), tocBeforeFullScreen(false),
-    windowStateBeforePresentation(0), prevStyle(0),
+    isFullScreen(false), presentation(PM_DISABLED), tocBeforeFullScreen(false),
+    windowStateBeforePresentation(0), nonFullScreenWindowStyle(0),
     hwndCanvas(hwnd),
     hwndSidebar(NULL),
     hwndTocBox(NULL), hwndTocTree(NULL),
@@ -195,9 +195,9 @@ void WindowInfo::ToggleZoom()
 
 void WindowInfo::MoveDocBy(int dx, int dy)
 {
-    assert(this->dm);
+    CrashIf(!this->dm);
     if (!this->IsDocLoaded()) return;
-    assert(!this->linkOnLastButtonDown);
+    CrashIf(this->linkOnLastButtonDown);
     if (this->linkOnLastButtonDown) return;
     if (0 != dx)
         this->dm->ScrollXBy(dx);

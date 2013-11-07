@@ -9,6 +9,8 @@ extern "C" {
 #include "PdfEngine.h"
 
 #include "FileUtil.h"
+#include "HtmlPullParser.h"
+#include "TrivialHtmlParser.h"
 #include "WinUtil.h"
 #include "ZipUtil.h"
 
@@ -95,15 +97,12 @@ static RenderedBitmap *new_rendered_fz_pixmap(fz_context *ctx, fz_pixmap *pixmap
     }
     fz_pixmap *bgrPixmap = NULL;
     if (bmpData && pixmap->n == 4 &&
-        pixmap->colorspace == fz_device_rgb(ctx))
-    {
+        pixmap->colorspace == fz_device_rgb(ctx)) {
         unsigned char *dest = bmpData;
         unsigned char *source = pixmap->samples;
 
-        for (int j = 0; j < h; j++)
-        {
-            for (int i = 0; i < w; i++)
-            {
+        for (int j = 0; j < h; j++) {
+            for (int i = 0; i < w; i++) {
                 RGBQUAD c = { 0 };
 
                 c.rgbRed = *source++;
@@ -117,8 +116,7 @@ static RenderedBitmap *new_rendered_fz_pixmap(fz_context *ctx, fz_pixmap *pixmap
                     if (*(int *)&bmi->bmiColors[k] == *(int *)&c)
                         break;
                 /* add it to the palette if it isn't in there and if there's still space left */
-                if (k == paletteSize)
-                {
+                if (k == paletteSize) {
                     if (k >= 256)
                         goto ProducingPaletteDone;
                     *(int *)&bmi->bmiColors[paletteSize] = *(int *)&c;
@@ -630,10 +628,10 @@ static void fz_inspection_handle_path(fz_device *dev, fz_path *path, bool clippi
 {
     ListInspectionData *data = (ListInspectionData *)dev->user;
     if (!clipping)
-        data->path_len += path->len;
+        data->path_len += path->cmd_len + path->coord_len;
     else
-        data->clip_path_len += path->len;
-    data->mem_estimate += path->cap * sizeof(fz_path_item);
+        data->clip_path_len += path->cmd_len + path->coord_len;
+    data->mem_estimate += sizeof(fz_path) + path->cmd_cap + path->coord_cap * sizeof(float);
 }
 
 static void fz_inspection_handle_text(fz_device *dev, fz_text *text)
@@ -644,7 +642,7 @@ static void fz_inspection_handle_text(fz_device *dev, fz_text *text)
 static void fz_inspection_handle_image(fz_device *dev, fz_image *image)
 {
     int n = image->colorspace ? image->colorspace->n + 1 : 1;
-    ((ListInspectionData *)dev->user)->mem_estimate += image->w * image->h * n;
+    ((ListInspectionData *)dev->user)->mem_estimate += sizeof(fz_image) + image->w * image->h * n;
 }
 
 extern "C" static void
@@ -933,7 +931,7 @@ fz_outline *pdf_loadattachments(pdf_document *doc)
         node->dest.ld.launch.new_window = 1;
         node->dest.ld.launch.embedded_num = pdf_to_num(embedded);
         node->dest.ld.launch.embedded_gen = pdf_to_gen(embedded);
-        node->dest.ld.launch.is_url = 0;
+        node->dest.ld.launch.is_uri = 0;
     }
     pdf_drop_obj(dict);
 
@@ -1054,6 +1052,70 @@ WStrVec *BuildPageLabelVec(pdf_obj *root, int pageCount)
     return labels;
 }
 
+struct PageTreeStackItem {
+    pdf_obj *kids;
+    int i, len;
+
+    PageTreeStackItem() : kids(NULL), i(-1), len(0) { }
+    PageTreeStackItem(pdf_obj *kids) : kids(kids), i(-1), len(pdf_array_len(kids)) { }
+};
+
+static void
+pdf_load_page_objs(pdf_document *doc, pdf_obj **page_objs)
+{
+    fz_context *ctx = doc->ctx;
+    int page_no = 0;
+
+    Vec<PageTreeStackItem> stack;
+    PageTreeStackItem top(pdf_dict_getp(pdf_trailer(doc), "Root/Pages/Kids"));
+
+    if (pdf_mark_obj(top.kids))
+        fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in page tree");
+
+    fz_try(ctx) {
+        for (;;) {
+            top.i++;
+            if (top.i == top.len) {
+                pdf_unmark_obj(top.kids);
+                if (stack.Size() == 0)
+                    break;
+                top = stack.Pop();
+                continue;
+            }
+
+            pdf_obj *kid = pdf_array_get(top.kids, top.i);
+            char *type = pdf_to_name(pdf_dict_gets(kid, "Type"));
+            if (str::Eq(type, "Page")) {
+                if (page_no >= pdf_count_pages(doc))
+                    fz_throw(ctx, FZ_ERROR_GENERIC, "found more /Page objects than anticipated");
+
+                page_objs[page_no] = kid;
+                page_no++;
+            }
+            else if (str::Eq(type, "Pages")) {
+                int count = pdf_to_int(pdf_dict_gets(kid, "Count"));
+                if (count > 0) {
+                    stack.Push(top);
+                    top = PageTreeStackItem(pdf_dict_gets(kid, "Kids"));
+
+                    if (pdf_mark_obj(top.kids))
+                        fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in page tree");
+                }
+            }
+            else {
+                fz_warn(ctx, "non-page object in page tree (%s)", type);
+            }
+        }
+    }
+    fz_catch(ctx) {
+        for (size_t i = 0; i < stack.Size(); i++) {
+            pdf_unmark_obj(stack.At(i).kids);
+        }
+        pdf_unmark_obj(top.kids);
+        fz_rethrow(ctx);
+    }
+}
+
 ///// Above are extensions to Fitz and MuPDF, now follows PdfEngine /////
 
 struct PdfPageRun {
@@ -1086,7 +1148,7 @@ public:
 
     virtual const WCHAR *FileName() const { return _fileName; };
     virtual int PageCount() const {
-        // make sure that pdf_load_page_tree is called as soon as
+        // make sure that _doc->page_count is initialized as soon as
         // _doc is defined, so that pdf_count_pages can't throw
         return _doc ? pdf_count_pages(_doc) : 0;
     }
@@ -1364,8 +1426,7 @@ public:
     PasswordCloner(unsigned char *cryptKey) : cryptKey(cryptKey) { }
 
     virtual WCHAR * GetPassword(const WCHAR *fileName, unsigned char *fileDigest,
-                                unsigned char decryptionKeyOut[32], bool *saveKey)
-    {
+                                unsigned char decryptionKeyOut[32], bool *saveKey) {
         memcpy(decryptionKeyOut, cryptKey, 32);
         *saveKey = true;
         return NULL;
@@ -1554,6 +1615,14 @@ bool PdfEngineImpl::LoadFromStream(fz_stream *stm, PasswordUI *pwdUI)
                 ok = pwd_utf8 && pdf_authenticate_password(_doc, pwd_utf8);
             }
         }
+        // older Acrobat versions seem to have considered passwords to be in codepage 1252
+        // note: such passwords aren't portable when stored as Unicode text
+        if (!ok && GetACP() != 1252) {
+            ScopedMem<char> pwd_ansi(str::conv::ToAnsi(pwd));
+            ScopedMem<WCHAR> pwd_cp1252(str::conv::FromCodePage(pwd_ansi, 1252));
+            pwd_utf8.Set(str::conv::ToUtf8(pwd_cp1252));
+            ok = pwd_utf8 && pdf_authenticate_password(_doc, pwd_utf8);
+        }
     }
 
     if (ok && saveKey) {
@@ -1589,13 +1658,11 @@ bool PdfEngineImpl::FinishLoading()
 
     ScopedCritSec scope(&ctxAccess);
 
-    for (int i = 0; i < PageCount(); i++) {
-        fz_try(ctx) {
-            _pageObjs[i] = pdf_lookup_page_obj(_doc, i);
-        }
-        fz_catch(ctx) {
-            fz_warn(ctx, "Couldn't load page %d", i + 1);
-        }
+    fz_try(ctx) {
+        pdf_load_page_objs(_doc, _pageObjs);
+    }
+    fz_catch(ctx) {
+        fz_warn(ctx, "Couldn't load all page objects");
     }
     fz_try(ctx) {
         outline = pdf_load_outline(_doc);
@@ -1746,7 +1813,7 @@ pdf_page *PdfEngineImpl::GetPdfPage(int pageNo, bool failIfBusy)
         ScopedCritSec ctxScope(&ctxAccess);
         fz_var(page);
         fz_try(ctx) {
-            page = pdf_load_page(_doc, pageNo - 1);
+            page = pdf_load_page_by_obj(_doc, pageNo - 1, _pageObjs[pageNo-1]);
             _pages[pageNo-1] = page;
             LinkifyPageText(page);
             pageAnnots[pageNo-1] = ProcessPageAnnotations(page);
@@ -1934,7 +2001,7 @@ RectD PdfEngineImpl::PageMediabox(int pageNo)
 
     ScopedCritSec scope(&ctxAccess);
 
-    // cf. pdf_page.c's pdf_load_page
+    // cf. pdf-page.c's pdf_load_page
     fz_rect mbox = fz_empty_rect, cbox = fz_empty_rect;
     int rotate = 0;
     float userunit = 1.0;
@@ -1960,7 +2027,7 @@ RectD PdfEngineImpl::PageMediabox(int pageNo)
     if ((rotate % 90) != 0)
         rotate = 0;
 
-    // cf. pdf_page.c's pdf_bound_page
+    // cf. pdf-page.c's pdf_bound_page
     fz_matrix ctm;
     fz_transform_rect(&mbox, fz_rotate(&ctm, (float)rotate));
 
@@ -2299,7 +2366,7 @@ pdf_annot **PdfEngineImpl::ProcessPageAnnotations(pdf_page *page)
                 ld.ld.launch.new_window = 1;
                 ld.ld.launch.embedded_num = pdf_to_num(embedded);
                 ld.ld.launch.embedded_gen = pdf_to_gen(embedded);
-                ld.ld.launch.is_url = 0;
+                ld.ld.launch.is_uri = 0;
                 fz_transform_rect(&rect, &page->ctm);
                 // add links in top-to-bottom order (i.e. last-to-first)
                 fz_link *link = fz_new_link(ctx, &rect, ld);
@@ -2418,7 +2485,7 @@ WCHAR *PdfEngineImpl::ExtractPageText(int pageNo, WCHAR *lineSep, RectI **coords
 
     EnterCriticalSection(&ctxAccess);
     fz_try(ctx) {
-        page = pdf_load_page(_doc, pageNo - 1);
+        page = pdf_load_page_by_obj(_doc, pageNo - 1, _pageObjs[pageNo-1]);
     }
     fz_catch(ctx) {
         LeaveCriticalSection(&ctxAccess);
@@ -2734,29 +2801,30 @@ bool PdfEngineImpl::SaveFileAs(const WCHAR *copyFileName)
     return SaveUserAnnots(copyFileName);
 }
 
-static int pdf_file_update_add_annotation(pdf_document *doc, pdf_file_update_list *list, pdf_page *page, int next_num, PageAnnotation& annot, pdf_obj *annots)
+static bool pdf_file_update_add_annotation(pdf_document *doc, pdf_page *page, PageAnnotation& annot, pdf_obj *annots)
 {
     static const char *obj_dict = "<<\
     /Type /Annot /Subtype /%s\
     /Rect [%f %f %f %f]\
     /C [%f %f %f]\
     /P %d %d R\
-    /AP << /N %d 0 R >>\
+    /QuadPoints %s\
+    /AP << >>\
 >>";
     static const char *obj_quad_tpl = "[%f %f %f %f %f %f %f %f]";
     static const char *ap_dict = "<< /Type /XObject /Subtype /Form /BBox [0 0 %f %f] /Resources << /ExtGState << /GS << /Type /ExtGState /ca %.f /AIS false /BM /Multiply >> >> /ProcSet [/PDF] >> >>";
-    static const char *ap_highlight = "q /DeviceRGB cs /GS gs %f %f %f rg 0 0 %f %f re f Q";
-    static const char *ap_underline = "q /DeviceRGB CS %f %f %f RG 1 w [] 0 d 0 0.5 m %f 0.5 l S Q";
-    static const char *ap_strikeout = "q /DeviceRGB CS %f %f %f RG 1 w [] 0 d 0 %f m %f %f l S Q";
-    static const char *ap_squiggly = "q /DeviceRGB CS %f %f %f RG 0.5 w [1] 1.5 d 0 0.25 m %f 0.25 l S [1] 0.5 d 0 0.75 m %f 0.75 l S Q";
+    static const char *ap_highlight = "q /DeviceRGB cs /GS gs %f %f %f rg 0 0 %f %f re f Q\n";
+    static const char *ap_underline = "q /DeviceRGB CS %f %f %f RG 1 w [] 0 d 0 0.5 m %f 0.5 l S Q\n";
+    static const char *ap_strikeout = "q /DeviceRGB CS %f %f %f RG 1 w [] 0 d 0 %f m %f %f l S Q\n";
+    static const char *ap_squiggly = "q /DeviceRGB CS %f %f %f RG 0.5 w [1] 1.5 d 0 0.25 m %f 0.25 l S [1] 0.5 d 0 0.75 m %f 0.75 l S Q\n";
 
     fz_context *ctx = doc->ctx;
-    pdf_obj *annot_obj = NULL, *obj = NULL;
-    fz_buffer *buf = NULL;
+    pdf_obj *annot_obj = NULL, *ap_obj = NULL;
+    fz_buffer *ap_buf = NULL;
 
     fz_var(annot_obj);
-    fz_var(obj);
-    fz_var(buf);
+    fz_var(ap_obj);
+    fz_var(ap_buf);
 
     const char *subtype = Annot_Highlight == annot.type ? "Highlight" :
                           Annot_Underline == annot.type ? "Underline" :
@@ -2773,13 +2841,6 @@ static int pdf_file_update_add_annotation(pdf_document *doc, pdf_file_update_lis
     if ((rotation % 180) == 90)
         Swap(dx, dy);
     float rgb[3] = { annot.color.r / 255.f, annot.color.g / 255.f, annot.color.b / 255.f };
-    pdf_obj *page_obj = pdf_lookup_page_obj(doc, annot.pageNo - 1);
-    ScopedMem<char> annot_tpl(str::Format(obj_dict, subtype,
-        r.x0, r.y0, r.x1, r.y1, rgb[0], rgb[1], rgb[2], //Rect and Color
-        pdf_to_num(page_obj), pdf_to_gen(page_obj), //P
-        next_num));
-    ScopedMem<char> annot_ap_dict(str::Format(ap_dict, dx, dy, annot.color.a / 255.f));
-    ScopedMem<char> annot_ap_stream;
     // rotate the QuadPoints to match the page
     ScopedMem<char> quad_tpl;
     if (0 == rotation)
@@ -2790,56 +2851,74 @@ static int pdf_file_update_add_annotation(pdf_document *doc, pdf_file_update_lis
         quad_tpl.Set(str::Format(obj_quad_tpl, r.x1, r.y0, r.x0, r.y0, r.x1, r.y1, r.x0, r.y1));
     else // if (270 == rotation)
         quad_tpl.Set(str::Format(obj_quad_tpl, r.x1, r.y1, r.x1, r.y0, r.x0, r.y1, r.x0, r.y0));
+    ScopedMem<char> annot_tpl(str::Format(obj_dict, subtype,
+        r.x0, r.y0, r.x1, r.y1, rgb[0], rgb[1], rgb[2], //Rect and Color
+        pdf_to_num(page->me), pdf_to_gen(page->me), //P
+        quad_tpl));
+    ScopedMem<char> annot_ap_dict(str::Format(ap_dict, dx, dy, annot.color.a / 255.f));
+    ScopedMem<char> annot_ap_stream;
 
     fz_try(ctx) {
         annot_obj = pdf_new_obj_from_str(doc, annot_tpl);
-        pdf_dict_puts_drop(annot_obj, "QuadPoints", pdf_new_obj_from_str(doc, quad_tpl));
-        if (!doc->crypt) {
-            // create the appearance stream (unencrypted) and append it to the file
-            obj = pdf_new_obj_from_str(doc, annot_ap_dict);
-            switch (annot.type) {
-            case Annot_Highlight:
-                annot_ap_stream.Set(str::Format(ap_highlight, rgb[0], rgb[1], rgb[2], dx, dy));
-                break;
-            case Annot_Underline:
-                annot_ap_stream.Set(str::Format(ap_underline, rgb[0], rgb[1], rgb[2], dx));
-                break;
-            case Annot_StrikeOut:
-                annot_ap_stream.Set(str::Format(ap_strikeout, rgb[0], rgb[1], rgb[2], dy / 2, dx, dy / 2));
-                break;
-            case Annot_Squiggly:
-                annot_ap_stream.Set(str::Format(ap_squiggly, rgb[0], rgb[1], rgb[2], dx, dx));
-                break;
-            }
-            if (annot.type != Annot_Highlight)
-                pdf_dict_dels(pdf_dict_gets(obj, "Resources"), "ExtGState");
-            if (rotation) {
-                fz_matrix rot;
-                pdf_dict_puts_drop(obj, "Matrix", pdf_new_matrix(doc, fz_rotate(&rot, rotation)));
-            }
-            buf = fz_new_buffer(ctx, (int)str::Len(annot_ap_stream));
-            memcpy(buf->data, annot_ap_stream, (buf->len = (int)str::Len(annot_ap_stream)));
-            pdf_file_update_append(list, obj, next_num++, 0, buf);
-        }
-        else {
-            // have the viewer create an appearance stream itself for encrypted documents
-            pdf_dict_dels(annot_obj, "AP");
-        }
-        // append a reference to the annotation to the page's /Annots entry
-        pdf_array_push_drop(annots, pdf_new_indirect(doc, next_num, 0));
         // append the annotation to the file
-        pdf_file_update_append(list, annot_obj, next_num++, 0, NULL);
-    }
-    fz_always(ctx) {
-        pdf_drop_obj(annot_obj);
-        pdf_drop_obj(obj);
-        fz_drop_buffer(ctx, buf);
+        int num = pdf_create_object(doc);
+        pdf_update_object(doc, num, annot_obj);
+        pdf_array_push_drop(annots, pdf_new_indirect(doc, num, 0));
     }
     fz_catch(ctx) {
-        fz_rethrow(ctx);
+        pdf_drop_obj(annot_obj);
+        return false;
     }
 
-    return next_num;
+    if (doc->crypt) {
+        // since we don't encrypt the appearance stream, for encrypted documents
+        // the readers will have to synthesize an appearance stream themselves
+        pdf_drop_obj(annot_obj);
+        return true;
+    }
+
+    fz_try(ctx) {
+        // create the appearance stream (unencrypted) and append it to the file
+        ap_obj = pdf_new_obj_from_str(doc, annot_ap_dict);
+        switch (annot.type) {
+        case Annot_Highlight:
+            annot_ap_stream.Set(str::Format(ap_highlight, rgb[0], rgb[1], rgb[2], dx, dy));
+            break;
+        case Annot_Underline:
+            annot_ap_stream.Set(str::Format(ap_underline, rgb[0], rgb[1], rgb[2], dx));
+            break;
+        case Annot_StrikeOut:
+            annot_ap_stream.Set(str::Format(ap_strikeout, rgb[0], rgb[1], rgb[2], dy / 2, dx, dy / 2));
+            break;
+        case Annot_Squiggly:
+            annot_ap_stream.Set(str::Format(ap_squiggly, rgb[0], rgb[1], rgb[2], dx, dx));
+            break;
+        }
+        if (annot.type != Annot_Highlight)
+            pdf_dict_dels(pdf_dict_gets(ap_obj, "Resources"), "ExtGState");
+        if (rotation) {
+            fz_matrix rot;
+            pdf_dict_puts_drop(ap_obj, "Matrix", pdf_new_matrix(doc, fz_rotate(&rot, rotation)));
+        }
+        ap_buf = fz_new_buffer(ctx, (int)str::Len(annot_ap_stream));
+        memcpy(ap_buf->data, annot_ap_stream, (ap_buf->len = (int)str::Len(annot_ap_stream)));
+        pdf_dict_puts_drop(ap_obj, "Length", pdf_new_int(doc, ap_buf->len));
+        // append the appearance stream to the file
+        int num = pdf_create_object(doc);
+        pdf_update_object(doc, num, ap_obj);
+        pdf_update_stream(doc, num, ap_buf);
+        pdf_dict_puts_drop(pdf_dict_gets(annot_obj, "AP"), "N", pdf_new_indirect(doc, num, 0));
+    }
+    fz_always(ctx) {
+        pdf_drop_obj(ap_obj);
+        fz_drop_buffer(ctx, ap_buf);
+        pdf_drop_obj(annot_obj);
+    }
+    fz_catch(ctx) {
+        return false;
+    }
+
+    return true;
 }
 
 bool PdfEngineImpl::SaveUserAnnots(const WCHAR *fileName)
@@ -2851,62 +2930,41 @@ bool PdfEngineImpl::SaveUserAnnots(const WCHAR *fileName)
     ScopedCritSec scope2(&ctxAccess);
 
     bool ok = true;
-    pdf_obj *obj = NULL, *annots_new = NULL;
-    pdf_file_update_list *list = NULL;
-    int next_num = pdf_xref_len(_doc);
-
-    fz_var(obj);
-    fz_var(annots_new);
-    fz_var(list);
+    ScopedMem<char> pathUtf8(str::conv::ToUtf8(fileName));
+    Vec<PageAnnotation> pageAnnots;
 
     fz_try(ctx) {
-        list = pdf_file_update_start_w(_doc, fileName, next_num + PageCount() * 2 + userAnnots.Count() * 2);
         for (int pageNo = 1; pageNo <= PageCount(); pageNo++) {
+            pdf_page *page = GetPdfPage(pageNo);
             // TODO: this will skip annotations for broken documents
-            if (!GetPdfPage(pageNo) || !pdf_to_num(_pageObjs[pageNo - 1])) {
+            if (!page || !pdf_to_num(_pageObjs[pageNo - 1])) {
                 ok = false;
                 break;
             }
-            Vec<PageAnnotation> pageAnnots = fz_get_user_page_annots(userAnnots, pageNo);
+            pageAnnots = fz_get_user_page_annots(userAnnots, pageNo);
             if (pageAnnots.Count() == 0)
                 continue;
             // get the page's /Annots array for appending
             pdf_obj *annots = pdf_dict_gets(_pageObjs[pageNo - 1], "Annots");
-            if (pdf_is_array(annots))
-                annots_new = pdf_copy_array(annots);
-            else
-                annots_new = pdf_new_array(_doc, pageAnnots.Count());
+            if (!pdf_is_array(annots)) {
+                pdf_dict_puts_drop(_pageObjs[pageNo - 1], "Annots", pdf_new_array(_doc, pageAnnots.Count()));
+                annots = pdf_dict_gets(_pageObjs[pageNo - 1], "Annots");
+            }
+            if (!pdf_is_indirect(annots)) {
+                // make /Annots indirect for the current /Page
+                int num = pdf_create_object(_doc);
+                pdf_update_object(_doc, num, annots);
+                pdf_dict_puts_drop(_pageObjs[pageNo - 1], "Annots", pdf_new_indirect(_doc, num, 0));
+            }
             // append all annotations for the current page
             for (size_t i = 0; i < pageAnnots.Count(); i++) {
-                next_num = pdf_file_update_add_annotation(_doc, list,
-                    GetPdfPage(pageNo), next_num, pageAnnots.At(i), annots_new);
-            }
-            // write the updated /Annots array back to the file
-            if (pdf_is_indirect(annots)) {
-                pdf_file_update_append(list, annots_new, pdf_to_num(annots), pdf_to_gen(annots), NULL);
-            }
-            else {
-                // make /Annots indirect for the current /Page
-                obj = pdf_copy_dict(_pageObjs[pageNo - 1]);
-                pdf_dict_puts_drop(obj, "Annots", pdf_new_indirect(_doc, next_num, 0));
-                pdf_file_update_append(list, obj, pdf_to_num(_pageObjs[pageNo - 1]), pdf_to_gen(_pageObjs[pageNo - 1]), NULL);
-                pdf_drop_obj(obj);
-                obj = NULL;
-                pdf_file_update_append(list, annots_new, next_num++, 0, NULL);
+                ok &= pdf_file_update_add_annotation(_doc, page, pageAnnots.At(i), annots);
             }
         }
-    }
-    fz_always(ctx) {
-        pdf_drop_obj(obj);
-        pdf_drop_obj(annots_new);
-        if (list) {
-            // write xref, trailer and startxref entries and clean up
-            fz_try(ctx) {
-                pdf_file_update_end(list, pdf_trailer(_doc), _doc->startxref);
-            }
-            fz_catch(ctx) {
-                ok = false;
-            }
+        if (ok) {
+            fz_write_options opts = { 0 };
+            opts.do_incremental = 1;
+            pdf_write_document(_doc, pathUtf8, &opts);
         }
     }
     fz_catch(ctx) {
@@ -3073,7 +3131,7 @@ PageDestType PdfLink::GetDestType() const
     case FZ_LINK_LAUNCH:
         if (link->ld.launch.embedded_num)
             return Dest_LaunchEmbedded;
-        if (link->ld.launch.is_url)
+        if (link->ld.launch.is_uri)
             return Dest_LaunchURL;
         return Dest_LaunchFile;
     case FZ_LINK_GOTOR:
@@ -3123,7 +3181,8 @@ RectD PdfLink::GetDestRect() const
         if (result.IsEmpty())
             result.dx = result.dy = 0.1;
     }
-    else if ((link->ld.gotor.flags & (fz_link_flag_fit_h | fz_link_flag_fit_v)) == fz_link_flag_fit_h) {
+    else if ((link->ld.gotor.flags & (fz_link_flag_fit_h | fz_link_flag_fit_v)) == fz_link_flag_fit_h &&
+        (link->ld.gotor.flags & fz_link_flag_t_valid)) {
         // /FitH or /FitBH link
         result.y = lt.y;
     }
@@ -3180,11 +3239,160 @@ PdfEngine *PdfEngine::CreateFromStream(IStream *stream, PasswordUI *pwdUI)
     return engine;
 }
 
-///// XpsEngine is also based on Fitz and shares quite some code with PdfEngine /////
+///// XPS-specific extensions to Fitz/MuXPS /////
 
 extern "C" {
 #include <mupdf/xps.h>
 }
+
+// TODO: use http://schemas.openxps.org/oxps/v1.0 as well once NS actually matters
+#define NS_XPS_MICROSOFT "http://schemas.microsoft.com/xps/2005/06"
+
+fz_rect
+xps_bound_page_quick(xps_document *doc, int number)
+{
+    xps_page *page = doc->first_page;
+    for (int n = 0; n < number && page; n++)
+        page = page->next;
+
+    xps_part *part = page ? xps_read_part(doc, page->name) : NULL;
+    if (!part)
+        return fz_empty_rect;
+
+    const char *data = (const char *)part->data;
+    size_t data_size = part->size;
+
+    ScopedMem<char> dataUtf8;
+    if (str::StartsWith(data, UTF16BE_BOM)) {
+        for (int i = 0; i < part->size; i += 2) {
+            Swap(part->data[i], part->data[i+1]);
+        }
+    }
+    if (str::StartsWith(data, UTF16_BOM)) {
+        dataUtf8.Set(str::conv::ToUtf8((const WCHAR *)(part->data + 2), part->size / 2 - 1));
+        data = dataUtf8;
+        data_size = str::Len(dataUtf8);
+    }
+    else if (str::StartsWith(data, UTF8_BOM)) {
+        data += 3;
+        data_size -= 3;
+    }
+
+    HtmlPullParser p(data, data_size);
+    HtmlToken *tok = p.Next();
+    fz_rect bounds = fz_empty_rect;
+    if (tok && tok->IsStartTag() && tok->NameIsNS("FixedPage", NS_XPS_MICROSOFT)) {
+        AttrInfo *attr = tok->GetAttrByNameNS("Width", NS_XPS_MICROSOFT);
+        if (attr)
+            bounds.x1 = fz_atof(attr->val) * 72.0f / 96.0f;
+        attr = tok->GetAttrByNameNS("Height", NS_XPS_MICROSOFT);
+        if (attr)
+            bounds.y1 = fz_atof(attr->val) * 72.0f / 96.0f;
+    }
+
+    xps_free_part(doc, part);
+
+    return bounds;
+}
+
+class xps_doc_props {
+public:
+    ScopedMem<WCHAR> title;
+    ScopedMem<WCHAR> author;
+    ScopedMem<WCHAR> subject;
+    ScopedMem<WCHAR> creation_date;
+    ScopedMem<WCHAR> modification_date;
+};
+
+static fz_xml *
+xps_open_and_parse(xps_document *doc, char *path)
+{
+    fz_xml *root = NULL;
+    xps_part *part = xps_read_part(doc, path);
+
+    fz_try(doc->ctx) {
+        root = fz_parse_xml(doc->ctx, part->data, part->size);
+    }
+    fz_always(doc->ctx) {
+        xps_free_part(doc, part);
+    }
+    fz_catch(doc->ctx) {
+        fz_rethrow(doc->ctx);
+    }
+
+    return root;
+}
+
+static WCHAR *
+xps_get_core_prop(fz_context *ctx, fz_xml *item)
+{
+    fz_xml *text = fz_xml_down(item);
+
+    if (!text)
+        return NULL;
+    if (!fz_xml_text(text) || fz_xml_next(text)) {
+        fz_warn(ctx, "non-text content for property %s", fz_xml_tag(item));
+        return NULL;
+    }
+
+    char *start, *end;
+    for (start = fz_xml_text(text); str::IsWs(*start); start++);
+    for (end = start + strlen(start); end > start && str::IsWs(*(end - 1)); end--);
+
+    return str::conv::FromHtmlUtf8(start, end - start);
+}
+
+#define REL_CORE_PROPERTIES \
+    "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties"
+
+xps_doc_props *
+xps_extract_doc_props(xps_document *doc)
+{
+    fz_xml *root = xps_open_and_parse(doc, "/_rels/.rels");
+
+    if (!root || !str::Eq(fz_xml_tag(root), "Relationships")) {
+        fz_free_xml(doc->ctx, root);
+        fz_throw(doc->ctx, FZ_ERROR_GENERIC, "couldn't parse part '/_rels/.rels'");
+    }
+
+    bool has_correct_root = false;
+    for (fz_xml *item = fz_xml_down(root); item; item = fz_xml_next(item)) {
+        if (str::Eq(fz_xml_tag(item), "Relationship") &&
+            str::Eq(fz_xml_att(item, "Type"), REL_CORE_PROPERTIES) && fz_xml_att(item, "Target")) {
+            char path[1024];
+            xps_resolve_url(path, "", fz_xml_att(item, "Target"), nelem(path));
+            fz_free_xml(doc->ctx, root);
+            root = xps_open_and_parse(doc, path);
+            has_correct_root = true;
+            break;
+        }
+    }
+
+    if (!has_correct_root) {
+        fz_free_xml(doc->ctx, root);
+        return NULL;
+    }
+
+    xps_doc_props *props = new xps_doc_props();
+
+    for (fz_xml *item = fz_xml_down(root); item; item = fz_xml_next(item)) {
+        if (str::Eq(fz_xml_tag(item), "dc:title") && !props->title)
+            props->title.Set(xps_get_core_prop(doc->ctx, item));
+        else if (str::Eq(fz_xml_tag(item), "dc:creator") && !props->author)
+            props->author.Set(xps_get_core_prop(doc->ctx, item));
+        else if (str::Eq(fz_xml_tag(item), "dc:subject") && !props->subject)
+            props->subject.Set(xps_get_core_prop(doc->ctx, item));
+        else if (str::Eq(fz_xml_tag(item), "dcterms:created") && !props->creation_date)
+            props->creation_date.Set(xps_get_core_prop(doc->ctx, item));
+        else if (str::Eq(fz_xml_tag(item), "dcterms:modified") && !props->modification_date)
+            props->modification_date.Set(xps_get_core_prop(doc->ctx, item));
+    }
+    fz_free_xml(doc->ctx, root);
+
+    return props;
+}
+
+///// XpsEngine is also based on Fitz and shares quite some code with PdfEngine /////
 
 struct XpsPageRun {
     xps_page *page;
@@ -3404,7 +3612,7 @@ XpsEngineImpl::~XpsEngineImpl()
     }
 
     fz_free_outline(ctx, _outline);
-    xps_free_doc_props(ctx, _info);
+    delete _info;
 
     if (imageRects) {
         for (int i = 0; i < PageCount(); i++)
@@ -3746,7 +3954,7 @@ RectD XpsEngineImpl::PageMediabox(int pageNo)
     if (!page) {
         ScopedCritSec scope(&ctxAccess);
         fz_try(ctx) {
-            mbox = fz_rect_to_RectD(xps_bound_page_quick_and_dirty(_doc, pageNo-1));
+            mbox = fz_rect_to_RectD(xps_bound_page_quick(_doc, pageNo-1));
         }
         fz_catch(ctx) { }
         if (!mbox.IsEmpty()) {
@@ -4037,15 +4245,14 @@ WCHAR *XpsEngineImpl::GetProperty(DocumentProperty prop)
     if (!_info)
         return NULL;
 
-    char *value = NULL;
     switch (prop) {
-    case Prop_Title: value = _info->title; break;
-    case Prop_Author: value = _info->author; break;
-    case Prop_Subject: value = _info->subject; break;
-    case Prop_CreationDate: value = _info->creation_date; break;
-    case Prop_ModificationDate: value = _info->modification_date; break;
+    case Prop_Title: return str::Dup(_info->title);
+    case Prop_Author: return str::Dup(_info->author);
+    case Prop_Subject: return str::Dup(_info->subject);
+    case Prop_CreationDate: return str::Dup(_info->creation_date);
+    case Prop_ModificationDate: return str::Dup(_info->modification_date);
+    default: return NULL;
     }
-    return value ? str::conv::FromUtf8(value) : NULL;
 };
 
 bool XpsEngineImpl::SupportsAnnotation(bool forSaving) const

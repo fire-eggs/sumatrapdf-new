@@ -602,12 +602,12 @@ static bool HasPreviousLineSingleImage(Vec<DrawInstr>& instrs)
     return imageY != -1;
 }
 
-void HtmlFormatter::EmitImage(ImageData *img)
+bool HtmlFormatter::EmitImage(ImageData *img)
 {
     CrashIf(!img->data);
     Size imgSize = BitmapSizeFromData(img->data, img->len);
     if (imgSize.Empty())
-        return;
+        return false;
 
     SizeF newSize((REAL)imgSize.Width, (REAL)imgSize.Height);
     // move overly large images to a new line (if they don't fit entirely)
@@ -637,6 +637,8 @@ void HtmlFormatter::EmitImage(ImageData *img)
     RectF bbox(PointF(currX, 0), newSize);
     AppendInstr(DrawInstr::Image(img->data, img->len, bbox));
     currX += bbox.Width;
+
+    return true;
 }
 
 // add horizontal line (<hr> in html terms)
@@ -1006,13 +1008,14 @@ void HtmlFormatter::HandleTagStyle(HtmlToken *t)
     if (attr && !attr->ValIs("text/css"))
         return;
 
-    const char *start = t->s + t->sLen + 2;
+    const char *start = t->s + t->sLen + 1;
     while (t && !t->IsError() && (!t->IsEndTag() || t->tag != Tag_Style)) {
         t = htmlParser->Next();
     }
     if (!t || !t->IsEndTag() || Tag_Style != t->tag)
         return;
     const char *end = t->s - 2;
+    CrashIf(start > end);
     ParseStyleSheet(start, end - start);
 }
 
@@ -1194,9 +1197,13 @@ void HtmlFormatter::HandleHtmlTag(HtmlToken *t)
 void HtmlFormatter::HandleText(HtmlToken *t)
 {
     CrashIf(!t->IsText());
-    bool skipped;
-    const char *curr = t->s;
-    const char *end = t->s + t->sLen;
+    HandleText(t->s, t->sLen);
+}
+
+void HtmlFormatter::HandleText(const char *s, size_t sLen)
+{
+    const char *curr = s;
+    const char *end = s + sLen;
 
     if (preFormatted) {
         // don't collapse whitespace and respect text newlines
@@ -1221,7 +1228,7 @@ void HtmlFormatter::HandleText(HtmlToken *t)
     while (curr < end) {
         // collapse multiple, consecutive white-spaces into a single space
         currReparseIdx = curr - htmlParser->Start();
-        skipped = SkipWs(curr, end);
+        bool skipped = SkipWs(curr, end);
         if (skipped)
             EmitElasticSpace();
 

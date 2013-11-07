@@ -25,11 +25,11 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f ..\makefile.msvc BASEDIR=.. CFG=dbg NASM=..\bin\nasm.exe SumatraPDF Installer Uninstaller PDFFilter PdfPreview BrowserPlugin EngineDump mudraw mutool EXTCFLAGS=&quot;/DDISABLE_EBOOK_UI /DENABLE_SUMATRAPDF_USER_INI&quot;"
+				BuildCommandLine="nmake -f ..\makefile.msvc BASEDIR=.. CFG=dbg NASM=..\bin\nasm.exe SumatraPDF Installer Uninstaller PDFFilter PdfPreview BrowserPlugin EngineDump mudraw mutool EXTCFLAGS=&quot;/DDISABLE_EBOOK_UI&quot;"
 				ReBuildCommandLine="nmake -f ..\makefile.msvc BASEDIR=.. CFG=dbg NASM=..\bin\nasm.exe rebuild"
 				CleanCommandLine="del /s ..\obj-dbg\*.obj"
 				Output="..\obj-dbg\sumatrapdf.exe"
-				PreprocessorDefinitions="WIN32;UNICODE;_UNICODE;_DEBUG;DEBUG;DISABLE_EBOOK_UI;ENABLE_SUMATRAPDF_USER_INI"
+				PreprocessorDefinitions="WIN32;UNICODE;_UNICODE;_DEBUG;DEBUG;DISABLE_EBOOK_UI"
 				IncludeSearchPath="..\src;..\src\utils;..\src\mui;..\mupdf\include"
 				ForcedIncludes=""
 				AssemblySearchPath=""
@@ -885,6 +885,14 @@
 					>
 				</File>
 				<File
+					RelativePath="..\src\PagesLayoutDef.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\src\PagesLayoutDef.h"
+					>
+				</File>
+				<File
 					RelativePath="..\src\Print.cpp"
 					>
 				</File>
@@ -962,6 +970,14 @@
 				</File>
 				<File
 					RelativePath="..\src\AppTools.h"
+					>
+				</File>
+				<File
+					RelativePath="..\src\AppUtil.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\src\AppUtil.h"
 					>
 				</File>
 				<File
@@ -1311,6 +1327,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\mupdf\source\fitz\glyph.c"
+					>
+				</File>
+				<File
 					RelativePath="..\mupdf\source\fitz\halftone.c"
 					>
 				</File>
@@ -1534,6 +1554,10 @@
 						>
 					</File>
 					<File
+						RelativePath="..\mupdf\include\mupdf\fitz\glyph.h"
+						>
+					</File>
+					<File
 						RelativePath="..\mupdf\include\mupdf\fitz\hash.h"
 						>
 					</File>
@@ -1623,6 +1647,10 @@
 					</File>
 					<File
 						RelativePath="..\mupdf\include\mupdf\fitz\transition.h"
+						>
+					</File>
+					<File
+						RelativePath="..\mupdf\include\mupdf\fitz\version.h"
 						>
 					</File>
 					<File
