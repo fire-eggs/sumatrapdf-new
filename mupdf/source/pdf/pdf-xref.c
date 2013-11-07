@@ -98,7 +98,7 @@ int pdf_xref_len(pdf_document *doc)
 	/* Return the length of the document's final xref section */
 	pdf_xref *xref = &doc->xref_sections[0];
 
-	return xref->len;
+	return xref == NULL ? 0 : xref->len;
 }
 
 /* Used while reading the individual xref sections from a file */
@@ -113,6 +113,10 @@ pdf_xref_entry *pdf_get_populating_xref_entry(pdf_document *doc, int num)
 		doc->xref_sections = fz_calloc(doc->ctx, 1, sizeof(pdf_xref));
 		doc->num_xref_sections = 1;
 	}
+
+	/* Prevent accidental heap underflow */
+	if (num < 0)
+		fz_throw(doc->ctx, FZ_ERROR_GENERIC, "object number must not be negative (%d)", num);
 
 	/* Ensure all xref sections map this entry */
 	for (i = doc->num_xref_sections - 1; i >= 0; i--)
@@ -305,8 +309,6 @@ pdf_read_start_xref(pdf_document *doc)
 	fz_seek(doc->file, t, SEEK_SET);
 
 	n = fz_read(doc->file, buf, sizeof buf);
-	if (n < 0)
-		fz_throw(doc->ctx, FZ_ERROR_GENERIC, "cannot read from file");
 
 	for (i = n - 9; i >= 0; i--)
 	{
@@ -359,6 +361,8 @@ pdf_xref_size_from_old_trailer(pdf_document *doc, pdf_lexbuf *buf)
 		if (!s)
 			fz_throw(doc->ctx, FZ_ERROR_GENERIC, "invalid range marker in xref");
 		len = fz_atoi(fz_strsep(&s, " "));
+		if (len <= 0)
+			fz_throw(doc->ctx, FZ_ERROR_GENERIC, "xref range marker must be positive");
 
 		/* broken pdfs where the section is not on a separate line */
 		if (s && *s != '\0')
@@ -421,7 +425,8 @@ pdf_read_old_xref(pdf_document *doc, pdf_lexbuf *buf)
 	int xref_len = pdf_xref_size_from_old_trailer(doc, buf);
 
 	/* Access last entry to ensure xref size up front and avoid reallocs */
-	(void)pdf_get_populating_xref_entry(doc, xref_len - 1);
+	if (xref_len > 0)
+		(void)pdf_get_populating_xref_entry(doc, xref_len - 1);
 
 	fz_read_line(doc->file, buf->scratch, buf->size);
 	if (strncmp(buf->scratch, "xref", 4) != 0)
@@ -460,8 +465,8 @@ pdf_read_old_xref(pdf_document *doc, pdf_lexbuf *buf)
 		{
 			pdf_xref_entry *entry = pdf_get_populating_xref_entry(doc, i);
 			n = fz_read(doc->file, (unsigned char *) buf->scratch, 20);
-			if (n < 0)
-				fz_throw(doc->ctx, FZ_ERROR_GENERIC, "cannot read xref table");
+			if (n != 20)
+				fz_throw(doc->ctx, FZ_ERROR_GENERIC, "unexpected EOF in xref table");
 			if (!entry->type)
 			{
 				s = buf->scratch;
@@ -580,11 +585,8 @@ pdf_read_new_xref(pdf_document *doc, pdf_lexbuf *buf)
 
 		size = pdf_to_int(obj);
 		/* Access xref entry to assure table size */
-		(void)pdf_get_populating_xref_entry(doc, size-1);
-
-		/* SumatraPDF: xref stream objects don't need an xref entry themselves */
-		if (num < 0 || num >= pdf_xref_len(doc))
-			fz_warn(ctx, "object id (%d %d R) out of range (0..%d)", num, gen, pdf_xref_len(doc) - 1);
+		if (size > 0)
+			(void)pdf_get_populating_xref_entry(doc, size-1);
 
 		obj = pdf_dict_gets(trailer, "W");
 		if (!obj)

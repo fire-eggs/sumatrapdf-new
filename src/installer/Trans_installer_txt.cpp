@@ -7,7 +7,7 @@
 
 namespace trans {
 
-#define LANGS_COUNT   37
+#define LANGS_COUNT   39
 #define STRINGS_COUNT 43
 
 const char *gOriginalStrings[STRINGS_COUNT] = {
@@ -309,7 +309,7 @@ const char * gTranslations_ca =
   "Instal\302\267la el &connector PDF pels navegadors Firefox, Chrome i Opera\0"\
   "Instal\302\267la el SumatraPDF\0"\
   "Instal\302\267la el SumatraPDF a la &carpeta:\0"\
-  "La instal\302\267laci\303\263 ha fallat!\0"\
+  "La instal\302\267laci\303\263 ha fallat.\0"\
   "La instal\302\267laci\303\263 \303\251s en progr\303\251s...\0"\
   "Permet al Windows Desktop Search &cercar als documents PDF\0"\
   "Permet al Windows mostrar &visualitzacions pr\303\250vies dels documents PDF\0"\
@@ -556,7 +556,7 @@ const char * gTranslations_dk =
 
 const char * gTranslations_nl = 
   "&Opties\0"\
-  "Bent u zeker SumatraPDF te willen desinstalleren?\0"\
+  "Bent u zeker dat u SumatraPDF wilt verwijderen?\0"\
   "Sluiten\0"\
   "Kon tijdelijke folder niet aanmaken\0"\
   "Kon de installatie folder niet aanmaken\0"\
@@ -566,17 +566,17 @@ const char * gTranslations_nl =
   "Kon tijdelijke folder niet verkrijgen\0"\
   "Kon installatie folder niet verwijderen\0"\
   "Kon snelkoppeling niet verwijderen\0"\
-  "Kon PDF voorbeeld niet deinstalleren\0"\
+  "Kon PDF-voorbeeldweergever niet verwijderen\0"\
   "Kon PDF zoek filter niet de\303\257nstalleren\0"\
-  "Kon browser plugin niet de\303\257nstalleren\0"\
+  "Kon browserplugin niet verwijderen\0"\
   "Kon %s niet op schijf wegschrijven\0"\
   "Kon deinstallatie programma niet kopieren naar tijdelijke folder\0"\
   "Kon snelkoppeling niet aanmaken\0"\
   "Kon deinstallatie register sleutels niet verwijderen\0"\
   "Kon uitgebreide bestandsextensie informatie niet wegschrijven in register\0"\
-  "Kon deinstallatie informatie niet wegschrijven in register\0"\
+  "Kan de\303\257nstallatie-informatie niet wegschrijven in het register\0"\
   "Verberg &Opties\0"\
-  "Installeer PDF &browser plugin voor Firefox, Chrome en Opera\0"\
+  "Installeer de PDF-&browserplugins voor Firefox, Chrome en Opera\0"\
   "Installeer SumatraPDF\0"\
   "Installeer SumatraPDF in &folder\0"\
   "Installatie mislukt!\0"\
@@ -590,10 +590,10 @@ const char * gTranslations_nl =
   "SumatraPDF %s installatieprogramma\0"\
   "SumatraPDF %s deinstallatieprogramma\0"\
   "SumatraPDF werd verwijderd.\0"\
-  "SumatraPDF installatie niet gevonden.\0"\
+  "SumatraPDF-installatie niet gevonden.\0"\
   "Dank u om voor SumatraPDF te kiezen!\0"\
   "Dank u! SumatraPDF werd geinstalleerd.\0"\
-  "Het installatie programma is beschadigd. Download het opnieuw aub.\nOnze excuses voor het ongemak!\0"\
+  "Het installatieprogramma is beschadigd. Download het opnieuw aub.\nOnze excuses voor het ongemak!\0"\
   "Deinstalleer SumatraPDF\0"\
   "Deinstallatie mislukt\0"\
   "Deinstallatie is bezig...\0"\
@@ -646,7 +646,7 @@ const char * gTranslations_et =
 
 const char * gTranslations_fi = 
   "&Asetukset\0"\
-  "Oletko varma ett\303\244 haluat poistaa SumatraPDF:n?\0"\
+  "Oletko varma, ett\303\244 haluat poistaa SumatraPDF:n?\0"\
   "Sulje\0"\
   "V\303\244liaikaiskansion luominen ep\303\244onnistui\0"\
   "Asennuskansion luominen ep\303\244onnistui\0"\
@@ -663,31 +663,31 @@ const char * gTranslations_fi =
   "Poisto-ohjelman kopioiminen v\303\244liaikaiskansioon ep\303\244onnistui\0"\
   "Pikakuvakkeen luominen ep\303\244onnistui\0"\
   "Poisto-ohjelman rekisteriavainten poistaminen ep\303\244onnistui\0"\
-  "\0"\
+  "Tiedostop\303\244\303\244tetietojen kirjoittaminen rekisteriin ep\303\244onnistui\0"\
   "Poistamistietojen kirjoittaminen rekisteriin ep\303\244onnistui\0"\
-  "Piilota &asetukset\0"\
+  "Piilota\0"\
   "Asenna PDF-liit\303\244nn\303\244inen selaimille Firefox, Chrome ja Opera\0"\
   "Asenna SumatraPDF\0"\
   "Asenna SumatraPDF kansioon:\0"\
   "Asentaminen ep\303\244onnistui!\0"\
   "Asennus k\303\244ynniss\303\244...\0"\
-  "Anna Windowsin ty\303\266p\303\266yd\303\244n hakutoiminnon &etsi\303\244 PDF-asiakirjoista\0"\
+  "&Anna Windowsin hakutoiminnon etsi\303\244 PDF-asiakirjoista\0"\
   "Anna Windowsin n\303\244ytt\303\244\303\244 &esikatselukuvat PDF-asiakirjoille\0"\
   "Sulje %s jatkaaksesi!\0"\
   "Valitse kansio, johon SumatraPDF asennetaan:\0"\
   "Osa asennettavista tiedostoista on vahingoittuneita tai ne puuttuvat\0"\
-  "K\303\244ynnist\303\244 SumatraPDF\0"\
+  "Avaa SumatraPDF\0"\
   "SumatraPDF %s asennusohjelma\0"\
   "SumatraPDF %s poisto-ohjelma\0"\
   "SumatraPDF on poistettu.\0"\
   "SumatraPDF-asennusta ei l\303\266ytynyt.\0"\
-  "Kiitos ett\303\244 valitsit SumatraPDF:n!\0"\
+  "Kiitos, ett\303\244 valitsit SumatraPDF:n!\0"\
   "Kiitos! SumatraPDF asennettiin.\0"\
   "Asennusohjelma on viallinen. Lataa se uudelleen.\nAnteeksi h\303\244iri\303\266!\0"\
   "Poista SumatraPDF\0"\
   "Poistaminen ep\303\244onnistui\0"\
   "Poistaminen k\303\244ynniss\303\244...\0"\
-  "K\303\244yt\303\244 SumatraPDF:\303\244\303\244 PDF-tiedostojen oletuslukijana\0";
+  "K\303\244yt\303\244 SumatraPDF:\303\244\303\244 PDF-asiakirjojen oletuslukijana\0";
 
 const char * gTranslations_fr = 
   "\0"\
@@ -733,6 +733,51 @@ const char * gTranslations_fr =
   "\303\211chec de la d\303\251sinstallation\0"\
   "D\303\251sinstallation en cours\342\200\246\0"\
   "Choisir SumatraPDF comme lecteur PDF par &d\303\251faut\0";
+
+const char * gTranslations_gl = 
+  "&Opci\303\263ns\0"\
+  "Seguro que queres desinstalar SumatraPDF?\0"\
+  "Pechar\0"\
+  "Non se puido crear o cartafol temporal\0"\
+  "Non se puido crear o cartafol de instalaci\303\263n\0"\
+  "Non se puido instalado o previsualizador de PDF\0"\
+  "Non se puido instalar o filtro de busca de PDF\0"\
+  "Non se puido instalar o engadido para o navegador\0"\
+  "Non se puido obter o cartafol temporal\0"\
+  "Non se puido eliminar o cartafol de instalaci\303\263n\0"\
+  "Non se puido eliminar o atallo\0"\
+  "Non se puido desinstalar o previsualizador de PDFs\0"\
+  "Non se puido desinstalar o filtro de buscas de PDF\0"\
+  "Non se puido desinstalar o engadido do navegador\0"\
+  "Non se puido escribir %s no disco\0"\
+  "Fallou a copia do desinstalador no cartafol temporal\0"\
+  "Fallou a creaci\303\263n do atallo\0"\
+  "Fallou o borrado das claves de rexistro\0"\
+  "Non se puido escribir a informaci\303\263n de extensi\303\263n do ficheiro no rexistro\0"\
+  "Fallouse ao escribir a informaci\303\263n de desintalaci\303\263n no rexistro\0"\
+  "Agochar as &opci\303\263ns\0"\
+  "Instalar o engadido de &navegador de PDFs para Firefox, Chrome e Opera\0"\
+  "Instalar SumatraPDF\0"\
+  "Instalar SumatraPDF no &cartafol:\0"\
+  "Fallou a instalaci\303\263n!\0"\
+  "Instalaci\303\263n en curso...\0"\
+  "Deixar que o buscador de escritorio de Windos &busque nos documentos de PDF\0"\
+  "Deixar que Windows mostre &previsualizaci\303\263ns de documentos PDF\0"\
+  "Peche %s para continuar\0"\
+  "Escolla o cartafol onde quere instalar SumatraPDF\0"\
+  "Alg\303\272ns ficheiros que se precisan instalar est\303\241n danados ou faltan\0"\
+  "Iniciar SumatraPDF\0"\
+  "Instalador %s SumatraPDF\0"\
+  "Desinstalador %s SumatraPDF\0"\
+  "Desintalouse SumatraPDF\0"\
+  "Non se atopou ningunha instalaci\303\263n de SumatraPDF.\0"\
+  "Graci\303\261as por escoller SumatraPDF!\0"\
+  "Parab\303\251ns! Xa tes SumatraPDF instalado.\0"\
+  "O instalador est\303\241 corrompido. Desc\303\241rgao de novo.\0"\
+  "Desinstalar SumatraPDF\0"\
+  "Fallou a desinstalaci\303\263n\0"\
+  "Desinstalaci\303\263n en procreso...\0"\
+  "Emprega SumatraPDF como o lector de PDF por &defecto\0";
 
 const char * gTranslations_de = 
   "&Optionen\0"\
@@ -1094,6 +1139,51 @@ const char * gTranslations_mk =
   "\320\221\321\200\320\270\321\210\320\265\321\232\320\265\321\202\320\276 \320\265 \320\262\320\276 \321\202\320\265\320\272...\0"\
   "\320\232\320\276\321\200\320\270\321\201\321\202\320\270 \320\263\320\276 SumatraPDF \320\272\320\260\320\272\320\276 &\320\276\321\201\320\275\320\276\320\262\320\265\320\275 \321\207\320\270\321\202\320\260\321\207 \320\275\320\260 PDF\0";
 
+const char * gTranslations_my = 
+  "&Tetapan\0"\
+  "Adakah anda pasti anda mahu membuang SumatraPDF?\0"\
+  "Tutup\0"\
+  "Tidak dapat mencipta direktori sementara\0"\
+  "Tidak dapat mencipta direktori pemasangan\0"\
+  "Tidak dapat memasang previewer PDF\0"\
+  "Tidak dapat memasang penapis carian PDF\0"\
+  "Tidak dapat memasang pelayar plugin\0"\
+  "Tidak boleh mendapatkan direktori sementara\0"\
+  "Tidak dapat memadamkan direktori pemasangan\0"\
+  "Tidak dapat membuang shortcut\0"\
+  "Tidak dapat membuang previewer PDF\0"\
+  "Tidak dapat memadam penapis carian PDF\0"\
+  "Tidak dapat membuang pelayar plugin\0"\
+  "Tidak boleh memasukkan data %s ke cakera\0"\
+  "Gagal untuk menyalin uninstaller untuk direktori sementara\0"\
+  "Gagal untuk mencipta shortcut\0"\
+  "Gagal untuk memadam kekunci pendaftaran uninstaller\0"\
+  "Gagal menulis fail lanjutan maklumat tambahan ke dalam registry\0"\
+  "Gagal untuk menulis maklumat pemasangan untuk registry\0"\
+  "Sembunyi &Tetapan\0"\
+  "Pasang PDF &pelayar plugin untuk Firefox, Chrome dan Opera\0"\
+  "Pasang SumatraPDF\0"\
+  "Pasang SumatraPDF dalam &folder\0"\
+  "Pemasangan gagal!\0"\
+  "Pemasangan sedang dijalankan...\0"\
+  "Biarkan Windows Desktop Search &mencari dokumen PDF\0"\
+  "Biarkan Windows menunjukkan &preview dokumen PDF\0"\
+  "Sila tutup\302\240%s untuk meneruskan!\0"\
+  "Pilih folder di mana SumatraPDF harus dipasang:\0"\
+  "Sesetengah fail yang akan dipasang akan rosak atau hilang\0"\
+  "Mula SumatraPDF\0"\
+  "Installer SumatraPDF %s\0"\
+  "\0"\
+  "SumatraPDF telah dibuang.\0"\
+  "Pemasangan SumatraPDF tidak dijumpai.\0"\
+  "Terima kasih kerana memilih SumatraPDF!\0"\
+  "Terima kasih! SumatraPDF sudah dipasang pada komputer anda.\0"\
+  "Installer telah rosak. Sila muat turun sekali lagi.\nMinta maaf atas kesulitan!\0"\
+  "Membuang SumatraPDF\0"\
+  "Penyahpasangan gagal\0"\
+  "Penyahpasangan sedang dijalankan ...\0"\
+  "Jadikan SumatraPDF sebagai aplikasi utama pembaca PDF anda\0";
+
 const char * gTranslations_pl = 
   "&Opcje\0"\
   "Czy na pewno chcesz usun\304\205\304\207 SumatraPDF?\0"\
@@ -1366,13 +1456,13 @@ const char * gTranslations_sk =
 
 const char * gTranslations_es = 
   "&Opciones\0"\
-  "\302\277Est\303\241 seguro de querer desinstalar SumatraPDF?\0"\
+  "\302\277Est\303\241 seguro de que quiere desinstalar SumatraPDF?\0"\
   "Cerrar\0"\
   "No es posiblre crear la carpeta temporal\0"\
   "No se puede crear el directorio de instalaci\303\263n\0"\
   "No se puede instalar previsualizador PDF\0"\
   "No se puede instalar el filtro buscador PDF\0"\
-  "No es posible instalar el plugin del navegador\0"\
+  "No se puede instalar el complemento del navegador\0"\
   "No se puede acceder al directorio temporal\0"\
   "No se puede eliminar el directorio de instalaci\303\263n\0"\
   "No se puede eliminar el acceso directo\0"\
@@ -1393,13 +1483,13 @@ const char * gTranslations_es =
   "Instalaci\303\263n en progreso...\0"\
   "Permitir que la b\303\272squeda de Windows encuentre documentos PDF\0"\
   "Mostrar miniaturas en los iconos de documentos &PDF\0"\
-  "\302\241Para continuar es necesario cerrar %s!\0"\
+  "Necesita cerrar %s para continuar.\0"\
   "Seleccione la carpeta de instalaci\303\263n de SumatraPDF:\0"\
   "Algunos de los archivos que van a ser instalados estan da\303\261ados o no se encuentran\0"\
   "Iniciar SumatraPDF\0"\
   "Instalador de SumatraPDF %s\0"\
   "Desinstalador de SumatraPDF %s\0"\
-  "SumatraPDF ha sido desinstalado.\0"\
+  "Se ha desinstalado SumatraPDF.\0"\
   "Instalaci\303\263n de SumatraPDF no encontrada.\0"\
   "\302\241Gracias por elegir a SumatraPDF!\0"\
   "\302\241Gracias! SumatraPDF ha sido instalado.\0"\
@@ -1407,7 +1497,7 @@ const char * gTranslations_es =
   "Desinstalar SumatraPDF\0"\
   "Fall\303\263 la desinstalaci\303\263n\0"\
   "Desinstalaci\303\263n en progreso...\0"\
-  "Usar SumatraPDF como lector PDF por &defecto\0";
+  "Usar SumatraPDF como el lector PDF pre&determinado\0";
 
 const char * gTranslations_sv = 
   "Alternativ\0"\
@@ -1697,6 +1787,7 @@ static const char *gTranslations[LANGS_COUNT] = {
   gTranslations_et, 
   gTranslations_fi, 
   gTranslations_fr, 
+  gTranslations_gl, 
   gTranslations_de, 
   gTranslations_hu, 
   gTranslations_id, 
@@ -1705,6 +1796,7 @@ static const char *gTranslations[LANGS_COUNT] = {
   gTranslations_kr, 
   gTranslations_ku, 
   gTranslations_mk, 
+  gTranslations_my, 
   gTranslations_pl, 
   gTranslations_br, 
   gTranslations_pt, 
@@ -1739,6 +1831,7 @@ const char *gLangCodes =   "en\0" \
   "et\0" \
   "fi\0" \
   "fr\0" \
+  "gl\0" \
   "de\0" \
   "hu\0" \
   "id\0" \
@@ -1747,6 +1840,7 @@ const char *gLangCodes =   "en\0" \
   "kr\0" \
   "ku\0" \
   "mk\0" \
+  "my\0" \
   "pl\0" \
   "br\0" \
   "pt\0" \
@@ -1777,6 +1871,7 @@ const char *gLangNames =   "English\0" \
   "Estonian (Eesti)\0" \
   "Finnish (Suomi)\0" \
   "French (Fran\303\247ais)\0" \
+  "Galician (Galego)\0" \
   "German (Deutsch)\0" \
   "Hungarian (Magyar)\0" \
   "Indonesian (Bahasa Indonesia)\0" \
@@ -1785,6 +1880,7 @@ const char *gLangNames =   "English\0" \
   "Korean (\355\225\234\352\265\255\354\226\264)\0" \
   "Kurdish (\331\203\331\210\330\261\330\257\333\214)\0" \
   "Macedonian (\320\274\320\260\320\272\320\265\320\264\320\276\320\275\321\201\320\272\320\270)\0" \
+  "Malaysian (Bahasa Melayu)\0" \
   "Polish (Polski)\0" \
   "Portuguese - Brazil (Portugu\303\252s)\0" \
   "Portuguese - Portugal (Portugu\303\252s)\0" \
@@ -1827,6 +1923,7 @@ const LANGID gLangIds[LANGS_COUNT] = {
   _LANGID(LANG_ESTONIAN),
   _LANGID(LANG_FINNISH),
   _LANGID(LANG_FRENCH),
+  _LANGID(LANG_GALICIAN),
   _LANGID(LANG_GERMAN),
   _LANGID(LANG_HUNGARIAN),
   _LANGID(LANG_INDONESIAN),
@@ -1835,6 +1932,7 @@ const LANGID gLangIds[LANGS_COUNT] = {
   _LANGID(LANG_KOREAN),
   MAKELANGID(LANG_CENTRAL_KURDISH, SUBLANG_CENTRAL_KURDISH_CENTRAL_KURDISH_IRAQ),
   _LANGID(LANG_MACEDONIAN),
+  _LANGID(LANG_MALAY),
   _LANGID(LANG_POLISH),
   MAKELANGID(LANG_PORTUGUESE, SUBLANG_PORTUGUESE_BRAZILIAN),
   _LANGID(LANG_PORTUGUESE),
@@ -1853,7 +1951,7 @@ const LANGID gLangIds[LANGS_COUNT] = {
 
 bool IsLangRtl(int idx)
 {
-  return (2 == idx) || (22 == idx);
+  return (2 == idx) || (23 == idx);
 }
 
 int gLangsCount = LANGS_COUNT;

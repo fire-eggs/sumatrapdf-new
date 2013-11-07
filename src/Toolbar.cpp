@@ -181,6 +181,9 @@ void ShowOrHideToolbarGlobally()
 
             PanelInfo *panel = WIN->gPanel.At(j);
 
+            if (panel->win->presentation || panel->win->isFullScreen)
+                continue;
+
             if (gGlobalPrefs->showToolbar)
                 ShowWindow(panel->win->toolBar()->hwndReBar, SW_SHOW);
             else {

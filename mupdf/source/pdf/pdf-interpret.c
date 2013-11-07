@@ -400,7 +400,7 @@ struct softmask_save_s
 };
 
 static pdf_gstate *
-begin_softmask(pdf_csi * csi, softmask_save *save, int for_group)
+begin_softmask(pdf_csi * csi, softmask_save *save)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	pdf_xobject *softmask = gstate->softmask;
@@ -466,14 +466,6 @@ begin_softmask(pdf_csi * csi, softmask_save *save, int for_group)
 
 	gstate = csi->gstate + csi->gtop;
 	gstate->ctm = save_ctm;
-	/* SumatraPDF: fix memory leak */
-	gstate->softmask = save->softmask;
-	/* SumatraPDF: fix regression in Bug6901014_CityMap-evince.pdf */
-	if (!for_group)
-	{
-		gstate->softmask = NULL;
-		pdf_drop_xobject(ctx, save->softmask);
-	}
 
 	return gstate;
 }
@@ -486,6 +478,7 @@ end_softmask(pdf_csi *csi, softmask_save *save)
 	if (save->softmask == NULL)
 		return;
 
+	gstate->softmask = save->softmask;
 	gstate->softmask_ctm = save->ctm;
 	fz_pop_clip(csi->dev);
 }
@@ -493,7 +486,7 @@ end_softmask(pdf_csi *csi, softmask_save *save)
 static void
 pdf_begin_group(pdf_csi *csi, const fz_rect *bbox, softmask_save *softmask)
 {
-	pdf_gstate *gstate = begin_softmask(csi, softmask, 1);
+	pdf_gstate *gstate = begin_softmask(csi, softmask);
 
 	/* SumatraPDF: support transfer functions */
 	if (gstate->blendmode || gstate->tr)
@@ -616,6 +609,7 @@ pdf_show_path(pdf_csi *csi, int doclose, int dofill, int dostroke, int even_odd)
 	fz_path *path;
 	fz_rect bbox;
 	softmask_save softmask = { NULL };
+	int knockout_group = 0;
 
 	if (dostroke) {
 		if (csi->dev->flags & (FZ_DEVFLAG_STROKECOLOR_UNDEFINED | FZ_DEVFLAG_LINEJOIN_UNDEFINED | FZ_DEVFLAG_LINEWIDTH_UNDEFINED))
@@ -643,7 +637,7 @@ pdf_show_path(pdf_csi *csi, int doclose, int dofill, int dostroke, int even_odd)
 		if (csi->clip)
 		{
 			gstate->clip_depth++;
-			fz_clip_path(csi->dev, path, NULL, csi->clip_even_odd, &gstate->ctm);
+			fz_clip_path(csi->dev, path, &bbox, csi->clip_even_odd, &gstate->ctm);
 			csi->clip = 0;
 		}
 
@@ -653,6 +647,25 @@ pdf_show_path(pdf_csi *csi, int doclose, int dofill, int dostroke, int even_odd)
 		if (dofill || dostroke)
 			pdf_begin_group(csi, &bbox, &softmask);
 
+		/* SumatraPDF: prevent regression (e.g. in blend mode 10.pdf and annotations galore.pdf) */
+		if (dofill && dostroke && 0)
+		{
+			/* We may need to push a knockout group */
+			if (gstate->stroke.alpha == 0)
+			{
+				/* No need for group, as stroke won't do anything */
+			}
+			else if (gstate->stroke.alpha == 1.0f && gstate->blendmode == FZ_BLEND_NORMAL)
+			{
+				/* No need for group, as stroke won't show up */
+			}
+			else
+			{
+				knockout_group = 1;
+				fz_begin_group(csi->dev, &bbox, 0, 1, FZ_BLEND_NORMAL, 1);
+			}
+		}
+
 		if (dofill)
 		{
 			switch (gstate->fill.kind)
@@ -660,9 +673,9 @@ pdf_show_path(pdf_csi *csi, int doclose, int dofill, int dostroke, int even_odd)
 			case PDF_MAT_NONE:
 				break;
 			case PDF_MAT_COLOR:
-				// cf. http://code.google.com/p/sumatrapdf/issues/detail?id=966
-				if (6 <= path->len && path->len <= 7 && path->items[0].k == FZ_MOVETO && path->items[3].k == FZ_LINETO &&
-					(path->items[1].v != path->items[4].v || path->items[2].v != path->items[5].v))
+				/* cf. http://code.google.com/p/sumatrapdf/issues/detail?id=966 */
+				if (path->coord_len == 4 && path->cmds[0] == FZ_MOVETO && path->cmds[1] == FZ_LINETO &&
+					(path->coords[0] != path->coords[2] || path->coords[1] != path->coords[3]))
 				{
 					fz_stroke_state *stroke = fz_new_stroke_state(ctx);
 					stroke->linewidth = 0.1f / fz_matrix_expansion(&gstate->ctm);
@@ -677,7 +690,7 @@ pdf_show_path(pdf_csi *csi, int doclose, int dofill, int dostroke, int even_odd)
 			case PDF_MAT_PATTERN:
 				if (gstate->fill.pattern)
 				{
-					fz_clip_path(csi->dev, path, NULL, even_odd, &gstate->ctm);
+					fz_clip_path(csi->dev, path, &bbox, even_odd, &gstate->ctm);
 					pdf_show_pattern(csi, gstate->fill.pattern, &csi->gstate[gstate->fill.gstate_num], &bbox, PDF_FILL);
 					fz_pop_clip(csi->dev);
 				}
@@ -685,7 +698,7 @@ pdf_show_path(pdf_csi *csi, int doclose, int dofill, int dostroke, int even_odd)
 			case PDF_MAT_SHADE:
 				if (gstate->fill.shade)
 				{
-					fz_clip_path(csi->dev, path, NULL, even_odd, &gstate->ctm);
+					fz_clip_path(csi->dev, path, &bbox, even_odd, &gstate->ctm);
 					/* The cluster and page 2 of patterns.pdf shows that fz_fill_shade should NOT be called with gstate->ctm. */
 					fz_fill_shade(csi->dev, gstate->fill.shade, &csi->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha);
 					fz_pop_clip(csi->dev);
@@ -722,6 +735,9 @@ pdf_show_path(pdf_csi *csi, int doclose, int dofill, int dostroke, int even_odd)
 				break;
 			}
 		}
+
+		if (knockout_group)
+			fz_end_group(csi->dev);
 
 		if (dofill || dostroke)
 			pdf_end_group(csi, &softmask);
@@ -1379,6 +1395,13 @@ pdf_set_colorspace(pdf_csi *csi, int what, fz_colorspace *colorspace)
 	mat->v[1] = 0;
 	mat->v[2] = 0;
 	mat->v[3] = 1;
+
+	if (pdf_is_tint_colorspace(colorspace))
+	{
+		int i;
+		for (i = 0; i < colorspace->n; i++)
+			mat->v[i] = 1.0f;
+	}
 }
 
 static void
@@ -1397,7 +1420,6 @@ pdf_set_color(pdf_csi *csi, int what, float *v)
 	{
 	case PDF_MAT_PATTERN:
 	case PDF_MAT_COLOR:
-		/* cf. http://code.google.com/p/sumatrapdf/issues/detail?id=1879 */
 		if (fz_colorspace_is_indexed(mat->colorspace))
 		{
 			mat->v[0] = v[0] / 255;
@@ -1665,7 +1687,7 @@ pdf_run_xobject(pdf_csi *csi, pdf_obj *resources, pdf_xobject *xobj, const fz_ma
 		{
 			fz_rect bbox = xobj->bbox;
 			fz_transform_rect(&bbox, &gstate->ctm);
-			gstate = begin_softmask(csi, &softmask, 0);
+			gstate = begin_softmask(csi, &softmask);
 
 			fz_begin_group(csi->dev, &bbox,
 				xobj->isolated, xobj->knockout, gstate->blendmode, gstate->fill.alpha);
@@ -1675,8 +1697,9 @@ pdf_run_xobject(pdf_csi *csi, pdf_obj *resources, pdf_xobject *xobj, const fz_ma
 			gstate->fill.alpha = 1;
 		}
 
-		/* clip to the bounds */
+		pdf_gsave(csi); /* Save here so the clippath doesn't persist */
 
+		/* clip to the bounds */
 		fz_moveto(ctx, csi->path, xobj->bbox.x0, xobj->bbox.y0);
 		fz_lineto(ctx, csi->path, xobj->bbox.x1, xobj->bbox.y0);
 		fz_lineto(ctx, csi->path, xobj->bbox.x1, xobj->bbox.y1);
@@ -1694,6 +1717,15 @@ pdf_run_xobject(pdf_csi *csi, pdf_obj *resources, pdf_xobject *xobj, const fz_ma
 	}
 	fz_always(ctx)
 	{
+		pdf_grestore(csi); /* Remove the clippath */
+
+		/* wrap up transparency stacks */
+		if (xobj->transparency)
+		{
+			fz_end_group(csi->dev);
+			end_softmask(csi, &softmask);
+		}
+
 		csi->gstate[csi->gparent].ctm = gparent_save_ctm;
 		csi->gparent = gparent_save;
 
@@ -1706,13 +1738,6 @@ pdf_run_xobject(pdf_csi *csi, pdf_obj *resources, pdf_xobject *xobj, const fz_ma
 		}
 
 		pdf_unmark_obj(xobj->me);
-
-		/* wrap up transparency stacks */
-		if (xobj->transparency)
-		{
-			fz_end_group(csi->dev);
-			end_softmask(csi, &softmask);
-		}
 	}
 	fz_catch(ctx)
 	{

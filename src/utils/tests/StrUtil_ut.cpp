@@ -61,6 +61,33 @@ static void StrSeqTest()
     utassert(-1 == seqstrings::StrToIdx(s, L"ba"));
 }
 
+static void StrIsDigitTest()
+{
+    const char *nonDigits = "/:.bz{}";
+    const char *digits = "0123456789";
+    for (size_t i = 0; i < str::Len(nonDigits); i++) {
+#if 0
+        if (str::IsDigit(nonDigits[i])) {
+            char c = nonDigits[i];
+            printf("%c is incorrectly determined as a digit\n", c);
+        }
+#endif
+        utassert(!str::IsDigit(nonDigits[i]));
+    }
+    for (size_t i = 0; i < str::Len(digits); i++) {
+        utassert(str::IsDigit(digits[i]));
+    }
+
+    const WCHAR *nonDigitsW = L"/:.bz{}";
+    const WCHAR *digitsW = L"0123456789";
+    for (size_t i = 0; i < str::Len(nonDigitsW); i++) {
+        utassert(!str::IsDigit(nonDigitsW[i]));
+    }
+    for (size_t i = 0; i < str::Len(digitsW); i++) {
+        utassert(str::IsDigit(digitsW[i]));
+    }
+}
+
 void StrTest()
 {
     WCHAR buf[32];
@@ -440,6 +467,7 @@ void StrTest()
         }
     }
 
+    StrIsDigitTest();
     StrReplaceTest();
     StrSeqTest();
 }

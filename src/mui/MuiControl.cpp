@@ -216,7 +216,10 @@ void Control::Show()
     if (IsVisible())
         return; // perf: avoid unnecessary repaints
     bit::Clear(stateBits, IsHiddenBit);
-    RequestRepaint(this);
+    // showing/hiding controls might affect layout, so we need
+    // to re-do layout.
+    // Note: not sure if have to RequestRepaint(this) as well
+    RequestLayout(this);
 }
 
 void Control::Hide()
@@ -285,10 +288,14 @@ void Control::Paint(Graphics *gfx, int offX, int offY)
     CrashIf(!IsVisible());
 }
 
+// returns true if the style of control has changed
 bool Control::SetStyle(Style *style)
 {
     bool changed;
+    CachedStyle *currStyle = cachedStyle;
     cachedStyle = CacheStyle(style, &changed);
+    if (currStyle != cachedStyle)
+        changed = true;
     if (changed)
         RequestRepaint(this);
     return changed;

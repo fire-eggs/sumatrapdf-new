@@ -7,8 +7,8 @@
 
 namespace trans {
 
-#define LANGS_COUNT   54
-#define STRINGS_COUNT 243
+#define LANGS_COUNT   55
+#define STRINGS_COUNT 244
 
 const char *gOriginalStrings[STRINGS_COUNT] = {
   "&About",
@@ -121,6 +121,7 @@ const char *gOriginalStrings[STRINGS_COUNT] = {
   "Error loading %s",
   "F&avorites",
   "F&orward\tAlt+Right Arrow",
+  "F&ullscreen\tCtrl+L",
   "F&ullscreen\tCtrl+Shift+L",
   "Facing",
   "Failed to rename the file!",
@@ -370,6 +371,7 @@ const char * gTranslations_sq =
   "Gabim n\303\253 hapjen e %s\0"\
   "P&\303\253lqej\0"\
   "P&\303\253rpara\tAlt+Right Arrow\0"\
+  "Ekran i p&lot\303\253\tCtrl+L\0"\
   "Ekran i p&lot\303\253\tCtrl+Shift+L\0"\
   "P\303\253rbri\0"\
   "D\303\253shtoi riem\303\253rtimi i sked\303\253s!\0"\
@@ -615,6 +617,7 @@ const char * gTranslations_ar =
   "\330\256\330\267\330\243 \331\201\331\212 \330\252\330\255\331\205\331\212\331\204 %s\0"\
   "\330\247\331\204\331\205\331\201\330\266\331\204\330\251\0"\
   "\330\247\331\204\330\243\331\205\330\247\331\205\tAlt+\330\247\331\204\330\263\331\207\331\205 \330\247\331\204\330\243\331\212\331\205\331\206\0"\
+  "\330\250\330\255\330\254\331\205 \330\247\331\204\330\264\330\247\330\264\330\251\tCtrl+L\0"\
   "\330\250\330\255\330\254\331\205 \330\247\331\204\330\264\330\247\330\264\330\251\tCtrl+Shift+L\0"\
   "\330\265\331\201\330\255\330\252\330\247\331\206 \331\205\330\252\331\202\330\247\330\250\331\204\330\252\330\247\331\206\0"\
   "\331\201\330\264\331\204 \331\201\331\212 \330\245\330\271\330\247\330\257\330\251 \330\252\330\263\331\205\331\212\330\251 \330\247\331\204\331\205\331\204\331\201!\0"\
@@ -765,7 +768,7 @@ const char * gTranslations_am =
   "&\325\226\325\241\325\265\325\254\0"\
   "&\324\273\325\266\325\271 \326\203\325\266\325\277\326\200\325\245\325\254.\0"\
   "\324\261\325\274\325\241\325\273\325\253\325\266 \325\247\325\273\325\250\tHome\0"\
-  "&\325\200\325\241\326\200\325\264\325\241\326\200\325\245\326\201\325\266\325\245\325\254 \325\247\325\273\325\245\326\200\325\250 \325\277\325\272\325\264\325\241\325\266 \325\260\325\241\325\264\325\241\326\200\0"\
+  "&\325\200\325\241\326\200\325\264\325\241\326\200\325\245\326\201\325\266\325\245\325\254 \325\247\325\273\325\245\326\200\325\250 \325\277\325\272\325\245\325\254\325\270\326\202 \325\260\325\241\325\264\325\241\326\200\0"\
   "&\324\261\325\266\326\201\325\266\325\245\325\254\0"\
   "&\324\261\325\266\326\201\325\266\325\245\325\254 \325\247\325\273\325\253\325\266.\0"\
   "&\325\225\325\243\325\266\325\270\326\202\325\251\325\265\325\270\326\202\325\266\0"\
@@ -860,6 +863,7 @@ const char * gTranslations_am =
   "\324\262\325\241\326\201\325\264\325\241\325\266 \325\275\325\255\325\241\325\254 %s\0"\
   "\324\270&\325\266\325\277\326\200\325\265\325\241\325\254\325\266\325\245\326\200\0"\
   "\324\261\325\274\325\241\325\273\tAlt+->\0"\
+  "\324\261\325\264&\325\242\325\270\325\262\325\273 \325\247\325\257\326\200\325\241\325\266\325\270\325\276\tCtrl+L\0"\
   "\324\261\325\264&\325\242\325\270\325\262\325\273 \325\247\325\257\326\200\325\241\325\266\325\270\325\276\tCtrl+Shift+L\0"\
   "\324\265\326\200\325\257\325\270\326\202 \325\247\325\273\0"\
   "\325\200\325\266\325\241\326\200\325\241\325\276\325\270\326\200 \325\271\325\245\325\262\325\241\325\276 \325\241\325\266\325\276\325\241\325\266\325\241\326\203\325\270\325\255\325\245\325\254 \326\206\325\241\325\265\325\254\325\250\326\211\0"\
@@ -966,7 +970,7 @@ const char * gTranslations_am =
   "\325\221\325\270\326\202\326\201\325\241\325\244\326\200\325\245\325\254 \325\250\325\266\325\277\326\200\325\265\325\241\325\254\325\266\325\245\326\200\325\250\0"\
   "\325\221\325\270\326\202\326\201\325\241\325\244\326\200\325\245\325\254 \325\260\325\241\325\263\325\241\325\255\325\241\325\257\325\253 \325\242\325\241\326\201\325\276\325\241\325\256\325\266\325\245\326\200\325\250\0"\
   "\325\200\325\266\325\241\326\200\325\241\325\276\325\270\326\200\325\270\326\202\325\251\325\265\325\241\325\266 \325\244\325\245\325\272\326\204\325\270\326\202\325\264 \326\201\325\270\326\202\325\265\326\201 \325\277\325\241\325\254 &\324\267\325\273\325\245\326\200\325\250\0"\
-  "&\325\204\325\245\325\257 \325\247\325\273\0"\
+  "\325\204\325\245\325\257 \325\247\325\273\0"\
   "\324\277\325\266\325\245\326\200\325\245\326\204, \325\275\325\241 \325\271\325\272\325\245\325\277\326\204 \325\247 \325\277\325\245\325\262\325\253 \325\270\326\202\325\266\325\245\325\266\325\241\326\200\326\211\n\n\325\215\325\245\325\262\325\264\325\245\326\204 '\325\204\325\245\326\200\325\252\325\245\325\254'\325\235\325\245\325\251\325\245 \326\201\325\241\325\266\325\257\325\241\325\266\325\270\326\202\325\264 \325\245\326\204 \326\205\325\243\325\266\325\245\325\254 \325\264\325\245\325\246 \325\276\325\245\326\200\325\241\326\201\325\266\325\245\325\254\325\270\326\202 \325\241\325\265\325\275 \325\275\325\255\325\241\325\254\325\250\326\211\0"\
   "%s \326\206\325\241\325\265\325\254\325\250 \325\271\325\270\326\202\325\266\325\253 \325\260\325\241\325\264\325\241\325\252\325\241\325\264\325\245\326\201\325\264\325\241\325\266 \325\257\325\245\325\277\0"\
   "\325\226\325\241\325\265\325\254\325\250.\0"\
@@ -984,7 +988,7 @@ const char * gTranslations_am =
   "\324\276\326\200\325\241\325\243\326\200\325\253 &\325\257\325\241\325\265\326\204\325\250\0"\
   "\324\266\325\243\325\270\326\202\325\267\325\241\326\201\325\270\326\202\325\264\0"\
   "XPS \326\206\325\241\325\265\325\254\325\245\326\200\0"\
-  "\325\215\325\241 \325\276\325\245\326\200\325\273\325\253\325\266 \325\277\325\241\326\200\325\242\325\245\326\200\325\241\325\257\325\266 \325\247\326\211\0"\
+  "\325\215\325\241 \325\266\325\270\326\200\325\241\325\243\325\270\326\202\325\265\325\266 \325\277\325\241\326\200\325\242\325\245\326\200\325\241\325\257\325\266 \325\247\326\211\0"\
   "\324\264\325\270\326\202\326\204 \326\205\325\243\325\277\325\241\325\243\325\270\326\200\325\256\325\270\326\202\325\264 \325\245\326\204 %s \325\277\325\241\326\200\325\242\325\245\326\200\325\241\325\257\325\250\0"\
   "\325\211\325\241\326\203\325\250\0"\
   "\325\204\325\245\325\256\325\241\326\201\325\266\325\245\325\254\0"\
@@ -1065,7 +1069,7 @@ const char * gTranslations_az =
   "\306\217lf\311\231cin yarl\304\261klar\304\261\0"\
   "%s. (%s) s\311\231hif\311\231 yarl\304\261k\304\261n\304\261n \311\231lf\311\231cini\0"\
   "\306\217lf\311\231cinl\311\231r\0"\
-  "Bayt\0"\
+  "bayt\0"\
   "CHM s\311\231n\311\231dl\311\231ri\0"\
   "\304\260nternet\311\231 qo\305\237ulmaq m\303\274mk\303\274n deyil (x\311\231ta %#x).\0"\
   "\304\260mtina\0"\
@@ -1102,9 +1106,10 @@ const char * gTranslations_az =
   "Parolu daxil edin\0"\
   "%s \303\274\303\247\303\274n parolu daxil edin\0"\
   "PDF s\311\231n\311\231dinin \303\274st\303\274n\311\231 iki d\311\231f\311\231 basd\304\261qda \303\247a\304\237\304\261r\304\261lan komanda s\311\231trini daxil edin:\0"\
-  "%s y\303\274kl\311\231nm\311\231sind\311\231 x\311\231ta ba\305\237 verdi\0"\
+  "%s fayl\304\261n\304\261n y\303\274kl\311\231nm\311\231sind\311\231 x\311\231ta ba\305\237 verdi\0"\
   "&Se\303\247ilmi\305\237l\311\231r\0"\
   "&\304\260r\311\231li\tAlt+Right Arrow\0"\
+  "Tam ek&ran\tCtrl+L\0"\
   "Tam ek&ran\tCtrl+Shift+L\0"\
   "C\303\274t s\311\231hif\311\231l\311\231r\0"\
   "Fayl\304\261n ad\304\261n\304\261 d\311\231yi\305\237m\311\231k m\303\274mk\303\274n olmad\304\261!\0"\
@@ -1350,6 +1355,7 @@ const char * gTranslations_eu =
   "Akatsa %s gertatzerakoan\0"\
   "&Gogokoenak\0"\
   "A&urrera\tAlt+Eskuin Gezia\0"\
+  "&Ikusleiho-osoan\tKtrl+L\0"\
   "&Ikusleiho-osoan\tKtrl+Shift+L\0"\
   "Bi Aldeetatik\0"\
   "Hutsegitea agiria berrizendatzerakoan!\0"\
@@ -1595,6 +1601,7 @@ const char * gTranslations_bs =
   "Gre\305\241ka pri u\304\215itavanju %s\0"\
   "F&avoriti\0"\
   "Naprijed\tAlt+->\0"\
+  "Cijeli ekran\tCtrl+L\0"\
   "Cijeli ekran\tCtrl+Shift+L\0"\
   "Dvije stranice\0"\
   "Neuspje\305\241na promjena naziva faja!\0"\
@@ -1840,6 +1847,7 @@ const char * gTranslations_bg =
   "\320\223\321\200\320\265\321\210\320\272\320\260 \320\277\321\200\320\270 \320\267\320\260\321\200\320\265\320\266\320\264\320\260\320\275\320\265 \320\275\320\260 %s\0"\
   "&\320\233\321\216\320\261\320\270\320\274\320\270\0"\
   "\320\235\320\260\320\277&\321\200\320\265\320\264\tAlt+\320\224\321\217\321\201\320\275\320\260 \321\201\321\202\321\200\320\265\320\273\320\272\320\260\0"\
+  "&\320\246\321\217\320\273 \320\225\320\272\321\200\320\260\320\275\tCtrl+L\0"\
   "&\320\246\321\217\320\273 \320\225\320\272\321\200\320\260\320\275\tCtrl+Shift+L\0"\
   "\320\241\321\200\320\265\321\211\321\203\320\277\320\276\320\273\320\276\320\266\320\275\320\270 \321\201\321\202\321\200\320\260\320\275\320\270\321\206\320\270\0"\
   "\320\237\321\200\320\265\320\270\320\274\320\265\320\275\321\203\320\262\320\260\320\275\320\265\321\202\320\276 \320\275\320\265 \320\261\320\265\321\210\320\265 \321\203\321\201\320\277\320\265\321\210\320\275\320\276!\0"\
@@ -2069,12 +2077,12 @@ const char * gTranslations_ca =
   "No es pot representar la p\303\240gina\0"\
   "Creat:\0"\
   "Fitxer actual\0"\
-  "Zoom &predeterminat..\tCtrl+Y\0"\
+  "Escala &predeterminada\342\200\246\tCtrl+Y\0"\
   "&Visualitzaci\303\263 predeterminada:\0"\
   "&Zoom predeterminat\0"\
   "No es pot canviar el lector de PDF predeterminat en mode portable.\0"\
   "Permisos denegats:\0"\
-  "Documents djvu\0"\
+  "Documents DjVu\0"\
   "Propietats del document\0"\
   "Baixa\0"\
   "S&urt\tCtrl+Q\0"\
@@ -2085,6 +2093,7 @@ const char * gTranslations_ca =
   "S'ha produ\303\257t un error en carregar %s\0"\
   "Pr&eferits\0"\
   "En&davant\tAlt+Right Arrow\0"\
+  "Pantalla &completa\tCtrl+L\0"\
   "Pantalla &completa\tCtrl+Shift+L\0"\
   "P\303\240gina doble\0"\
   "S'ha produ\303\257t un error en canviar el nom del fitxer!\0"\
@@ -2160,7 +2169,7 @@ const char * gTranslations_ca =
   "Documents Postscript\0"\
   "Pr&esentaci\303\263\tCtrl+L\0"\
   "P\303\240gina anterior\0"\
-  "Impressora\0"\
+  "Imprimeix\0"\
   "Imprimeix com a &imatge (requereix m\303\251s mem\303\262ria)\0"\
   "Interval d'impressi\303\263\0"\
   "No existeix cap impressora amb el nom prove\303\257t\0"\
@@ -2330,6 +2339,7 @@ const char * gTranslations_ca_xv =
   "S'ha produ\303\257t un error en carregar %s\0"\
   "F&avorits\0"\
   "Avan&t\tAlt+Right Arrow\0"\
+  "Pantalla &completa\tCtrl+L\0"\
   "Pantalla &completa\tCtrl+Shift+L\0"\
   "P\303\240gina doble\0"\
   "S'ha produ\303\217t un error en canviar el nom del fitxer!\0"\
@@ -2575,6 +2585,7 @@ const char * gTranslations_cn =
   "\350\275\275\345\205\245\351\224\231\350\257\257 %s\0"\
   "\346\224\266\350\227\217(&A)\0"\
   "\344\270\213\344\270\200\350\247\206\345\233\276(&O)\tAlt+Right Arrow\0"\
+  "\345\205\250\345\261\217(&U)\tCtrl+L\0"\
   "\345\205\250\345\261\217(&U)\tCtrl+Shift+L\0"\
   "\345\271\263\351\223\272\351\241\265\351\235\242\0"\
   "\346\227\240\346\263\225\351\207\215\345\221\275\345\220\215!\0"\
@@ -2820,6 +2831,7 @@ const char * gTranslations_tw =
   "\350\274\211\345\205\245 %s \346\231\202\347\231\274\347\224\237\351\214\257\350\252\244\0"\
   "\346\210\221\347\232\204\346\234\200\346\204\233(&A)\0"\
   "\344\270\213\344\270\200\345\201\234\351\240\223\351\240\201\351\235\242(&O)\tAlt+->\0"\
+  "\345\205\250\350\236\242\345\271\225\351\241\257\347\244\272(&U)\tCtrl+L\0"\
   "\345\205\250\350\236\242\345\271\225\351\241\257\347\244\272(&U)\tCtrl+Shift+L\0"\
   "\351\233\231\351\240\201\346\250\241\345\274\217\0"\
   "\351\207\215\346\226\260\345\221\275\345\220\215\350\251\262\346\252\224\346\241\210\345\244\261\346\225\227!\0"\
@@ -3065,6 +3077,7 @@ const char * gTranslations_hr =
   "Gre\305\241ka kod pokretanja %s\0"\
   "F&avoriti\0"\
   "Naprijed\tAlt+->\0"\
+  "Cijeli zaslon\tCtrl+L\0"\
   "Cijeli zaslon\tCtrl+Shift+L\0"\
   "Dvije stranice\0"\
   "Neuspjeh u preimenovanju datoteke!\0"\
@@ -3310,6 +3323,7 @@ const char * gTranslations_cz =
   "Chyba p\305\231i na\304\215\303\255t\303\241n\303\255 %s\0"\
   "&Obl\303\255ben\303\251 polo\305\276ky\0"\
   "V&p\305\231ed\tAlt+\305\240ipka vpravo\0"\
+  "&Cel\303\241 obrazovka\tCtrl+L\0"\
   "&Cel\303\241 obrazovka\tCtrl+Shift+L\0"\
   "Dvojstr\303\241nky\0"\
   "Soubor se nepoda\305\231ilo p\305\231ejmenovat!\0"\
@@ -3555,6 +3569,7 @@ const char * gTranslations_dk =
   "Side %s kan ikke indl\303\246ses\0"\
   "Bogm&\303\246rker\0"\
   "F&remad\tAlt+->\0"\
+  "F&uldsk\303\246rmsvisning\tCtrl+L\0"\
   "F&uldsk\303\246rmsvisning\tCtrl+Shift+L\0"\
   "Modst\303\245ende\0"\
   "Fejl ved omd\303\270bning af fil!\0"\
@@ -3800,13 +3815,14 @@ const char * gTranslations_nl =
   "Fout bij het laden van %s\0"\
   "F&avorieten\0"\
   "Verder\tAlt+->\0"\
+  "Volledig scherm\tCtrl+L\0"\
   "Volledig scherm\tCtrl+Shift+L\0"\
   "Dubbele pagina\0"\
   "Naam niet kunnen wijzigen!\0"\
   "Fout bij opslaan bestand\0"\
   "Snelle browserweergave\0"\
   "Favorieten\0"\
-  "FictionBook documenten\0"\
+  "FictionBookdocumenten\0"\
   "Bestand %s niet gevonden\0"\
   "Bestandsgrootte\0"\
   "Bestand:\0"\
@@ -3838,7 +3854,7 @@ const char * gTranslations_nl =
   "\0"\
   "SumatraPDF als standaardlezer van PDF-bestanden instellen?\0"\
   "SumatraPDF als standaard PDF-lezer instellen\0"\
-  "\0"\
+  "Man&gamodus\0"\
   "Hoofdlettergevoelig\0"\
   "Mobi-documenten\0"\
   "Aangepast:\0"\
@@ -4045,6 +4061,7 @@ const char * gTranslations_et =
   "Viga laadimisel: %s\0"\
   "L&emmikud\0"\
   "E&dasi\tAlt+Paremnool\0"\
+  "&T\303\244isekraanvaade\tCtrl+L\0"\
   "&T\303\244isekraanvaade\tCtrl+Shift+L\0"\
   "Kahelehek\303\274ljeline\0"\
   "Faili \303\274mbernimetamine eba\303\265nnestus.\0"\
@@ -4188,7 +4205,7 @@ const char * gTranslations_fi =
   "&Kirjan\303\244kym\303\244\tCtrl+8\0"\
   "&Sulje\tCtrl+W\0"\
   "Kopioi &valinta\0"\
-  "Kopioi valinta\tCtrl+C\0"\
+  "Ko&pioi valinta\tCtrl+C\0"\
   "\303\204&l\303\244 kysy uudestaan\0"\
   "Vain pa&rilliset sivut\0"\
   "&Rinnakkain\tCtrl+7\0"\
@@ -4228,15 +4245,15 @@ const char * gTranslations_fi =
   "&K\303\244yt\303\244 alkuper\303\244isi\303\244 sivukokoja\0"\
   "&N\303\244yt\303\244\0"\
   "&Kyll\303\244\0"\
-  "&Kohdista\0"\
+  "&Zoomaus\0"\
   "(%d:st\303\244)\0"\
   "(sivu %s)\0"\
   "Tietoja SumatraPDF:st\303\244\0"\
   "Lis\303\244\303\244 suosikki\0"\
-  "Lis\303\244\303\244 sivu %s suosikkeihin\0"\
+  "&Lis\303\244\303\244 sivu %s suosikkeihin\0"\
   "Lis\303\244\303\244 sivu %s suosikkeihin (valinnaisella) nimell\303\244:\0"\
   "Lis\303\244\303\244 suosikkeihin\0"\
-  "Kehittynyt\0"\
+  "Lis\303\244asetukset\0"\
   "Kaikki tiedostot\0"\
   "Kaikki tuetut asiakirjat\0"\
   "Ohjelma:\0"\
@@ -4246,7 +4263,7 @@ const char * gTranslations_fi =
   "Automaattinen\0"\
   "Tarkista p\303\244&ivitykset automaattisesti\0"\
   "Kirjan\303\244kym\303\244\0"\
-  "Kirjanmerkit\tF12\0"\
+  "K&irjanmerkit\tF12\0"\
   "Pikakuvakkeet\0"\
   "Tee pikakuvake sivulle %s/%s\0"\
   "Kirjanmerkit\0"\
@@ -4254,14 +4271,14 @@ const char * gTranslations_fi =
   "CHM-asiakirjat\0"\
   "Internetiin yhdist\303\244minen ep\303\244onnistui (virhe %#x).\0"\
   "Peruuta\0"\
-  "T\303\244m\303\244n tiedoston tulostus ep\303\244onnistui\0"\
-  "K\303\244\303\244nteisen hakukomennon aloitus ep\303\244onnistui. Tarkista komentorivi asetuksissa.\0"\
+  "T\303\244m\303\244n tiedoston tulostaminen ep\303\244onnistui\0"\
+  "K\303\244\303\244nteisen hakukomennon aloittaminen ep\303\244onnistui. Tarkista komentorivi asetuksista.\0"\
   "Valitse kieli (Change Language)\0"\
-  "Tarkista, onko &p\303\244ivityksi\303\244 saatavilla\0"\
+  "Tarkista &p\303\244ivitysten saatavuus\0"\
   "Sarjakuvat\0"\
   "Yhteensopivuus\0"\
   "Per\303\244kk\303\244in\0"\
-  "Jatkuva kirjan\303\244kym\303\244\0"\
+  "Kirjan\303\244kym\303\244, per\303\244kk\303\244in\0"\
   "Per\303\244kk\303\244in ja rinnakkain\0"\
   "Osallistu suomennosprojektiin\0"\
   "Kopioi &kuva\0"\
@@ -4270,14 +4287,14 @@ const char * gTranslations_fi =
   "Tekstin kopioiminen kiellettiin (kopioidaan vain kuvana)\0"\
   "\0"\
   "Tulostimen ominaisuuksia ei voinut lukea\0"\
-  "Tulostinta ei voida valmistella\0"\
+  "Tulostimen valmistelu ep\303\244onnistui\0"\
   "Sivun tulkinta ep\303\244onnistui\0"\
-  "Tehty:\0"\
+  "Luotu:\0"\
   "Nykyinen tiedosto\0"\
-  "&Mukautettu l\303\244hennys...\tCtrl+Y\0"\
+  "&Mukautettu zoomaustaso...\tCtrl+Y\0"\
   "Oletus&tyyli:\0"\
-  "Oletus&l\303\244hennys:\0"\
-  "P\303\244\303\244-PDF-lukijaa ei voida muuttaa kannettavassa tilassa\0"\
+  "Oletus&zoomaus:\0"\
+  "PDF-oletuslukijaa ei voi vaihtaa kannettavassa tilassa\0"\
   "Kielletyt oikeudet:\0"\
   "DjVu-asiakirjat\0"\
   "Asiakirjan ominaisuudet\0"\
@@ -4286,15 +4303,16 @@ const char * gTranslations_fi =
   "EPUB-asiakirjat\0"\
   "Kirjoita salasana\0"\
   "Kirjoita tiedoston %s salasana\0"\
-  "Anna komentorivin komento joka ajetaan PDF-asiakirjaa kaksoisnapsautettaessa:\0"\
+  "Anna komentorivin komento, joka ajetaan kun PDF-asiakirjaa kaksoisnapsautetaan:\0"\
   "Virhe ladattaessa: %s\0"\
   "S&uosikit\0"\
   "Se&uraava\tAlt+Oikea nuoli\0"\
+  "Koko &n\303\244ytt\303\266\tCtrl+L\0"\
   "Koko &n\303\244ytt\303\266\tCtrl+Shift+L\0"\
   "Rinnakkain\0"\
   "Tiedoston uudelleennime\303\244minen ep\303\244onnistui!\0"\
   "Tiedoston tallennus ep\303\244onnistui\0"\
-  "\0"\
+  "Nopea web-n\303\244kym\303\244\0"\
   "suosikit\0"\
   "FictionBook-asiakirjat\0"\
   "Tiedosto %s ei l\303\266ydy\0"\
@@ -4326,8 +4344,8 @@ const char * gTranslations_fi =
   "Kt\0"\
   "Ladataan tiedostoa %s...\0"\
   "Mt\0"\
-  "Tee SumatraPDF:st\303\244 PDF-tiedostojen oletuslukuohjelma?\0"\
-  "Tee SumatraPDF:st\303\244 PDF-tiedostojen oletuslukuohjelma\0"\
+  "Tee SumatraPDF:st\303\244 PDF-asiakirjojen oletuslukuohjelma?\0"\
+  "Tee SumatraPDF:st\303\244 PDF-asiakirjojen oletuslukuohjelma\0"\
   "Man&ga-moodi\0"\
   "Sama kirjainkoko\0"\
   "Mobi-asiakirjat\0"\
@@ -4343,7 +4361,7 @@ const char * gTranslations_fi =
   "Avaa\0"\
   "Avaa PDF-XChange\0"\
   "Avaa asiakirja...\0"\
-  "\0"\
+  "Avaa ohjelmassa %s\0"\
   "Avaa &Adobe Readerissa\0"\
   "Avaa &Foxit Readerissa\0"\
   "Avaa Microsoft HTML Help\0"\
@@ -4355,7 +4373,7 @@ const char * gTranslations_fi =
   "PDF-tuottaja:\0"\
   "PDF-versio:\0"\
   "PDF-asiakirjat\0"\
-  "S&ivulle...\tCtrl+G\0"\
+  "Si&vulle...\tCtrl+G\0"\
   "Sivu %s\0"\
   "Sivun koko:\0"\
   "Sivunumeroa %u ei ole olemassa\0"\
@@ -4376,7 +4394,7 @@ const char * gTranslations_fi =
   "Tulostusongelma\0"\
   "&Uudelleennime\303\244...\tF2\0"\
   "Muista &avatut tiedostot\0"\
-  "Poista suosikeista\0"\
+  "&Poista suosikeista\0"\
   "Poista sivu %s suosikeista\0"\
   "Uudelleennime\303\244\0"\
   "Korvaa asiakirjan &v\303\244rit Windowsin v\303\244riteemalla\0"\
@@ -4392,21 +4410,21 @@ const char * gTranslations_fi =
   "Aseta k\303\244\303\244nteinen haku komentorivill\303\244\0"\
   "N\303\244yt\303\244 &Kirjanmerkit\0"\
   "N\303\244yt\303\244 &ty\303\266kalupalkki\0"\
-  "N\303\244yt\303\244 &sivut jatkuvasti\0"\
-  "N\303\244yt\303\244 suosikit\0"\
+  "N\303\244yt\303\244 &sivut per\303\244kk\303\244in\0"\
+  "&N\303\244yt\303\244 suosikit\0"\
   "N\303\244yt\303\244 usein luetut\0"\
   "N\303\244yt\303\244 &kirjanmerkit sivupalkissa, kun saatavilla\0"\
   "Yksitt\303\244inen sivu\0"\
   "Pahoittelut, jotain odottamatonta tapahtui!\n\nPaina 'Peruuta' jos haluat auttaa tekij\303\266it\303\244 korjaamaan t\303\244m\303\244n virheen.\0"\
-  "L\303\244hdetiedostolla %s ei ole synkronisaatiopistett\303\244\0"\
+  "L\303\244hdetiedostolla %s ei ole synkronointikohtaa\0"\
   "Otsikko:\0"\
   "SumatraPDF:n asetukset\0"\
   "SumatraPDF:n p\303\244ivitys\0"\
   "SumatraPDF kaatui\0"\
-  "SumatraPDF on p\303\244\303\244-PDF-lukijasi\0"\
-  "SumatraPDF:n pit\303\244isi nyt olla p\303\244\303\244-PDF-lukijasi\0"\
+  "SumatraPDF on oletuslukijasi PDF-asiakirjoille\0"\
+  "SumatraPDF:n pit\303\244isi nyt olla oletuslukijasi PDF-asiakirjoille\0"\
   "Synkronisointitiedostoa ei voitu avata\0"\
-  "\0"\
+  "Merkitty PDF\0"\
   "Tekstiasiakirjat\0"\
   "Otsikko:\0"\
   "Tuntematon l\303\244hdetiedosto (%s)\0"\
@@ -4416,10 +4434,10 @@ const char * gTranslations_fi =
   "XPS-asiakirjat\0"\
   "Sinulla on uusin versio.\0"\
   "Sinulla on versio %s\0"\
+  "Zoomaus\0"\
   "L\303\244henn\303\244\0"\
-  "Kohdenna l\303\244hemm\303\244ksi\0"\
-  "Loitonna kauemmaksi\0"\
-  "L\303\244hennyskerroin\0"\
+  "Loitonna\0"\
+  "Zoomaustaso\0"\
   "[Muutoksia tunnistettiin; p\303\244ivitet\303\244\303\244n] %s\0"\
   "Kopioidaan teksti\303\244\0"\
   "tulostetaan asiakirjaa\0";
@@ -4535,6 +4553,7 @@ const char * gTranslations_fr =
   "Erreur de chargement de %s\0"\
   "Fa&voris\0"\
   "&Avancer\tAlt+->\0"\
+  "Plein  \303\251cran\tCtrl+L\0"\
   "&Plein \303\251cran\tCtrl+Shift+L\0"\
   "Page double\0"\
   "Impossible de renommer le fichier!\0"\
@@ -4670,15 +4689,15 @@ const char * gTranslations_fr =
   "impression du document\0";
 
 const char * gTranslations_gl = 
-  "Arred&or de\0"\
-  "&Tama\303\261o real\tCtrl+1\0"\
-  "\0"\
+  "A&cerca de\0"\
+  "&Tama\303\261o actual\tCtrl+1\0"\
+  "&Opci\303\263ns avanzadas...\0"\
   "&Todas as p\303\241xinas seleccionadas\0"\
-  "&Atr\303\241s\tAlt+Flecha esquerda\0"\
+  "&Atr\303\241s\tAlt+Frecha esquerda\0"\
   "Vista de &libro\tCtrl+8\0"\
   "&Pechar\tCtrl+W\0"\
-  "&Copiar Selecci\303\263n\0"\
-  "&Copiar Selecci\303\263n\tCtrl+C\0"\
+  "&Copiar a selecci\303\263n\0"\
+  "&Copiar selecci\303\263n\tCtrl+C\0"\
   "Non preguntar de novo\0"\
   "&P\303\241xinas pares s\303\263\0"\
   "&D\303\272as p\303\241xinas\tCtrl+7\0"\
@@ -4710,7 +4729,7 @@ const char * gTranslations_gl =
   "&Lembrar estes axustes para cada documento\0"\
   "&Borrar Documento\0"\
   "&Gardar como...\0"\
-  "&Salvar como...\tCtrl+S\0"\
+  "&Gardar como...\tCtrl+S\0"\
   "&Axustes\0"\
   "&Reducir p\303\241xinas \303\241 \303\241rea imprimible (se for necesario)\0"\
   "&P\303\241xina \303\272nica\tCtrl+6\0"\
@@ -4718,23 +4737,23 @@ const char * gTranslations_gl =
   "&Usar tama\303\261os de p\303\241xina orixinais\0"\
   "&Ver\0"\
   "&Si\0"\
-  "\0"\
+  "&Ampliar\0"\
   "(de %d)\0"\
   "(p\303\241xina %s)\0"\
-  "Arredor do SumatraPDF\0"\
-  "Engadir Favorito\0"\
-  "Engadir p\303\241xina %s aos favoritos\0"\
+  "Aceca de SumatraPDF\0"\
+  "Engadir favorito\0"\
+  "Engadir a p\303\241xina %s aos favoritos\0"\
   "Engadir p\303\241xina %s aos favoritos  cun nome (opcional):\0"\
   "Engadir a favoritos\0"\
   "Avanzado\0"\
-  "Todos os arquivos\0"\
-  "Todos os documentos admitidos\0"\
+  "Todos os ficheiros\0"\
+  "Todos os documentos soportados\0"\
   "Aplicaci\303\263n:\0"\
-  "Asociar con arquivos PDF?\0"\
+  "Asociar con ficheiros PDF?\0"\
   "Adxunto: %s\0"\
   "Autor:\0"\
   "Autom\303\241tico\0"\
-  "Comprobar actualizaci\303\263ns autom\303\241ticamente\0"\
+  "Comprobar se hai &actualizaci\303\263ns autom\303\241ticamente\0"\
   "Vista Libro\0"\
   "Preferidos\tF12\0"\
   "Atallos de marcadores\0"\
@@ -4745,28 +4764,28 @@ const char * gTranslations_gl =
   "Non se pode conectar a Internet (error %#x).\0"\
   "Cancelar\0"\
   "Non se pode imprimir este ficheiro\0"\
-  "Non se pode iniciar comando de b\303\272squeda inversa. Por favor, revisa a li\303\261a de comandos nos axustes.\0"\
-  "Cambiar lingua (Change Language)\0"\
-  "&Comprobar nova versi\303\263n\0"\
+  "Non se pode iniciar o comando de b\303\272squeda inversa. Revisa a li\303\261a de comandos na confiiguraci\303\263n.\0"\
+  "Cambiar a lingua\0"\
+  "Buscar a&ctualizaci\303\263ns\0"\
   "Albumes de c\303\263mic\0"\
-  "\0"\
+  "Compatibilidade\0"\
   "Cont\303\255nuo\0"\
   "Vista continua de libro\0"\
   "P\303\241xina dobre continua\0"\
-  "Contribuir na traducci\303\263n\0"\
+  "Axudar coa traducci\303\263n\0"\
+  "Copiar a &imaxe\0"\
+  "Copar o enderezo da &ligaz\303\263n\0"\
+  "Copiar o co&mentario\0"\
+  "Impediuse copiar texto (estase a copiar s\303\263 como imaxe)\0"\
   "\0"\
-  "Copar enderezo da ligaz\303\263n\0"\
-  "Copiar Co&mentario\0"\
-  "Copiar texto foi denegado (copiando s\303\263 coma imaxe)\0"\
-  "\0"\
-  "Non se poden obter as propiedades da impresora\0"\
+  "Non se puideron obter as propiedades da impresora\0"\
   "Non se pode inicializar a impresora\0"\
-  "Non se pode compo\303\261er a p\303\241xina\0"\
+  "Non se pode xerar a vista da p\303\241xina\0"\
   "Creado:\0"\
   "Ficheiro actual\0"\
   "&Aumento a medida...\tCtrl+Y\0"\
   "Disposici\303\263n por defecto:\0"\
-  "Aumento por defecto:\0"\
+  "&Aumento por defecto:\0"\
   "O lector de PDF por defecto non pode trocarse en modo portable\0"\
   "Permisos denegados:\0"\
   "Documentos DjVu\0"\
@@ -4774,19 +4793,20 @@ const char * gTranslations_gl =
   "Descargar\0"\
   "Sai&r\tCtrl+Q\0"\
   "Documentos EPUB\0"\
-  "Introduza o contrasinal\0"\
+  "Introduce o contrasinal\0"\
   "Introduza contrasinal para %s\0"\
   "Introduza a li\303\261a de comandos a invocar cando faga dobre-click sobre o documento PDF:\0"\
   "Erro cargando %s\0"\
   "F&avoritos\0"\
   "Adiante\tAlt+Right Arrow\0"\
+  "&Pantalla completa\tCtrl+L\0"\
   "A toda pantalla\tCtrl+Shift+L\0"\
   "P\303\241xina dobre\0"\
-  "\0"\
+  "Fallouse ao renomear o ficheiro\0"\
   "Erro ao salvar o arquivo.\0"\
-  "\0"\
+  "Vista web r\303\241pida\0"\
   "Favoritos\0"\
-  "\0"\
+  "Documentos FictionBook\0"\
   "Ficheiro %s non atopado\0"\
   "Tama\303\261o de arquivo:\0"\
   "Ficheiro:\0"\
@@ -4803,8 +4823,8 @@ const char * gTranslations_gl =
   "Axustar ao ancho\0"\
   "Axustar ancho e amosar p\303\241xinas seguidas\0"\
   "Axustar a p\303\241xina \303\272nica\0"\
-  "\0"\
-  "\0"\
+  "Fontes:\0"\
+  "D\303\241ndolle formato ao libro... %d p\303\241xinas\0"\
   "Atopado texto na p\303\241xina %s\0"\
   "Atopado texto na p\303\241xina %s (de novo)\0"\
   "Lido decote\0"\
@@ -4814,11 +4834,11 @@ const char * gTranslations_gl =
   "Usar \"F3\" para amosar seguinte resultado\0"\
   "Ficheiros de imaxe (*.%s)\0"\
   "\0"\
-  "\0"\
+  "Cargando o ficheiro %s...\0"\
   "\0"\
   "Facer o SumatraPDF a aplicaci\303\263n por defecto para arquivos PDF?\0"\
   "Facer do SumatraPDF o leitor PDF por defecto\0"\
-  "\0"\
+  "Modo Man&ga\0"\
   "Coincidir mai\303\272sculas e min\303\272sculas\0"\
   "Documentos Mobi\0"\
   "Modificado:\0"\
@@ -4833,7 +4853,7 @@ const char * gTranslations_gl =
   "Abrir\0"\
   "Abrir no PDF-XChange\0"\
   "Abrir un documento...\0"\
-  "\0"\
+  "Abrir en %s\0"\
   "Abrir no &Adobe Reader\0"\
   "Abrir no &Foxit Reader\0"\
   "Abrir no Microsoft HTML Help\0"\
@@ -4841,7 +4861,7 @@ const char * gTranslations_gl =
   "P&ropiedades\0"\
   "P&ropiedades\tCtrl+D\0"\
   "Documento PDF\0"\
-  "\0"\
+  "Optimizaci\303\263n de PDF:\0"\
   "Productor do PDF:\0"\
   "Versi\303\263n PDF:\0"\
   "Documentos PDF\0"\
@@ -4856,20 +4876,20 @@ const char * gTranslations_gl =
   "Pr&esentaci\303\263n\tCtrl+L\0"\
   "P\303\241xina anterior\0"\
   "Imprimir\0"\
-  "\0"\
+  "Imprimir como &imaxe (precisar\303\241 de m\303\241is memoria)\0"\
   "Imprimir un rango\0"\
   "A impresora co nome indicado non existe\0"\
-  "\0"\
-  "\0"\
+  "Impresi\303\263n en curso.\0"\
+  "Ainda se est\303\241 imprimindo. Quere detela e sa\303\255r?\0"\
   "A impresi\303\263n est\303\241 a\303\255nda en curso. Detela e recomezar?\0"\
   "Imprimir p\303\241xina %d de %d...\0"\
   "Problema de impresi\303\263n.\0"\
-  "\0"\
+  "Re&nomear...\tF2\0"\
   "Lembrar ficheiros abertos\0"\
   "Eliminar de favoritos\0"\
   "Eliminar p\303\241xina %s de favoritos\0"\
-  "\0"\
-  "\0"\
+  "Renomear como\0"\
+  "Cambiar as &cores do documento pola paleta de cores de Windows\0"\
   "Xirar \303\241 esquerda\tCtrl+Shift+-\0"\
   "Xirar \303\241 dereita\tCtrl+Shift++\0"\
   "Salvar como\0"\
@@ -4880,7 +4900,7 @@ const char * gTranslations_gl =
   "Seleccionar contido con Ctrl+bot\303\263n esquerdo do rato\0"\
   "Enviar por email...\0"\
   "Establecer procura inversa\0"\
-  "\0"\
+  "Mostrar os &marcadores\0"\
   "Amosar barra de ferramentas\0"\
   "Amosar p\303\241xinas seguidas\0"\
   "Amosar Favoritos\0"\
@@ -4896,7 +4916,7 @@ const char * gTranslations_gl =
   "SumatraPDF \303\251 o seu lector de PDF por defecto\0"\
   "SumatraPDF ser\303\241 agora o seu lector de PDF por defecto\0"\
   "O ficheiro de sincronizaci\303\263n non pode abrirse\0"\
-  "\0"\
+  "PDF etiquetado\0"\
   "Documentos de texto\0"\
   "T\303\255tulo:\0"\
   "Ficheiros de orixe desco\303\261ecidos (%s)\0"\
@@ -4904,9 +4924,9 @@ const char * gTranslations_gl =
   "Visitar o &Website\0"\
   "Aviso\0"\
   "Documentos XPS\0"\
-  "Ten vostede a \303\272ltima versi\303\263n\0"\
-  "A s\303\272a versi\303\263n \303\251 %s\0"\
-  "\0"\
+  "Tes a \303\272ltima versi\303\263n\0"\
+  "A versi\303\263n actual \303\251 %s\0"\
+  "Ampliar\0"\
   "Achegar zoom\0"\
   "Afastar zoom\0"\
   "Factor de aumento\0"\
@@ -5025,6 +5045,7 @@ const char * gTranslations_ka =
   "\341\203\251\341\203\220\341\203\242\341\203\225\341\203\230\341\203\240\341\203\227\341\203\225\341\203\230\341\203\241 \341\203\250\341\203\224\341\203\252\341\203\223\341\203\235\341\203\233\341\203\220 %s\0"\
   "&\341\203\240\341\203\251\341\203\224\341\203\243\341\203\232\341\203\224\341\203\221\341\203\230\0"\
   "&\341\203\254\341\203\230\341\203\234\tAlt+\341\203\230\341\203\241\341\203\220\341\203\240\341\203\230 \341\203\233\341\203\220\341\203\240\341\203\257\341\203\225\341\203\234\341\203\230\341\203\225\0"\
+  "\0"\
   "\341\203\233\341\203\227\341\203\224\341\203\232 &\341\203\224\341\203\231\341\203\240\341\203\220\341\203\234\341\203\226\341\203\224\tCtrl+Shift+L\0"\
   "\341\203\243\341\203\240\341\203\227\341\203\230\341\203\224\341\203\240\341\203\227-\341\203\241\341\203\220\341\203\236\341\203\230\341\203\240\341\203\230\341\203\241\341\203\236\341\203\230\341\203\240\341\203\235\341\203\223\0"\
   "\0"\
@@ -5270,6 +5291,7 @@ const char * gTranslations_de =
   "Fehler beim \303\226ffnen von %s\0"\
   "&Favoriten\0"\
   "Vor&w\303\244rts\tAlt+->\0"\
+  "&Vollbild\tStrg+L\0"\
   "&Vollbild\tStrg+Umschalt+L\0"\
   "Doppelseite\0"\
   "Die Datei konnte nicht umbenannt werden!\0"\
@@ -5407,7 +5429,7 @@ const char * gTranslations_de =
 const char * gTranslations_el = 
   "&\316\243\317\207\316\265\317\204\316\271\316\272\316\254\0"\
   "\316\240\317\201\316\261\316\263\316\274\316\261\317\204\316\271\316\272\317\214 &\316\234\316\255\316\263\316\265\316\270\316\277\317\202\tCtrl+1\0"\
-  "\0"\
+  "&\316\225\317\200\316\271\316\273\316\277\316\263\316\255\317\202 \316\263\316\271\316\261 \317\200\317\201\316\277\317\207\317\211\317\201\316\267\316\274\316\255\316\275\316\277\317\205\317\202\0"\
   "\316\214&\316\273\316\265\317\202 \316\277\316\271 \316\265\317\200\316\271\316\273\316\265\316\263\316\274\316\255\316\275\316\265\317\202\0"\
   "&\316\240\316\257\317\203\317\211\tAlt+<-\0"\
   "&\316\240\317\201\316\277\316\262\316\277\316\273\316\256 \316\222\316\271\316\262\316\273\316\257\316\277\317\205\tCtrl+8\0"\
@@ -5515,6 +5537,7 @@ const char * gTranslations_el =
   "\316\243\317\206\316\254\316\273\316\274\316\261 \317\206\317\214\317\201\317\204\317\211\317\203\316\267\317\202 \317\204\316\277\317\205 %s\0"\
   "\316\221&\316\263\316\261\317\200\316\267\316\274\316\255\316\275\316\261\0"\
   "\316\225\316\274\317\200&\317\201\317\214\317\202\tAlt+->\0"\
+  "&\316\240\316\273\316\256\317\201\316\267\317\202 \316\237\316\270\317\214\316\275\316\267\tCtrl+L\0"\
   "&\316\240\316\273\316\256\317\201\316\267\317\202 \316\237\316\270\317\214\316\275\316\267\tCtrl+Shift+L\0"\
   "\316\224\317\215\316\277 \317\203\316\265\316\273\316\257\316\264\316\265\317\202\0"\
   "\316\227 \316\274\316\265\317\204\316\277\316\275\316\277\316\274\316\261\317\203\316\257\316\261 \317\204\316\277\317\205 \316\261\317\201\317\207\316\265\316\257\316\277\317\205 \316\261\317\200\316\255\317\204\317\205\317\207\316\265!\0"\
@@ -5568,7 +5591,7 @@ const char * gTranslations_el =
   "\316\206\316\275\316\277\316\271\316\263\316\274\316\261\0"\
   "\316\206\316\275\316\277\316\271\316\263\316\274\316\261 \316\274\316\265 PDF-XChange\0"\
   "\316\206\316\275\316\277\316\271\316\263\316\274\316\261 \316\265\316\263\316\263\317\201\316\254\317\206\316\277\317\205...\0"\
-  "\0"\
+  "\316\206\316\275\316\277\316\271\316\263\316\274\316\261 \317\203\316\265 %s\0"\
   "\316\206\316\275\316\277\316\271\316\263\316\274\316\261 \316\274\316\265 &Adobe Reader\0"\
   "\316\206\316\275\316\277\316\271\316\263\316\274\316\261 \316\274\316\265 &Foxit Reader\0"\
   "\316\206\316\275\316\277\316\271\316\263\316\274\316\261 \316\274\316\265 Microsoft HTML Help\0"\
@@ -5760,6 +5783,7 @@ const char * gTranslations_he =
   "\327\251\327\222\327\231\327\220\327\252 \327\230\327\242\327\231\327\240\327\224 %s\0"\
   "\327\236\327\225\327\242\327\223\327\244\327\231\327\235\0"\
   "\327\247\327\223\327\231\327\236\327\224\tAlt+ ?\0"\
+  "\327\236\327\241\327\232 \327\236\327\234\327\220\tCtrl+L\0"\
   "\327\236\327\241\327\232 \327\236\327\234\327\220\tCtrl+Shift+L\0"\
   "\327\223\327\243 \327\233\327\244\327\225\327\234\0"\
   "\327\244\327\242\327\225\327\234\327\252 \327\251\327\231\327\240\327\225\327\231 \327\251\327\235 \327\224\327\247\327\225\327\221\327\245 \327\240\327\233\327\251\327\234\327\224!\0"\
@@ -6005,6 +6029,7 @@ const char * gTranslations_hi =
   "\340\244\244\340\245\215\340\244\260\340\245\201\340\244\237\340\244\277 \340\244\262\340\245\213\340\244\241 \340\244\271\340\245\213 \340\244\260\340\244\271\340\245\200 \340\244\271\340\245\210 %s\0"\
   "&\340\244\252\340\244\270\340\244\202\340\244\246\340\245\200\340\244\246\340\244\276\0"\
   "\340\244\205\340\244\227&\340\244\262\340\244\276\tAlt+\340\244\246\340\244\276\340\244\257\340\244\276\340\244\201 \340\244\244\340\245\200\340\244\260\0"\
+  "\340\244\252\340\245\202\340\244\260\340\244\276 \340\244\252\340\244\260\340\244\246\340\244\276\tCtrl+L\0"\
   "\340\244\252\340\245\202\340\244\260\340\244\276 \340\244\252\340\244\260\340\244\246\340\244\276\tCtrl+Shift+L\0"\
   "\340\244\252\340\245\201\340\244\270\340\245\215\340\244\244\340\244\225\0"\
   "\340\244\253\340\244\274\340\244\276\340\244\207\340\244\262 \340\244\225\340\244\276 \340\244\250\340\244\276\340\244\256 \340\244\254\340\244\246\340\244\262\340\244\250\340\245\207 \340\244\256\340\245\207 \340\244\205\340\244\270\340\244\253\340\244\274\340\244\262\342\200\213 !\0"\
@@ -6250,6 +6275,7 @@ const char * gTranslations_hu =
   "Hiba %s dokumentum bet\303\266lt\303\251sekor\0"\
   "&Kedvencek\0"\
   "Ugr\303\241s el\305\221re\tAlt+->\0"\
+  "Teljes k\303\251perny\305\221\tCtrl+L\0"\
   "Teljes k\303\251perny\305\221\tCtrl+Shift+L\0"\
   "Oldalp\303\241r\0"\
   "A f\303\241jl \303\241tnevez\303\251se sikertelen\0"\
@@ -6495,6 +6521,7 @@ const char * gTranslations_id =
   "Kesalahan memuat %s\0"\
   "F&avorit\0"\
   "Berikutnya\tAlt+->\0"\
+  "Selayar Penuh\tCtrl+L\0"\
   "Selayar Penuh\tCtrl+Shift+L\0"\
   "Dua Halaman\0"\
   "Gagal mengganti nama berkas!\0"\
@@ -6740,6 +6767,7 @@ const char * gTranslations_ga =
   "Tharla bot\303\272n ag lucht\303\272 %s\0"\
   "Ce&an\303\241in\0"\
   "Ar aghaidh\tAlt+Saighead Ar Deis\0"\
+  "L\303\241nsc\303\241ile\303\241n\tCtrl+L\0"\
   "L\303\241nsc\303\241ile\303\241n\tCtrl+Shift+L\0"\
   "Dh\303\241 Leathanach\0"\
   "Theip ar athainmni\303\272 an chomhaid!\0"\
@@ -6985,6 +7013,7 @@ const char * gTranslations_it =
   "Errore nel caricamento di %s\0"\
   "&Preferiti\0"\
   "A&vanti\t<Alt>+<Freccia destra>\0"\
+  "S&chermo intero\t<Ctrl>+L\0"\
   "S&chermo intero\t<Ctrl>+<Maiusc>+L\0"\
   "Pagine affiancate\0"\
   "Impossibile rinominare il file\0"\
@@ -7230,6 +7259,7 @@ const char * gTranslations_ja =
   "%s \343\201\256\350\252\255\343\201\277\350\276\274\343\201\277\343\201\253\345\244\261\346\225\227\0"\
   "\343\201\212\346\260\227\343\201\253\345\205\245\343\202\212(&A)\0"\
   "\346\254\241\343\201\253\351\200\262\343\202\200(&O)\tAlt+\342\206\222\0"\
+  "\345\205\250\347\224\273\351\235\242\350\241\250\347\244\272(&U)\tCtrl+L\0"\
   "\345\205\250\347\224\273\351\235\242\350\241\250\347\244\272(&U)\tCtrl+Shift+L\0"\
   "\350\246\213\350\277\224\343\201\227\0"\
   "\343\203\225\343\202\241\343\202\244\343\203\253\345\220\215\343\201\256\345\244\211\346\233\264\343\201\253\345\244\261\346\225\227\343\201\227\343\201\276\343\201\227\343\201\237\357\274\201\0"\
@@ -7475,6 +7505,7 @@ const char * gTranslations_kr =
   "%s(\354\235\204)\353\245\274 \353\266\210\353\237\254\354\230\244\353\212\224 \354\244\221 \354\230\244\353\245\230 \353\260\234\354\203\235!\0"\
   "\354\246\220\352\262\250\354\260\276\352\270\260(&A)\0"\
   "\354\235\264\355\233\204\354\227\220 \353\263\270 \355\216\230\354\235\264\354\247\200(&O)\tAlt+\354\230\244\353\245\270\354\252\275 \353\260\251\355\226\245\355\202\244\0"\
+  "\354\240\204\354\262\264 \355\231\224\353\251\264(&U)\tCtrl+L\0"\
   "\354\240\204\354\262\264 \355\231\224\353\251\264(&U)\tCtrl+Shift+L\0"\
   "\353\221\220 \355\216\230\354\235\264\354\247\200\354\224\251\0"\
   "\355\214\214\354\235\274 \354\235\264\353\246\204\354\235\204 \353\260\224\352\276\270\354\247\200 \353\252\273\355\226\210\354\212\265\353\213\210\353\213\244!\0"\
@@ -7720,6 +7751,7 @@ const char * gTranslations_ku =
   "%s \331\207\333\225\332\265\333\225 \332\225\331\210\331\210\333\214\330\257\330\247 \331\204\333\225 \332\251\330\261\330\257\331\206\333\225\331\210\333\225\333\214\0"\
   "\331\276\333\225&\330\263\333\225\331\206\330\257\333\225\332\251\330\247\331\206\0"\
   "\331\276\333\216&\330\264\330\252\330\261\tAlt+Right Arrow\0"\
+  "\331\276\332\225&\330\250\333\225\330\264\330\247\330\264\333\225\tCtrl+L\0"\
   "\331\276\332\225&\330\250\333\225\330\264\330\247\330\264\333\225\tCtrl+Shift+L\0"\
   "\332\225\331\210\331\210\332\251\330\247\330\261\0"\
   "\332\257\333\206\332\225\333\214\331\206\333\214 \331\206\330\247\331\210\333\214 \331\201\330\247\333\214\331\204 \330\263\333\225\330\261\332\251\333\225\331\210\330\252\331\210\331\206\333\225\330\250\331\210\331\210!\0"\
@@ -7965,6 +7997,7 @@ const char * gTranslations_lt =
   "Nepavyko \304\257kelti %s\0"\
   "&Parankiniai\0"\
   "&Pirmyn\tAlt+De\305\241in\304\227n\0"\
+  "\0"\
   "&Visas ekranas\tCtrl+Shift+L\0"\
   "Du puslapiai\0"\
   "\0"\
@@ -8210,6 +8243,7 @@ const char * gTranslations_mk =
   "\320\223\321\200\320\265\321\210\320\272\320\260 \320\277\321\200\320\270 \320\262\321\207\320\270\321\202\321\203\320\262\320\260\321\232\320\265 %s\0"\
   "\320\236\320\274\320\270\320\273\320\265\320\275\320\270\0"\
   "\320\235\320\260\320\277\321\200\320\265\320\264\tAlt+Right Arrow\0"\
+  "\320\235\320\260 \321\206\320\265\320\273 \320\265\320\272\321\200\320\260\320\275\tCtrl+L\0"\
   "\320\235\320\260 \321\206\320\265\320\273 \320\265\320\272\321\200\320\260\320\275\tCtrl+Shift+L\0"\
   "\320\224\320\262\320\265 \321\201\321\202\321\200\320\260\320\275\320\270\321\206\320\270\0"\
   "\320\235\320\265 \321\203\321\201\320\277\320\265\320\260\320\262 \320\264\320\260 \321\230\320\260 \320\277\321\200\320\265\320\270\320\274\320\265\320\275\321\203\320\262\320\260\320\274 \320\264\320\260\321\202\320\276\321\202\320\265\320\272\320\260\321\202\320\260!\0"\
@@ -8344,6 +8378,252 @@ const char * gTranslations_mk =
   "\320\272\320\276\320\277\320\270\321\200\320\260\320\274 \321\202\320\265\320\272\321\201\321\202\0"\
   "\320\277\320\265\321\207\320\260\321\202\320\260\320\274 \320\264\320\276\320\272\321\203\320\274\320\265\320\275\321\202\0";
 
+const char * gTranslations_my = 
+  "&Mengenai\0"\
+  "&Saiz sebenar\tCtrl+1\0"\
+  "&Tetapan terperinci...\0"\
+  "&Semua mukasurat pilihan\0"\
+  "&Kembali\tAlt+Left Arrow\0"\
+  "Lihat &buku\tCtrl+8\0"\
+  "&Tutup\tCtrl+W\0"\
+  "&Salin Pilihan\0"\
+  "&Salin pilihan\tCtrl+C\0"\
+  "&Jangan tanya saya lagi\0"\
+  "&Mukasurat genap sahaja\0"\
+  "&Menghadap\tCtrl+7\0"\
+  "&Fail\0"\
+  "&carian:\0"\
+  "&Halaman pertama\tHome\0"\
+  "&Muatkan halaman pada kawasan boleh cetak\0"\
+  "&Pergi\0"\
+  "&Pergi ke halaman:\0"\
+  "&Bantuan\0"\
+  "&Halaman terakhir\0"\
+  "&Pembesaran:\0"\
+  "\0"\
+  "&Padan case\0"\
+  "&Halaman seterusnya\t->\0"\
+  "&Tidak\0"\
+  "&Tidak, terima kasih\0"\
+  "&Mukasurat ganjil sahaja\0"\
+  "&Buka dokumen\0"\
+  "&Buka...\tCtrl+O\0"\
+  "&Pilihan...\0"\
+  "&Kata laluan\0"\
+  "&Pin Dokumen\0"\
+  "&Halaman sebelumnya\t<-\0"\
+  "&Cetak...\0"\
+  "&Cetak...\tCtrl+P\0"\
+  "&Cetak... (dinafikan)\0"\
+  "&Ingat katalaluan untuk dokumen ini\0"\
+  "&Ingat tetapan-tetapan ini untuk setiap dokumen\0"\
+  "&Buang dokumen\0"\
+  "&Simpan Sebagai...\0"\
+  "&Simpan sebagai...\tCtrl+S\0"\
+  "&Tetapan\0"\
+  "&Kecilkan muka surat ke kawasan cetak (jika perlu)\0"\
+  "&Halaman Tunggal\tCtrl+6\0"\
+  "&Langkau versi ini\0"\
+  "&Gunakan saiz halaman asal\0"\
+  "&Lihat\0"\
+  "&Ya\0"\
+  "&Fokus\0"\
+  "(dari %d)\0"\
+  "(halaman %s)\0"\
+  "Mengenai SumatraPDF\0"\
+  "Tambah pada Kegemaran\0"\
+  "Tambahkan halaman %s pada kegemaran\0"\
+  "Tambah halaman %s pada kegemaran dengan nama (pilihan):\0"\
+  "Tambah pada kegemaran\0"\
+  "Lanjutan\0"\
+  "Semua fail\0"\
+  "Semua dokumen yang disokong\0"\
+  "Aplikasi\0"\
+  "Kaitkan dengan fail PDF?\0"\
+  "Lampiran: %s\0"\
+  "Pengarang\0"\
+  "Automatik\0"\
+  "Semak &kemas kini secara automatik\0"\
+  "Paparan buku\0"\
+  "Penanda\tF12\0"\
+  "Pintasan Penanda\0"\
+  "Bookmark shortcut ke halaman %s daripada %s\0"\
+  "Penanda\0"\
+  "\0"\
+  "Dokumen CHM\0"\
+  "Gagal menyambung ke Internet (ralat %#x).\0"\
+  "Batal\0"\
+  "Tidak boleh cetak fail ini\0"\
+  "Tidak boleh memulakan arahan carian songsang. Sila periksa baris arahan dalam tetapan.\0"\
+  "Tukar bahasa (Change Language)\0"\
+  "Semak &Kemaskini\0"\
+  "Buku komik\0"\
+  "Kesesuaian\0"\
+  "Bersambung\0"\
+  "Paparan buku berterusan\0"\
+  "Dua belah mukasurat bersambung\0"\
+  "Menyumbangkan alihbahasa\0"\
+  "Salin &Imej\0"\
+  "Salin &Alamat Pautan\0"\
+  "Salin Ko&men\0"\
+  "Salinan teks telah ditolak (menyalin sebagai imej sahaja)\0"\
+  "Hakcipta\0"\
+  "Gagal mendapatkan maklumat Pencetak\0"\
+  "Tidak dapat memulakan pencetak\0"\
+  "Tidak dapat memuatkan halaman\0"\
+  "Dicipta:\0"\
+  "Fail semasa\0"\
+  "\0"\
+  "Default &Susunatur:\0"\
+  "Default &Zum:\0"\
+  "Pembaca utama PDF tidak boleh ditukar ketika mod mudah alih\0"\
+  "Kebenaran Dinafikan:\0"\
+  "Dokumen DjVu\0"\
+  "Maklumat Dokumen\0"\
+  "Muat turun\0"\
+  "&Keluar\tCtrl+Q\0"\
+  "Ebook EPUB\0"\
+  "Masukkan kata laluan\0"\
+  "Masukkan kata laluan untuk %s\0"\
+  "Masukkan baris arahan untuk digunakan apabila anda klik dua kali pada dokumen PDF:\0"\
+  "Ralat memuatkan %s\0"\
+  "Kegem&aran\0"\
+  "F&orward \t alt + Panah Kanan\0"\
+  "\0"\
+  "Mukasurat Penuh\tCtrl+Shift+L\0"\
+  "Dua belah mukasurat\0"\
+  "Gagal menamakan semula fail!\0"\
+  "Gagal menyimpan fail\0"\
+  "Paparan Web Cepat\0"\
+  "Kegemaran\0"\
+  "Dokumen FictionBook\0"\
+  "Fail %s tidak dijumpai\0"\
+  "Saiz fail:\0"\
+  "Fail:\0"\
+  "Cari...\tCtrl+F\0"\
+  "Cari\0"\
+  "Cari seterusnya\0"\
+  "Cari sebelumnya\0"\
+  "Cari:\0"\
+  "Fit &Kandungan\tCtrl +3\0"\
+  "&Muatkan mukasurat\tCtrl+0\0"\
+  "&Muatkan lebar\tCtrl+2\0"\
+  "Muatkan Kandungan\0"\
+  "Muatkan mukasurat\0"\
+  "Muatkan lebar\0"\
+  "Muatkan Lebar dan Paparkan Halaman Berterusan\0"\
+  "Muatkan Halaman Tunggal\0"\
+  "Fon:\0"\
+  "Format buku ... %d halaman\0"\
+  "Menjumpai teks pada halaman %s\0"\
+  "Found teks pada halaman %s (lagi)\0"\
+  "Kerap Dibaca\0"\
+  "\0"\
+  "Pergi ke mukasurat\0"\
+  "Sembunyikan Bacaan Kerap\0"\
+  "Petunjuk: Gunakan kekunci F3 untuk mencari semula\0"\
+  "Imej Fail (*.%s)\0"\
+  "\0"\
+  "Memuatkan fail %s...\0"\
+  "\0"\
+  "Jadikan aplikasi SumatraPDF pembaca utama bagi fail PDF?\0"\
+  "Jadikan SumatraPDF pembaca utama PDF\0"\
+  "Mode Man&ga\0"\
+  "Hampir sama\0"\
+  "Dokumen Mobi\0"\
+  "Diubah:\0"\
+  "Versi terbaru %s tersedia. Muat turun versi terbaru?\0"\
+  "Mukasurat seterusnya\0"\
+  "Tiada padanan dijumpai\0"\
+  "Tiada hasil ditemui di sekitar baris %u dalam fail %s\0"\
+  "Tiada fail penyegerakan ditemui\0"\
+  "Tiada maklumat penyelarasan pada kedudukan ini\0"\
+  "Jumlah mukasurat:\0"\
+  "\0"\
+  "Buka\0"\
+  "Buka &menggunakan PDF-XChange\0"\
+  "Buka dokumen...\0"\
+  "Buka dalam %s\0"\
+  "Buka menggunakan &Adobe Reader\0"\
+  "Buka dengan &Foxit Reader\0"\
+  "Buka menggunakan &Microsoft HTML Help\0"\
+  "Buka menggunakan &Microsoft XPS-Viewer\0"\
+  "\0"\
+  "\0"\
+  "Dokumen PDF\0"\
+  "Pengoptimuman PDF:\0"\
+  "\0"\
+  "Versi PDF:\0"\
+  "Dokumen-dokumen PDF\0"\
+  "Mukasurat...\tCtrl+G\0"\
+  "Halaman %s\0"\
+  "Saiz mukasurat\0"\
+  "Halaman bilangan\302\240%u tidak wujud\0"\
+  "Skala halaman\0"\
+  "Mukasurat:\0"\
+  "Sila tunggu - memaparkan...\0"\
+  "Dokumen PostScript\0"\
+  "P&embentangan\tCtrl + L\0"\
+  "Mukasurat sebelumnya\0"\
+  "Cetak\0"\
+  "Cetak sebagai &imej (memerlukan memori yang lebih)\0"\
+  "Cetak julat\0"\
+  "Pencetak dengan nama yang diberikan tidak wujud\0"\
+  "Cetakan sedang dijalankan.\0"\
+  "Cetakan sedang dilakukan. Batal dan Henti?\0"\
+  "Cetakan masih lagi dijalankan. Batalkan dan mulakan semula?\0"\
+  "Mencetak halaman %d daripada %d...\0"\
+  "Masalah mencetak\0"\
+  "&Nama semula ...\tF2\0"\
+  "Ingat &fail yang telah dibuka\0"\
+  "Keluarkan daripada kegemaran\0"\
+  "Padam halaman %s dari kegemaran\0"\
+  "Namakan sebagai\0"\
+  "Menggantikan dokumen &warna dengan skim warna Windows\0"\
+  "Ubah ke kiri\tCtrl+Shift+-\0"\
+  "Ubah ke kanan\tCtrl+Shift++\0"\
+  "Simpan sebagai\0"\
+  "Simpan S&hortcut...\tCtrl+Shift+S\0"\
+  "Mencari %d dari %d...\0"\
+  "Pilih &Semua\0"\
+  "Pilih Semu&a\tCtrl+A\0"\
+  "Pilih kandungan dengan Ctrl + butang kiri tetikus\0"\
+  "Hantar melalui &Emel...\0"\
+  "Tetapkan pencarian songsang baris arahan\0"\
+  "Papar &Bookmark\0"\
+  "Tunjukkan Bar Alat\0"\
+  "Papar mukasurat secara berterusan\0"\
+  "Papar kegemaran\0"\
+  "Paparkan dokuman yang kerap dibaca\0"\
+  "Tunjukkan &bookmark sidebar apabila ada\0"\
+  "Satu Mukasurat\0"\
+  "Maaf, itu tidak sepatutnya berlaku!\nSila tekan 'Batal', jika anda ingin membantu kami menetapkan punca kemalangan ini.\0"\
+  "Sumber fail %s tidak mempunyai titik penyegerakan\0"\
+  "Subjek\0"\
+  "Tetapan-tetapan SumatraPDF\0"\
+  "Kemaskini SumatraPDF\0"\
+  "\0"\
+  "SumatraPDF ialah pembaca PDF utama anda\0"\
+  "SumatraPDF kini harus menjadi pembaca utama PDF anda\0"\
+  "File penyegerakan tidak boleh dibuka\0"\
+  "PDF ditanda\0"\
+  "Dokumen teks\0"\
+  "Tajuk:\0"\
+  "Fail sumber tidak diketahui (%s)\0"\
+  "Lihat\0"\
+  "&Lawat lamanweb\0"\
+  "Amaran\0"\
+  "Dokumen XPS\0"\
+  "Anda mempunyai versi terkini.\0"\
+  "Versi anda %s\0"\
+  "Zum\0"\
+  "Fokus ke dalam\0"\
+  "Fokus ke luar\0"\
+  "Faktor zoom\0"\
+  "[Perubahan dikesan; refresh semula] %s\0"\
+  "menyalin teks\0"\
+  "mencetak dokumen\0";
+
 const char * gTranslations_ne = 
   "SumatraPDF &\340\244\254\340\244\276\340\244\260\340\245\207\340\244\256\340\244\276\0"\
   "&\340\244\270\340\244\271\340\245\200 \340\244\206\340\244\225\340\244\276\340\244\260\tCtrl+1\0"\
@@ -8455,6 +8735,7 @@ const char * gTranslations_ne =
   "%s \340\244\262\340\245\213\340\244\241 \340\244\244\340\245\215\340\244\260\340\245\201\340\244\237\340\244\277\0"\
   "&\340\244\256\340\244\250\340\244\252\340\244\260\340\245\215\340\244\250\340\245\207\0"\
   "\340\244\205&\340\244\227\340\244\276\340\244\241\340\244\277\tAlt+\340\244\246\340\244\276\340\244\257\340\244\276\340\244\201 \340\244\254\340\244\276\340\244\243\0"\
+  "\340\244\252\340\245\202&\340\244\260\340\245\215\340\244\243\340\244\270\340\245\215\340\244\225\340\245\215\340\244\260\340\244\277\340\244\250\tCtrl+L\0"\
   "\340\244\252\340\245\202&\340\244\260\340\245\215\340\244\243\340\244\270\340\245\215\340\244\225\340\245\215\340\244\260\340\244\277\340\244\250\tCtrl+Shift+L\0"\
   "\340\244\270\340\244\256\340\245\215\340\244\256\340\245\201\340\244\226\0"\
   "\340\244\250\340\244\276\340\244\256 \340\244\253\340\245\207\340\244\260\340\244\276\340\244\210 \340\244\205\340\244\270\340\244\253\340\244\262\0"\
@@ -8700,6 +8981,7 @@ const char * gTranslations_no =
   "Feil under lasting %s\0"\
   "F&avoritter\0"\
   "Fremover\tAlt+Pil h\303\270yre\0"\
+  "Fullskjerm\tCtrl+L\0"\
   "Fullskjerm\tCtrl+Shift+L\0"\
   "Motst\303\245ende\0"\
   "Kunne ikke endre navn p\303\245 filen!\0"\
@@ -8945,6 +9227,7 @@ const char * gTranslations_fa =
   "\331\206\331\205\330\247\333\214\330\264 \330\256\330\267\330\247 %s\0"\
   "\331\205\331\210\330\247\330\261\330\257 &\331\205\331\206\330\252\330\256\330\250\0"\
   "&\330\254\331\204\331\210\tAlt+\342\206\222\0"\
+  "&\330\252\331\205\330\247\331\205\342\200\214\330\265\331\201\330\255\331\207\tCtrl+L\0"\
   "&\330\252\331\205\330\247\331\205\342\200\214\330\265\331\201\330\255\331\207\tCtrl+Shift+L\0"\
   "\331\206\331\205\330\247\333\214\330\264 \330\257\331\210\330\265\331\201\330\255\331\207\342\200\214\330\247\333\214\0"\
   "\330\252\330\272\333\214\333\214\330\261 \331\206\330\247\331\205 \331\276\330\261\331\210\331\206\330\257\331\207 \330\250\330\247 \330\264\332\251\330\263\330\252 \331\205\331\210\330\247\330\254\331\207 \330\264\330\257!\0"\
@@ -9190,6 +9473,7 @@ const char * gTranslations_pl =
   "B\305\202\304\205d \305\202adowania pliku %s\0"\
   "&Ulubione\0"\
   "&Dalej\tAlt+W prawo\0"\
+  "Pe\305\202ny ekran\tCtrl+L\0"\
   "Pe\305\202ny ekran\tCtrl+Shift+L\0"\
   "Wiele stron\0"\
   "B\305\202\304\205d zmiany nazwy pliku!\0"\
@@ -9435,6 +9719,7 @@ const char * gTranslations_br =
   "Erro ao carregar %s\0"\
   "F&avoritos\0"\
   "Avan\303\247ar\tAlt+->\0"\
+  "Tela cheia\tCtrl+L\0"\
   "Tela cheia\tCtrl+Shift+L\0"\
   "P\303\241gina dupla\0"\
   "Falha ao renomear o arquivo!\0"\
@@ -9680,6 +9965,7 @@ const char * gTranslations_pt =
   "Erro ao carregar %s\0"\
   "Fav&oritos\0"\
   "A&van\303\247ar\tAlt + ->\0"\
+  "Ecr\303\243 co&mpleto\tCtrl+L\0"\
   "Ecr\303\243 co&mpleto\tCtrl+Shift+L\0"\
   "Duas p\303\241ginas\0"\
   "Falha ao mudar o nome do ficheiro!\0"\
@@ -9925,6 +10211,7 @@ const char * gTranslations_ro =
   "Eroare la \303\256nc\304\203rcarea %s\0"\
   "F&avorite\0"\
   "\303\216nainte\tAlt+->\0"\
+  "Tot ecranul\tCtrl+L\0"\
   "Tot ecranul\tCtrl+Shift+L\0"\
   "Dou\304\203 pagini\0"\
   "Eroare la redenumirea fisierului!\0"\
@@ -10170,6 +10457,7 @@ const char * gTranslations_ru =
   "\320\236\321\210\320\270\320\261\320\272\320\260 \320\267\320\260\320\263\321\200\321\203\320\267\320\272\320\270 %s\0"\
   "&\320\230\320\267\320\261\321\200\320\260\320\275\320\275\320\276\320\265\0"\
   "&\320\222\320\277\320\265\321\200\321\221\320\264\tAlt+\320\241\321\202\321\200\320\265\320\273\320\272\320\260 \320\262\320\277\321\200\320\260\320\262\320\276\0"\
+  "\320\237\320\276\320\273\320\275\321\213\320\271 &\321\215\320\272\321\200\320\260\320\275\tCtrl+L\0"\
   "\320\237\320\276\320\273\320\275\321\213\320\271 &\321\215\320\272\321\200\320\260\320\275\tCtrl+Shift+L\0"\
   "\320\237\320\276 \320\264\320\262\320\265 \321\201\321\202\321\200\320\260\320\275\320\270\321\206\321\213\0"\
   "\320\236\321\210\320\270\320\261\320\272\320\260 \320\277\320\265\321\200\320\265\320\270\320\274\320\265\320\275\320\276\320\262\320\260\320\275\320\270\321\217 \321\204\320\260\320\271\320\273\320\260!\0"\
@@ -10301,8 +10589,8 @@ const char * gTranslations_ru =
   "\320\243\320\274\320\265\320\275\321\214\321\210\320\270\321\202\321\214\0"\
   "\320\234\320\260\321\201\321\210\321\202\320\260\320\261\0"\
   "[\320\236\320\261\320\275\320\260\321\200\321\203\320\266\320\265\320\275\321\213 \320\270\320\267\320\274\320\265\320\275\320\265\320\275\320\270\321\217; \320\276\320\261\320\275\320\276\320\262\320\273\320\265\320\275\320\270\320\265...] %s\0"\
-  "\320\272\320\276\320\277\320\270\321\200\321\203\320\265\321\202\321\201\321\217 \321\202\320\265\320\272\321\201\321\202\0"\
-  "\320\277\320\265\321\207\320\260\321\202\320\260\320\265\321\202\321\201\321\217 \320\264\320\276\320\272\321\203\320\274\320\265\320\275\321\202\0";
+  "\320\272\320\276\320\277\320\270\321\200\320\276\320\262\320\260\320\275\320\270\320\265 \321\202\320\265\320\272\321\201\321\202\320\260\0"\
+  "\320\277\320\265\321\207\320\260\321\202\321\214 \320\264\320\276\320\272\321\203\320\274\320\265\320\275\321\202\320\260\0";
 
 const char * gTranslations_sr_rs = 
   "\320\236 \320\277\321\200\320\276\320\263\321\200\320\260\320\274\321\203\0"\
@@ -10415,6 +10703,7 @@ const char * gTranslations_sr_rs =
   "\320\224\320\276\321\210\320\273\320\276 \321\230\320\265 \320\264\320\276 \320\263\321\200\320\265\321\210\320\272\320\265 \320\277\321\200\320\270\320\273\320\270\320\272\320\276\320\274 \321\203\321\207\320\270\321\202\320\260\320\262\320\260\321\232\320\260 \320\264\320\260\321\202\320\276\321\202\320\265\320\272\320\265 %s\0"\
   "\320\236\320\264\320\260\320\261\320\270\321\200\0"\
   "\320\235\320\260\320\277\321\200\320\265\320\264\tAlt+->\0"\
+  "\320\246\320\265\320\276 \320\265\320\272\321\200\320\260\320\275\tCtrl+L\0"\
   "\320\246\320\265\320\276 \320\265\320\272\321\200\320\260\320\275\tCtrl+Shift+L\0"\
   "\320\235\320\260\321\201\320\277\321\200\320\260\320\274\320\275\320\276\0"\
   "\320\235\320\265\320\274\320\276\320\263\321\203\321\233\320\265 \321\230\320\265 \320\277\321\200\320\265\320\270\320\274\320\265\320\275\320\276\320\262\320\260\321\202\320\270 \320\264\320\260\321\202\320\276\321\202\320\265\320\272\321\203!\0"\
@@ -10660,6 +10949,7 @@ const char * gTranslations_sp_rs =
   "Do\305\241lo je do gre\305\241ke prilikom u\304\215itavanja datoteke %s\0"\
   "Odabir\0"\
   "Napred\tAlt+->\0"\
+  "Ceo ekran\tCtrl+L\0"\
   "Ceo ekran\tCtrl+Shift+L\0"\
   "Naspramno\0"\
   "Nemogu\304\207e je preimenovati datoteku!\0"\
@@ -10905,6 +11195,7 @@ const char * gTranslations_sk =
   "Chyba pri na\304\215\303\255tan\303\255 %s\0"\
   "&Ob\304\276\303\272ben\303\251 polo\305\276ky\0"\
   "D&opredu\tAlt+Right Arrow\0"\
+  "&Na cel\303\272 obrazovku\tCtrl+L\0"\
   "&Na cel\303\272 obrazovku\tCtrl+Shift+L\0"\
   "Dve strany\0"\
   "Premenovanie s\303\272boru bolo ne\303\272spe\305\241n\303\251!\0"\
@@ -11150,6 +11441,7 @@ const char * gTranslations_sl =
   "Napaka pri nalaganju %s\0"\
   "Priljubljeni\0"\
   "Naprej\tAlt+Desna pu\305\241\304\215ica\0"\
+  "Celozaslonsko\tCtrl+L\0"\
   "Celozaslonsko\tCtrl+Shift+L\0"\
   "Dvostransko\0"\
   "Preimenovanje datoteke ni uspelo!\0"\
@@ -11285,11 +11577,11 @@ const char * gTranslations_sl =
   "tiskanje dokumenta\0";
 
 const char * gTranslations_es = 
-  "&Acerca de...\0"\
+  "&Acerca de\0"\
   "T&ama\303\261o real\tCtrl+1\0"\
   "Opciones &avanzadas...\0"\
   "Tod&as las p\303\241ginas seleccionadas\0"\
-  "A&tr\303\241s\tAlt+<-\0"\
+  "A&tr\303\241s\tAlt+Izq\0"\
   "&Vista de libro\tCtrl+8\0"\
   "&Cerrar\tCtrl+W\0"\
   "&Copiar selecci\303\263n\0"\
@@ -11343,7 +11635,7 @@ const char * gTranslations_es =
   "A\303\261adir a favoritos\0"\
   "Avanzado\0"\
   "Todos los archivos\0"\
-  "Todos los documentos soportados\0"\
+  "Todos los documentos compatibles\0"\
   "Aplicaci\303\263n:\0"\
   "\302\277Asociar con archivos PDF?\0"\
   "Adjunto: %s\0"\
@@ -11353,7 +11645,7 @@ const char * gTranslations_es =
   "Vista de libro\0"\
   "&Marcadores\tF12\0"\
   "Marcar atajos\0"\
-  "Marcar atajo a pagina %s de %s\0"\
+  "Marcar atajo a la p\303\241gina %s de %s\0"\
   "Marcadores\0"\
   "\0"\
   "Documentos CHM\0"\
@@ -11368,7 +11660,7 @@ const char * gTranslations_es =
   "Continua\0"\
   "Vista continua de libro\0"\
   "P\303\241gina doble continua\0"\
-  "Contribuir en la traducci\303\263n\0"\
+  "Contribuir con una traducci\303\263n\0"\
   "Copiar &imagen\0"\
   "Copiar direcci\303\263n del en&lace\0"\
   "Copiar co&mentario\0"\
@@ -11381,20 +11673,21 @@ const char * gTranslations_es =
   "Archivo actual\0"\
   "&Zoom personalizado...\tCtrl+Y\0"\
   "Apariencia predeterminada:\0"\
-  "&Zoom por defecto:\0"\
+  "Am&pliaci\303\263n predeterminada:\0"\
   "No se puede cambiar el lector PDF predeterminado en modo port\303\241til\0"\
   "Permisos denegados:\0"\
   "Documentos DjVu\0"\
   "Propiedades del documento\0"\
   "Descargar\0"\
   "&Salir\tCtrl+Q\0"\
-  "Libros en formato EPUB\0"\
+  "Libros electr\303\263nicos en EPUB\0"\
   "Introduzca contrase\303\261a\0"\
   "Introduzca contrase\303\261a para %s\0"\
   "Introduzca los par\303\241metros de l\303\255nea de comandos que se ejecutar\303\241n al hacer doble-clic en el documento PDF:\0"\
   "Error al cargar %s\0"\
   "&Favoritos\0"\
-  "Adelante\tAlt+->\0"\
+  "Adelante\tAlt+Der\0"\
+  "Pantalla completa\tCtrl+L\0"\
   "Pantalla completa\tCtrl+May\303\272s+L\0"\
   "P\303\241gina doble\0"\
   "\302\241No se pudo renombrar el archivo!\0"\
@@ -11476,7 +11769,7 @@ const char * gTranslations_es =
   "La impresora con el nombre especificado no existe\0"\
   "Impresi\303\263n en progreso.\0"\
   "Impresi\303\263n a\303\272n en progreso. \302\277Cancelar y salir?\0"\
-  "Se esta imprimiendo. \302\277Abortar y empezar de nuevo?\0"\
+  "Se esta imprimiendo. \302\277Cancelar y empezar de nuevo?\0"\
   "Imprimiendo p\303\241gina %d de %d...\0"\
   "Problema de impresi\303\263n.\0"\
   "Re&nombrar...\tF2\0"\
@@ -11532,7 +11825,7 @@ const char * gTranslations_es =
 const char * gTranslations_sv = 
   "&Om\0"\
   "&Verklig storlek\tCtrl+1\0"\
-  "\0"\
+  "&Avancerade Inst\303\244llningar\0"\
   "&Alla valda sidor\0"\
   "Tillbaka\tAlt+Pil v\303\244nster\0"\
   "&Bokvy\tCtrl+8\0"\
@@ -11640,6 +11933,7 @@ const char * gTranslations_sv =
   "Fel vid \303\266ppning av %s\0"\
   "F&avoriter\0"\
   "Fram\303\245t\tAlt+Pil h\303\266ger\0"\
+  "Fullsk\303\244rm\tCtrl+L\0"\
   "Fullsk\303\244rm\tCtrl+Shift+L\0"\
   "Uppslag\0"\
   "Kunde inte d\303\266pa om filen!\0"\
@@ -11678,7 +11972,7 @@ const char * gTranslations_sv =
   "\0"\
   "St\303\244lla in SumatraPDF som standardprogram f\303\266r PDF-filer?\0"\
   "Anv\303\244nd SumatraPDF som standardl\303\244sare f\303\266r PDF\0"\
-  "\0"\
+  "Man&ga L\303\244ge\0"\
   "Matcha versaler/gemener\0"\
   "Mobi-dokument\0"\
   "\303\204ndrad:\0"\
@@ -11772,7 +12066,7 @@ const char * gTranslations_sv =
   "Zoomfaktor\0"\
   "[\303\204ndringar detekterade; uppdaterar] %s\0"\
   "kopierar text\0"\
-  "skriver ut dokumentet\0";
+  "skriver ut dokument\0";
 
 const char * gTranslations_ta = 
   "\340\256\252\340\256\261\340\257\215\340\256\261\340\256\277\0"\
@@ -11885,6 +12179,7 @@ const char * gTranslations_ta =
   "\340\256\217\340\256\261\340\257\215\340\256\261\340\257\201\340\256\265\340\256\244\340\256\277\340\256\262\340\257\215 \340\256\252\340\256\277\340\256\264\340\257\210 %s\0"\
   "\340\256\252\340\256\277\340\256\237\340\256\277\340\256\244\340\257\215\340\256\244\340\256\265\340\257\210\0"\
   "\340\256\256\340\257\201\340\256\251\340\257\215\340\256\251\340\257\207\340\256\276\340\256\225\340\257\215\340\256\225\340\256\277 \tAlt+Right Arrow\0"\
+  "\340\256\256\340\257\201\340\256\264\340\257\201\340\256\244\340\257\215\340\256\244\340\256\277\340\256\260\340\257\210\0"\
   "\340\256\256\340\257\201\340\256\264\340\257\201\340\256\244\340\257\215\340\256\244\340\256\277\340\256\260\340\257\210\0"\
   "\340\256\256\340\257\201\340\256\225\340\256\252\340\257\215\340\256\252\340\257\201\0"\
   "\340\256\225\340\257\207\340\256\276\340\256\252\340\257\215\340\256\252\340\257\201\340\256\225\340\257\215\340\256\225\340\257\201 \340\256\256\340\256\261\340\257\201\340\256\252\340\257\206\340\256\257\340\256\260\340\256\277\340\256\237 \340\256\256\340\257\201\340\256\237\340\256\277\340\256\257\340\256\265\340\256\277\340\256\262\340\257\215\340\256\262\340\257\210!\0"\
@@ -12130,6 +12425,7 @@ const char * gTranslations_tr =
   "%s y\303\274kleme hatas\304\261\0"\
   "S&\304\261k kullan\304\261lanlar\0"\
   "\304\260&leri\tAlt+Sa\304\237 Ok\0"\
+  "&Tam Ekran\tCtrl+L\0"\
   "&Tam Ekran\tCtrl+Shift+L\0"\
   "\303\207ift sayfa\0"\
   "Dosyan\304\261n ismi de\304\237i\305\237tirilemedi!\0"\
@@ -12375,6 +12671,7 @@ const char * gTranslations_uk =
   "\320\237\320\276\320\274\320\270\320\273\320\272\320\260 \320\267\320\260\320\262\320\260\320\275\321\202\320\260\320\266\320\265\320\275\320\275\321\217 %s\0"\
   "\320\227\320\260\320\272\320\273\320\260\320\264\320\272\320\270\0"\
   "\320\222\320\277\320\265\321\200\320\265\320\264\tAlt+\320\237\321\200\320\260\320\262\320\260 \321\201\321\202\321\200\321\226\320\273\320\272\320\260\0"\
+  "\320\235\320\260 \321\206\321\226\320\273\320\270\320\271 \320\265\320\272\321\200\320\260\320\275\tCtrl+L\0"\
   "\320\235\320\260 \321\206\321\226\320\273\320\270\320\271 \320\265\320\272\321\200\320\260\320\275\tCtrl+Shift+L\0"\
   "\320\224\320\262\321\226 \321\201\321\202\320\276\321\200\321\226\320\275\320\272\320\270\0"\
   "\320\235\320\265 \320\262\320\264\320\260\320\273\320\276\321\201\321\217 \320\277\320\265\321\200\320\265\320\271\320\274\320\265\320\275\321\203\320\262\320\260\321\202\320\270 \321\204\320\260\320\271\320\273!\0"\
@@ -12620,6 +12917,7 @@ const char * gTranslations_uz =
   "%s yuklab olish xatosi\0"\
   "&Tanlanganlar\0"\
   "&Oldinga\tAlt+->\0"\
+  "To'liq &ekran\tCtrl+L\0"\
   "To'liq &ekran\tCtrl+Shift+L\0"\
   "Ikkita betdan\0"\
   "Fayl nomini o'zgartirish muvaffaqiyatsiz tugadi!\0"\
@@ -12865,6 +13163,7 @@ const char * gTranslations_vn =
   "Kh\303\264ng m\341\273\237 %s \304\221\306\260\341\273\243c\0"\
   "\306\257a th\303\255ch\0"\
   "Ti\341\272\277p t\341\273\245c\tAlt+M\305\251i t\303\252n ph\341\272\243i\0"\
+  "To\303\240n m\303\240n h\303\254nh\tCtrl+L\0"\
   "To\303\240n m\303\240n h\303\254nh\tCtrl+Shift+L\0"\
   "Trang k\303\251p\0"\
   "Kh\303\264ng th\341\273\203 \304\221\341\273\225i t\303\252n t\341\272\255p tin!\0"\
@@ -13110,6 +13409,7 @@ const char * gTranslations_cy =
   "Gwall llwytho %s\0"\
   "&Ffefrynnau\0"\
   "Ymlaen\tAlt+Saeth Dde\0"\
+  "Sgrin Lawn\tCtrl+L\0"\
   "Sgrin Lawn\tCtrl+Shift+L\0"\
   "Gwynebu\0"\
   "Methwyd ailenwi'r ffeil!\0"\
@@ -13280,6 +13580,7 @@ static const char *gTranslations[LANGS_COUNT] = {
   gTranslations_ku, 
   gTranslations_lt, 
   gTranslations_mk, 
+  gTranslations_my, 
   gTranslations_ne, 
   gTranslations_no, 
   gTranslations_fa, 
@@ -13339,6 +13640,7 @@ const char *gLangCodes =   "en\0" \
   "ku\0" \
   "lt\0" \
   "mk\0" \
+  "my\0" \
   "ne\0" \
   "no\0" \
   "fa\0" \
@@ -13394,6 +13696,7 @@ const char *gLangNames =   "English\0" \
   "Kurdish (\331\203\331\210\330\261\330\257\333\214)\0" \
   "Lithuanian (Lietuvi\305\263)\0" \
   "Macedonian (\320\274\320\260\320\272\320\265\320\264\320\276\320\275\321\201\320\272\320\270)\0" \
+  "Malaysian (Bahasa Melayu)\0" \
   "Nepali (\340\244\250\340\245\207\340\244\252\340\244\276\340\244\262\340\245\200)\0" \
   "Norwegian (Norsk)\0" \
   "Persian (\331\201\330\247\330\261\330\263\333\214)\0" \
@@ -13461,6 +13764,7 @@ const LANGID gLangIds[LANGS_COUNT] = {
   MAKELANGID(LANG_CENTRAL_KURDISH, SUBLANG_CENTRAL_KURDISH_CENTRAL_KURDISH_IRAQ),
   _LANGID(LANG_LITHUANIAN),
   _LANGID(LANG_MACEDONIAN),
+  _LANGID(LANG_MALAY),
   _LANGID(LANG_NEPALI),
   MAKELANGID(LANG_NORWEGIAN, SUBLANG_NORWEGIAN_BOKMAL),
   _LANGID(LANG_FARSI),
@@ -13486,7 +13790,7 @@ const LANGID gLangIds[LANGS_COUNT] = {
 
 bool IsLangRtl(int idx)
 {
-  return (2 == idx) || (23 == idx) || (31 == idx) || (36 == idx);
+  return (2 == idx) || (23 == idx) || (31 == idx) || (37 == idx);
 }
 
 int gLangsCount = LANGS_COUNT;
