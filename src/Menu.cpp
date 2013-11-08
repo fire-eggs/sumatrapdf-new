@@ -792,19 +792,19 @@ void UpdateMenu(EbookWindow *win, HMENU m)
 // so that accidental removal of the menu isn't catastrophic
 void ShowHideMenuBar(WindowInfo *win, bool showTemporarily)
 {
-    CrashIf(!win->menu);
+    CrashIf(!win->menu());
     if (win->presentation || win->isFullScreen)
         return;
 
     HWND hwnd = win->hwndFrame;
 
     if (showTemporarily) {
-        SetMenu(hwnd, win->menu);
+        SetMenu(hwnd, win->menu());
         return;
     }
 
     bool hideMenu = !showTemporarily && GetMenu(hwnd) != NULL;
-    SetMenu(hwnd, hideMenu ? NULL : win->menu);
+    SetMenu(hwnd, hideMenu ? NULL : win->menu());
     win->isMenuHidden = hideMenu;
 }
 
