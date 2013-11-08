@@ -1440,7 +1440,7 @@ static WindowInfo* CreateWindowInfo()
     SetMenu(WIN->hwndFrame, WIN->menu);
     win->isMenuHidden = !gGlobalPrefs->showMenubar;
     if (!win->isMenuHidden)
-        SetMenu(win->hwndFrame, win->menu);
+        SetMenu(win->hwndFrame, win->menu());
     // At this point, it will
     // call FrameOnSize, but now toolBar and sideBar are still NULL.
     // We append WIN to gWIN later to avoid resize problem.
@@ -3361,7 +3361,6 @@ void CloseWindow(WindowInfo *win, bool quitIfLast, bool forceClose)
         DestroyWindow(win->hwndCanvas);
         DeleteWindowInfo(win);
     }
-    }
 }
 
 // returns false if no filter has been appended
@@ -4121,7 +4120,7 @@ static void FrameOnSize(WindowInfo* win, int dx, int dy)
     // FrameOnSize is called only when all childs are created and all infos are recorded.
 
     int rebBarDy = 0;
-    if (!gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->showToolbar && !(win->presentation || win->isfullScreen)) {
+    if (!gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->showToolbar && !(win->presentation || win->isFullScreen)) {
         SetWindowPos(win->toolBar()->hwndReBar, NULL, 0, 0, dx, 0, SWP_NOZORDER); // win->toolBar() is not null, see CreateWindowInfo.
         rebBarDy = WindowRect(win->toolBar()->hwndReBar).dy;
     }
@@ -4156,7 +4155,7 @@ static void FrameOnSize(WindowInfo* win, int dx, int dy)
     else // One should combine this with above, but now we separate them for clearness.
         SetWindowPos(win->panel->WIN->container->hwndContainer, NULL, 0, rebBarDy, dx, dy - rebBarDy, SWP_NOZORDER);
 
-    if (win->presentation || win->isfullScreen) {
+    if (win->presentation || win->isFullScreen) {
         RectI fullscreen = GetFullscreenRect(win->hwndFrame);
         WindowRect rect(win->hwndFrame);
         // Windows XP sometimes seems to change the window size on it's own
@@ -4445,7 +4444,7 @@ static void ExitFullScreen(WindowInfo& win)
     if (gGlobalPrefs->showToolbar)
         ShowWindow(win.toolBar()->hwndReBar, SW_SHOW);
     if (!win.isMenuHidden)
-        SetMenu(win.hwndFrame, win.menu);
+        SetMenu(win.hwndFrame, win.menu());
 
     SetWindowLong(win.hwndFrame, GWL_STYLE, win.nonFullScreenWindowStyle);
     UINT flags = SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOSIZE | SWP_NOMOVE;
@@ -5367,7 +5366,7 @@ void SetSidebarVisibility(WindowInfo *win, bool tocVisible, bool showFavorites, 
     if (!gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->showToolbar && win->panel->container->isAtTop)
         toolbarDy = 0;
 
-    if (gGlobalPrefs->showToolbar && (gGlobalPrefs->toolbarForEachPanel == gGlobalPrefs->sidebarForEachPanel) && !win->isfullScreen && !win->presentation)
+    if (gGlobalPrefs->showToolbar && (gGlobalPrefs->toolbarForEachPanel == gGlobalPrefs->sidebarForEachPanel) && !win->isFullScreen && !win->presentation)
         toolbarDy = WindowRect(win->toolBar()->hwndReBar).dy;
 
     if (gGlobalPrefs->sidebarForEachPanel && gGlobalPrefs->tabVisible) {
@@ -5488,8 +5487,8 @@ void ShowDocument(PanelInfo *panel, WindowInfo *win,  WindowInfo *winNew, bool H
     if (win == winNew)
         return;
 
-    if (win->fullScreen || win->presentation)
-        ExitFullscreen(*win);
+    if (win->isFullScreen || win->presentation)
+        ExitFullScreen(*win);
 
     panel->win = winNew;
 
@@ -5956,7 +5955,7 @@ static void PanelOnSize(PanelInfo* panel, int dx, int dy)
     if (!gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->showToolbar && panel->container->isAtTop)
         rebBarDy = 0;
 
-    if (gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->showToolbar && !(panel->win->presentation || panel->win->fullScreen)) {
+    if (gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->showToolbar && !(panel->win->presentation || panel->win->isFullScreen)) {
         SetWindowPos(panel->win->toolBar()->hwndReBar, NULL, 0, 0, dx, 0, SWP_NOZORDER);
         rebBarDy = WindowRect(panel->toolBar->hwndReBar).dy;
     }
@@ -6218,7 +6217,7 @@ static void PanelOnPaint(PanelInfo& panel)
     if (!gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->showToolbar && panel.container->isAtTop)
         rebBarDy = 0;
 
-    if (gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->showToolbar && !(panel.win->presentation || panel.win->fullScreen))
+    if (gGlobalPrefs->toolbarForEachPanel && gGlobalPrefs->showToolbar && !(panel.win->presentation || panel.win->isFullScreen))
         rebBarDy = WindowRect(panel.toolBar->hwndReBar).dy;
 
     int tabDy = 0;

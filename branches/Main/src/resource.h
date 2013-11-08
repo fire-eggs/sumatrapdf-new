@@ -37,7 +37,7 @@
 #define IDM_VIEW_BOOKMARKS              417
 #define IDM_VIEW_PRESENTATION_MODE      418
 #define IDM_VIEW_SHOW_HIDE_TOOLBAR      419
-#define IDM_VIEW_SHOW_HIDE_TAB          423
+#define IDM_VIEW_SHOW_HIDE_TAB          424
 #define IDM_COPY_SELECTION              420
 #define IDM_VIEW_FULLSCREEN             421
 #define IDM_SELECT_ALL                  422

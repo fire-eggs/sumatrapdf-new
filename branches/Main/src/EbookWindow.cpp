@@ -159,7 +159,7 @@ static void CloseEbookWindow(EbookWindow *win, bool quitIfLast, bool forceClose)
         return;
     }
     w->isMenuHidden = hideMenu;
-    SetMenu(w->hwndFrame, hideMenu ? NULL : w->menu);
+    SetMenu(w->hwndFrame, hideMenu ? NULL : w->menu());
 }
 
 static LRESULT OnMouseWheel(EbookWindow *win, UINT msg, WPARAM wParam, LPARAM lParam)
