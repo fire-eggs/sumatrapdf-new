@@ -645,6 +645,9 @@
     <ClCompile Include="..\mupdf\source\fitz\transition.c">
       <Filter>ext\mupdf\fitz</Filter>
     </ClCompile>
+    <ClCompile Include="..\mupdf\source\fitz\tree.c">
+      <Filter>ext\mupdf\fitz</Filter>
+    </ClCompile>
     <ClCompile Include="..\mupdf\source\fitz\ucdn.c">
       <Filter>ext\mupdf\fitz</Filter>
     </ClCompile>
