@@ -1,10 +1,10 @@
 /***************************************************************************/
 /*                                                                         */
-/*  svwinfnt.h                                                             */
+/*  afscript.h                                                             */
 /*                                                                         */
-/*    The FreeType Windows FNT/FONT service (specification).               */
+/*    Auto-fitter scripts (specification only).                            */
 /*                                                                         */
-/*  Copyright 2003 by                                                      */
+/*  Copyright 2013 by                                                      */
 /*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
 /*                                                                         */
 /*  This file is part of the FreeType project, and may only be used,       */
@@ -16,35 +16,22 @@
 /***************************************************************************/
 
 
-#ifndef __SVWINFNT_H__
-#define __SVWINFNT_H__
-
-#include FT_INTERNAL_SERVICE_H
-#include FT_WINFONTS_H
+  /* The following part can be included multiple times. */
+  /* Define `SCRIPT' as needed.                         */
 
 
-FT_BEGIN_HEADER
+  /* Add new scripts here. */
 
-
-#define FT_SERVICE_ID_WINFNT  "winfonts"
-
-  typedef FT_Error
-  (*FT_WinFnt_GetHeaderFunc)( FT_Face               face,
-                              FT_WinFNT_HeaderRec  *aheader );
-
-
-  FT_DEFINE_SERVICE( WinFnt )
-  {
-    FT_WinFnt_GetHeaderFunc  get_header;
-  };
-
-  /* */
-
-
-FT_END_HEADER
-
-
-#endif /* __SVWINFNT_H__ */
+  SCRIPT( cyrl, CYRL, "Cyrillic" )
+  SCRIPT( deva, DEVA, "Indic scripts" )
+  SCRIPT( dflt, DFLT, "no script" )
+  SCRIPT( grek, GREK, "Greek" )
+  SCRIPT( hani, HANI, "CJKV ideographs" )
+  SCRIPT( hebr, HEBR, "Hebrew" )
+  SCRIPT( latn, LATN, "Latin" )
+#ifdef FT_OPTION_AUTOFIT2
+  SCRIPT( ltn2, LTN2, "Latin 2" )
+#endif
 
 
 /* END */
