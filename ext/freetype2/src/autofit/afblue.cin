@@ -1,10 +1,10 @@
 /***************************************************************************/
 /*                                                                         */
-/*  svtteng.h                                                              */
+/*  afblue.c                                                               */
 /*                                                                         */
-/*    The FreeType TrueType engine query service (specification).          */
+/*    Auto-fitter data for blue strings (body).                            */
 /*                                                                         */
-/*  Copyright 2006 by                                                      */
+/*  Copyright 2013 by                                                      */
 /*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
 /*                                                                         */
 /*  This file is part of the FreeType project, and may only be used,       */
@@ -16,38 +16,24 @@
 /***************************************************************************/
 
 
-#ifndef __SVTTENG_H__
-#define __SVTTENG_H__
-
-#include FT_INTERNAL_SERVICE_H
-#include FT_MODULE_H
+#include "aftypes.h"
 
 
-FT_BEGIN_HEADER
-
-
-  /*
-   *  SFNT table loading service.
-   */
-
-#define FT_SERVICE_ID_TRUETYPE_ENGINE  "truetype-engine"
-
-  /*
-   * Used to implement FT_Get_TrueType_Engine_Type
-   */
-
-  FT_DEFINE_SERVICE( TrueTypeEngine )
+  FT_LOCAL_ARRAY_DEF( char )
+  af_blue_strings[] =
   {
-    FT_TrueTypeEngineType  engine_type;
+    /* */
+@AF_BLUE_STRINGS_ARRAY@
   };
 
-  /* */
 
-
-FT_END_HEADER
-
-
-#endif /* __SVTTENG_H__ */
+  /* stringsets are specific to scripts */
+  FT_LOCAL_ARRAY_DEF( AF_Blue_StringRec )
+  af_blue_stringsets[] =
+  {
+    /* */
+@AF_BLUE_STRINGSETS_ARRAY@
+  };
 
 
 /* END */

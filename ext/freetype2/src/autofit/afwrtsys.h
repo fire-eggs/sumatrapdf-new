@@ -1,10 +1,10 @@
 /***************************************************************************/
 /*                                                                         */
-/*  svkern.h                                                               */
+/*  afwrtsys.h                                                             */
 /*                                                                         */
-/*    The FreeType Kerning service (specification).                        */
+/*    Auto-fitter writing systems (specification only).                    */
 /*                                                                         */
-/*  Copyright 2006 by                                                      */
+/*  Copyright 2013 by                                                      */
 /*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
 /*                                                                         */
 /*  This file is part of the FreeType project, and may only be used,       */
@@ -16,36 +16,36 @@
 /***************************************************************************/
 
 
-#ifndef __SVKERN_H__
-#define __SVKERN_H__
+#ifndef __AFWRTSYS_H__
+#define __AFWRTSYS_H__
 
-#include FT_INTERNAL_SERVICE_H
-#include FT_TRUETYPE_TABLES_H
+  /* Since preprocessor directives can't create other preprocessor */
+  /* directives, we have to include the header files manually.     */
 
+#include "afdummy.h"
+#include "aflatin.h"
+#include "afcjk.h"
+#include "afindic.h"
+#ifdef FT_OPTION_AUTOFIT2
+#include "aflatin2.h"
+#endif
 
-FT_BEGIN_HEADER
-
-#define FT_SERVICE_ID_KERNING  "kerning"
-
-
-  typedef FT_Error
-  (*FT_Kerning_TrackGetFunc)( FT_Face    face,
-                              FT_Fixed   point_size,
-                              FT_Int     degree,
-                              FT_Fixed*  akerning );
-
-  FT_DEFINE_SERVICE( Kerning )
-  {
-    FT_Kerning_TrackGetFunc  get_track;
-  };
-
-  /* */
+#endif /* __AFWRTSYS_H__ */
 
 
-FT_END_HEADER
+  /* The following part can be included multiple times. */
+  /* Define `WRITING_SYSTEM' as needed.                 */
 
 
-#endif /* __SVKERN_H__ */
+  /* Add new writing systems here. */
+
+  WRITING_SYSTEM( dummy,  DUMMY  )
+  WRITING_SYSTEM( latin,  LATIN  )
+  WRITING_SYSTEM( cjk,    CJK    )
+  WRITING_SYSTEM( indic,  INDIC  )
+#ifdef FT_OPTION_AUTOFIT2
+  WRITING_SYSTEM( latin2, LATIN2 )
+#endif
 
 
 /* END */
