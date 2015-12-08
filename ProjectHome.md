@@ -1,0 +1,1 @@
+Give SumatraPDF new GUI and some additional features
